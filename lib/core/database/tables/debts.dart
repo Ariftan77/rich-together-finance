@@ -1,0 +1,19 @@
+import 'package:drift/drift.dart';
+import '../../../core/models/enums.dart';
+import 'accounts.dart';
+
+/// Debts table definition
+class Debts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get type => intEnum<DebtType>()();
+  TextColumn get personName => text().withLength(min: 1, max: 100)();
+  RealColumn get amount => real()();
+  IntColumn get currency => intEnum<Currency>()();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  TextColumn get note => text().nullable()();
+  BoolColumn get isSettled => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get settledDate => dateTime().nullable()();
+  IntColumn get settledAccountId => integer().nullable().references(Accounts, #id)();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}

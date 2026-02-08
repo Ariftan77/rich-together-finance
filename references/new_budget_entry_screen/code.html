@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>New Budget Entry - Rich Together</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#eebd2b",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221d10",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(40, 35, 20, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-button {
+            box-shadow: 0 0 20px rgba(238, 189, 43, 0.3);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-full relative">
+<!-- Blurred Background Content (Simulating the Budget List) -->
+<div class="absolute inset-0 z-0 opacity-40 blur-2xl scale-110 pointer-events-none">
+<div class="flex flex-col p-6 gap-6">
+<div class="h-40 w-full bg-primary/20 rounded-xl"></div>
+<div class="h-20 w-full bg-white/5 rounded-xl"></div>
+<div class="h-20 w-full bg-white/5 rounded-xl"></div>
+<div class="h-20 w-full bg-white/5 rounded-xl"></div>
+<div class="h-20 w-full bg-white/5 rounded-xl"></div>
+</div>
+</div>
+<!-- Main Container (Glassmorphism Overlay) -->
+<div class="relative z-10 flex flex-col h-full w-full max-w-md mx-auto overflow-hidden shadow-2xl">
+<!-- TopAppBar -->
+<div class="flex items-center px-4 pt-8 pb-4 justify-between bg-transparent">
+<div class="text-white flex size-10 shrink-0 items-center justify-start cursor-pointer">
+<span class="material-symbols-outlined">close</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">New Budget Entry</h2>
+<div class="flex w-10 items-center justify-end">
+<p class="text-primary text-sm font-semibold tracking-wide cursor-pointer">HELP</p>
+</div>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto hide-scrollbar px-4 pb-32">
+<!-- HeadlineText & MetaText (Amount Input) -->
+<div class="py-10 text-center">
+<p class="text-white/60 text-sm font-medium leading-normal mb-1">Set Limit Amount</p>
+<h1 class="text-primary tracking-tight text-[48px] font-bold leading-tight px-4 text-center">
+<span class="text-white/40">$</span>2,500<span class="animate-pulse">|</span>
+</h1>
+</div>
+<!-- Glass Card Section -->
+<div class="glass-card rounded-xl p-5 mb-6">
+<!-- SectionHeader: Category -->
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white text-base font-bold leading-tight tracking-tight">Select Category</h3>
+<span class="text-primary/70 text-xs font-medium uppercase tracking-widest">See All</span>
+</div>
+<!-- Chips (Horizontal Category Selector) -->
+<div class="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+<div class="flex flex-col items-center gap-2 shrink-0">
+<div class="flex size-14 items-center justify-center rounded-full bg-primary text-background-dark glow-button">
+<span class="material-symbols-outlined text-2xl">restaurant</span>
+</div>
+<p class="text-white text-xs font-semibold">Food</p>
+</div>
+<div class="flex flex-col items-center gap-2 shrink-0">
+<div class="flex size-14 items-center justify-center rounded-full glass-panel text-white/80">
+<span class="material-symbols-outlined text-2xl">directions_car</span>
+</div>
+<p class="text-white/60 text-xs font-medium">Travel</p>
+</div>
+<div class="flex flex-col items-center gap-2 shrink-0">
+<div class="flex size-14 items-center justify-center rounded-full glass-panel text-white/80">
+<span class="material-symbols-outlined text-2xl">shopping_bag</span>
+</div>
+<p class="text-white/60 text-xs font-medium">Shop</p>
+</div>
+<div class="flex flex-col items-center gap-2 shrink-0">
+<div class="flex size-14 items-center justify-center rounded-full glass-panel text-white/80">
+<span class="material-symbols-outlined text-2xl">favorite</span>
+</div>
+<p class="text-white/60 text-xs font-medium">Health</p>
+</div>
+<div class="flex flex-col items-center gap-2 shrink-0">
+<div class="flex size-14 items-center justify-center rounded-full glass-panel text-white/80">
+<span class="material-symbols-outlined text-2xl">payments</span>
+</div>
+<p class="text-white/60 text-xs font-medium">Bills</p>
+</div>
+</div>
+</div>
+<!-- Segmented Control: Period -->
+<div class="glass-card rounded-xl p-5 mb-6">
+<h3 class="text-white text-base font-bold mb-4">Select Period</h3>
+<div class="flex bg-white/5 rounded-lg p-1">
+<button class="flex-1 py-2 text-sm font-semibold rounded-md bg-white/10 text-white shadow-sm border border-white/5">Monthly</button>
+<button class="flex-1 py-2 text-sm font-semibold rounded-md text-white/40">Weekly</button>
+</div>
+</div>
+<!-- Date Picker (Integrated Glass Style) -->
+<div class="glass-card rounded-xl p-5 mb-6">
+<h3 class="text-white text-base font-bold mb-4">Start Date</h3>
+<div class="flex items-center justify-between glass-panel rounded-lg px-4 py-3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary/80">calendar_month</span>
+<p class="text-sm font-medium text-white">October 1, 2023</p>
+</div>
+<span class="material-symbols-outlined text-white/30 text-sm">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Footer Action Button -->
+<div class="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-gradient-to-t from-background-dark via-background-dark/80 to-transparent">
+<button class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 rounded-xl transition-all glow-button flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save</span>
+                Save Budget
+            </button>
+</div>
+</div>
+<!-- Decoration Gradients -->
+<div class="fixed top-[-10%] left-[-10%] size-80 bg-primary/20 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="fixed bottom-[-10%] right-[-10%] size-80 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
+</body></html>

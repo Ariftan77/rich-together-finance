@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quick Transaction Entry Glass</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#eebd2b",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221d10",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .bg-gradient-mesh {
+            background-color: #221d10;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(238, 189, 43, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(238, 189, 43, 0.1) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(34, 29, 16, 1) 0px, transparent 50%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-full">
+<!-- Blurred Background Context (Transaction History Simulation) -->
+<div class="fixed inset-0 z-0 opacity-40 blur-3xl scale-110 bg-gradient-mesh" data-alt="Abstract golden and dark brown gradient pattern">
+<div class="flex flex-col p-8 gap-8">
+<div class="h-20 w-full bg-white/10 rounded-xl"></div>
+<div class="h-20 w-full bg-white/10 rounded-xl"></div>
+<div class="h-20 w-full bg-white/10 rounded-xl"></div>
+<div class="h-20 w-full bg-white/10 rounded-xl"></div>
+</div>
+</div>
+<!-- Main Glass UI Overlay -->
+<div class="relative z-10 flex flex-col h-full max-w-[480px] mx-auto overflow-y-auto scrollbar-hide">
+<!-- TopAppBar -->
+<div class="flex items-center p-4 pb-2 justify-between">
+<div class="text-white flex size-12 shrink-0 items-center justify-start cursor-pointer">
+<span class="material-symbols-outlined">close</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">New Entry</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex size-12 cursor-pointer items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-white">help</span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center px-6 py-4 space-y-8">
+<!-- Amount Input Section -->
+<div class="w-full space-y-2 text-center">
+<p class="text-primary/80 text-sm font-medium uppercase tracking-widest">Enter Amount</p>
+<div class="relative flex items-center justify-center">
+<span class="text-primary text-4xl font-bold mr-1">$</span>
+<input class="bg-transparent border-none text-white text-7xl font-extrabold text-center focus:ring-0 w-full placeholder:text-white/20" type="text" value="0.00"/>
+</div>
+</div>
+<!-- SegmentedButtons (Type Selection) -->
+<div class="w-full glass-panel p-1 rounded-2xl flex">
+<label class="flex-1 cursor-pointer">
+<input class="sr-only peer" name="tx-type" type="radio" value="Income"/>
+<div class="py-3 text-center text-sm font-semibold rounded-xl transition-all duration-300 peer-checked:bg-white/10 peer-checked:text-white text-white/40">
+                        Income
+                    </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input checked="" class="sr-only peer" name="tx-type" type="radio" value="Expense"/>
+<div class="py-3 text-center text-sm font-semibold rounded-xl transition-all duration-300 peer-checked:bg-primary/20 peer-checked:text-primary text-white/40">
+                        Expense
+                    </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="sr-only peer" name="tx-type" type="radio" value="Transfer"/>
+<div class="py-3 text-center text-sm font-semibold rounded-xl transition-all duration-300 peer-checked:bg-white/10 peer-checked:text-white text-white/40">
+                        Transfer
+                    </div>
+</label>
+</div>
+<!-- Detail Fields (Glass Style) -->
+<div class="w-full space-y-4">
+<!-- Category Select -->
+<div class="space-y-2">
+<label class="text-white/60 text-xs font-semibold uppercase tracking-wider ml-1">Category</label>
+<div class="glass-input flex items-center px-4 h-14 rounded-xl cursor-pointer group hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-primary/80 mr-3">category</span>
+<select class="bg-transparent border-none text-white focus:ring-0 w-full p-0 text-base appearance-none cursor-pointer">
+<option class="bg-background-dark">Select category</option>
+<option class="bg-background-dark">Food &amp; Drinks</option>
+<option class="bg-background-dark">Transportation</option>
+<option class="bg-background-dark">Entertainment</option>
+<option class="bg-background-dark">Shopping</option>
+</select>
+<span class="material-symbols-outlined text-white/30 group-hover:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+<!-- Account Select -->
+<div class="space-y-2">
+<label class="text-white/60 text-xs font-semibold uppercase tracking-wider ml-1">Account</label>
+<div class="glass-input flex items-center px-4 h-14 rounded-xl cursor-pointer group hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-primary/80 mr-3">account_balance_wallet</span>
+<select class="bg-transparent border-none text-white focus:ring-0 w-full p-0 text-base appearance-none cursor-pointer">
+<option class="bg-background-dark">Main Savings</option>
+<option class="bg-background-dark">Daily Checking</option>
+<option class="bg-background-dark">Credit Card</option>
+</select>
+<span class="material-symbols-outlined text-white/30 group-hover:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+<!-- Date/Note Toggle row -->
+<div class="flex gap-4">
+<div class="flex-1 glass-input flex items-center px-4 h-14 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined text-white/60 mr-2 text-sm">calendar_today</span>
+<span class="text-white text-sm">Today</span>
+</div>
+<div class="flex-1 glass-input flex items-center px-4 h-14 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined text-white/60 mr-2 text-sm">edit_note</span>
+<span class="text-white text-sm">Add Note</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Save Button -->
+<div class="p-6">
+<button class="relative w-full h-16 bg-primary rounded-xl font-bold text-background-dark text-lg shadow-[0_0_30px_rgba(238,189,43,0.3)] hover:shadow-[0_0_45px_rgba(238,189,43,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined">check_circle</span>
+                Save Transaction
+                <!-- Subtle internal shine -->
+<div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none"></div>
+</button>
+<!-- iOS Indicator -->
+<div class="w-32 h-1.5 bg-white/20 rounded-full mx-auto mt-8 mb-2"></div>
+</div>
+</div>
+</body></html>

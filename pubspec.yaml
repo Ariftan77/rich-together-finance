@@ -1,0 +1,65 @@
+name: rich_together
+description: "Offline-first personal finance app for expense tracking, budgeting, and portfolio management."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Database - Drift (SQLite)
+  drift: ^2.15.0
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.0
+  path: ^1.8.0
+
+  # State Management - Riverpod
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Networking
+  dio: ^5.4.0
+
+  # Charts
+  fl_chart: ^0.66.0
+
+  # Authentication
+  local_auth: ^2.1.8
+  flutter_secure_storage: ^9.0.0
+
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.3.3
+  equatable: ^2.0.5
+
+  # UI Enhancements
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # Code Generation
+  drift_dev: ^2.15.0
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.3.9
+
+flutter:
+  uses-material-design: true
+
+  # Assets will be added here later
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+
+  # Google Fonts are loaded dynamically, no need for local fonts

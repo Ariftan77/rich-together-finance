@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1f3b61",
+                        "brand-gold": "#d4af37",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#14181e",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.18);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+        .dark .glass {
+            background: rgba(10, 15, 25, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bg-mesh {
+            background: radial-gradient(at 0% 0%, #1a365d 0%, transparent 60%),
+                        radial-gradient(at 100% 0%, #b8860b 0%, transparent 60%),
+                        radial-gradient(at 50% 100%, #1e3a8a 0%, transparent 70%);
+            background-color: #0f172a;
+        }
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-mesh font-display text-white selection:bg-brand-gold/30">
+<div class="relative flex min-h-screen w-full max-w-[430px] mx-auto flex-col overflow-x-hidden pb-32">
+<div class="flex items-center p-6 pb-2 justify-between">
+<div class="flex size-10 shrink-0 items-center justify-center glass rounded-full overflow-hidden">
+<div class="bg-center bg-no-repeat aspect-square bg-cover size-full" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4T37dOIqmsXe71NpNPlXdUEBxdhtMujjiVno4g-LLDwMR80UVlr1o1PUFprfXicfkdHvUd5EdhXTRe2WAa1J_fJ0OEITfTgdpR38I2T6G07Ap0nm_mdech5WXBddwI-v6BPxG51l69JlibSJi9cxVEcT1EOV64uG5bwIpSvTrN2LsBrchiD5T7ELvhlUA7LQdrHhueaTRDj0vr8YMq9wMarn1RGJaXF2cxRKo2er2VOiwYYebmU5fvFNQ9JRBipjKh38jOCAAAsE");'></div>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Rich Together</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="flex size-10 items-center justify-center glass rounded-full">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+</div>
+</div>
+<div class="p-4 pt-6">
+<div class="glass flex flex-col items-stretch justify-end rounded-2xl p-6 relative overflow-hidden">
+<div class="absolute -top-12 -right-12 size-32 bg-brand-gold/20 rounded-full blur-3xl"></div>
+<div class="relative z-10 flex flex-col gap-1">
+<div class="flex items-center justify-between mb-2">
+<p class="text-white/70 text-sm font-medium uppercase tracking-[0.1em]">Net Worth</p>
+<div class="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            +2.4%
+                        </div>
+</div>
+<p class="text-white tracking-tighter text-4xl font-extrabold leading-tight">$125,430.00</p>
+<div class="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+<p class="text-white/40 text-[10px] italic">Live synchronization active</p>
+<button class="flex items-center gap-1 text-brand-gold text-sm font-bold">
+                            Analysis <span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 px-4">
+<div class="glass flex flex-col gap-3 rounded-2xl p-5 border-white/20">
+<div class="size-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+<span class="material-symbols-outlined">south_west</span>
+</div>
+<div>
+<p class="text-white/60 text-[11px] font-semibold uppercase tracking-wider">Income</p>
+<h2 class="text-white text-xl font-bold leading-tight">$5,200</h2>
+</div>
+</div>
+<div class="glass flex flex-col gap-3 rounded-2xl p-5 border-white/20">
+<div class="size-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+<span class="material-symbols-outlined">north_east</span>
+</div>
+<div>
+<p class="text-white/60 text-[11px] font-semibold uppercase tracking-wider">Expenses</p>
+<h2 class="text-white text-xl font-bold leading-tight">$3,100</h2>
+</div>
+</div>
+</div>
+<div class="px-4 pt-8">
+<h3 class="text-white text-lg font-bold leading-tight tracking-tight mb-4 px-1">Budget Allocation</h3>
+<div class="glass flex flex-col gap-4 p-5 rounded-2xl">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-brand-gold animate-pulse"></div>
+<p class="text-white text-sm font-semibold">Monthly Limit</p>
+</div>
+<p class="text-brand-gold text-sm font-black bg-white/10 px-3 py-1 rounded-full">75%</p>
+</div>
+<div class="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
+<div class="h-full rounded-full bg-gradient-to-r from-brand-gold to-yellow-300" style="width: 75%;"></div>
+</div>
+<div class="flex justify-between items-center text-white/50 text-[11px] font-medium px-1">
+<span>$2,325 spent</span>
+<span>$3,100 total</span>
+</div>
+</div>
+</div>
+<div class="px-4 pt-8 pb-4">
+<div class="flex items-center justify-between mb-4 px-1">
+<h3 class="text-white text-lg font-bold leading-tight tracking-tight">Recent Activity</h3>
+<button class="text-white/40 text-sm font-medium hover:text-white transition-colors">History</button>
+</div>
+<div class="flex flex-col gap-3">
+<div class="glass flex items-center justify-between p-4 rounded-xl">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300">
+<span class="material-symbols-outlined">shopping_bag</span>
+</div>
+<div>
+<p class="text-white font-bold text-sm">Apple Store</p>
+<p class="text-white/40 text-xs">Today, 2:45 PM</p>
+</div>
+</div>
+<p class="text-white font-bold">-$99.00</p>
+</div>
+<div class="glass flex items-center justify-between p-4 rounded-xl">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div>
+<p class="text-white font-bold text-sm">Dividends</p>
+<p class="text-white/40 text-xs">Yesterday</p>
+</div>
+</div>
+<p class="text-emerald-400 font-bold">+$45.20</p>
+</div>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 z-40 px-6 pb-8 pt-4">
+<div class="glass rounded-full px-4 py-2 flex items-center justify-around max-w-[390px] mx-auto border-white/20">
+<button class="flex flex-col items-center gap-1 py-1 px-4 rounded-full text-brand-gold">
+<span class="material-symbols-outlined font-bold text-[28px]" style="font-variation-settings: 'FILL' 1">home</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 py-1 px-4 rounded-full text-white/40">
+<span class="material-symbols-outlined text-[28px]">history</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">History</span>
+</button>
+<button class="flex flex-col items-center gap-1 py-1 px-4 rounded-full text-white/40">
+<span class="material-symbols-outlined text-[28px]">account_balance</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Investment</span>
+</button>
+<button class="flex flex-col items-center gap-1 py-1 px-4 rounded-full text-white/40">
+<span class="material-symbols-outlined text-[28px]">savings</span>
+<span class="text-[10px] font-medium uppercase tracking-tighter">Budget</span>
+</button>
+</div>
+</div>
+</div>
+
+</body></html>
