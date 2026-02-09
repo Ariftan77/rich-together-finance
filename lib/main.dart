@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'features/auth/presentation/auth_wrapper.dart';
 import 'shared/theme/app_theme.dart';
+import 'core/providers/profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,15 +21,20 @@ void main() async {
   );
 }
 
-class RichTogetherApp extends StatelessWidget {
+class RichTogetherApp extends ConsumerWidget {
   const RichTogetherApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the theme mode from settings
+    final themeMode = ref.watch(themeModeProvider);
+    
     return MaterialApp(
       title: 'Rich Together',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       home: const AuthWrapper(),
     );
   }

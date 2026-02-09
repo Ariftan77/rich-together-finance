@@ -38,6 +38,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
 
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return accountsAsync.when(
       data: (accounts) => categoriesAsync.when(
@@ -184,7 +185,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                             ),
                             // Amount
                             Text(
-                              '${isIncome ? '+' : isExpense ? '-' : ''} ${Formatters.formatCurrency(transaction.amount)}',
+                              '${isIncome ? '+' : isExpense ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
                               style: TextStyle(
                                 color: isIncome
                                     ? AppColors.success

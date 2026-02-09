@@ -211,10 +211,13 @@
 - [ ] Base currency selection
 - [ ] Date format preferences
 - [ ] Number format preferences
-- [ ] Theme selection (Dark/Light)
+- [x] Theme selection (Dark/Light) (Reverted to Dark Only as requested)
+- [x] Remove unused settings (Date/Number formats)
+- [ ] Show Decimal Toggle
+- [ ] Change PIN Feature
 - [ ] Language selection
 - [ ] Notification settings
-- [ ] Security settings (PIN change, biometric toggle)
+- [ ] Security settings (biometric toggle)
 
 ### Data Management
 - [ ] Export all data (JSON/CSV)
@@ -352,7 +355,7 @@
 **Upcoming:**
 - 💰 Phase 5: Portfolio & Investments
 - 🔄 Phase 6: Recurring & Automation
-- ⚙️ Phase 7: Settings & Customization
+- ⚙️ Phase 7: Settings & Customization (Partial)
 - 🎨 Phase 8: Polish & Optimization
 - 🚀 Phase 9: Advanced Features
 - 🎯 Phase 10: Launch Preparation

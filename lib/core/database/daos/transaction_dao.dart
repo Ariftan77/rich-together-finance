@@ -12,9 +12,11 @@ part 'transaction_dao.g.dart';
 class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDaoMixin {
   TransactionDao(super.db);
 
-  /// Get all transactions ordered by date descending
-  Future<List<Transaction>> getAllTransactions() =>
-      (select(transactions)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
+  /// Get all transactions for a profile ordered by date descending
+  Future<List<Transaction>> getAllTransactions(int profileId) =>
+      (select(transactions)
+        ..where((t) => t.profileId.equals(profileId))
+        ..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
 
   /// Get transactions for a specific account
   Future<List<Transaction>> getTransactionsByAccount(int accountId) =>
@@ -23,10 +25,10 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
-  /// Get transactions by type
-  Future<List<Transaction>> getTransactionsByType(TransactionType type) =>
+  /// Get transactions by type for a profile
+  Future<List<Transaction>> getTransactionsByType(int profileId, TransactionType type) =>
       (select(transactions)
-            ..where((t) => t.type.equals(type.index))
+            ..where((t) => t.profileId.equals(profileId) & t.type.equals(type.index))
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
@@ -37,10 +39,10 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
-  /// Get transactions within date range
-  Future<List<Transaction>> getTransactionsInRange(DateTime start, DateTime end) =>
+  /// Get transactions within date range for a profile
+  Future<List<Transaction>> getTransactionsInRange(int profileId, DateTime start, DateTime end) =>
       (select(transactions)
-            ..where((t) => t.date.isBiggerOrEqualValue(start) & t.date.isSmallerOrEqualValue(end))
+            ..where((t) => t.profileId.equals(profileId) & t.date.isBiggerOrEqualValue(start) & t.date.isSmallerOrEqualValue(end))
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
@@ -53,9 +55,11 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
-  /// Watch all transactions (reactive stream)
-  Stream<List<Transaction>> watchAllTransactions() =>
-      (select(transactions)..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
+  /// Watch all transactions for a profile (reactive stream)
+  Stream<List<Transaction>> watchAllTransactions(int profileId) =>
+      (select(transactions)
+        ..where((t) => t.profileId.equals(profileId))
+        ..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
 
   /// Watch transactions for a specific account
   Stream<List<Transaction>> watchTransactionsByAccount(int accountId) =>
@@ -114,12 +118,12 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return balance;
   }
 
-  /// Get monthly totals for income and expense
-  Future<Map<String, double>> getMonthlySummary(int year, int month) async {
+  /// Get monthly totals for income and expense for a profile
+  Future<Map<String, double>> getMonthlySummary(int profileId, int year, int month) async {
     final startDate = DateTime(year, month, 1);
     final endDate = DateTime(year, month + 1, 0, 23, 59, 59);
 
-    final txs = await getTransactionsInRange(startDate, endDate);
+    final txs = await getTransactionsInRange(profileId, startDate, endDate);
 
     double income = 0;
     double expense = 0;
@@ -133,5 +137,53 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     }
 
     return {'income': income, 'expense': expense};
+  }
+  Stream<List<Transaction>> watchFilteredTransactions({
+    required int profileId,
+    required int limit,
+    String? searchQuery,
+    int? accountId,
+    TransactionType? type,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) {
+    final query = select(transactions).join([
+      leftOuterJoin(accounts, accounts.id.equalsExp(transactions.accountId)),
+      leftOuterJoin(categories, categories.id.equalsExp(transactions.categoryId)),
+    ]);
+
+    query.where(transactions.profileId.equals(profileId));
+
+    if (accountId != null) {
+      query.where(transactions.accountId.equals(accountId) | transactions.toAccountId.equals(accountId));
+    }
+
+    if (type != null) {
+      query.where(transactions.type.equals(type.index));
+    }
+
+    if (dateFrom != null) {
+      query.where(transactions.date.isBiggerOrEqualValue(dateFrom));
+    }
+
+    if (dateTo != null) {
+      query.where(transactions.date.isSmallerOrEqualValue(dateTo));
+    }
+
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final term = '%${searchQuery.toLowerCase()}%';
+      query.where(
+        transactions.title.lower().like(term) |
+        transactions.note.lower().like(term) |
+        transactions.amount.cast<String>().like(term) | 
+        accounts.name.lower().like(term) |
+        categories.name.lower().like(term)
+      );
+    }
+
+    query.orderBy([OrderingTerm.desc(transactions.date)]);
+    query.limit(limit);
+
+    return query.map((row) => row.readTable(transactions)).watch();
   }
 }

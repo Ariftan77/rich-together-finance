@@ -8,6 +8,7 @@ import '../database/daos/budget_dao.dart';
 import '../database/daos/goal_dao.dart';
 import '../database/daos/debt_dao.dart';
 import '../database/daos/recurring_dao.dart';
+import 'profile_provider.dart';
 
 /// Database provider - singleton instance
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -66,18 +67,25 @@ final recurringDaoProvider = Provider<RecurringDao>((ref) {
 
 // ============================================
 // Stream Providers for reactive data
+// These now filter by active profile
 // ============================================
 
-/// All accounts stream
+/// All accounts stream (filtered by active profile)
 final accountsStreamProvider = StreamProvider<List<Account>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+  
   final accountDao = ref.watch(accountDaoProvider);
-  return accountDao.watchAllAccounts();
+  return accountDao.watchAllAccounts(profileId);
 });
 
-/// All transactions stream
+/// All transactions stream (filtered by active profile)
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+  
   final transactionDao = ref.watch(transactionDaoProvider);
-  return transactionDao.watchAllTransactions();
+  return transactionDao.watchAllTransactions(profileId);
 });
 
 /// All categories stream

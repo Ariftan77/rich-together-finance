@@ -36,15 +36,20 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     // Trigger initialization (e.g. recurring transactions check)
     ref.watch(appInitProvider);
 
+    // Determine if using light theme
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.bgDarkStart, AppColors.bgDarkEnd],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.mainGradient,
+          //   colors: isDarkMode 
+          //       ? [AppColors.bgDarkStart, AppColors.bgDarkEnd]
+          //       : [AppColors.bgLightStart, AppColors.bgLightEnd],
+          //   begin: Alignment.topCenter,
+          //   end: Alignment.bottomCenter,
+          // ),
         ),
         child: _screens[_currentIndex < _screens.length ? _currentIndex : 0],
       ),

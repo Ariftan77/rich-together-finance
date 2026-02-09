@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/utils/currency_input_formatter.dart';
+import '../providers/balance_provider.dart';
+import '../../../transactions/presentation/screens/transactions_history_screen.dart';
+import '../../../transactions/presentation/providers/search_provider.dart';
 
 class AccountEntryScreen extends ConsumerStatefulWidget {
   final Account? account; // Null for new, non-null for edit
@@ -23,8 +29,10 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _balanceController;
+  late TextEditingController _adjustmentController;
   AccountType _selectedType = AccountType.cash;
   Currency _selectedCurrency = Currency.idr;
+  bool _isAdjusting = false;
 
   @override
   void initState() {
@@ -33,6 +41,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     _balanceController = TextEditingController(
       text: widget.account?.initialBalance.toString() ?? '',
     );
+    _adjustmentController = TextEditingController();
     if (widget.account != null) {
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
@@ -43,6 +52,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   void dispose() {
     _nameController.dispose();
     _balanceController.dispose();
+    _adjustmentController.dispose();
     super.dispose();
   }
 
@@ -50,13 +60,13 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
-    // Remove formatting (dots) and parse
-    final balanceText = _balanceController.text.replaceAll('.', '').replaceAll(',', '');
-    final balance = double.tryParse(balanceText) ?? 0.0;
+    // Parse using Formatters helper
+    final balance = Formatters.parseCurrency(_balanceController.text, currency: _selectedCurrency);
 
     // Check for duplicate account name (only for new accounts or if name changed)
     final dao = ref.read(accountDaoProvider);
-    final existingAccounts = await dao.getAllAccountsIncludingInactive();
+    final profileId = ref.read(activeProfileIdProvider);
+    final existingAccounts = profileId != null ? await dao.getAllAccountsIncludingInactive(profileId) : <Account>[];
     
     final isDuplicate = existingAccounts.any((account) {
       // For new account: check if name exists
@@ -80,12 +90,22 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       return;
     }
 
-
-
     if (widget.account == null) {
       // Create
+      if (profileId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No active profile. Please set up a profile first.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
       await dao.insertAccount(
         AccountsCompanion(
+          profileId: drift.Value(profileId),
           name: drift.Value(name),
           type: drift.Value(_selectedType), 
           currency: drift.Value(_selectedCurrency),
@@ -112,98 +132,348 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     if (mounted) Navigator.pop(context);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgDarkStart,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(widget.account == null ? 'New Account' : 'Edit Account'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GlassInput(
-                  controller: _nameController,
-                  hintText: 'Account Name',
-                  prefixIcon: Icons.label,
-                  validator: (v) => v!.isEmpty ? 'Name required' : null,
-                ),
-                const SizedBox(height: 16),
-                GlassInput(
-                  controller: _balanceController,
-                  hintText: 'Initial Balance',
-                  prefixIcon: Icons.monetization_on,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    IndonesianCurrencyInputFormatter(),
-                  ],
-                  validator: (v) {
-                    if (v == null || v.isEmpty || v == '0') {
-                      return 'Balance required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                Text('Type', style: AppTypography.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: AccountType.values.map((type) {
-                    final isSelected = _selectedType == type;
-                    return ChoiceChip(
-                      label: Text(type.displayName),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedType = type);
-                      },
-                      selectedColor: AppColors.primaryGold,
-                      backgroundColor: AppColors.glassBackground,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 24),
-                Text('Currency', style: AppTypography.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: Currency.values.map((currency) {
-                    final isSelected = _selectedCurrency == currency;
-                    return ChoiceChip(
-                      label: Text(currency.code),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedCurrency = currency);
-                      },
-                      selectedColor: AppColors.primaryGold,
-                      backgroundColor: AppColors.glassBackground,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 32),
-                GlassButton(
-                  text: 'Save Account',
-                  isFullWidth: true,
-                  size: GlassButtonSize.large,
-                  onPressed: _saveAccount,
-                ),
-              ],
-            ),
+  Future<void> _applyAdjustment() async {
+    final adjustmentAmount = Formatters.parseCurrency(_adjustmentController.text, currency: widget.account!.currency);
+    
+    if (adjustmentAmount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an adjustment amount')),
+      );
+      return;
+    }
+
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId == null || widget.account == null) return;
+
+    setState(() => _isAdjusting = true);
+
+    try {
+      final transactionDao = ref.read(transactionDaoProvider);
+      
+      // Determine if positive (income) or negative (expense) adjustment
+      final isPositive = adjustmentAmount > 0;
+      
+      await transactionDao.insertTransaction(
+        TransactionsCompanion(
+          profileId: drift.Value(profileId),
+          accountId: drift.Value(widget.account!.id),
+          type: drift.Value(isPositive ? TransactionType.income : TransactionType.expense),
+          amount: drift.Value(adjustmentAmount.abs()),
+          date: drift.Value(DateTime.now()),
+          title: const drift.Value('Balance Adjustment'),
+          note: drift.Value('Manual adjustment for ${widget.account!.name}'),
+          createdAt: drift.Value(DateTime.now()),
+        ),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Adjustment of ${isPositive ? '+' : '-'}${Formatters.formatCurrency(adjustmentAmount.abs(), currency: widget.account!.currency, showDecimal: ref.read(showDecimalProvider))} applied'),
+            backgroundColor: AppColors.success,
           ),
+        );
+        _adjustmentController.clear();
+        setState(() => _isAdjusting = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+        );
+        setState(() => _isAdjusting = false);
+      }
+    }
+  }
+
+  void _viewTransactionHistory() {
+    if (widget.account == null) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProviderScope(
+          overrides: [
+            transactionAccountFilterProvider.overrideWith((ref) => widget.account!.id),
+            transactionSearchQueryProvider.overrideWith((ref) => ''),
+            transactionTypeFilterProvider.overrideWith((ref) => null),
+            dateFromFilterProvider.overrideWith((ref) => null),
+            dateToFilterProvider.overrideWith((ref) => null),
+          ],
+          child: const TransactionsHistoryScreen(),
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.account != null;
+    final balances = ref.watch(accountBalanceProvider);
+    final currentBalance = isEditing 
+        ? (balances[widget.account!.id] ?? widget.account!.initialBalance)
+        : 0.0;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final showDecimal = ref.watch(showDecimalProvider);
+
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.mainGradient,
+          ),
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(isEditing ? 'Edit Account' : 'New Account', style: const TextStyle(color: Colors.white)),
+            iconTheme: const IconThemeData(color: Colors.white),
+            actions: isEditing ? [
+              IconButton(
+                icon: const Icon(Icons.history, color: Colors.white),
+                tooltip: 'View History',
+                onPressed: _viewTransactionHistory,
+              ),
+            ] : null,
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Current Balance Card (only in edit mode)
+                    if (isEditing) ...[
+                      GlassCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header: Name and Type
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    _getIconForType(widget.account!.type),
+                                    color: AppColors.primaryGold,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.account!.name,
+                                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                                          color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.account!.type.displayName,
+                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                          color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            const Divider(color: AppColors.glassBorder),
+                            const SizedBox(height: 16),
+                            
+                            // Balance Display
+                            Center(
+                              child: Text(
+                                '${widget.account!.currency == Currency.idr ? 'IDR' : '\$'} ${Formatters.formatCurrency(currentBalance, currency: widget.account!.currency, showDecimal: showDecimal)}',
+                                style: AppTypography.textTheme.displaySmall?.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 32,
+                                ),
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 24),
+                            const Divider(color: AppColors.glassBorder),
+                            const SizedBox(height: 16),
+                            
+                            // Adjustment Section
+                            Text(
+                              'Balance Adjustment',
+                              style: AppTypography.textTheme.labelLarge?.copyWith(
+                                 color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Enter positive for increase, negative for decrease',
+                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                                 color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GlassInput(
+                                    controller: _adjustmentController,
+                                    hintText: 'e.g. 50000 or -50000',
+                                    prefixIcon: Icons.tune,
+                                    keyboardType: TextInputType.numberWithOptions(signed: true, decimal: showDecimal),
+                                    inputFormatters: [
+                                      CurrencyInputFormatter(
+                                        currency: widget.account!.currency, // Adjustment uses account currency
+                                        showDecimal: showDecimal,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                GlassButton(
+                                  text: 'Apply',
+                                  size: GlassButtonSize.small,
+                                  onPressed: _applyAdjustment,
+                                  isLoading: _isAdjusting,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // View History Button
+                            GlassButton(
+                              text: 'View Transaction History',
+                              icon: Icons.history,
+                              isFullWidth: true,
+                              isPrimary: false,
+                              onPressed: _viewTransactionHistory,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (!isEditing) ...[
+                      const SizedBox(height: 24),
+                      const Divider(color: AppColors.glassBorder),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Edit Details',
+                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                           color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GlassInput(
+                        controller: _nameController,
+                        hintText: 'Account Name',
+                        prefixIcon: Icons.label,
+                        validator: (v) => v!.isEmpty ? 'Name required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                        GlassInput(
+                        controller: _balanceController,
+                        hintText: isEditing ? 'Initial Balance' : 'Starting Balance',
+                        prefixIcon: Icons.monetization_on,
+                        keyboardType: TextInputType.numberWithOptions(decimal: showDecimal),
+                        inputFormatters: [
+                          CurrencyInputFormatter(
+                            currency: _selectedCurrency,
+                            showDecimal: showDecimal,
+                          ),
+                        ],
+                        validator: (v) {
+                          if (v == null || v.isEmpty) { // Allow '0' as valid start balance
+                            // But wait, if empty string, we might want to say required.
+                            // If user clears field, v is empty.
+                            return 'Balance required';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+                      Text('Type', style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: AccountType.values.map((type) {
+                          final isSelected = _selectedType == type;
+                          return ChoiceChip(
+                            label: Text(type.displayName),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) setState(() => _selectedType = type);
+                            },
+                            selectedColor: AppColors.primaryGold,
+                            backgroundColor: isDarkMode ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.black : (isDarkMode ? Colors.white : AppColors.textPrimaryLight),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Currency', style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: Currency.values.map((currency) {
+                          final isSelected = _selectedCurrency == currency;
+                          return ChoiceChip(
+                            label: Text(currency.code),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) setState(() => _selectedCurrency = currency);
+                            },
+                            selectedColor: AppColors.primaryGold,
+                            backgroundColor: isDarkMode ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.black : (isDarkMode ? Colors.white : AppColors.textPrimaryLight),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      GlassButton(
+                        text: 'Save Account',
+                        isFullWidth: true,
+                        size: GlassButtonSize.large,
+                        onPressed: _saveAccount,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  IconData _getIconForType(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return Icons.wallet;
+      case AccountType.bank:
+        return Icons.account_balance;
+      case AccountType.eWallet:
+        return Icons.phone_android;
+      case AccountType.investment:
+        return Icons.trending_up;
+    }
   }
 }

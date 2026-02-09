@@ -4,5 +4,6 @@ part of 'account_dao.dart';
 
 // ignore_for_file: type=lint
 mixin _$AccountDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ProfilesTable get profiles => attachedDatabase.profiles;
   $AccountsTable get accounts => attachedDatabase.accounts;
 }

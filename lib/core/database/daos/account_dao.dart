@@ -10,29 +10,29 @@ part 'account_dao.g.dart';
 class AccountDao extends DatabaseAccessor<AppDatabase> with _$AccountDaoMixin {
   AccountDao(super.db);
 
-  /// Get all active accounts
-  Future<List<Account>> getAllAccounts() => 
-      (select(accounts)..where((a) => a.isActive)).get();
+  /// Get all active accounts for a profile
+  Future<List<Account>> getAllAccounts(int profileId) => 
+      (select(accounts)..where((a) => a.isActive & a.profileId.equals(profileId))).get();
 
-  /// Get all accounts including inactive
-  Future<List<Account>> getAllAccountsIncludingInactive() => 
-      select(accounts).get();
+  /// Get all accounts including inactive for a profile
+  Future<List<Account>> getAllAccountsIncludingInactive(int profileId) => 
+      (select(accounts)..where((a) => a.profileId.equals(profileId))).get();
 
   /// Get account by ID
   Future<Account?> getAccountById(int id) =>
       (select(accounts)..where((a) => a.id.equals(id))).getSingleOrNull();
 
-  /// Get accounts by type
-  Future<List<Account>> getAccountsByType(AccountType type) =>
-      (select(accounts)..where((a) => a.type.equals(type.index) & a.isActive)).get();
+  /// Get accounts by type for a profile
+  Future<List<Account>> getAccountsByType(int profileId, AccountType type) =>
+      (select(accounts)..where((a) => a.profileId.equals(profileId) & a.type.equals(type.index) & a.isActive)).get();
 
-  /// Watch all active accounts (reactive stream)
-  Stream<List<Account>> watchAllAccounts() =>
-      (select(accounts)..where((a) => a.isActive)).watch();
+  /// Watch all active accounts for a profile (reactive stream)
+  Stream<List<Account>> watchAllAccounts(int profileId) =>
+      (select(accounts)..where((a) => a.isActive & a.profileId.equals(profileId))).watch();
 
-  /// Watch accounts by type
-  Stream<List<Account>> watchAccountsByType(AccountType type) =>
-      (select(accounts)..where((a) => a.type.equals(type.index) & a.isActive)).watch();
+  /// Watch accounts by type for a profile
+  Stream<List<Account>> watchAccountsByType(int profileId, AccountType type) =>
+      (select(accounts)..where((a) => a.profileId.equals(profileId) & a.type.equals(type.index) & a.isActive)).watch();
 
   /// Create a new account
   Future<int> insertAccount(AccountsCompanion account) =>

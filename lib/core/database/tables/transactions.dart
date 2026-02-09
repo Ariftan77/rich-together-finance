@@ -3,10 +3,12 @@ import '../../../core/models/enums.dart';
 import 'accounts.dart';
 import 'categories.dart';
 import 'recurring.dart';
+import 'profiles.dart';
 
 /// Transactions table definition
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
   IntColumn get accountId => integer().references(Accounts, #id)();
   IntColumn get categoryId => integer().nullable().references(Categories, #id)();
   IntColumn get type => intEnum<TransactionType>()();
@@ -20,3 +22,4 @@ class Transactions extends Table {
   IntColumn get recurringId => integer().nullable().references(Recurring, #id)();
   DateTimeColumn get createdAt => dateTime()();
 }
+

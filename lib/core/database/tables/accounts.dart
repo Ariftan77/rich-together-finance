@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import '../../../core/models/enums.dart';
+import 'profiles.dart';
 
 /// Accounts table definition
 class Accounts extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
   IntColumn get type => intEnum<AccountType>()();
   IntColumn get currency => intEnum<Currency>()();
@@ -14,3 +16,4 @@ class Accounts extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
+

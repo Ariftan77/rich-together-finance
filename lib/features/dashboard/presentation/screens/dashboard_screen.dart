@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/utils/formatters.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/cash_flow_chart.dart';
@@ -105,6 +106,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final netWorthAsync = ref.watch(dashboardNetWorthProvider);
     final monthlyIncomeAsync = ref.watch(dashboardMonthlyIncomeProvider);
     final monthlyExpenseAsync = ref.watch(dashboardMonthlyExpenseProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -129,7 +131,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: totalBalanceAsync.when(
                     data: (balance) => SummaryCard(
                       title: 'Total Balance',
-                      value: Formatters.formatCurrency(balance),
+                      value: Formatters.formatCurrency(balance, showDecimal: showDecimal),
                       icon: Icons.account_balance_wallet,
                       iconColor: AppColors.primaryGold,
                     ),
@@ -150,7 +152,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: netWorthAsync.when(
                     data: (netWorth) => SummaryCard(
                       title: 'Net Worth',
-                      value: Formatters.formatCurrency(netWorth),
+                      value: Formatters.formatCurrency(netWorth, showDecimal: showDecimal),
                       icon: Icons.trending_up,
                       iconColor: AppColors.success,
                     ),
@@ -175,7 +177,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: monthlyIncomeAsync.when(
                     data: (income) => SummaryCard(
                       title: 'This Month',
-                      value: Formatters.formatCurrency(income),
+                      value: Formatters.formatCurrency(income, showDecimal: showDecimal),
                       icon: Icons.arrow_downward,
                       iconColor: AppColors.success,
                       subtitle: 'Income',
@@ -199,7 +201,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: monthlyExpenseAsync.when(
                     data: (expense) => SummaryCard(
                       title: 'This Month',
-                      value: Formatters.formatCurrency(expense),
+                      value: Formatters.formatCurrency(expense, showDecimal: showDecimal),
                       icon: Icons.arrow_upward,
                       iconColor: AppColors.error,
                       subtitle: 'Expenses',

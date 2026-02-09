@@ -1,14 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 
 /// Total balance across all accounts
 final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield 0;
+    return;
+  }
+  
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   
-  await for (final accounts in accountDao.watchAllAccounts()) {
+  await for (final accounts in accountDao.watchAllAccounts(profileId)) {
     double total = 0;
     for (final account in accounts) {
       final balance = await transactionDao.calculateAccountBalance(account.id);
@@ -20,13 +27,19 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
 
 /// Net worth (assets - liabilities)
 final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield 0;
+    return;
+  }
+  
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final debtDao = ref.watch(debtDaoProvider);
   
   // Get total assets (account balances)
   double totalAssets = 0;
-  await for (final accounts in accountDao.watchAllAccounts()) {
+  await for (final accounts in accountDao.watchAllAccounts(profileId)) {
     for (final account in accounts) {
       final balance = await transactionDao.calculateAccountBalance(account.id);
       totalAssets += balance;
@@ -48,12 +61,18 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
 
 /// Monthly income for current month
 final dashboardMonthlyIncomeProvider = StreamProvider.autoDispose<double>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield 0;
+    return;
+  }
+  
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions()) {
+  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
     double total = 0;
     for (final t in transactions) {
       if (t.type == TransactionType.income &&
@@ -68,12 +87,18 @@ final dashboardMonthlyIncomeProvider = StreamProvider.autoDispose<double>((ref) 
 
 /// Monthly expenses for current month
 final dashboardMonthlyExpenseProvider = StreamProvider.autoDispose<double>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield 0;
+    return;
+  }
+  
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions()) {
+  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
     double total = 0;
     for (final t in transactions) {
       if (t.type == TransactionType.expense &&
@@ -100,13 +125,19 @@ class CategoryBreakdown {
 }
 
 final dashboardCategoryBreakdownProvider = StreamProvider.autoDispose<List<CategoryBreakdown>>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield [];
+    return;
+  }
+  
   final transactionDao = ref.watch(transactionDaoProvider);
   final categoryDao = ref.watch(categoryDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions()) {
+  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
     // Get all categories
     final categories = await categoryDao.getAllCategories();
     final categoryMap = {for (var c in categories) c.id: c.name};
@@ -158,10 +189,16 @@ class MonthlyFlow {
 }
 
 final dashboardCashFlowProvider = StreamProvider.autoDispose<List<MonthlyFlow>>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield [];
+    return;
+  }
+  
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   
-  await for (final transactions in transactionDao.watchAllTransactions()) {
+  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
     final List<MonthlyFlow> flows = [];
     
     // Calculate for last 6 months
@@ -200,9 +237,12 @@ final dashboardCashFlowProvider = StreamProvider.autoDispose<List<MonthlyFlow>>(
 
 /// Recent transactions (last 10)
 final dashboardRecentTransactionsProvider = StreamProvider.autoDispose<List<Transaction>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+  
   final transactionDao = ref.watch(transactionDaoProvider);
   
-  return transactionDao.watchAllTransactions().map((transactions) {
+  return transactionDao.watchAllTransactions(profileId).map((transactions) {
     // Already sorted by date descending in DAO
     return transactions.take(10).toList();
   });

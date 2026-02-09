@@ -153,11 +153,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       backgroundColor: AppColors.bgDarkStart,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.bgDarkStart, AppColors.bgDarkEnd],
-          ),
+          gradient: AppColors.mainGradient,
         ),
         child: SafeArea(
           child: Column(

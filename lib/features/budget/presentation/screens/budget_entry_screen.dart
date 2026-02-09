@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
@@ -67,8 +68,18 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
 
       if (widget.budget == null) {
         // Create
+        final profileId = ref.read(activeProfileIdProvider);
+        if (profileId == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No active profile. Please set up a profile first.')),
+            );
+          }
+          return;
+        }
         await dao.createBudget(
           BudgetsCompanion(
+            profileId: drift.Value(profileId),
             categoryId: drift.Value(_selectedCategoryId!),
             amount: drift.Value(amount),
             period: drift.Value(_selectedPeriod),
@@ -111,13 +122,23 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.bgDarkStart,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(widget.budget == null ? 'New Budget' : 'Edit Budget'),
-      ),
-      body: SafeArea(
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.mainGradient,
+          ),
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(widget.budget == null ? 'New Budget' : 'Edit Budget', style: const TextStyle(color: Colors.white)),
+          ),
+          body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -248,6 +269,8 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
           ),
         ),
       ),
+      ),
+      ],
     );
   }
 }

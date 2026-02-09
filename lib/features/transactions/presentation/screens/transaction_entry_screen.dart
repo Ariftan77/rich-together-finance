@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/widgets/glass_segmented_control.dart';
 import '../../../../shared/widgets/glass_dropdown_field.dart';
 import '../../../../shared/utils/formatters.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+
+import '../../../../shared/utils/currency_input_formatter.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
 
@@ -59,6 +61,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final transaction = await dao.getTransactionById(widget.transactionId!);
     
     if (transaction != null && mounted) {
+      // Get account to determine currency
+      final accountDao = ref.read(accountDaoProvider);
+      final account = await accountDao.getAccountById(transaction.accountId);
+      final currency = account?.currency ?? Currency.idr;
+      final showDecimal = ref.read(showDecimalProvider);
+
       setState(() {
         _selectedType = transaction.type;
         _selectedAccountId = transaction.accountId;
@@ -66,9 +74,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _selectedToAccountId = transaction.toAccountId;
         _selectedDate = transaction.date;
         _rawAmount = transaction.amount.toString();
-        // Format with Indonesian locale for edit mode - NO DECIMALS
-        final formatter = NumberFormat('#,##0', 'id_ID');
-        _amountController.text = formatter.format(transaction.amount);
+        
+        // Format amount
+        _amountController.text = Formatters.formatCurrency(
+          transaction.amount, 
+          currency: currency, 
+          showDecimal: showDecimal
+        );
+
         _titleController.text = transaction.title ?? '';
         _noteController.text = transaction.note ?? '';
         _estimatedDestinationAmount = transaction.destinationAmount;
@@ -164,8 +177,18 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         print('✅ Transaction updated with ID: ${widget.transactionId}');
       } else {
         // Insert new transaction
+        final profileId = ref.read(activeProfileIdProvider);
+        if (profileId == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No active profile. Please set up a profile first.')),
+            );
+          }
+          return;
+        }
         final transactionId = await dao.insertTransaction(
           TransactionsCompanion(
+            profileId: drift.Value(profileId),
             accountId: drift.Value(_selectedAccountId!),
             categoryId: _selectedCategoryId != null ? drift.Value(_selectedCategoryId!) : const drift.Value.absent(),
             toAccountId: _selectedToAccountId != null ? drift.Value(_selectedToAccountId!) : const drift.Value.absent(),
@@ -194,23 +217,30 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
-  void _updateAmount(String value) {
-    // Extract digits only for storage
-    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
-    
-    if (digitsOnly.isEmpty) {
+  void _updateAmount(String value, List<Account> accounts) {
+    if (value.isEmpty) {
       setState(() {
         _rawAmount = '';
       });
       return;
     }
 
-    // Parse as whole number (not cents since we removed decimals)
-    final amount = int.parse(digitsOnly);
+    final currency = _getCurrency(accounts);
+    final amount = Formatters.parseCurrency(value, currency: currency);
     
     setState(() {
       _rawAmount = amount.toString();
     });
+  }
+
+  Currency _getCurrency(List<Account> accounts) {
+    if (_selectedAccountId == null) return Currency.idr;
+    // Find account or default
+    try {
+      return accounts.firstWhere((a) => a.id == _selectedAccountId).currency;
+    } catch (_) {
+      return Currency.idr; 
+    }
   }
 
   Future<void> _selectDate() async {
@@ -384,8 +414,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF221D10),
-      body: SafeArea(
+      backgroundColor: Colors.transparent, // const Color(0xFF221D10),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.mainGradient,
+        ),
+        child: SafeArea(
         child: Column(
           children: [
             // Header
@@ -471,11 +505,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   child: IntrinsicWidth(
                                     child: TextField(
                                       controller: _amountController,
-                                      keyboardType: TextInputType.number,
+                                      keyboardType: TextInputType.numberWithOptions(decimal: ref.watch(showDecimalProvider)),
                                       inputFormatters: [
-                                        IndonesianCurrencyInputFormatter(),
+                                        CurrencyInputFormatter(
+                                          currency: _getCurrency(accounts),
+                                          showDecimal: ref.watch(showDecimalProvider),
+                                        ),
                                       ],
-                                      onChanged: _updateAmount,
+                                      onChanged: (val) => _updateAmount(val, accounts),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 56,  // Reduced from 72
@@ -650,6 +687,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                             final dao = ref.read(categoryDaoProvider);
                                             final newCategoryId = await dao.createCategory(
                                               CategoriesCompanion(
+                                                profileId: drift.Value(ref.read(activeProfileIdProvider)),
                                                 name: drift.Value(categoryName),
                                                 type: drift.Value(categoryType!),
                                                 icon: const drift.Value('category'), // Default icon
@@ -916,6 +954,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }

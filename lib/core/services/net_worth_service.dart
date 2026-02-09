@@ -26,8 +26,8 @@ class NetWorthService {
         _getPriceCallback = getPriceCallback;
 
   /// Calculate total balance across all accounts in target currency
-  Future<double> getTotalCashBalance({Currency targetCurrency = Currency.idr}) async {
-    final accounts = await _accountDao.getAllAccounts();
+  Future<double> getTotalCashBalance({required int profileId, Currency targetCurrency = Currency.idr}) async {
+    final accounts = await _accountDao.getAllAccounts(profileId);
     double totalBalance = 0;
 
     for (final account in accounts) {
@@ -50,7 +50,7 @@ class NetWorthService {
   }
 
   /// Calculate total portfolio value in target currency
-  Future<double> getTotalPortfolioValue({Currency targetCurrency = Currency.idr}) async {
+  Future<double> getTotalPortfolioValue({required int profileId, Currency targetCurrency = Currency.idr}) async {
     final holdings = await _holdingDao.getAllHoldings();
     double totalValue = 0;
 
@@ -85,15 +85,15 @@ class NetWorthService {
   }
 
   /// Calculate total net worth (cash + portfolio)
-  Future<double> getNetWorth({Currency targetCurrency = Currency.idr}) async {
-    final cashBalance = await getTotalCashBalance(targetCurrency: targetCurrency);
-    final portfolioValue = await getTotalPortfolioValue(targetCurrency: targetCurrency);
+  Future<double> getNetWorth({required int profileId, Currency targetCurrency = Currency.idr}) async {
+    final cashBalance = await getTotalCashBalance(profileId: profileId, targetCurrency: targetCurrency);
+    final portfolioValue = await getTotalPortfolioValue(profileId: profileId, targetCurrency: targetCurrency);
     return cashBalance + portfolioValue;
   }
 
   /// Get breakdown by category
-  Future<Map<String, double>> getNetWorthBreakdown({Currency targetCurrency = Currency.idr}) async {
-    final cashBalance = await getTotalCashBalance(targetCurrency: targetCurrency);
+  Future<Map<String, double>> getNetWorthBreakdown({required int profileId, Currency targetCurrency = Currency.idr}) async {
+    final cashBalance = await getTotalCashBalance(profileId: profileId, targetCurrency: targetCurrency);
     
     final holdings = await _holdingDao.getAllHoldings();
     double cryptoValue = 0;

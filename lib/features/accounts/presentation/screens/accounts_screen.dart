@@ -4,6 +4,7 @@ import '../../../../core/providers/database_providers.dart';
 import '../../../../shared/theme/typography.dart';
 import '../widgets/account_card.dart';
 import '../providers/balance_provider.dart';
+import 'account_entry_screen.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -47,7 +48,12 @@ class AccountsScreen extends ConsumerWidget {
                           account: account,
                           balance: balances[account.id] ?? account.initialBalance,
                           onTap: () {
-                            // TODO: Edit account
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AccountEntryScreen(account: account),
+                              ),
+                            );
                           },
                         );
                       },

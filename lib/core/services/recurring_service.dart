@@ -41,6 +41,7 @@ class RecurringService {
       // 1. Create Transaction
       await transactionDao.insertTransaction(
         TransactionsCompanion(
+          profileId: Value(recurring.profileId),
           accountId: Value(recurring.accountId),
           categoryId: recurring.categoryId != null ? Value(recurring.categoryId!) : const Value.absent(),
           toAccountId: recurring.toAccountId != null ? Value(recurring.toAccountId!) : const Value.absent(),

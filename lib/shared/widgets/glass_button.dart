@@ -30,12 +30,13 @@ class GlassButton extends StatelessWidget {
     final double paddingVertical = _getPaddingVertical();
     final double paddingHorizontal = _getPaddingHorizontal();
     final TextStyle textStyle = _getTextStyle(context);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bgColor = isPrimary 
         ? AppColors.primaryGold.withValues(alpha: 0.8) 
-        : AppColors.glassBackground;
+        : (isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight);
     final Color borderColor = isPrimary 
         ? AppColors.primaryGoldAccent.withValues(alpha: 0.5) 
-        : AppColors.glassBorder;
+        : (isDark ? AppColors.glassBorder : AppColors.glassBorderLight);
 
     Widget content;
     
@@ -46,7 +47,9 @@ class GlassButton extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(
-            isPrimary ? Colors.black : Colors.white
+            isPrimary 
+                ? Colors.black 
+                : (isDark ? Colors.white : AppColors.textPrimaryLight)
           ),
         ),
       );
@@ -56,12 +59,17 @@ class GlassButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, color: AppColors.textPrimary, size: 20),
+            Icon(icon, 
+              color: isPrimary ? Colors.black : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+              size: 20
+            ),
             const SizedBox(width: 8),
           ],
           Text(
             text,
-            style: textStyle,
+            style: textStyle.copyWith(
+              color: isPrimary ? Colors.black : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+            ),
           ),
         ],
       );

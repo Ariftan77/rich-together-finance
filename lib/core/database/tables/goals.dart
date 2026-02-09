@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import '../../../core/models/enums.dart';
+import 'profiles.dart';
 
 /// Goals table definition
 class Goals extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
   RealColumn get targetAmount => real()();
   IntColumn get targetCurrency => intEnum<Currency>()();
@@ -14,3 +16,4 @@ class Goals extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
+

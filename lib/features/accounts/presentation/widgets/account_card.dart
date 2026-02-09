@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
@@ -6,7 +8,7 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 
-class AccountCard extends StatelessWidget {
+class AccountCard extends ConsumerWidget {
   final Account account;
   final double balance; // Calculated balance
   final VoidCallback onTap;
@@ -19,8 +21,9 @@ class AccountCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final currency = account.currency == Currency.idr ? 'Rp' : '\$'; // Simple check, should use Formatter
+  Widget build(BuildContext context, WidgetRef ref) {
+    final showDecimal = ref.watch(showDecimalProvider);
+    final currencySymbol = account.currency == Currency.idr ? 'Rp' : '\$';
     
     // Convert int type to Enum
     final accountType = account.type;
@@ -62,7 +65,7 @@ class AccountCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '$currency ${Formatters.formatNumber(balance)}', 
+                '$currencySymbol ${Formatters.formatCurrency(balance, currency: account.currency, showDecimal: showDecimal)}', 
                 style: AppTypography.textTheme.labelLarge?.copyWith(
                   color: AppColors.primaryGoldAccent,
                 ),
