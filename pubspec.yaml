@@ -59,8 +59,7 @@ flutter:
   uses-material-design: true
 
   # Assets will be added here later
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
+  assets:
+    - assets/images/
 
   # Google Fonts are loaded dynamically, no need for local fonts

@@ -204,27 +204,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildSecuritySection(UserSetting? settings) {
     final biometricEnabled = settings?.biometricEnabled ?? true;
 
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          SettingsTile(
-            icon: Icons.fingerprint,
-            title: 'Biometric Login',
-            trailing: Switch(
-              value: biometricEnabled,
-              onChanged: (value) => _toggleBiometric(value),
-              activeColor: AppColors.primaryGold,
-            ),
+    return FutureBuilder<bool>(
+      future: ref.read(authServiceProvider).isAuthEnabled(),
+      builder: (context, snapshot) {
+        final isAppLockEnabled = snapshot.data ?? false;
+
+        return GlassCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              SettingsTile(
+                icon: isAppLockEnabled ? Icons.lock : Icons.lock_open,
+                title: 'Lock App',
+                subtitle: isAppLockEnabled ? 'PIN/Biometric required' : 'App is unlocked',
+                trailing: Switch(
+                  value: isAppLockEnabled,
+                  onChanged: (value) => _toggleAppLock(value),
+                  activeColor: AppColors.primaryGold,
+                ),
+              ),
+              _buildDivider(),
+              Opacity(
+                opacity: isAppLockEnabled ? 1.0 : 0.5,
+                child: AbsorbPointer(
+                  absorbing: !isAppLockEnabled,
+                  child: SettingsTile(
+                    icon: Icons.fingerprint,
+                    title: 'Biometric Login',
+                    trailing: Switch(
+                      value: biometricEnabled,
+                      onChanged: (value) => _toggleBiometric(value),
+                      activeColor: AppColors.primaryGold,
+                    ),
+                  ),
+                ),
+              ),
+              if (isAppLockEnabled) ...[
+                _buildDivider(),
+                SettingsTile(
+                  icon: Icons.lock_outline,
+                  title: 'Change PIN',
+                  onTap: () => _showChangePinDialog(),
+                ),
+              ],
+            ],
           ),
-          _buildDivider(),
-          SettingsTile(
-            icon: Icons.lock_outline,
-            title: 'Change PIN',
-            onTap: () => _showChangePinDialog(),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -326,7 +352,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-
+  Future<void> _toggleAppLock(bool enable) async {
+    final authService = ref.read(authServiceProvider);
+    
+    if (enable) {
+      final hasPin = await authService.hasPin();
+      if (hasPin) {
+        await authService.setAuthEnabled(true);
+        setState(() {}); 
+      } else {
+        if (!mounted) return;
+        // Await the dialog so we can refresh UI after it closes
+        await _showNewPinDialog();
+        setState(() {});
+      }
+    } else {
+      if (!mounted) return;
+      await authService.setAuthEnabled(false);
+      setState(() {});
+    }
+  }
 
   Future<void> _showChangePinDialog() async {
     final authService = ref.read(authServiceProvider);
@@ -335,15 +380,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!mounted) return;
 
     if (hasPin) {
-      _showVerifyPinDialog();
+      await _showVerifyPinDialog();
     } else {
-      _showNewPinDialog();
+      await _showNewPinDialog();
     }
   }
 
-  void _showVerifyPinDialog() {
+  Future<void> _showVerifyPinDialog() {
     final pinController = TextEditingController();
-    showDialog(
+    return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -374,7 +419,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (!mounted) return;
               Navigator.pop(context);
               if (isValid) {
-                _showNewPinDialog();
+                await _showNewPinDialog();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Incorrect PIN'), backgroundColor: AppColors.error),
@@ -388,11 +433,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showNewPinDialog() {
+  Future<void> _showNewPinDialog() {
     final pinController = TextEditingController();
     final confirmController = TextEditingController();
     
-    showDialog(
+    return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -444,7 +489,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (!mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('PIN changed successfully'), backgroundColor: AppColors.success),
+                const SnackBar(content: Text('PIN set & App Lock Enabled'), backgroundColor: AppColors.success),
               );
             },
             child: const Text('Set PIN', style: TextStyle(color: AppColors.primaryGold)),
@@ -455,6 +500,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _updateCurrency(Currency currency) async {
+
     final profileId = ref.read(activeProfileIdProvider);
     if (profileId != null) {
       await ref.read(settingsDaoProvider).setDefaultCurrency(profileId, currency);

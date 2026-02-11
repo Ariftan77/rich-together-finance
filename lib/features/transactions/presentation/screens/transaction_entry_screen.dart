@@ -9,12 +9,13 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/widgets/glass_segmented_control.dart';
-import '../../../../shared/widgets/glass_dropdown_field.dart';
+
 import '../../../../shared/utils/formatters.dart';
 
 import '../../../../shared/utils/currency_input_formatter.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
+import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
@@ -29,6 +30,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
+  final _amountFocusNode = FocusNode();
   
   TransactionType _selectedType = TransactionType.expense;
   DateTime _selectedDate = DateTime.now();
@@ -40,6 +42,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   double? _estimatedDestinationAmount;
   double? _exchangeRate;
   
+  // Suggested Titles
+  Future<List<String>>? _frequentTitlesFuture;
+  
   // Raw amount value (without formatting)
   String _rawAmount = '';
 
@@ -48,6 +53,15 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     super.initState();
     _amountController.text = '0';  // Default to single zero
     
+    // Auto focus amount field
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _amountFocusNode.requestFocus();
+      // Fetch frequent titles
+      setState(() {
+         _frequentTitlesFuture = ref.read(transactionDaoProvider).getMostFrequentTitles(5);
+      });
+    });
+
     // Load transaction data if editing
     if (widget.transactionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -95,6 +109,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -408,6 +423,35 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
+  Widget _buildAccountDropdown({
+    required List<Account> accounts,
+    required bool isToAccount,
+    required String label,
+  }) {
+    final selectedId = isToAccount ? _selectedToAccountId : _selectedAccountId;
+    final selectedAccount = accounts.where((a) => a.id == selectedId).firstOrNull;
+
+    return GenericSearchableDropdown<Account>(
+      items: accounts,
+      selectedItem: selectedAccount,
+      itemLabelBuilder: (a) => a.name,
+      onItemSelected: (account) {
+        setState(() {
+          if (isToAccount) {
+            _selectedToAccountId = account.id;
+          } else {
+            _selectedAccountId = account.id;
+          }
+        });
+      },
+      label: label,
+      icon: Icons.account_balance_wallet_outlined,
+      hint: 'Select account',
+      searchHint: 'Search accounts...',
+      noItemsFoundText: 'No accounts found',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsStreamProvider);
@@ -505,7 +549,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   child: IntrinsicWidth(
                                     child: TextField(
                                       controller: _amountController,
+                                      focusNode: _amountFocusNode,
                                       keyboardType: TextInputType.numberWithOptions(decimal: ref.watch(showDecimalProvider)),
+                                      textInputAction: TextInputAction.next,
                                       inputFormatters: [
                                         CurrencyInputFormatter(
                                           currency: _getCurrency(accounts),
@@ -542,17 +588,22 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     const SizedBox(height: 48),
 
                     // Transaction Type Segmented Control
-                    GlassSegmentedControl<TransactionType>(
-                      value: _selectedType,
-                      options: const [
-                        TransactionType.income,
-                        TransactionType.expense,
-                        TransactionType.transfer,
-                      ],
-                      labels: const ['Income', 'Expense', 'Transfer'],
-                      onChanged: (type) => setState(() => _selectedType = type),
-                      highlightValue: TransactionType.expense,
-                    ),
+                      GlassSegmentedControl<TransactionType>(
+                        value: _selectedType,
+                        options: const [
+                          TransactionType.income,
+                          TransactionType.expense,
+                          TransactionType.transfer,
+                        ],
+                        labels: const ['Income', 'Expense', 'Transfer'],
+                        onChanged: (type) {
+                          setState(() => _selectedType = type);
+                          if (type == TransactionType.transfer) {
+                            _amountFocusNode.requestFocus();
+                          }
+                        },
+                        highlightValue: TransactionType.expense,
+                      ),
 
                     const SizedBox(height: 32),
 
@@ -610,6 +661,49 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             ],
                           ),
                         ),
+                        
+                        // Frequent Titles Suggestions
+                        if (_frequentTitlesFuture != null && _selectedType != TransactionType.transfer)
+                          FutureBuilder<List<String>>(
+                            future: _frequentTitlesFuture,
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+                              return Container(
+                                height: 36,
+                                margin: const EdgeInsets.only(top: 12),
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: snapshot.data!.length,
+                                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                  itemBuilder: (context, index) {
+                                    final title = snapshot.data![index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        _titleController.text = title;
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(18),
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          title,
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.9),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
                       ],
                     ),
 
@@ -776,21 +870,25 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     if (_selectedType != TransactionType.transfer)
                       const SizedBox(height: 16),
 
-                    // Account Dropdown
+                    // Account Selection
                     accountsAsync.when(
                       data: (accounts) {
-                        return GlassDropdownField<int>(
-                          label: _selectedType == TransactionType.transfer ? 'From Account' : 'Account',
-                          icon: Icons.account_balance_wallet_outlined,
-                          value: _selectedAccountId,
-                          hint: 'Select account',
-                          items: accounts
-                              .map((a) => DropdownMenuItem(
-                                    value: a.id,
-                                    child: Text(a.name),
-                                  ))
-                              .toList(),
-                          onChanged: (value) => setState(() => _selectedAccountId = value),
+                        return Column(
+                          children: [
+                            _buildAccountDropdown(
+                              accounts: accounts,
+                              isToAccount: false,
+                              label: _selectedType == TransactionType.transfer ? 'From Account' : 'Account',
+                            ),
+                            if (_selectedType == TransactionType.transfer) ...[
+                              const SizedBox(height: 16),
+                              _buildAccountDropdown(
+                                accounts: accounts,
+                                isToAccount: true,
+                                label: 'To Account',
+                              ),
+                            ],
+                          ],
                         );
                       },
                       loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
@@ -799,31 +897,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
                     const SizedBox(height: 16),
 
-                    // To Account Dropdown (for transfers)
-                    if (_selectedType == TransactionType.transfer)
-                      accountsAsync.when(
-                        data: (accounts) {
-                          return GlassDropdownField<int>(
-                            label: 'To Account',
-                            icon: Icons.account_balance_wallet_outlined,
-                            value: _selectedToAccountId,
-                            hint: 'Select destination',
-                            items: accounts
-                                .where((a) => a.id != _selectedAccountId)
-                                .map((a) => DropdownMenuItem(
-                                      value: a.id,
-                                      child: Text(a.name),
-                                    ))
-                                .toList(),
-                            onChanged: (value) => setState(() => _selectedToAccountId = value),
-                          );
-                        },
-                        loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                        error: (_, __) => const Text('Error loading accounts'),
-                      ),
 
-                    if (_selectedType == TransactionType.transfer)
-                      const SizedBox(height: 16),
 
                     // Date and Note Row
                     Row(

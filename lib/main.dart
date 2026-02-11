@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'features/auth/presentation/auth_wrapper.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 import 'shared/theme/app_theme.dart';
 import 'core/providers/profile_provider.dart';
 
@@ -35,7 +35,7 @@ class RichTogetherApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const AuthWrapper(),
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rich Together Splash Screen</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    primary: "#FFB800",
+                    "deep-navy": "#0A0F1D",
+                    "vibrant-gold": "#C25400",
+                    "teal-hand": "#2D7F77",
+                    "orange-hand": "#E58A44",
+                },
+                fontFamily: {
+                    display: ["Inter", "sans-serif"],
+                },
+            },
+        },
+    };
+</script>
+<style type="text/tailwindcss">
+    :root {
+        --primary-gold: #FFB800;
+        --accent-orange: #E87F00;
+        --deep-charcoal: #121826;
+    }
+    .splash-gradient {
+        background: linear-gradient(to bottom, #0F172A 0%, #171E2E 30%, #854D0E 80%, #C25400 100%);
+    }
+    .logo-glow {
+        filter: drop-shadow(0 0 20px rgba(255, 184, 0, 0.2));
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-full font-display bg-slate-200 flex items-center justify-center">
+<div class="relative w-full max-w-[390px] h-[844px] splash-gradient overflow-hidden rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center">
+<div class="w-full h-12 flex justify-between px-8 items-end pb-2">
+<span class="text-white text-[14px] font-semibold">9:41</span>
+<div class="flex space-x-1.5 items-center">
+<span class="material-symbols-outlined text-[16px] text-white" style="font-variation-settings: 'FILL' 1">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[16px] text-white" style="font-variation-settings: 'FILL' 1">wifi</span>
+<span class="material-symbols-outlined text-[20px] text-white" style="font-variation-settings: 'FILL' 1">battery_full_alt</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center w-full px-6">
+<div class="relative w-64 h-64 mb-10 flex items-center justify-center logo-glow">
+<svg class="w-full h-full" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+<path d="M165 140 L200 80 L235 140 H220 V190 H180 V140 Z" fill="url(#arrow_gold_grad)"></path>
+<text fill="#78350F" font-family="Inter" font-size="34" font-weight="800" text-anchor="middle" x="200" y="165">$</text>
+<path d="M155 90 Q145 75 160 80 Q165 95 155 90" fill="#4ADE80"></path>
+<path d="M160 220 C140 210, 120 230, 140 250 L180 290 C190 300, 210 300, 220 290 L260 250" fill="none" stroke="#2D7F77" stroke-linecap="round" stroke-width="28"></path>
+<path d="M240 220 C260 210, 280 230, 260 250 L220 290 C210 300, 190 300, 180 290 L140 250" fill="none" opacity="0.9" stroke="#E58A44" stroke-linecap="round" stroke-width="28"></path>
+<circle cx="200" cy="270" fill="#FDE68A" opacity="0.4" r="15"></circle>
+<path d="M120 210 L80 250 L110 280 L150 240 Z" fill="#1E4D48"></path>
+<path d="M280 210 L320 250 L290 280 L250 240 Z" fill="#92400E"></path>
+<defs>
+<linearGradient id="arrow_gold_grad" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#FDE047"></stop>
+<stop offset="100%" stop-color="#D97706"></stop>
+</linearGradient>
+</defs>
+</svg>
+</div>
+<div class="text-center">
+<h1 class="text-white text-[2.2rem] tracking-[0.15em] font-extrabold uppercase leading-tight">
+                RICH TOGETHER
+            </h1>
+<p class="text-white/50 text-[10px] mt-3 tracking-[0.6em] font-semibold uppercase">EST. MMXXIV</p>
+</div>
+</div>
+<div class="absolute bottom-16 flex space-x-3">
+<div class="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+<div class="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+</div>
+<div class="absolute bottom-2 w-32 h-1.5 bg-white/20 rounded-full"></div>
+</div>
+
+</body></html>

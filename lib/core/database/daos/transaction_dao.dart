@@ -186,4 +186,17 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
 
     return query.map((row) => row.readTable(transactions)).watch();
   }
+
+  /// Get most frequent transaction titles
+  Future<List<String>> getMostFrequentTitles(int limit) {
+    final count = transactions.id.count();
+    final query = selectOnly(transactions)
+      ..addColumns([transactions.title, count])
+      ..where(transactions.title.isNotNull() & transactions.title.length.isBiggerThanValue(0))
+      ..groupBy([transactions.title])
+      ..orderBy([OrderingTerm.desc(count)])
+      ..limit(limit);
+
+    return query.map((row) => row.read(transactions.title)!).get();
+  }
 }
