@@ -189,7 +189,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
             note: drift.Value(_noteController.text),
           ),
         );
-        print('✅ Transaction updated with ID: ${widget.transactionId}');
+        // Transaction updated
       } else {
         // Insert new transaction
         final profileId = ref.read(activeProfileIdProvider);
@@ -217,13 +217,13 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
             createdAt: drift.Value(DateTime.now()),
           ),
         );
-        print('✅ Transaction saved with ID: $transactionId');
+        // Transaction saved
       }
       
       if (mounted) Navigator.pop(context);
     } catch (e, stackTrace) {
-      print('❌ ERROR saving transaction: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('❌ ERROR saving transaction: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving transaction: $e')),
@@ -335,12 +335,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (confirmed != true) return;
 
     try {
-      print('🗑️ Deleting transaction ID: ${widget.transactionId}');
+      debugPrint('🗑️ Deleting transaction ID: ${widget.transactionId}');
       
       final dao = ref.read(transactionDaoProvider);
       await dao.deleteTransaction(widget.transactionId!);
       
-      print('✅ Transaction deleted successfully');
+      // Transaction deleted
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -352,7 +352,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         Navigator.pop(context, true); // Return true to indicate deletion
       }
     } catch (e) {
-      print('❌ Error deleting transaction: $e');
+      debugPrint('❌ Error deleting transaction: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -713,7 +713,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     if (_selectedType != TransactionType.transfer)
                       categoriesAsync.when(
                         data: (categories) {
-                          print('📋 Categories loaded: ${categories.length} total');
+                          // Categories loaded
                           
                           // Convert TransactionType to CategoryType
                           CategoryType? categoryType;
@@ -727,141 +727,59 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               ? categories.where((c) => c.type == categoryType).toList()
                               : <Category>[];
                           
-                          print('📋 Filtered categories (${categoryType?.name}): ${filteredCategories.length}');
-                          print('📋 Category names: ${filteredCategories.map((c) => c.name).join(", ")}');
+                          // Debug logs removed
                           
                           // Get selected category name
                           final selectedCategory = filteredCategories
                               .where((c) => c.id == _selectedCategoryId)
                               .firstOrNull;
                           
-                          print('📋 Selected category ID: $_selectedCategoryId, Name: ${selectedCategory?.name}');
-                          
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                                child: Text(
-                                  'CATEGORY',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => CategorySelector(
-                                      categories: filteredCategories,
-                                      selectedCategoryId: _selectedCategoryId,
-                                      onCategorySelected: (id) {
-                                        setState(() => _selectedCategoryId = id);
-                                      },
-                                      onAddNew: (searchText) async {
-                                        // Show add category dialog with pre-filled search text
-                                        final categoryName = await showDialog<String>(
-                                          context: context,
-                                          builder: (context) => AddCategoryDialog(
-                                            type: categoryType!,
-                                            initialName: searchText,
-                                          ),
-                                        );
-                                        
-                                        if (categoryName != null && categoryName.isNotEmpty) {
-                                          try {
-                                            print('🔵 Creating category: $categoryName');
-                                            // Save to database
-                                            final dao = ref.read(categoryDaoProvider);
-                                            final newCategoryId = await dao.createCategory(
-                                              CategoriesCompanion(
-                                                profileId: drift.Value(ref.read(activeProfileIdProvider)),
-                                                name: drift.Value(categoryName),
-                                                type: drift.Value(categoryType!),
-                                                icon: const drift.Value('category'), // Default icon
-                                                isSystem: const drift.Value(false),
-                                                sortOrder: drift.Value(999), // Put at end
-                                              ),
-                                            );
-                                            
-                                            print('✅ Category created with ID: $newCategoryId');
-                                            
-                                            // Select the newly created category
-                                            setState(() {
-                                              _selectedCategoryId = newCategoryId;
-                                            });
-                                            
-                                            print('✅ Category selected: $_selectedCategoryId');
-                                            
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Category "$categoryName" created!'),
-                                                  backgroundColor: AppColors.primaryGold,
-                                                ),
-                                              );
-                                            }
-                                          } catch (e) {
-                                            print('❌ Error creating category: $e');
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Error creating category: $e'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  );
+                              return GenericSearchableDropdown<Category>(
+                                items: filteredCategories,
+                                selectedItem: selectedCategory,
+                                itemLabelBuilder: (c) => c.name,
+                                onItemSelected: (category) {
+                                  setState(() => _selectedCategoryId = category.id);
                                 },
-                                child: Container(
-                                  height: 56,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.15),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.category_outlined,
-                                        color: AppColors.primaryGold.withValues(alpha: 0.8),
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          selectedCategory?.name ?? 'Select category',
-                                          style: TextStyle(
-                                            color: selectedCategory != null
-                                                ? Colors.white
-                                                : Colors.white.withValues(alpha: 0.4),
-                                            fontSize: 15,
-                                          ),
+                                label: 'CATEGORY',
+                                icon: Icons.category_outlined,
+                                hint: 'Select category',
+                                searchHint: 'Search categories...',
+                                onAddNew: (searchText) async {
+                                  // Safety check for category type
+                                  if (categoryType == null) return;
+
+                                  // Direct create if search text is provided
+                                  final name = searchText.trim();
+                                  
+                                  if (name.isNotEmpty) {
+                                      // Direct creation path
+                                      await _createNewCategory(name, categoryType!);
+                                  } else {
+                                      // Fallback to dialog if no text entered
+                                      FocusScope.of(context).unfocus();
+                                      await Future.delayed(const Duration(milliseconds: 100));
+                                      
+                                      if (!mounted) return;
+
+                                      final result = await showDialog<Map<String, dynamic>>(
+                                        context: context,
+                                        builder: (context) => AddCategoryDialog(
+                                          type: categoryType!,
+                                          initialName: '',
                                         ),
-                                      ),
-                                      Icon(
-                                        Icons.arrow_drop_down,
-                                        color: Colors.white.withValues(alpha: 0.3),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
+                                      );
+                                      
+                                      if (mounted) {
+                                        FocusScope.of(context).unfocus();
+                                      }
+
+                                      if (result != null && result['name'] != null) {
+                                         await _createNewCategory(result['name'] as String, categoryType!);
+                                      }
+                                  }
+                                },
+                              );
                         },
                         loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
                         error: (_, __) => const Text('Error loading categories'),
@@ -1031,5 +949,47 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       ),
       ),
     );
+  }
+
+  Future<void> _createNewCategory(String name, CategoryType type) async {
+    try {
+      final dao = ref.read(categoryDaoProvider);
+      final profileId = ref.read(activeProfileIdProvider);
+      if (profileId == null) return;
+
+      final newCategoryId = await dao.createCategory(
+        CategoriesCompanion(
+          profileId: drift.Value(profileId),
+          name: drift.Value(name),
+          type: drift.Value(type),
+          icon: const drift.Value('category'),
+          isSystem: const drift.Value(false),
+          sortOrder: const drift.Value(999),
+        ),
+      );
+      
+      setState(() {
+        _selectedCategoryId = newCategoryId;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Category "$name" created!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error creating category: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating category: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }

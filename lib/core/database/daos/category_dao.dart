@@ -46,5 +46,5 @@ class CategoryDao extends DatabaseAccessor<AppDatabase> with _$CategoryDaoMixin 
 
   /// Delete a category (only if not system)
   Future<int> deleteCategory(int id) =>
-      (delete(categories)..where((c) => c.id.equals(id) & c.isSystem.equals(false))).go();
+      (delete(categories)..where((c) => c.id.equals(id))).go();
 }

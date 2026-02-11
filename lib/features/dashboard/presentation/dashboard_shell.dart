@@ -23,12 +23,12 @@ class DashboardShell extends ConsumerStatefulWidget {
 class _DashboardShellState extends ConsumerState<DashboardShell> {
   int _currentIndex = 0;
 
-  List<Widget> get _screens => [
-    const TransactionsHistoryScreen(), // 0: Transactions
-    const AccountsScreen(), // 1: Wallet (Accounts)
-    const DashboardScreen(), // 2: Overview (Dashboard)
-    // const BudgetScreen(), // 3: Budgets (Hidden for detailed implementation)
-    const SettingsScreen(), // 3: Settings
+  final List<Widget> _screens = const [
+    TransactionsHistoryScreen(), // 0: Transactions
+    AccountsScreen(), // 1: Wallet (Accounts)
+    DashboardScreen(), // 2: Overview (Dashboard)
+    // BudgetScreen(), // 3: Budgets
+    SettingsScreen(), // 3: Settings
   ];
 
   @override
@@ -37,21 +37,18 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     ref.watch(appInitProvider);
 
     // Determine if using light theme
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    // final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: AppColors.mainGradient,
-          //   colors: isDarkMode 
-          //       ? [AppColors.bgDarkStart, AppColors.bgDarkEnd]
-          //       : [AppColors.bgLightStart, AppColors.bgLightEnd],
-          //   begin: Alignment.topCenter,
-          //   end: Alignment.bottomCenter,
-          // ),
         ),
-        child: _screens[_currentIndex < _screens.length ? _currentIndex : 0],
+        child: IndexedStack(
+          index: _currentIndex < _screens.length ? _currentIndex : 0,
+          children: _screens,
+        ),
       ),
       bottomNavigationBar: GlassBottomNav(
         currentIndex: _currentIndex,

@@ -63,26 +63,26 @@ class AppDatabase extends _$AppDatabase {
           try {
             await m.addColumn(recurring, recurring.toAccountId);
           } catch (e) {
-            print('⚠️ Column toAccountId already exists, skipping: $e');
+            // Ignore
           }
         }
         if (from < 3) {
           try {
             await m.addColumn(transactions, transactions.destinationAmount);
           } catch (e) {
-            print('⚠️ Column destinationAmount already exists, skipping: $e');
+            // Ignore
           }
           try {
             await m.addColumn(transactions, transactions.exchangeRate);
           } catch (e) {
-            print('⚠️ Column exchangeRate already exists, skipping: $e');
+            // Ignore
           }
         }
         if (from < 4) {
           try {
             await m.addColumn(transactions, transactions.title);
           } catch (e) {
-            print('⚠️ Column title already exists, skipping: $e');
+            // Ignore
           }
         }
         if (from < 5) {
@@ -93,7 +93,7 @@ class AppDatabase extends _$AppDatabase {
           try {
             await m.addColumn(userSettings, userSettings.showDecimal);
           } catch (e) {
-            print('⚠️ Column showDecimal already exists, skipping: $e');
+            // Ignore
           }
         }
       },
@@ -175,7 +175,7 @@ class AppDatabase extends _$AppDatabase {
     // Expense categories
     final expenseCategories = [
       CategoriesCompanion.insert(
-        name: 'Food & Drinks',
+        name: 'Food',
         type: CategoryType.expense,
         icon: '🍔',
         color: const Value('#FF6B6B'),
@@ -191,92 +191,12 @@ class AppDatabase extends _$AppDatabase {
         sortOrder: const Value(2),
       ),
       CategoriesCompanion.insert(
-        name: 'Shopping',
-        type: CategoryType.expense,
-        icon: '🛍️',
-        color: const Value('#FFE66D'),
-        isSystem: const Value(true),
-        sortOrder: const Value(3),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Bills & Utilities',
-        type: CategoryType.expense,
-        icon: '📄',
-        color: const Value('#95E1D3'),
-        isSystem: const Value(true),
-        sortOrder: const Value(4),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Entertainment',
-        type: CategoryType.expense,
-        icon: '🎬',
-        color: const Value('#DDA0DD'),
-        isSystem: const Value(true),
-        sortOrder: const Value(5),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Health',
-        type: CategoryType.expense,
-        icon: '💊',
-        color: const Value('#98D8C8'),
-        isSystem: const Value(true),
-        sortOrder: const Value(6),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Education',
-        type: CategoryType.expense,
-        icon: '📚',
-        color: const Value('#F7DC6F'),
-        isSystem: const Value(true),
-        sortOrder: const Value(7),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Personal Care',
-        type: CategoryType.expense,
-        icon: '💇',
-        color: const Value('#BB8FCE'),
-        isSystem: const Value(true),
-        sortOrder: const Value(8),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Home',
-        type: CategoryType.expense,
-        icon: '🏠',
-        color: const Value('#85C1E9'),
-        isSystem: const Value(true),
-        sortOrder: const Value(9),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Gifts & Donations',
-        type: CategoryType.expense,
-        icon: '🎁',
-        color: const Value('#F1948A'),
-        isSystem: const Value(true),
-        sortOrder: const Value(10),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Travel',
-        type: CategoryType.expense,
-        icon: '✈️',
-        color: const Value('#7DCEA0'),
-        isSystem: const Value(true),
-        sortOrder: const Value(11),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Investment',
-        type: CategoryType.expense,
-        icon: '📈',
-        color: const Value('#5DADE2'),
-        isSystem: const Value(true),
-        sortOrder: const Value(12),
-      ),
-      CategoriesCompanion.insert(
         name: 'Other',
         type: CategoryType.expense,
         icon: '📦',
         color: const Value('#BDC3C7'),
         isSystem: const Value(true),
-        sortOrder: const Value(13),
+        sortOrder: const Value(3),
       ),
     ];
 
@@ -299,44 +219,12 @@ class AppDatabase extends _$AppDatabase {
         sortOrder: const Value(2),
       ),
       CategoriesCompanion.insert(
-        name: 'Business',
-        type: CategoryType.income,
-        icon: '🏪',
-        color: const Value('#9B59B6'),
-        isSystem: const Value(true),
-        sortOrder: const Value(3),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Investment Return',
-        type: CategoryType.income,
-        icon: '📊',
-        color: const Value('#1ABC9C'),
-        isSystem: const Value(true),
-        sortOrder: const Value(4),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Gift',
-        type: CategoryType.income,
-        icon: '🎁',
-        color: const Value('#E74C3C'),
-        isSystem: const Value(true),
-        sortOrder: const Value(5),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Refund',
-        type: CategoryType.income,
-        icon: '↩️',
-        color: const Value('#F39C12'),
-        isSystem: const Value(true),
-        sortOrder: const Value(6),
-      ),
-      CategoriesCompanion.insert(
         name: 'Other',
         type: CategoryType.income,
         icon: '📦',
         color: const Value('#BDC3C7'),
         isSystem: const Value(true),
-        sortOrder: const Value(7),
+        sortOrder: const Value(3),
       ),
     ];
 

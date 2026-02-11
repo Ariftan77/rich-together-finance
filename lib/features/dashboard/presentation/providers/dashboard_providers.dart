@@ -60,55 +60,41 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
 });
 
 /// Monthly income for current month
-final dashboardMonthlyIncomeProvider = StreamProvider.autoDispose<double>((ref) async* {
+/// Monthly income for current month
+final dashboardMonthlyIncomeProvider = StreamProvider.autoDispose<double>((ref) {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) {
-    yield 0;
-    return;
-  }
+  if (profileId == null) return Stream.value(0);
   
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
-    double total = 0;
-    for (final t in transactions) {
-      if (t.type == TransactionType.income &&
-          t.date.isAfter(startOfMonth) &&
-          t.date.isBefore(endOfMonth)) {
-        total += t.amount;
-      }
-    }
-    yield total;
-  }
+  return transactionDao.watchTotalByType(
+    profileId, 
+    TransactionType.income, 
+    startOfMonth, 
+    endOfMonth
+  );
 });
 
 /// Monthly expenses for current month
-final dashboardMonthlyExpenseProvider = StreamProvider.autoDispose<double>((ref) async* {
+/// Monthly expenses for current month
+final dashboardMonthlyExpenseProvider = StreamProvider.autoDispose<double>((ref) {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) {
-    yield 0;
-    return;
-  }
+  if (profileId == null) return Stream.value(0);
   
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
-    double total = 0;
-    for (final t in transactions) {
-      if (t.type == TransactionType.expense &&
-          t.date.isAfter(startOfMonth) &&
-          t.date.isBefore(endOfMonth)) {
-        total += t.amount;
-      }
-    }
-    yield total;
-  }
+  return transactionDao.watchTotalByType(
+    profileId, 
+    TransactionType.expense, 
+    startOfMonth, 
+    endOfMonth
+  );
 });
 
 /// Category breakdown data for current month
@@ -124,55 +110,27 @@ class CategoryBreakdown {
   });
 }
 
-final dashboardCategoryBreakdownProvider = StreamProvider.autoDispose<List<CategoryBreakdown>>((ref) async* {
+final dashboardCategoryBreakdownProvider = StreamProvider.autoDispose<List<CategoryBreakdown>>((ref) {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) {
-    yield [];
-    return;
-  }
+  if (profileId == null) return Stream.value([]);
   
   final transactionDao = ref.watch(transactionDaoProvider);
-  final categoryDao = ref.watch(categoryDaoProvider);
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
   
-  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
-    // Get all categories
-    final categories = await categoryDao.getAllCategories();
-    final categoryMap = {for (var c in categories) c.id: c.name};
+  return transactionDao.watchCategoryExpenseTotals(profileId, startOfMonth, endOfMonth).map((dtos) {
+    // Calculate total for percentage
+    final total = dtos.fold<double>(0, (sum, item) => sum + item.amount);
     
-    // Group expenses by category
-    final Map<int, double> categoryTotals = {};
-    double totalExpenses = 0;
-    
-    for (final t in transactions) {
-      if (t.type == TransactionType.expense &&
-          t.categoryId != null &&
-          t.date.isAfter(startOfMonth) &&
-          t.date.isBefore(endOfMonth)) {
-        categoryTotals[t.categoryId!] = (categoryTotals[t.categoryId!] ?? 0) + t.amount;
-        totalExpenses += t.amount;
-      }
-    }
-    
-    // Convert to CategoryBreakdown list
-    final breakdowns = categoryTotals.entries.map((entry) {
-      final categoryName = categoryMap[entry.key] ?? 'Unknown';
-      final amount = entry.value;
-      final percentage = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toDouble() : 0.0;
-      
+    return dtos.map((dto) {
       return CategoryBreakdown(
-        categoryName: categoryName,
-        amount: amount,
-        percentage: percentage,
+        categoryName: dto.name,
+        amount: dto.amount,
+        percentage: total > 0 ? ((dto.amount / total) * 100) : 0,
       );
-    }).toList();
-    
-    // Sort by amount descending and take top 5
-    breakdowns.sort((a, b) => b.amount.compareTo(a.amount));
-    yield breakdowns.take(5).toList();
-  }
+    }).take(5).toList();
+  });
 });
 
 /// Cash flow data for last 6 months
@@ -188,17 +146,18 @@ class MonthlyFlow {
   });
 }
 
-final dashboardCashFlowProvider = StreamProvider.autoDispose<List<MonthlyFlow>>((ref) async* {
+final dashboardCashFlowProvider = StreamProvider.autoDispose<List<MonthlyFlow>>((ref) {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) {
-    yield [];
-    return;
-  }
+  if (profileId == null) return Stream.value([]);
   
   final transactionDao = ref.watch(transactionDaoProvider);
   final now = DateTime.now();
   
-  await for (final transactions in transactionDao.watchAllTransactions(profileId)) {
+  // Calculate range for last 6 months
+  final startOfPeriod = DateTime(now.year, now.month - 5, 1);
+  final endOfPeriod = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  
+  return transactionDao.watchTransactionsInRange(profileId, startOfPeriod, endOfPeriod).map((transactions) {
     final List<MonthlyFlow> flows = [];
     
     // Calculate for last 6 months
@@ -231,8 +190,8 @@ final dashboardCashFlowProvider = StreamProvider.autoDispose<List<MonthlyFlow>>(
       ));
     }
     
-    yield flows.toList();
-  }
+    return flows;
+  });
 });
 
 /// Recent transactions (last 10)

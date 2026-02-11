@@ -187,6 +187,54 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return query.map((row) => row.readTable(transactions)).watch();
   }
 
+  /// Watch total amount for a type within date range (Optimized for Dashboard)
+  Stream<double> watchTotalByType(int profileId, TransactionType type, DateTime start, DateTime end) {
+    final amountSum = transactions.amount.sum();
+    final query = selectOnly(transactions)
+      ..addColumns([amountSum])
+      ..where(transactions.profileId.equals(profileId))
+      ..where(transactions.type.equals(type.index))
+      ..where(transactions.date.isBiggerOrEqualValue(start))
+      ..where(transactions.date.isSmallerOrEqualValue(end));
+      
+    return query.watchSingle().map((row) => row.read(amountSum) ?? 0);
+  }
+
+  /// Watch category totals for expenses (Optimized for Dashboard)
+  Stream<List<CategoryTotalDTO>> watchCategoryExpenseTotals(int profileId, DateTime start, DateTime end) {
+    final amountSum = transactions.amount.sum();
+    
+    final query = select(transactions).join([
+      innerJoin(categories, categories.id.equalsExp(transactions.categoryId))
+    ])
+      ..addColumns([categories.name, amountSum])
+      ..where(transactions.profileId.equals(profileId))
+      ..where(transactions.type.equals(TransactionType.expense.index))
+      ..where(transactions.date.isBiggerOrEqualValue(start))
+      ..where(transactions.date.isSmallerOrEqualValue(end))
+      ..groupBy([transactions.categoryId]);
+      
+    query.orderBy([OrderingTerm.desc(amountSum)]);
+    
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return CategoryTotalDTO(
+          name: row.read(categories.name)!,
+          amount: row.read(amountSum) ?? 0,
+        );
+      }).toList();
+    });
+  }
+
+  /// Watch transactions within date range (Optimized for CashFlow)
+  Stream<List<Transaction>> watchTransactionsInRange(int profileId, DateTime start, DateTime end) =>
+      (select(transactions)
+            ..where((t) => t.profileId.equals(profileId) & 
+                           t.date.isBiggerOrEqualValue(start) & 
+                           t.date.isSmallerOrEqualValue(end))
+            ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          .watch();
+
   /// Get most frequent transaction titles
   Future<List<String>> getMostFrequentTitles(int limit) {
     final count = transactions.id.count();
@@ -199,4 +247,39 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
 
     return query.map((row) => row.read(transactions.title)!).get();
   }
+
+  /// Watch categories with usage count
+  Stream<List<CategoryWithUsage>> watchCategoriesWithUsageCount(int profileId) {
+    final usageCount = transactions.id.count();
+    
+    final query = select(categories).join([
+      leftOuterJoin(transactions, transactions.categoryId.equalsExp(categories.id)),
+    ])
+      ..addColumns([usageCount])
+      ..where(categories.profileId.equals(profileId) | categories.profileId.isNull())
+      ..groupBy([categories.id])
+      ..orderBy([OrderingTerm.asc(categories.sortOrder)]);
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final category = row.readTable(categories);
+        final count = row.read(usageCount) ?? 0;
+        return CategoryWithUsage(category: category, usageCount: count);
+      }).toList();
+    });
+  }
+}
+
+class CategoryTotalDTO {
+  final String name;
+  final double amount;
+  
+  CategoryTotalDTO({required this.name, required this.amount});
+}
+
+class CategoryWithUsage {
+  final Category category;
+  final int usageCount;
+  
+  CategoryWithUsage({required this.category, required this.usageCount});
 }

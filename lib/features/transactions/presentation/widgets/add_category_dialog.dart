@@ -6,11 +6,13 @@ import '../../../../shared/theme/colors.dart';
 class AddCategoryDialog extends StatefulWidget {
   final CategoryType type;
   final String? initialName;
+  final bool canChangeType;
 
   const AddCategoryDialog({
     super.key,
     required this.type,
     this.initialName,
+    this.canChangeType = false,
   });
 
   @override
@@ -19,11 +21,13 @@ class AddCategoryDialog extends StatefulWidget {
 
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController _nameController = TextEditingController();
+  late CategoryType _selectedType;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.type;
     // Pre-fill with initial name if provided
     if (widget.initialName != null && widget.initialName!.isNotEmpty) {
       _nameController.text = widget.initialName!;
@@ -52,8 +56,11 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     setState(() => _isLoading = true);
 
     try {
-      // Return the category name to be saved by the parent
-      Navigator.pop(context, name);
+      // Return Map with name and type
+      Navigator.pop(context, {
+        'name': name,
+        'type': _selectedType,
+      });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -102,18 +109,69 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               ],
             ),
             
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             
-            // Type indicator
-            Text(
-              'Type: ${widget.type == CategoryType.income ? 'Income' : 'Expense'}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
+            // Type Selector (if allowed)
+            if (widget.canChangeType) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedType = CategoryType.expense),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _selectedType == CategoryType.expense ? AppColors.primaryGold : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.primaryGold),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Expense',
+                          style: TextStyle(
+                            color: _selectedType == CategoryType.expense ? Colors.black : AppColors.primaryGold,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedType = CategoryType.income),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _selectedType == CategoryType.income ? AppColors.primaryGold : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.primaryGold),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Income',
+                          style: TextStyle(
+                            color: _selectedType == CategoryType.income ? Colors.black : AppColors.primaryGold,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            
-            const SizedBox(height: 24),
+              const SizedBox(height: 16),
+            ] else ...[
+              // Static Type indicator
+              Text(
+                'Type: ${widget.type == CategoryType.income ? 'Income' : 'Expense'}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             
             // Name input
             Text(

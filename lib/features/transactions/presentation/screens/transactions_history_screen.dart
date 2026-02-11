@@ -70,6 +70,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
   Widget build(BuildContext context) {
     final filteredHelper = ref.watch(filteredTransactionsProvider);
     final currentTypeFilter = ref.watch(transactionTypeFilterProvider);
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final accountsAsync = ref.watch(accountsStreamProvider);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPop = Navigator.canPop(context);
@@ -200,11 +202,6 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                 Expanded(
                   child: filteredHelper.when(
                     data: (transactions) {
-                      print('📋 TransactionsHistoryScreen received ${transactions.length} transactions');
-                      if (transactions.isNotEmpty) {
-                        print('🔍 First transaction: ${transactions.first.type}, ${transactions.first.amount}');
-                      }
-                      
                       if (transactions.isEmpty) {
                         return Center(
                           child: Text(
@@ -229,6 +226,14 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       
                       final sortedDates = grouped.keys.toList()
                         ..sort((a, b) => b.compareTo(a));
+
+                      // Pre-fetch maps for efficient lookup
+                      final categoryMap = categoriesAsync.valueOrNull != null 
+                          ? {for (var c in categoriesAsync.value!) c.id: c} 
+                          : <int, Category>{};
+                      final accountMap = accountsAsync.valueOrNull != null 
+                          ? {for (var a in accountsAsync.value!) a.id: a} 
+                          : <int, Account>{};
 
                       return ListView.builder(
                         controller: _scrollController,
@@ -276,7 +281,11 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                   ],
                                 ),
                               ),
-                              ...txs.map((tx) => _TransactionItem(transaction: tx)),
+                              ...txs.map((tx) => _TransactionItem(
+                                transaction: tx,
+                                category: categoryMap[tx.categoryId],
+                                account: accountMap[tx.accountId],
+                              )),
                             ],
                           );
                         },
@@ -338,8 +347,14 @@ class _FilterChip extends StatelessWidget {
 
 class _TransactionItem extends ConsumerWidget {
   final Transaction transaction;
+  final Category? category;
+  final Account? account;
 
-  const _TransactionItem({required this.transaction});
+  const _TransactionItem({
+    required this.transaction,
+    this.category,
+    this.account,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -349,15 +364,7 @@ class _TransactionItem extends ConsumerWidget {
     final color = isExpense ? const Color(0xFFFB7185) : (isIncome ? const Color(0xFF34D399) : const Color(0xFF60A5FA));
     final prefix = isExpense ? '-' : (isIncome ? '+' : '');
     
-    // Get category name if available
-    final categoryDao = ref.watch(categoryDaoProvider);
-    final categoryFuture = transaction.categoryId != null 
-        ? categoryDao.getCategoryById(transaction.categoryId!)
-        : Future.value(null);
-    
-    // Get account info
-    final accountDao = ref.watch(accountDaoProvider);
-    final accountFuture = accountDao.getAccountById(transaction.accountId);
+    // Data is now passed in, no need for Futures
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -412,10 +419,9 @@ class _TransactionItem extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   // Time and category
-                  FutureBuilder<Category?>(
-                    future: categoryFuture,
-                    builder: (context, snapshot) {
-                      final categoryName = snapshot.data?.name ?? transaction.type.displayName;
+                  Builder(
+                    builder: (context) {
+                      final categoryName = category?.name ?? transaction.type.displayName;
                       final timeStr = _formatTime(transaction.date);
                       return Text(
                         '$timeStr • $categoryName',
@@ -433,10 +439,8 @@ class _TransactionItem extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                FutureBuilder<Account?>(
-                  future: accountFuture,
-                  builder: (context, snapshot) {
-                    final account = snapshot.data;
+                Builder(
+                  builder: (context) {
                     final currencySymbol = account?.currency == Currency.idr ? 'IDR' : '\$';
                     return Text(
                       '$currencySymbol $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
@@ -449,10 +453,9 @@ class _TransactionItem extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 4),
-                FutureBuilder<Account?>(
-                  future: accountFuture,
-                  builder: (context, snapshot) {
-                    final accountName = snapshot.data?.name ?? 'Loading...';
+                Builder(
+                  builder: (context) {
+                    final accountName = account?.name ?? 'Loading...';
                     return Text(
                       accountName,
                       style: AppTypography.textTheme.bodySmall!.copyWith(

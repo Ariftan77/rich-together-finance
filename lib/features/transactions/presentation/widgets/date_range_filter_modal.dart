@@ -103,14 +103,10 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
       });
       return;
     }
-
-    print('📅 Applying date filter: From=$_dateFrom, To=$_dateTo');
     
     // Apply filters
     ref.read(dateFromFilterProvider.notifier).state = _dateFrom;
     ref.read(dateToFilterProvider.notifier).state = _dateTo;
-    
-    print('✅ Date filter applied successfully');
     
     Navigator.pop(context);
   }

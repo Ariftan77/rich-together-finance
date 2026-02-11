@@ -106,7 +106,7 @@ class BottomNavItem {
   final IconData activeIcon;
   final String label;
 
-  BottomNavItem({
+  const BottomNavItem({
     required this.icon,
     required this.activeIcon,
     required this.label,

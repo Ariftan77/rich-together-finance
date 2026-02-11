@@ -16,6 +16,7 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'help_faq_screen.dart';
+import 'categories_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -180,6 +181,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
+          SettingsTile(
+            icon: Icons.category_outlined,
+            title: 'Manage Categories',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+            ),
+          ),
+          _buildDivider(),
           SettingsTile(
             icon: Icons.attach_money,
             title: 'Base Currency',

@@ -15,6 +15,8 @@ class GenericSearchableDropdown<T> extends StatefulWidget {
   final String noItemsFoundText;
   /// Max visible items before scrolling kicks in (default 4).
   final int maxVisibleItems;
+  /// Optional callback to add a new item. If provided, an "Add New" button appears.
+  final ValueChanged<String>? onAddNew;
 
   const GenericSearchableDropdown({
     super.key,
@@ -28,6 +30,7 @@ class GenericSearchableDropdown<T> extends StatefulWidget {
     this.searchHint = 'Search...',
     this.noItemsFoundText = 'No items found',
     this.maxVisibleItems = 4,
+    this.onAddNew,
   });
 
   @override
@@ -89,6 +92,7 @@ class _GenericSearchableDropdownState<T>
     if (_isOpen) {
       _removeOverlay();
     } else {
+      FocusScope.of(context).unfocus();
       _showOverlay();
     }
   }
@@ -127,7 +131,11 @@ class _GenericSearchableDropdownState<T>
     final listHeight =
         (_filteredItems.isEmpty ? itemHeight : _filteredItems.length * itemHeight)
             .clamp(itemHeight, widget.maxVisibleItems * itemHeight);
-    final totalHeight = searchFieldHeight + verticalPadding * 2 + listHeight + 8;
+    
+    // Calculate extra height for "Add New" button
+    final addNewHeight = widget.onAddNew != null ? 49.0 : 0.0; // 48 button + 1 divider
+
+    final totalHeight = searchFieldHeight + verticalPadding * 2 + listHeight + 8 + addNewHeight;
 
     return OverlayEntry(
       builder: (context) {
@@ -136,7 +144,7 @@ class _GenericSearchableDropdownState<T>
             (_filteredItems.isEmpty ? itemHeight : _filteredItems.length * itemHeight)
                 .clamp(itemHeight, widget.maxVisibleItems * itemHeight);
         final currentTotalHeight =
-            searchFieldHeight + verticalPadding * 2 + currentListHeight + 8;
+            searchFieldHeight + verticalPadding * 2 + currentListHeight + 8 + addNewHeight;
 
         return Stack(
           children: [
@@ -277,6 +285,47 @@ class _GenericSearchableDropdownState<T>
                                   },
                                 ),
                         ),
+                        // Add New Button (if provided)
+                        if (widget.onAddNew != null) ...[
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              final text = _searchController.text.trim();
+                              _removeOverlay();
+                              widget.onAddNew!(text);
+                            },
+                            child: Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.add_circle_outline,
+                                    color: AppColors.primaryGold,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _searchController.text.trim().isEmpty 
+                                          ? 'Add New Category'
+                                          : 'Add "${_searchController.text.trim()}"',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryGold,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
