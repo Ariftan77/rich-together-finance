@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../core/providers/database_providers.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -16,7 +17,9 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'help_faq_screen.dart';
+import 'help_faq_screen.dart';
 import 'categories_screen.dart';
+import 'backup_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -98,6 +101,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 12),
               _buildAppInfoSection(),
               const SizedBox(height: 24),
+
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => _showClearDataDialog(),
+                  icon: const Icon(Icons.delete_forever, color: AppColors.error, size: 18),
+                  label: const Text('Clear All Data', style: TextStyle(color: AppColors.error)),
+                ),
+              ),
 
               // Version info at bottom
               Center(
@@ -187,6 +198,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+            ),
+          ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.backup_outlined,
+            title: 'Backup & Restore',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BackupScreen()),
             ),
           ),
           _buildDivider(),
@@ -528,6 +548,107 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profileId = ref.read(activeProfileIdProvider);
     if (profileId != null) {
       await ref.read(settingsDaoProvider).setBiometricEnabled(profileId, enabled);
+    }
+  }
+
+  Future<void> _showClearDataDialog() async {
+    final confirmController = TextEditingController();
+    bool canProceed = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppColors.bgDarkEnd,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Clear All Data?', style: TextStyle(color: AppColors.error)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This will permanently delete ALL your data (transactions, accounts, categories). This action cannot be undone.',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Type "Confirm" to proceed:',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              GlassInput(
+                controller: confirmController,
+                hintText: 'Confirm',
+                onChanged: (value) {
+                  setState(() {
+                    canProceed = value == 'Confirm';
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            ),
+            TextButton(
+              onPressed: canProceed
+                  ? () async {
+                      Navigator.pop(context);
+                      await _performClearData();
+                    }
+                  : null,
+              child: Text(
+                'Clear Everything',
+                style: TextStyle(
+                  color: canProceed ? AppColors.error : Colors.white24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _performClearData() async {
+    try {
+      // Show loading
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+      );
+
+      // Perform wipe
+      await ref.read(databaseProvider).clearAllData();
+
+      if (!mounted) return;
+      // Close loading
+      Navigator.pop(context);
+
+      // Show success and maybe restart or go home
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All data cleared successfully'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Force refresh of providers
+      ref.invalidate(activeProfileIdProvider);
+      ref.invalidate(activeProfileProvider);
+      ref.invalidate(activeProfileSettingsProvider);
+
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error clearing data: $e'), backgroundColor: AppColors.error),
+      );
     }
   }
 }

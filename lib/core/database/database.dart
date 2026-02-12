@@ -233,6 +233,38 @@ class AppDatabase extends _$AppDatabase {
       batch.insertAll(categories, incomeCategories);
     });
   }
+
+  /// Wipes all data from the database and re-seeds default data
+  Future<void> clearAllData() async {
+    await transaction(() async {
+      // 1. Delete all data from all tables
+      // Order matters due to foreign key constraints (delete children first)
+      await delete(transactions).go();
+      await delete(investmentTransactions).go();
+      await delete(recurring).go();
+      await delete(priceCache).go();
+      await delete(exchangeRates).go();
+      await delete(budgets).go();
+      await delete(goals).go();
+      await delete(goalAccounts).go();
+      await delete(debts).go();
+      await delete(holdings).go();
+      
+      // Delete user-created categories (system ones are managed by seed, but let's wipe clean)
+      await delete(categories).go();
+      
+      // Delete accounts and settings
+      await delete(accounts).go();
+      await delete(userSettings).go();
+      
+      // finally delete profiles
+      await delete(profiles).go();
+
+      // 2. Re-seed default data
+      await _createDefaultProfile();
+      await _seedCategories();
+    });
+  }
 }
 
 /// Opens a connection to the database file

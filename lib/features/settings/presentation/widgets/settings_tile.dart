@@ -6,6 +6,7 @@ class SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Color? titleColor;
   final Widget? trailing;
   final VoidCallback? onTap;
 
@@ -14,6 +15,7 @@ class SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.titleColor,
     this.trailing,
     this.onTap,
   });
@@ -30,12 +32,12 @@ class SettingsTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: (titleColor ?? AppColors.primaryGold).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: AppColors.primaryGold,
+                color: titleColor ?? AppColors.primaryGold,
                 size: 20,
               ),
             ),
@@ -44,10 +46,10 @@ class SettingsTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: titleColor ?? Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
