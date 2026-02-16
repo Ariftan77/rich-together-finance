@@ -18,5 +18,8 @@ class Debts extends Table {
   IntColumn get settledAccountId => integer().nullable().references(Accounts, #id)();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 

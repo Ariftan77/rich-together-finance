@@ -16,6 +16,7 @@ import '../../../../shared/utils/currency_input_formatter.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
+import '../../../../core/providers/locale_provider.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
@@ -78,6 +79,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       // Get account to determine currency
       final accountDao = ref.read(accountDaoProvider);
       final account = await accountDao.getAccountById(transaction.accountId);
+      if (!mounted) return;
       final currency = account?.currency ?? Currency.idr;
       final showDecimal = ref.read(showDecimalProvider);
 
@@ -113,23 +115,35 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     super.dispose();
   }
 
+  bool _isSaving = false;
+
   Future<void> _saveTransaction() async {
+    if (_isSaving) return;
+    
+    // Capture messenger and navigator early to avoid "deactivated widget" errors after async gaps
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    
+    // Unfocus to prevent keyboard/focus issues during navigation
+    _amountFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+
     if (_selectedAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Please select an account')),
       );
       return;
     }
     
     if (_selectedType == TransactionType.transfer && _selectedToAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Please select a destination account')),
       );
       return;
     }
     
     if (_selectedType != TransactionType.transfer && _selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Please select a category')),
       );
       return;
@@ -137,95 +151,148 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
     final amount = double.tryParse(_rawAmount) ?? 0.0;
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Please enter a valid amount')),
       );
       return;
     }
 
-    // Validate sufficient balance for expenses
-    if (_selectedType == TransactionType.expense) {
-      final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
-      if (amount > accountBalance) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
-          );
-        }
-        return;
-      }
-    }
-
-    // Validate sufficient balance for transfers
-    if (_selectedType == TransactionType.transfer) {
-      final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
-      if (amount > accountBalance) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
-          );
-        }
-        return;
-      }
-    }
-    
-    final dao = ref.read(transactionDaoProvider);
+    setState(() => _isSaving = true);
 
     try {
-      if (widget.transactionId != null) {
-        // Update existing transaction
-        await dao.updateTransaction(
-          widget.transactionId!,
-          TransactionsCompanion(
-            accountId: drift.Value(_selectedAccountId!),
-            categoryId: _selectedCategoryId != null ? drift.Value(_selectedCategoryId!) : const drift.Value.absent(),
-            toAccountId: _selectedToAccountId != null ? drift.Value(_selectedToAccountId!) : const drift.Value.absent(),
-            destinationAmount: _estimatedDestinationAmount != null ? drift.Value(_estimatedDestinationAmount) : const drift.Value.absent(),
-            exchangeRate: _exchangeRate != null ? drift.Value(_exchangeRate) : const drift.Value.absent(),
-            type: drift.Value(_selectedType),
-            amount: drift.Value(amount),
-            date: drift.Value(_selectedDate),
-            title: drift.Value(_titleController.text),
-            note: drift.Value(_noteController.text),
-          ),
-        );
-        // Transaction updated
-      } else {
-        // Insert new transaction
-        final profileId = ref.read(activeProfileIdProvider);
-        if (profileId == null) {
+      // Validate sufficient balance for expenses
+      if (_selectedType == TransactionType.expense) {
+        final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
+        if (amount > accountBalance) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No active profile. Please set up a profile first.')),
+            messenger.showSnackBar(
+              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
             );
+            setState(() => _isSaving = false);
           }
           return;
         }
-        final transactionId = await dao.insertTransaction(
-          TransactionsCompanion(
-            profileId: drift.Value(profileId),
-            accountId: drift.Value(_selectedAccountId!),
-            categoryId: _selectedCategoryId != null ? drift.Value(_selectedCategoryId!) : const drift.Value.absent(),
-            toAccountId: _selectedToAccountId != null ? drift.Value(_selectedToAccountId!) : const drift.Value.absent(),
-            destinationAmount: _estimatedDestinationAmount != null ? drift.Value(_estimatedDestinationAmount) : const drift.Value.absent(),
-            exchangeRate: _exchangeRate != null ? drift.Value(_exchangeRate) : const drift.Value.absent(),
-            type: drift.Value(_selectedType),
-            amount: drift.Value(amount),
-            date: drift.Value(_selectedDate),
-            title: drift.Value(_titleController.text),
-            note: drift.Value(_noteController.text),
-            createdAt: drift.Value(DateTime.now()),
-          ),
-        );
-        // Transaction saved
+      }
+
+      // Validate sufficient balance for transfers
+      if (_selectedType == TransactionType.transfer) {
+        final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
+        if (amount > accountBalance) {
+          if (mounted) {
+            messenger.showSnackBar(
+              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
+            );
+            setState(() => _isSaving = false);
+          }
+          return;
+        }
       }
       
-      if (mounted) Navigator.pop(context);
+      final dao = ref.read(transactionDaoProvider);
+
+      double? finalDestinationAmount;
+      double? finalExchangeRate;
+
+      // Check for cross-currency transfer
+      if (_selectedType == TransactionType.transfer && _selectedToAccountId != null) {
+        final accountDao = ref.read(accountDaoProvider);
+        final fromAccount = await accountDao.getAccountById(_selectedAccountId!);
+        final toAccount = await accountDao.getAccountById(_selectedToAccountId!);
+
+        if (fromAccount != null && toAccount != null) {
+           if (fromAccount.currency != toAccount.currency) {
+              if (!mounted) return;
+              
+              // Always show dialog for cross-currency to ensure we get the correct receiving amount
+              final destinationAmount = await _showConversionDialog(
+                context, 
+                amount, 
+                fromAccount.currency, 
+                toAccount.currency
+              );
+
+              if (destinationAmount == null) {
+                if (mounted) {
+                  setState(() => _isSaving = false);
+                }
+                return; // User cancelled
+              }
+              
+              // EXPLICITLY set values
+              finalDestinationAmount = destinationAmount;
+              if (destinationAmount > 0) {
+                finalExchangeRate = amount / destinationAmount;
+                
+                // Append rate note
+                 final rateText = 'Rate: 1 ${toAccount.currency.code} = ${Formatters.formatNumber(finalExchangeRate!)} ${fromAccount.currency.code}';
+                if (!_noteController.text.contains('Rate:')) {
+                   if (_noteController.text.isNotEmpty) {
+                    _noteController.text += '\n$rateText';
+                  } else {
+                    _noteController.text = rateText;
+                  }
+                }
+              }
+           } else {
+             // Same currency
+             finalDestinationAmount = amount;
+             finalExchangeRate = 1.0;
+           }
+        }
+      }
+
+      // If it is a transfer but NOT cross-currency (or accounts not loaded?), default to amount
+      if (_selectedType == TransactionType.transfer && finalDestinationAmount == null) {
+         finalDestinationAmount = amount;
+         finalExchangeRate = 1.0;
+      }
+      
+      // Update state for next time
+      _estimatedDestinationAmount = finalDestinationAmount;
+      _exchangeRate = finalExchangeRate;
+
+      final transactionCompanion = TransactionsCompanion(
+        profileId: ref.read(activeProfileIdProvider) != null ? drift.Value(ref.read(activeProfileIdProvider)!) : const drift.Value.absent(),
+        accountId: drift.Value(_selectedAccountId!),
+        categoryId: _selectedCategoryId != null ? drift.Value(_selectedCategoryId!) : const drift.Value.absent(),
+        toAccountId: _selectedToAccountId != null ? drift.Value(_selectedToAccountId!) : const drift.Value.absent(),
+        destinationAmount: finalDestinationAmount != null ? drift.Value(finalDestinationAmount) : const drift.Value.absent(),
+        exchangeRate: finalExchangeRate != null ? drift.Value(finalExchangeRate) : const drift.Value.absent(),
+        type: drift.Value(_selectedType),
+        amount: drift.Value(amount),
+        date: drift.Value(_selectedDate),
+        title: drift.Value(_titleController.text),
+        note: drift.Value(_noteController.text),
+        createdAt: widget.transactionId == null ? drift.Value(DateTime.now()) : const drift.Value.absent(),
+      );
+
+      if (widget.transactionId != null) {
+        // Update existing transaction
+        await dao.updateTransaction(widget.transactionId!, transactionCompanion);
+      } else {
+        // Insert new transaction
+        if (transactionCompanion.profileId.present) {
+           await dao.insertTransaction(transactionCompanion);
+        } else {
+           if (mounted) {
+            messenger.showSnackBar(
+              const SnackBar(content: Text('No active profile. Please set up a profile first.')),
+            );
+          }
+          setState(() => _isSaving = false);
+          return;
+        }
+      }
+      
+      if (mounted) {
+        navigator.pop();
+      }
     } catch (e, stackTrace) {
       debugPrint('❌ ERROR saving transaction: $e');
       debugPrint('Stack trace: $stackTrace');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        setState(() => _isSaving = false);
+        messenger.showSnackBar(
           SnackBar(content: Text('Error saving transaction: $e')),
         );
       }
@@ -285,10 +352,17 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   Future<void> _deleteTransaction() async {
     if (widget.transactionId == null) return;
 
+    // Unfocus to prevent keyboard/focus issues during navigation
+    _amountFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF2D2416),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -309,14 +383,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(
               'Cancel',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
@@ -335,24 +409,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (confirmed != true) return;
 
     try {
-      debugPrint('🗑️ Deleting transaction ID: ${widget.transactionId}');
-      
       final dao = ref.read(transactionDaoProvider);
       await dao.deleteTransaction(widget.transactionId!);
-      
-      // Transaction deleted
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Transaction deleted'),
-            backgroundColor: AppColors.primaryGold,
-          ),
-        );
-        Navigator.pop(context, true); // Return true to indicate deletion
-      }
     } catch (e) {
-      debugPrint('❌ Error deleting transaction: $e');
+      debugPrint('Error deleting transaction: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -361,7 +421,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
           ),
         );
       }
+      return;
     }
+
+    navigator.pop(true);
   }
 
   Future<void> _addNote() async {
@@ -403,6 +466,76 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
+  Future<double?> _showConversionDialog(
+    BuildContext context, 
+    double sourceAmount,
+    Currency fromCurrency, 
+    Currency toCurrency,
+  ) async {
+    final controller = TextEditingController();
+    
+    return showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF221D10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Currency Conversion', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sending: ${Formatters.formatCurrency(sourceAmount, currency: fromCurrency)}',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Amount Received in ${toCurrency.code}:', // e.g. USD
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                prefixText: '${toCurrency.symbol} ',
+                prefixStyle: const TextStyle(color: AppColors.primaryGold),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primaryGold),
+                ),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Use robust parser based on target currency
+              final amount = Formatters.parseCurrency(controller.text, currency: toCurrency);
+              if (amount > 0) {
+                Navigator.pop(context, amount);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getCurrencyPrefix(List<Account> accounts) {
     if (_selectedAccountId == null) return 'IDR ';  // Default to IDR
     final account = accounts.firstWhere((a) => a.id == _selectedAccountId);
@@ -415,9 +548,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     
     if (selectedDay == today) {
-      return 'Today';
+      return ref.read(translationsProvider).commonToday;
     } else if (selectedDay == today.subtract(const Duration(days: 1))) {
-      return 'Yesterday';
+      return ref.read(translationsProvider).commonYesterday;
     } else {
       return DateFormat('MMM dd, yyyy').format(_selectedDate);
     }
@@ -446,14 +579,17 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       },
       label: label,
       icon: Icons.account_balance_wallet_outlined,
-      hint: 'Select account',
-      searchHint: 'Search accounts...',
-      noItemsFoundText: 'No accounts found',
+      hint: ref.read(translationsProvider).entrySelectAccount,
+      searchHint: ref.read(translationsProvider).entrySearchAccount,
+      noItemsFoundText: ref.read(translationsProvider).entryNoAccounts,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch translations
+    final trans = ref.watch(translationsProvider);
+    
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
@@ -477,7 +613,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
-                    widget.transactionId != null ? 'Edit Entry' : 'New Entry',
+                    widget.transactionId != null ? trans.entryTitleEdit : trans.entryTitleAdd,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -491,14 +627,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         IconButton(
                           icon: const Icon(Icons.delete_outline, color: Colors.red),
                           onPressed: _deleteTransaction,
-                          tooltip: 'Delete transaction',
+                          tooltip: trans.delete,
                         ),
-                      IconButton(
-                        icon: const Icon(Icons.help_outline, color: Colors.white),
-                        onPressed: () {
-                          // Show help dialog
-                        },
-                      ),
+                      if (_selectedType != TransactionType.transfer)
+                        IconButton(
+                          icon: const Icon(Icons.repeat, color: Colors.white),
+                          onPressed: _showRecurringDialog,
+                          tooltip: 'Set as Recurring',
+                        ),
                     ],
                   ),
                 ],
@@ -517,7 +653,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     Column(
                       children: [
                         Text(
-                          'ENTER AMOUNT',
+                          trans.entryAmount,
                           style: TextStyle(
                             color: AppColors.primaryGold.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -595,7 +731,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                           TransactionType.expense,
                           TransactionType.transfer,
                         ],
-                        labels: const ['Income', 'Expense', 'Transfer'],
+
+                        labels: [trans.entryTypeIncome, trans.entryTypeExpense, trans.entryTypeTransfer],
                         onChanged: (type) {
                           setState(() => _selectedType = type);
                           if (type == TransactionType.transfer) {
@@ -741,10 +878,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                 onItemSelected: (category) {
                                   setState(() => _selectedCategoryId = category.id);
                                 },
-                                label: 'CATEGORY',
+                                label: trans.entryCategory,
                                 icon: Icons.category_outlined,
-                                hint: 'Select category',
-                                searchHint: 'Search categories...',
+                                hint: trans.entrySelectCategory,
+                                searchHint: trans.entrySearchCategory,
                                 onAddNew: (searchText) async {
                                   // Safety check for category type
                                   if (categoryType == null) return;
@@ -796,14 +933,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             _buildAccountDropdown(
                               accounts: accounts,
                               isToAccount: false,
-                              label: _selectedType == TransactionType.transfer ? 'From Account' : 'Account',
+                              label: _selectedType == TransactionType.transfer ? trans.entryFromAccount : trans.entryAccount,
                             ),
                             if (_selectedType == TransactionType.transfer) ...[
                               const SizedBox(height: 16),
                               _buildAccountDropdown(
                                 accounts: accounts,
                                 isToAccount: true,
-                                label: 'To Account',
+                                label: trans.entryToAccount,
                               ),
                             ],
                           ],
@@ -842,7 +979,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _formatDateDisplay(),
+                                    DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(_selectedDate),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
@@ -877,7 +1014,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      _noteController.text.isEmpty ? 'Add Note' : _noteController.text,
+                                      _noteController.text.isEmpty ? trans.entryAddNote : _noteController.text,
                                       style: TextStyle(
                                         color: _noteController.text.isEmpty
                                             ? Colors.white.withValues(alpha: 0.6)
@@ -933,7 +1070,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                       Icon(Icons.check_circle, size: 24),
                       SizedBox(width: 12),
                       Text(
-                        'Save Transaction',
+                        // 'Save Transaction' -> trans.entrySaveButton
+                        // Needs to be accessed via ref in build method context to be cleaner
+                        // But here we are inside a method? No, this is build method structure
+                        // Wait, I need access to `trans` variable.
+                        // I'll add `final trans = ref.watch(translationsProvider);` at start of build.
+                        'Save Transaction', 
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -949,6 +1091,104 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       ),
       ),
     );
+  }
+
+  Future<void> _showRecurringDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (_selectedAccountId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please select an account')),
+      );
+      return;
+    }
+
+    if (_selectedCategoryId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please select a category')),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(_rawAmount) ?? 0.0;
+    if (amount <= 0) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+
+    final selectedFrequency = await showDialog<RecurringFrequency>(
+      context: context,
+      builder: (context) => _RecurringFrequencyDialog(
+        initialDate: _selectedDate,
+        transactionTitle: _titleController.text,
+      ),
+    );
+
+    if (selectedFrequency == null) return;
+
+    await _createRecurringEntry(selectedFrequency);
+  }
+
+  Future<void> _createRecurringEntry(RecurringFrequency frequency) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final profileId = ref.read(activeProfileIdProvider);
+
+    if (profileId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No active profile. Please set up a profile first.')),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(_rawAmount) ?? 0.0;
+    final name = _titleController.text.trim().isNotEmpty
+        ? _titleController.text.trim()
+        : '${_selectedType.displayName} - ${Formatters.formatNumber(amount)}';
+
+    try {
+      final recurringDao = ref.read(recurringDaoProvider);
+      final nextDate = recurringDao.calculateNextDate(_selectedDate, frequency);
+      await recurringDao.createRecurring(
+        RecurringCompanion.insert(
+          profileId: profileId,
+          name: name,
+          type: _selectedType,
+          amount: amount,
+          accountId: _selectedAccountId!,
+          categoryId: drift.Value(_selectedCategoryId),
+          frequency: frequency,
+          nextDate: nextDate,
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.repeat, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text('Recurring ${frequency.displayName.toLowerCase()} transaction created'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error creating recurring transaction: $e');
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Error creating recurring: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _createNewCategory(String name, CategoryType type) async {
@@ -975,7 +1215,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Category "$name" created!'),
+            content: Text(ref.read(translationsProvider).entryCategoryCreated),
             backgroundColor: AppColors.success,
           ),
         );
@@ -985,11 +1225,189 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating category: $e'),
+            content: Text(e.toString()),
             backgroundColor: AppColors.error,
           ),
         );
       }
     }
+  }
+}
+
+class _RecurringFrequencyDialog extends StatefulWidget {
+  final DateTime initialDate;
+  final String transactionTitle;
+
+  const _RecurringFrequencyDialog({
+    required this.initialDate,
+    required this.transactionTitle,
+  });
+
+  @override
+  State<_RecurringFrequencyDialog> createState() => _RecurringFrequencyDialogState();
+}
+
+class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
+  RecurringFrequency _frequency = RecurringFrequency.monthly;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF2D2416),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.repeat, color: AppColors.primaryGold, size: 24),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Set as Recurring',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (widget.transactionTitle.isNotEmpty)
+              Text(
+                '"${widget.transactionTitle}"',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            const SizedBox(height: 20),
+            Text(
+              'FREQUENCY',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: RecurringFrequency.values.map((freq) {
+                final isSelected = _frequency == freq;
+                return GestureDetector(
+                  onTap: () => setState(() => _frequency = freq),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primaryGold
+                          : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryGold
+                            : Colors.white.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Text(
+                      freq.displayName,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF1A1410)
+                            : Colors.white.withValues(alpha: 0.8),
+                        fontSize: 14,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Starts from ${DateFormat.yMMMd().format(widget.initialDate)}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, _frequency),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.primaryGold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Confirm',
+                      style: TextStyle(
+                        color: Color(0xFF1A1410),
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

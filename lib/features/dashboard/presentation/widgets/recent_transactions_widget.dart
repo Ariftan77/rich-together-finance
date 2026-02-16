@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -21,19 +23,19 @@ class RecentTransactionsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (transactions.isEmpty) {
-      return GlassCard(
-        child: Container(
-          height: 150,
-          alignment: Alignment.center,
-          child: Text(
-            'No transactions yet',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
+        return GlassCard(
+          child: Container(
+            height: 150,
+            alignment: Alignment.center,
+            child: Text(
+              ref.watch(translationsProvider).noTransactions,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
             ),
           ),
-        ),
-      );
+        );
     }
 
     final accountsAsync = ref.watch(accountsStreamProvider);
@@ -55,9 +57,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Recent Transactions',
-                        style: TextStyle(
+                      Text(
+                        ref.watch(translationsProvider).recentTransactions,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -69,8 +71,8 @@ class RecentTransactionsWidget extends ConsumerWidget {
                           // The shell already has this tab, so we don't need to navigate
                         },
                         child: Text(
-                          'View All',
-                          style: TextStyle(
+                          ref.watch(translationsProvider).viewAll,
+                          style: const TextStyle(
                             color: AppColors.primaryGold,
                             fontSize: 12,
                           ),
@@ -172,7 +174,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                         ),
                                       ),
                                       Text(
-                                        DateFormat('MMM dd').format(transaction.date),
+                                        DateFormat('MMM dd', ref.watch(localeProvider).languageCode).format(transaction.date),
                                         style: TextStyle(
                                           color: Colors.white.withValues(alpha: 0.6),
                                           fontSize: 12,

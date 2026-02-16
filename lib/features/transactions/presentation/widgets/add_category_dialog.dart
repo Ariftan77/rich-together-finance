@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 
 /// Dialog for creating a new category
-class AddCategoryDialog extends StatefulWidget {
+class AddCategoryDialog extends ConsumerStatefulWidget {
   final CategoryType type;
   final String? initialName;
   final bool canChangeType;
@@ -16,10 +18,10 @@ class AddCategoryDialog extends StatefulWidget {
   });
 
   @override
-  State<AddCategoryDialog> createState() => _AddCategoryDialogState();
+  ConsumerState<AddCategoryDialog> createState() => _AddCategoryDialogState();
 }
 
-class _AddCategoryDialogState extends State<AddCategoryDialog> {
+class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
   final TextEditingController _nameController = TextEditingController();
   late CategoryType _selectedType;
   bool _isLoading = false;
@@ -46,7 +48,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter a category name'),
+          content: Text(ref.read(translationsProvider).errorEnterCategoryName),
           backgroundColor: Colors.red,
         ),
       );
@@ -76,6 +78,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final trans = ref.watch(translationsProvider);
+
     return Dialog(
       backgroundColor: const Color(0xFF2D2416),
       shape: RoundedRectangleBorder(
@@ -98,7 +102,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Add New Category',
+                    trans.entryAddCategory,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -127,7 +131,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Expense',
+                          trans.entryTypeExpense,
                           style: TextStyle(
                             color: _selectedType == CategoryType.expense ? Colors.black : AppColors.primaryGold,
                             fontWeight: FontWeight.bold,
@@ -149,7 +153,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Income',
+                          trans.entryTypeIncome,
                           style: TextStyle(
                             color: _selectedType == CategoryType.income ? Colors.black : AppColors.primaryGold,
                             fontWeight: FontWeight.bold,
@@ -164,7 +168,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             ] else ...[
               // Static Type indicator
               Text(
-                'Type: ${widget.type == CategoryType.income ? 'Income' : 'Expense'}',
+                '${trans.entryCategory}: ${widget.type == CategoryType.income ? trans.entryTypeIncome : trans.entryTypeExpense}',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
@@ -175,7 +179,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             
             // Name input
             Text(
-              'CATEGORY NAME',
+              trans.entryCategory.toUpperCase(),
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 11,
@@ -200,7 +204,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                   fontSize: 15,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Enter category name...',
+                  hintText: trans.entrySearchCategory,
                   hintStyle: TextStyle(
                     color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 15,
@@ -228,7 +232,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                       ),
                     ),
                     child: Text(
-                      'Cancel',
+                      trans.cancel,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 15,
@@ -258,7 +262,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                             ),
                           )
                         : Text(
-                            'Save',
+                            trans.save,
                             style: TextStyle(
                               color: Color(0xFF1A1410),
                               fontSize: 15,

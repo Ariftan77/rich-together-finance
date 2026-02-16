@@ -34,7 +34,7 @@ final accountBalanceProvider = Provider<Map<int, double>>((ref) {
     // Destination Account (for Transfer)
     if (type == TransactionType.transfer && trans.toAccountId != null) {
       if (balances.containsKey(trans.toAccountId!)) {
-        balances[trans.toAccountId!] = balances[trans.toAccountId!]! + amount;
+        balances[trans.toAccountId!] = balances[trans.toAccountId!]! + (trans.destinationAmount ?? amount);
       }
     }
   }

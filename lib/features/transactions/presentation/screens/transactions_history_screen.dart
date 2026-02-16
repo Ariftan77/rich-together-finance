@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
@@ -15,6 +16,7 @@ import '../../../../shared/widgets/glass_input.dart';
 import '../providers/search_provider.dart';
 import '../widgets/date_range_filter_modal.dart';
 import 'transaction_entry_screen.dart';
+import 'recurring_list_screen.dart';
 
 
 class TransactionsHistoryScreen extends ConsumerStatefulWidget {
@@ -72,6 +74,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     final currentTypeFilter = ref.watch(transactionTypeFilterProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
+    final trans = ref.watch(translationsProvider);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPop = Navigator.canPop(context);
@@ -100,13 +103,29 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                              onPressed: () => Navigator.pop(context),
                            ),
                          ),
-                       Text(
-                        'Transactions',
+                      Text(
+                        trans.navTransactions,
                         style: AppTypography.textTheme.displaySmall?.copyWith(
                           color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                         ),
                       ),
                       const Spacer(),
+                      // Recurring button
+                      IconButton(
+                        icon: Icon(
+                          Icons.repeat,
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecurringListScreen(),
+                            ),
+                          );
+                        },
+                        tooltip: 'Recurring',
+                      ),
                       // Filter button
                       Consumer(
                         builder: (context, ref, child) {
@@ -160,7 +179,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: GlassInput(
                     controller: _searchController,
-                    hintText: 'Search transactions...',
+                    hintText: trans.commonSearch,
                     prefixIcon: Icons.search,
                   ),
                 ),
@@ -170,31 +189,31 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.all(16),
                   child: Row(
-                    children: [
-                      _FilterChip(
-                        label: 'All',
-                        isSelected: currentTypeFilter == null,
-                        onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = null,
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Income',
-                        isSelected: currentTypeFilter == TransactionType.income,
-                        onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.income,
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Expense',
-                        isSelected: currentTypeFilter == TransactionType.expense,
-                        onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.expense,
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Transfer',
-                        isSelected: currentTypeFilter == TransactionType.transfer,
-                        onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.transfer,
-                      ),
-                    ],
+                      children: [
+                        _FilterChip(
+                          label: trans.filterAll,
+                          isSelected: currentTypeFilter == null,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = null,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: trans.entryTypeIncome,
+                          isSelected: currentTypeFilter == TransactionType.income,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.income,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: trans.entryTypeExpense,
+                          isSelected: currentTypeFilter == TransactionType.expense,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.expense,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: trans.entryTypeTransfer,
+                          isSelected: currentTypeFilter == TransactionType.transfer,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.transfer,
+                        ),
+                      ],
                   ),
                 ),
 

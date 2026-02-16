@@ -16,6 +16,9 @@ class Holdings extends Table {
   IntColumn get currency => intEnum<Currency>()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   List<Set<Column>> get uniqueKeys => [

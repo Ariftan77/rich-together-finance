@@ -1,16 +1,21 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Pie chart showing expense breakdown by category
 class CategoryPieChart extends StatelessWidget {
   final List<CategoryBreakdown> data;
-  
+  final String currencySymbol;
+  final bool showDecimal;
+
   const CategoryPieChart({
     super.key,
     required this.data,
+    this.currencySymbol = 'Rp',
+    this.showDecimal = false,
   });
 
   @override
@@ -131,7 +136,7 @@ class CategoryPieChart extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    'Rp ${_formatNumber(breakdown.amount)}',
+                                    '$currencySymbol ${Formatters.formatCurrency(breakdown.amount, showDecimal: showDecimal)}',
                                     style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.6),
                                       fontSize: 10,
@@ -154,12 +159,4 @@ class CategoryPieChart extends StatelessWidget {
     );
   }
 
-  String _formatNumber(double value) {
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}K';
-    }
-    return value.toStringAsFixed(0);
-  }
 }

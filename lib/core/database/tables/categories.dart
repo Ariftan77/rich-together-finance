@@ -13,5 +13,9 @@ class Categories extends Table {
   BoolColumn get isSystem => boolean().withDefault(const Constant(false))();
   IntColumn get parentId => integer().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 

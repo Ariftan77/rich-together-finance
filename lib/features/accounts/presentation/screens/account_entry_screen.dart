@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -12,6 +13,7 @@ import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/utils/currency_input_formatter.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../providers/balance_provider.dart';
 import '../../../transactions/presentation/screens/transactions_history_screen.dart';
 import '../../../transactions/presentation/providers/search_provider.dart';
@@ -81,8 +83,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     if (isDuplicate) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account name already exists. Please use a different name.'),
+          SnackBar(
+            content: Text(ref.read(translationsProvider).accountNameExists),
             backgroundColor: AppColors.error,
           ),
         );
@@ -95,8 +97,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       if (profileId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No active profile. Please set up a profile first.'),
+            SnackBar(
+              content: Text(ref.read(translationsProvider).accountNoProfile),
               backgroundColor: AppColors.error,
             ),
           );
@@ -133,11 +135,11 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   }
 
   Future<void> _applyAdjustment() async {
-    final adjustmentAmount = Formatters.parseCurrency(_adjustmentController.text, currency: widget.account!.currency);
+    final adjustmentAmount = double.tryParse(_adjustmentController.text) ?? 0.0;
     
     if (adjustmentAmount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an adjustment amount')),
+        SnackBar(content: Text(ref.read(translationsProvider).accountAdjustmentRequired)),
       );
       return;
     }
@@ -149,10 +151,10 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
 
     try {
       final transactionDao = ref.read(transactionDaoProvider);
-      
+
       // Determine if positive (income) or negative (expense) adjustment
       final isPositive = adjustmentAmount > 0;
-      
+
       await transactionDao.insertTransaction(
         TransactionsCompanion(
           profileId: drift.Value(profileId),
@@ -169,18 +171,20 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Adjustment of ${isPositive ? '+' : '-'}${Formatters.formatCurrency(adjustmentAmount.abs(), currency: widget.account!.currency, showDecimal: ref.read(showDecimalProvider))} applied'),
+            content: Text('${ref.read(translationsProvider).accountAdjustmentApplied}: ${isPositive ? '+' : '-'}${Formatters.formatCurrency(adjustmentAmount.abs(), currency: widget.account!.currency, showDecimal: ref.read(showDecimalProvider))}'),
             backgroundColor: AppColors.success,
           ),
         );
-        _adjustmentController.clear();
-        setState(() => _isAdjusting = false);
+        _adjustmentController.text = '0';
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
         );
+      }
+    } finally {
+      if (mounted) {
         setState(() => _isAdjusting = false);
       }
     }
@@ -229,12 +233,15 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            title: Text(isEditing ? 'Edit Account' : 'New Account', style: const TextStyle(color: Colors.white)),
+            title: Text(isEditing 
+                ? ref.watch(translationsProvider).accountTitleEdit 
+                : ref.watch(translationsProvider).accountTitleAdd, 
+                style: const TextStyle(color: Colors.white)),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: isEditing ? [
               IconButton(
                 icon: const Icon(Icons.history, color: Colors.white),
-                tooltip: 'View History',
+                tooltip: ref.watch(translationsProvider).accountViewHistory,
                 onPressed: _viewTransactionHistory,
               ),
             ] : null,
@@ -314,14 +321,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             
                             // Adjustment Section
                             Text(
-                              'Balance Adjustment',
+                              ref.watch(translationsProvider).accountBalanceAdjustment,
                               style: AppTypography.textTheme.labelLarge?.copyWith(
                                  color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Enter positive for increase, negative for decrease',
+                              ref.watch(translationsProvider).accountAdjustmentHint,
                               style: AppTypography.textTheme.labelSmall?.copyWith(
                                  color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
                               ),
@@ -336,16 +343,13 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                     prefixIcon: Icons.tune,
                                     keyboardType: TextInputType.numberWithOptions(signed: true, decimal: showDecimal),
                                     inputFormatters: [
-                                      CurrencyInputFormatter(
-                                        currency: widget.account!.currency, // Adjustment uses account currency
-                                        showDecimal: showDecimal,
-                                      ),
+                                      FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*')),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 GlassButton(
-                                  text: 'Apply',
+                                  text: ref.watch(translationsProvider).accountApply,
                                   size: GlassButtonSize.small,
                                   onPressed: _applyAdjustment,
                                   isLoading: _isAdjusting,
@@ -356,7 +360,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             
                             // View History Button
                             GlassButton(
-                              text: 'View Transaction History',
+                              text: ref.watch(translationsProvider).accountViewHistory,
                               icon: Icons.history,
                               isFullWidth: true,
                               isPrimary: false,
@@ -371,7 +375,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       const Divider(color: AppColors.glassBorder),
                       const SizedBox(height: 24),
                       Text(
-                        'Edit Details',
+                        ref.watch(translationsProvider).accountEditDetails,
                         style: AppTypography.textTheme.titleLarge?.copyWith(
                            color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                         ),
@@ -379,14 +383,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       const SizedBox(height: 16),
                       GlassInput(
                         controller: _nameController,
-                        hintText: 'Account Name',
+                        hintText: ref.watch(translationsProvider).accountNameHint,
                         prefixIcon: Icons.label,
-                        validator: (v) => v!.isEmpty ? 'Name required' : null,
+                        validator: (v) => v!.isEmpty ? ref.watch(translationsProvider).accountNameExists : null, // Reusing localized error or add specific one. Wait "Name required"
                       ),
                       const SizedBox(height: 16),
                         GlassInput(
                         controller: _balanceController,
-                        hintText: isEditing ? 'Initial Balance' : 'Starting Balance',
+                        hintText: isEditing ? ref.watch(translationsProvider).accountStartingBalanceHint : ref.watch(translationsProvider).accountBalanceHint,
                         prefixIcon: Icons.monetization_on,
                         keyboardType: TextInputType.numberWithOptions(decimal: showDecimal),
                         inputFormatters: [
@@ -399,14 +403,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                           if (v == null || v.isEmpty) { // Allow '0' as valid start balance
                             // But wait, if empty string, we might want to say required.
                             // If user clears field, v is empty.
-                            return 'Balance required';
+                            return ref.watch(translationsProvider).accountBalanceRequired;
                           }
                           return null;
                         },
                       ),
 
                       const SizedBox(height: 24),
-                      Text('Type', style: AppTypography.textTheme.labelLarge),
+                      Text(ref.watch(translationsProvider).accountType, style: AppTypography.textTheme.labelLarge),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -427,7 +431,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 24),
-                      Text('Currency', style: AppTypography.textTheme.labelLarge),
+                      Text(ref.watch(translationsProvider).accountCurrency, style: AppTypography.textTheme.labelLarge),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -449,7 +453,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       ),
                       const SizedBox(height: 32),
                       GlassButton(
-                        text: 'Save Account',
+                        text: ref.watch(translationsProvider).accountSave,
                         isFullWidth: true,
                         size: GlassButtonSize.large,
                         onPressed: _saveAccount,

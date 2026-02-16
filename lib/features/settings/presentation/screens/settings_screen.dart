@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../shared/theme/colors.dart';
@@ -17,9 +18,9 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'help_faq_screen.dart';
-import 'help_faq_screen.dart';
 import 'categories_screen.dart';
 import 'backup_screen.dart';
+import 'sync_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -65,13 +66,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               // Header
               Text(
-                'Settings',
+                ref.watch(translationsProvider).navSettings,
                 style: AppTypography.textTheme.displaySmall,
               ),
               const SizedBox(height: 24),
 
               // Profile Section
-              _buildSectionHeader('Profile'),
+              _buildSectionHeader(ref.watch(translationsProvider).settingsProfile),
               const SizedBox(height: 12),
               activeProfile.when(
                 data: (profile) => _buildProfileCard(profile),
@@ -81,7 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Preferences Section
-              _buildSectionHeader('Preferences'),
+              _buildSectionHeader(ref.watch(translationsProvider).settingsPreferences),
               const SizedBox(height: 12),
               settings.when(
                 data: (userSettings) => _buildPreferencesSection(userSettings),
@@ -91,13 +92,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Security Section
-              _buildSectionHeader('Security'),
+              _buildSectionHeader(ref.watch(translationsProvider).settingsSecurity),
               const SizedBox(height: 12),
               _buildSecuritySection(settings.valueOrNull),
               const SizedBox(height: 24),
 
               // App Info Section
-              _buildSectionHeader('About'),
+              _buildSectionHeader(ref.watch(translationsProvider).settingsAbout),
               const SizedBox(height: 12),
               _buildAppInfoSection(),
               const SizedBox(height: 24),
@@ -106,7 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: TextButton.icon(
                   onPressed: () => _showClearDataDialog(),
                   icon: const Icon(Icons.delete_forever, color: AppColors.error, size: 18),
-                  label: const Text('Clear All Data', style: TextStyle(color: AppColors.error)),
+                  label: Text(ref.watch(translationsProvider).settingsClearData, style: const TextStyle(color: AppColors.error)),
                 ),
               ),
 
@@ -138,49 +139,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildProfileCard(Profile? profile) {
-    return GlassCard(
-      onTap: () => _showProfileSelector(),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                profile?.avatar ?? '👤',
-                style: const TextStyle(fontSize: 24),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile?.name ?? 'No Profile',
-                  style: AppTypography.textTheme.titleMedium,
+    return Column(
+      children: [
+        GlassCard(
+          onTap: () => _showProfileSelector(),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
                 ),
-                Text(
-                  'Tap to switch profile',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12,
+                child: Center(
+                  child: Text(
+                    profile?.avatar ?? '👤',
+                    style: const TextStyle(fontSize: 24),
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile?.name ?? 'No Profile',
+                      style: AppTypography.textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Tap to switch profile',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        GlassCard(
+          padding: EdgeInsets.zero,
+          child: SettingsTile(
+            icon: Icons.cloud_sync,
+            title: ref.watch(translationsProvider).settingsSyncBackup,
+            subtitle: 'Connect to Supabase', // Keep hardcoded or add key? generic is fine for now
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SyncScreen()),
             ),
           ),
-          Icon(
-            Icons.chevron_right,
-            color: Colors.white.withValues(alpha: 0.5),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -193,8 +211,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         children: [
           SettingsTile(
+            icon: Icons.language,
+            title: ref.watch(translationsProvider).settingsLanguage,
+            subtitle: ref.watch(localeProvider).languageCode == 'id' ? 'Bahasa Indonesia' : 'English',
+            onTap: () => _showLanguageSelector(),
+          ),
+          _buildDivider(),
+          SettingsTile(
             icon: Icons.category_outlined,
-            title: 'Manage Categories',
+            title: ref.watch(translationsProvider).settingsManageCategories,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CategoriesScreen()),
@@ -203,7 +228,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildDivider(),
           SettingsTile(
             icon: Icons.backup_outlined,
-            title: 'Backup & Restore',
+            title: ref.watch(translationsProvider).settingsBackupRestore,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const BackupScreen()),
@@ -212,14 +237,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildDivider(),
           SettingsTile(
             icon: Icons.attach_money,
-            title: 'Base Currency',
+            title: ref.watch(translationsProvider).settingsBaseCurrency,
             subtitle: currency.code,
             onTap: () => _showCurrencyPicker(currency),
           ),
           _buildDivider(),
           SettingsTile(
             icon: Icons.exposure,
-            title: 'Show Decimals',
+            title: ref.watch(translationsProvider).settingsShowDecimals,
             trailing: Switch(
               value: showDecimal,
               onChanged: (value) => _toggleShowDecimal(value),
@@ -650,5 +675,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(content: Text('Error clearing data: $e'), backgroundColor: AppColors.error),
       );
     }
+  }
+
+  void _showLanguageSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgDarkEnd,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final currentLocale = ref.watch(localeProvider);
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                ref.watch(translationsProvider).settingsLanguage,
+                style: AppTypography.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 20)),
+                title: const Text('English', style: TextStyle(color: Colors.white)),
+                trailing: currentLocale.languageCode == 'en'
+                    ? const Icon(Icons.check, color: AppColors.primaryGold)
+                    : null,
+                onTap: () {
+                  ref.read(localeProvider.notifier).state = const Locale('en');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Text('🇮🇩', style: TextStyle(fontSize: 20)),
+                title: const Text('Bahasa Indonesia', style: TextStyle(color: Colors.white)),
+                trailing: currentLocale.languageCode == 'id'
+                    ? const Icon(Icons.check, color: AppColors.primaryGold)
+                    : null,
+                onTap: () {
+                  ref.read(localeProvider.notifier).state = const Locale('id');
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

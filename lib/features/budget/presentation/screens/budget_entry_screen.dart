@@ -9,7 +9,9 @@ import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
+import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../transactions/presentation/widgets/add_category_dialog.dart';
 
 class BudgetEntryScreen extends ConsumerStatefulWidget {
   final Budget? budget;
@@ -118,6 +120,47 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     }
   }
 
+  Future<void> _createNewCategory(String name) async {
+    try {
+      final dao = ref.read(categoryDaoProvider);
+      final profileId = ref.read(activeProfileIdProvider);
+      if (profileId == null) return;
+
+      final newCategoryId = await dao.createCategory(
+        CategoriesCompanion(
+          profileId: drift.Value(profileId),
+          name: drift.Value(name),
+          type: const drift.Value(CategoryType.expense),
+          icon: const drift.Value('category'),
+          isSystem: const drift.Value(false),
+          sortOrder: const drift.Value(999),
+        ),
+      );
+
+      setState(() {
+        _selectedCategoryId = newCategoryId;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Category "$name" created'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating category: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
@@ -163,39 +206,40 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 const SizedBox(height: 24),
                 
                 // Category Selector
-                Text('Category', style: AppTypography.textTheme.labelLarge),
-                const SizedBox(height: 8),
                 categoriesAsync.when(
                   data: (categories) {
-                    // Filter only expense categories usually? But maybe income targets too?
-                    // Typically budget is for expenses.
-                    final expenseCategories = categories.where((c) => c.type == CategoryType.expense.index).toList();
-                    
-                    return DropdownButtonFormField<int>(
-                      value: _selectedCategoryId,
-                      dropdownColor: AppColors.cardSurface,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.glassBackground,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      items: expenseCategories.map((category) {
-                        return DropdownMenuItem<int>(
-                          value: category.id,
-                          child: Row(
-                            children: [
-                              Text(category.icon),
-                              const SizedBox(width: 8),
-                              Text(category.name),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(() => _selectedCategoryId = val),
+                    final expenseCategories = categories.where((c) => c.type == CategoryType.expense).toList();
+                    final selectedCategory = _selectedCategoryId != null
+                        ? expenseCategories.where((c) => c.id == _selectedCategoryId).firstOrNull
+                        : null;
+
+                    return GenericSearchableDropdown<Category>(
+                      items: expenseCategories,
+                      selectedItem: selectedCategory,
+                      itemLabelBuilder: (c) => c.name,
+                      onItemSelected: (category) {
+                        setState(() => _selectedCategoryId = category.id);
+                      },
+                      label: 'Category',
+                      icon: Icons.category_outlined,
+                      hint: 'Select category',
+                      searchHint: 'Search categories...',
+                      onAddNew: (searchText) async {
+                        final name = searchText.trim();
+                        if (name.isNotEmpty) {
+                          await _createNewCategory(name);
+                        } else {
+                          final result = await showDialog<Map<String, dynamic>>(
+                            context: context,
+                            builder: (context) => const AddCategoryDialog(
+                              type: CategoryType.expense,
+                            ),
+                          );
+                          if (result != null && result['name'] != null) {
+                            await _createNewCategory(result['name'] as String);
+                          }
+                        }
+                      },
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
@@ -243,21 +287,22 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                    Center(
                      child: TextButton(
                        onPressed: () async {
+                         final navigator = Navigator.of(context);
                          final confirm = await showDialog<bool>(
                            context: context,
-                           builder: (context) => AlertDialog(
+                           builder: (ctx) => AlertDialog(
                              title: const Text('Delete Budget?'),
                              content: const Text('This action cannot be undone.'),
                              actions: [
-                               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                               TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
                              ],
                            ),
                          );
-                         
+
                          if (confirm == true) {
                             await ref.read(budgetDaoProvider).deleteBudget(widget.budget!.id);
-                            if (mounted) Navigator.pop(context);
+                            navigator.pop();
                          }
                        },
                        child: const Text('Delete Budget', style: TextStyle(color: Colors.red)),

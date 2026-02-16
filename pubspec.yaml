@@ -46,10 +46,11 @@ dependencies:
 
   # Backup & Restore
   share_plus: ^7.2.1
-  file_picker: ^6.1.1
+  file_picker: ^8.1.4
   google_sign_in: ^6.1.6
   googleapis: ^13.0.0
   extension_google_sign_in_as_googleapis_auth: ^2.0.11
+  supabase_flutter: ^2.12.0
 
 dev_dependencies:
   flutter_test:

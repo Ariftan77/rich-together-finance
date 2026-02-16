@@ -1,16 +1,21 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Bar chart showing income vs expense for last 6 months
 class CashFlowChart extends StatelessWidget {
   final List<MonthlyFlow> data;
-  
+  final String currencySymbol;
+  final bool showDecimal;
+
   const CashFlowChart({
     super.key,
     required this.data,
+    this.currencySymbol = 'Rp',
+    this.showDecimal = false,
   });
 
   @override
@@ -82,7 +87,7 @@ class CashFlowChart extends StatelessWidget {
                         final value = rodIndex == 0 ? flow.income : flow.expense;
                         final label = rodIndex == 0 ? 'Income' : 'Expense';
                         return BarTooltipItem(
-                          '$label\nRp ${_formatNumber(value)}',
+                          '$label\n$currencySymbol ${Formatters.formatCurrency(value, showDecimal: showDecimal)}',
                           const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -196,15 +201,6 @@ class CashFlowChart extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _formatNumber(double value) {
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}K';
-    }
-    return value.toStringAsFixed(0);
   }
 
   String _formatCompact(double value) {

@@ -21,5 +21,9 @@ class Transactions extends Table {
   TextColumn get note => text().nullable()();
   IntColumn get recurringId => integer().nullable().references(Recurring, #id)();
   DateTimeColumn get createdAt => dateTime()();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 

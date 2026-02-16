@@ -16,4 +16,8 @@ class InvestmentTransactions extends Table {
   DateTimeColumn get date => dateTime()();
   TextColumn get note => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }

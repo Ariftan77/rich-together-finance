@@ -8,4 +8,8 @@ class Profiles extends Table {
   TextColumn get avatar => text().withDefault(const Constant('👤'))();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }

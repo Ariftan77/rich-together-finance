@@ -80,6 +80,12 @@ flutter run
 **Android:**
 ```bash
 flutter build apk --release
+flutter build apk --release --split-per-abi
+(Note: This might take a few minutes)
+
+Once finished, navigate to: build\app\outputs\flutter-apk\
+
+Copy the file named app-arm64-v8a-release.apk to your Samsung device. (Most modern Samsung phones use arm64-v8a architecture).
 ```
 
 **iOS:**

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../../shared/widgets/fab_button.dart';
 import '../providers/budget_provider.dart';
 import 'budget_entry_screen.dart';
 
@@ -14,7 +14,8 @@ class BudgetScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
-    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final baseCurrency = ref.watch(defaultCurrencyProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Handled by DashboardShell
@@ -23,30 +24,9 @@ class BudgetScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Budgets',
-                    style: AppTypography.textTheme.headlineMedium,
-                  ),
-                  // Header add button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const BudgetEntryScreen()),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Budgets',
+                style: AppTypography.textTheme.headlineMedium,
               ),
             ),
             Expanded(
@@ -65,7 +45,7 @@ class BudgetScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Tap + to create a budget',
+                            'Tap the button below to create a budget',
                             style: AppTypography.textTheme.bodyMedium?.copyWith(color: Colors.white30),
                           ),
                         ],
@@ -79,7 +59,7 @@ class BudgetScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final item = budgets[index];
                       final isOverBudget = item.progress > 1.0;
-                      final progressColor = isOverBudget ? Colors.red : (item.progress > 0.8 ? Colors.orange : AppColors.primaryGold);
+                      final progressColor = item.progress > 0.9 ? Colors.red : (item.progress > 0.5 ? Colors.orange : AppColors.success);
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
@@ -119,9 +99,9 @@ class BudgetScreen extends ConsumerWidget {
                                             style: AppTypography.textTheme.titleMedium,
                                           ),
                                           Text(
-                                            isOverBudget 
-                                              ? 'Over by ${currencyFormatter.format(item.spentAmount - item.budget.amount)}'
-                                              : '${currencyFormatter.format(item.remainingAmount)} remaining',
+                                            isOverBudget
+                                              ? 'Over by ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
+                                              : '${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)} remaining',
                                             style: AppTypography.textTheme.bodySmall?.copyWith(
                                               color: isOverBudget ? Colors.redAccent : Colors.white70,
                                             ),
@@ -133,7 +113,7 @@ class BudgetScreen extends ConsumerWidget {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          currencyFormatter.format(item.budget.amount),
+                                          Formatters.formatCurrency(item.budget.amount, currency: baseCurrency, showDecimal: showDecimal),
                                           style: AppTypography.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                                         ),
                                         Text(
@@ -163,7 +143,7 @@ class BudgetScreen extends ConsumerWidget {
                                       style: AppTypography.textTheme.bodySmall?.copyWith(color: progressColor),
                                     ),
                                     Text(
-                                      'Spent: ${currencyFormatter.format(item.spentAmount)}',
+                                      'Spent: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
                                       style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white70),
                                     ),
                                   ],

@@ -63,14 +63,28 @@ class ExchangeRateService {
     return null;
   }
 
-  /// Get exchange rate (from cache or fetch)
+  /// Get any cached rate, ignoring staleness (last resort fallback)
+  Future<double?> getStaleCachedRate(Currency from, Currency to) async {
+    final cached = await (_db.select(_db.exchangeRates)
+          ..where((r) => r.fromCurrency.equals(from.index) & r.toCurrency.equals(to.index)))
+        .getSingleOrNull();
+    return cached?.rate;
+  }
+
+  /// Get exchange rate (from cache or fetch, falls back to stale cache)
   Future<double?> getRate(Currency from, Currency to) async {
     if (from == to) return 1.0;
 
+    // 1. Try fresh cached rate
     final cached = await getCachedRate(from, to);
     if (cached != null) return cached;
 
-    return fetchRate(from, to);
+    // 2. Try fetching from API
+    final fetched = await fetchRate(from, to);
+    if (fetched != null) return fetched;
+
+    // 3. Fall back to stale cached rate (better than nothing)
+    return getStaleCachedRate(from, to);
   }
 
   /// Convert amount from one currency to another
@@ -80,9 +94,8 @@ class ExchangeRateService {
     return amount * rate;
   }
 
-  /// Seed default exchange rates (IDR-based, approximate)
+  /// Seed default exchange rates (only if no rate exists for the pair)
   Future<void> seedDefaultRates() async {
-    // Approximate rates - will be updated by API
     const defaultRates = {
       (Currency.usd, Currency.idr): 15500.0,
       (Currency.sgd, Currency.idr): 11500.0,
@@ -93,8 +106,12 @@ class ExchangeRateService {
       final (from, to) = entry.key;
       final rate = entry.value;
 
-      await cacheRate(from, to, rate);
-      await cacheRate(to, from, 1 / rate);
+      // Only seed if no rate exists at all (don't overwrite API-fetched rates)
+      final existing = await getStaleCachedRate(from, to);
+      if (existing == null) {
+        await cacheRate(from, to, rate);
+        await cacheRate(to, from, 1 / rate);
+      }
     }
   }
 }

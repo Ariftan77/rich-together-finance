@@ -14,4 +14,8 @@ class UserSettings extends Table {
   BoolColumn get biometricEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get showDecimal => boolean().withDefault(const Constant(false))();
+  TextColumn get remoteId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }

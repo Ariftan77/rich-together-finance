@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -95,6 +95,9 @@ class AppDatabase extends _$AppDatabase {
           } catch (e) {
             // Ignore
           }
+        }
+        if (from < 7) {
+          await _migrateToSyncSupport(m);
         }
       },
     );
@@ -146,6 +149,82 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('UPDATE holdings SET profile_id = $profileId WHERE profile_id IS NULL');
     } catch (e) {
       print('⚠️ Profile migration partial error: $e');
+    }
+  }
+
+  /// Adds sync columns to all tables
+  Future<void> _migrateToSyncSupport(Migrator m) async {
+    try {
+      // Profiles
+      await m.addColumn(profiles, profiles.remoteId);
+      await m.addColumn(profiles, profiles.updatedAt);
+      await m.addColumn(profiles, profiles.deletedAt);
+      await m.addColumn(profiles, profiles.isSynced);
+
+      // UserSettings
+      await m.addColumn(userSettings, userSettings.remoteId);
+      await m.addColumn(userSettings, userSettings.updatedAt);
+      await m.addColumn(userSettings, userSettings.deletedAt);
+      await m.addColumn(userSettings, userSettings.isSynced);
+
+      // Categories
+      await m.addColumn(categories, categories.remoteId);
+      await m.addColumn(categories, categories.updatedAt);
+      await m.addColumn(categories, categories.deletedAt);
+      await m.addColumn(categories, categories.isSynced);
+
+      // Transactions
+      await m.addColumn(transactions, transactions.remoteId);
+      await m.addColumn(transactions, transactions.updatedAt);
+      await m.addColumn(transactions, transactions.deletedAt);
+      await m.addColumn(transactions, transactions.isSynced);
+
+      // Accounts
+      await m.addColumn(accounts, accounts.remoteId);
+      await m.addColumn(accounts, accounts.deletedAt);
+      await m.addColumn(accounts, accounts.isSynced);
+
+      // Recurring
+      await m.addColumn(recurring, recurring.remoteId);
+      await m.addColumn(recurring, recurring.updatedAt);
+      await m.addColumn(recurring, recurring.deletedAt);
+      await m.addColumn(recurring, recurring.isSynced);
+
+      // Budgets
+      await m.addColumn(budgets, budgets.remoteId);
+      await m.addColumn(budgets, budgets.updatedAt);
+      await m.addColumn(budgets, budgets.deletedAt);
+      await m.addColumn(budgets, budgets.isSynced);
+
+      // Goals
+      await m.addColumn(goals, goals.remoteId);
+      await m.addColumn(goals, goals.deletedAt);
+      await m.addColumn(goals, goals.isSynced);
+
+      // GoalAccounts
+      await m.addColumn(goalAccounts, goalAccounts.remoteId);
+      await m.addColumn(goalAccounts, goalAccounts.updatedAt);
+      await m.addColumn(goalAccounts, goalAccounts.deletedAt);
+      await m.addColumn(goalAccounts, goalAccounts.isSynced);
+
+      // Debts
+      await m.addColumn(debts, debts.remoteId);
+      await m.addColumn(debts, debts.deletedAt);
+      await m.addColumn(debts, debts.isSynced);
+
+      // Holdings
+      await m.addColumn(holdings, holdings.remoteId);
+      await m.addColumn(holdings, holdings.deletedAt);
+      await m.addColumn(holdings, holdings.isSynced);
+
+      // InvestmentTransactions
+      await m.addColumn(investmentTransactions, investmentTransactions.remoteId);
+      await m.addColumn(investmentTransactions, investmentTransactions.updatedAt);
+      await m.addColumn(investmentTransactions, investmentTransactions.deletedAt);
+      await m.addColumn(investmentTransactions, investmentTransactions.isSynced);
+
+    } catch (e) {
+      print('⚠️ Sync migration error: $e');
     }
   }
 

@@ -5,7 +5,8 @@ import 'glass_card.dart';
 enum GlassButtonSize { small, medium, large }
 
 class GlassButton extends StatelessWidget {
-  final String text;
+  final String? text;
+  final Widget? child;
   final VoidCallback onPressed;
   final IconData? icon;
   final GlassButtonSize size;
@@ -15,14 +16,15 @@ class GlassButton extends StatelessWidget {
 
   const GlassButton({
     super.key,
-    required this.text,
+    this.text,
+    this.child,
     required this.onPressed,
     this.icon,
     this.size = GlassButtonSize.medium,
     this.isPrimary = true,
     this.isFullWidth = false,
     this.isLoading = false,
-  });
+  }) : assert(text != null || child != null, 'Either text or child must be provided');
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,8 @@ class GlassButton extends StatelessWidget {
           ),
         ),
       );
+    } else if (child != null) {
+      content = child!;
     } else {
       content = Row(
         mainAxisSize: MainAxisSize.min,
@@ -66,7 +70,7 @@ class GlassButton extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Text(
-            text,
+            text!,
             style: textStyle.copyWith(
               color: isPrimary ? Colors.black : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),

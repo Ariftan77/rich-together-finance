@@ -11,7 +11,9 @@ import '../../../shared/widgets/fab_button.dart';
 import '../../../core/providers/app_init_provider.dart';
 import 'screens/dashboard_screen.dart';
 
-import '../../budget/presentation/screens/budget_screen.dart';
+import '../../budget/presentation/screens/budget_entry_screen.dart';
+import '../../goals/presentation/screens/goal_entry_screen.dart';
+import '../../wealth/presentation/screens/wealth_screen.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -27,8 +29,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     TransactionsHistoryScreen(), // 0: Transactions
     AccountsScreen(), // 1: Wallet (Accounts)
     DashboardScreen(), // 2: Overview (Dashboard)
-    // BudgetScreen(), // 3: Budgets
-    SettingsScreen(), // 3: Settings
+    WealthScreen(), // 3: Wealth (Budget, Goals, Investment)
+    SettingsScreen(), // 4: Settings
   ];
 
   @override
@@ -65,20 +67,18 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
             label: 'Wallet'
           ),
           BottomNavItem(
-            icon: Icons.dashboard_outlined, 
-            activeIcon: Icons.dashboard, 
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
             label: 'Overview'
           ),
-          /*
           BottomNavItem(
-            icon: Icons.pie_chart_outline, 
-            activeIcon: Icons.pie_chart, 
-            label: 'Budgets'
+            icon: Icons.trending_up_outlined,
+            activeIcon: Icons.trending_up,
+            label: 'Wealth'
           ),
-          */
           BottomNavItem(
-            icon: Icons.settings_outlined, 
-            activeIcon: Icons.settings, 
+            icon: Icons.settings_outlined,
+            activeIcon: Icons.settings,
             label: 'Settings'
           ),
         ],
@@ -115,8 +115,35 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         );
       case 2: // Overview
         return null;
-      case 3: // Portfolio
-        return null; // TODO: Add asset FAB for Phase 3
+      case 3: // Wealth
+        final wealthTab = ref.watch(wealthTabIndexProvider);
+        if (wealthTab == 0) {
+          return FabButton(
+            icon: Icons.add,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BudgetEntryScreen(),
+                ),
+              );
+            },
+          );
+        }
+        if (wealthTab == 1) {
+          return FabButton(
+            icon: Icons.add,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GoalEntryScreen(),
+                ),
+              );
+            },
+          );
+        }
+        return null;
       case 4: // Settings
         return null;
       default:
