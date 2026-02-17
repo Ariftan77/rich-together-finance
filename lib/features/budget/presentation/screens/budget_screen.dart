@@ -16,6 +16,7 @@ class BudgetScreen extends ConsumerWidget {
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
+    final trans = ref.watch(translationsProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Handled by DashboardShell
@@ -25,7 +26,7 @@ class BudgetScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Budgets',
+                trans.budgetTitle,
                 style: AppTypography.textTheme.headlineMedium,
               ),
             ),
@@ -40,12 +41,12 @@ class BudgetScreen extends ConsumerWidget {
                           const Icon(Icons.pie_chart_outline, size: 64, color: Colors.white54),
                           const SizedBox(height: 16),
                           Text(
-                            'No budgets yet',
+                            trans.budgetNoBudgets,
                             style: AppTypography.textTheme.bodyLarge?.copyWith(color: Colors.white54),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Tap the button below to create a budget',
+                            trans.budgetNoBudgetsHint,
                             style: AppTypography.textTheme.bodyMedium?.copyWith(color: Colors.white30),
                           ),
                         ],
@@ -100,8 +101,8 @@ class BudgetScreen extends ConsumerWidget {
                                           ),
                                           Text(
                                             isOverBudget
-                                              ? 'Over by ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
-                                              : '${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)} remaining',
+                                              ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
+                                              : '${trans.budgetRemaining} ${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)}',
                                             style: AppTypography.textTheme.bodySmall?.copyWith(
                                               color: isOverBudget ? Colors.redAccent : Colors.white70,
                                             ),
@@ -117,7 +118,7 @@ class BudgetScreen extends ConsumerWidget {
                                           style: AppTypography.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                                         ),
                                         Text(
-                                          'Limit',
+                                          trans.budgetAmount,
                                           style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54),
                                         ),
                                       ],
@@ -143,7 +144,7 @@ class BudgetScreen extends ConsumerWidget {
                                       style: AppTypography.textTheme.bodySmall?.copyWith(color: progressColor),
                                     ),
                                     Text(
-                                      'Spent: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
+                                      '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
                                       style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white70),
                                     ),
                                   ],
@@ -157,7 +158,7 @@ class BudgetScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+                error: (err, stack) => Center(child: Text('${trans.error}: $err', style: const TextStyle(color: Colors.red))),
               ),
             ),
           ],

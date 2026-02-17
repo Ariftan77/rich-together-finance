@@ -16,7 +16,8 @@ import '../../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../../goals/presentation/providers/goal_provider.dart';
 import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
-import '../../../accounts/presentation/providers/balance_provider.dart';
+import '../../../../shared/utils/indonesian_currency_formatter.dart';
+
 
 /// Exposes the active sub-tab index so DashboardShell can show the right FAB.
 final wealthTabIndexProvider = StateProvider<int>((ref) => 0);
@@ -35,7 +36,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         ref.read(wealthTabIndexProvider.notifier).state = _tabController.index;
@@ -97,6 +98,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       tabs: [
                         Tab(text: trans.wealthBudget),
                         Tab(text: trans.wealthGoals),
+                        Tab(text: trans.debtTitle), // New Tab
                         Tab(text: trans.wealthInvestment),
                       ],
                     ),
@@ -112,6 +114,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 children: [
                   _buildBudgetTab(),
                   _buildGoalsTab(),
+                  _buildDebtsTab(), // New Tab
                   _buildInvestmentTab(),
                 ],
               ),
@@ -127,6 +130,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
+    final trans = ref.watch(translationsProvider);
 
     return Column(
       children: [
@@ -141,11 +145,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       const Icon(Icons.pie_chart_outline,
                           size: 64, color: Colors.white54),
                       const SizedBox(height: 16),
-                      Text('No budgets yet',
+                      Text(trans.budgetNoBudgets,
                           style: AppTypography.textTheme.bodyLarge
                               ?.copyWith(color: Colors.white54)),
                       const SizedBox(height: 8),
-                      Text('Tap the button below to create a budget',
+                      Text(trans.budgetNoBudgetsHint,
                           style: AppTypography.textTheme.bodyMedium
                               ?.copyWith(color: Colors.white30)),
                     ],
@@ -208,8 +212,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                               .textTheme.titleMedium),
                                       Text(
                                         isOverBudget
-                                            ? 'Over by ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
-                                            : '${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)} remaining',
+                                            ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
+                                            : '${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
                                         style: AppTypography
                                             .textTheme.bodySmall
                                             ?.copyWith(
@@ -231,7 +235,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                           ?.copyWith(
                                               fontWeight: FontWeight.bold),
                                     ),
-                                    Text('Limit',
+                                    Text(trans.budgetLimit,
                                         style: AppTypography
                                             .textTheme.bodySmall
                                             ?.copyWith(
@@ -261,7 +265,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                       ?.copyWith(color: progressColor),
                                 ),
                                 Text(
-                                  'Spent: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
+                                  '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
                                   style: AppTypography.textTheme.bodySmall
                                       ?.copyWith(color: Colors.white70),
                                 ),
@@ -278,7 +282,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.primaryGold)),
             error: (err, stack) => Center(
-                child: Text('Error: $err',
+                child: Text('${trans.error}: $err',
                     style: const TextStyle(color: Colors.red))),
           ),
         ),
@@ -290,7 +294,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   Widget _buildGoalsTab() {
     final trans = ref.watch(translationsProvider);
     final goalsAsync = ref.watch(goalsWithProgressProvider);
-    final debtsAsync = ref.watch(debtsStreamProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -298,29 +301,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Goals Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
               Text(trans.wealthGoals,
                   style: AppTypography.textTheme.titleLarge),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const GoalEntryScreen()),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 12),
 
           // Goals List
@@ -344,36 +326,28 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               child: CircularProgressIndicator(color: AppColors.primaryGold),
             )),
             error: (err, _) => Center(
-                child: Text('Error: $err',
+                child: Text('${trans.error}: $err',
                     style: const TextStyle(color: Colors.red))),
           ),
+          const SizedBox(height: 100), // Bottom padding for nav bar
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 32),
+  // ===================== DEBTS TAB =====================
+  Widget _buildDebtsTab() {
+    final trans = ref.watch(translationsProvider);
+    final debtsAsync = ref.watch(debtsStreamProvider);
 
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           // Debts Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
               Text(trans.debtTitle,
                   style: AppTypography.textTheme.titleLarge),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const DebtEntryScreen()),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 12),
 
           // Debts List
@@ -397,7 +371,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               child: CircularProgressIndicator(color: AppColors.primaryGold),
             )),
             error: (err, _) => Center(
-                child: Text('Error: $err',
+                child: Text('${trans.error}: $err',
                     style: const TextStyle(color: Colors.red))),
           ),
           const SizedBox(height: 100), // Bottom padding for nav bar
@@ -446,12 +420,36 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       children: [
                         Text(item.goal.name,
                             style: AppTypography.textTheme.titleMedium),
-                        if (item.goal.deadline != null)
+                        if (item.goal.deadline != null) ...[
                           Text(
                             DateFormat.yMMMd().format(item.goal.deadline!),
                             style: AppTypography.textTheme.bodySmall
                                 ?.copyWith(color: Colors.white54),
                           ),
+                          const SizedBox(height: 2),
+                          Builder(
+                            builder: (context) {
+                              final daysLeft = item.goal.deadline!
+                                  .difference(DateTime.now())
+                                  .inDays;
+                              return Text(
+                                daysLeft < 0
+                                    ? trans.commonPastDue
+                                    : (daysLeft == 0
+                                        ? trans.commonDueToday
+                                        : '$daysLeft ${trans.commonDaysLeft}'),
+                                style: AppTypography.textTheme.bodySmall?.copyWith(
+                                  color: daysLeft < 0
+                                      ? AppColors.error
+                                      : (daysLeft < 7
+                                          ? AppColors.primaryGold
+                                          : AppColors.success),
+                                  fontSize: 10,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -465,7 +463,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         style: AppTypography.textTheme.bodyLarge
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      Text('Target',
+                      Text(trans.commonTarget,
                           style: AppTypography.textTheme.bodySmall
                               ?.copyWith(color: Colors.white54)),
                     ],
@@ -520,6 +518,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     final typeColor = isPayable ? AppColors.error : AppColors.success;
     final isOverdue =
         debt.dueDate != null && debt.dueDate!.isBefore(DateTime.now());
+    
+    final remaining = debt.amount - debt.paidAmount;
+    final progress = debt.amount > 0 ? debt.paidAmount / debt.amount : 0.0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -533,65 +534,101 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         },
         child: GlassCard(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isPayable ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: typeColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(debt.personName,
-                        style: AppTypography.textTheme.titleMedium),
-                    Text(
-                      isPayable ? trans.debtPayable : trans.debtReceivable,
-                      style: AppTypography.textTheme.bodySmall
-                          ?.copyWith(color: typeColor),
-                    ),
-                    if (debt.dueDate != null)
-                      Text(
-                        '${trans.debtDueDate}: ${DateFormat.yMMMd().format(debt.dueDate!)}',
-                        style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isOverdue ? Colors.red : Colors.white54,
-                        ),
-                      ),
-                    if (debt.note != null && debt.note!.isNotEmpty)
-                      Text(
-                        debt.note!,
-                        style: AppTypography.textTheme.bodySmall
-                            ?.copyWith(color: Colors.white38),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              Row(
                 children: [
-                  Text(
-                    Formatters.formatCurrency(debt.amount,
-                        currency: debt.currency, showDecimal: showDecimal),
-                    style: AppTypography.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                   Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: typeColor.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isPayable ? Icons.arrow_upward : Icons.arrow_downward,
                       color: typeColor,
+                      size: 20,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  _buildSettleButton(debt),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(debt.personName,
+                            style: AppTypography.textTheme.titleMedium),
+                        Text(
+                          isPayable ? trans.debtPayable : trans.debtReceivable,
+                          style: AppTypography.textTheme.bodySmall
+                              ?.copyWith(color: typeColor),
+                        ),
+                        if (debt.dueDate != null)
+                          Text(
+                            '${trans.debtDueDate}: ${DateFormat.yMMMd().format(debt.dueDate!)}',
+                            style: AppTypography.textTheme.bodySmall?.copyWith(
+                              color: isOverdue ? Colors.red : Colors.white54,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        Formatters.formatCurrency(remaining,
+                            currency: debt.currency, showDecimal: showDecimal),
+                        style: AppTypography.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: typeColor,
+                        ),
+                      ),
+                       Text(
+                        '${trans.commonOf} ${Formatters.formatCurrency(debt.amount, currency: debt.currency, showDecimal: false)}',
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: Colors.white38,
+                          fontSize: 10
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (!debt.isSettled)
+                        _buildSettleButton(debt),
+                    ],
+                  ),
                 ],
               ),
+              if (debt.paidAmount > 0) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0.0, 1.0),
+                    backgroundColor: Colors.white10,
+                    color: typeColor,
+                    minHeight: 6,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${(progress * 100).toStringAsFixed(0)}% ${trans.commonPaid}',
+                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: Colors.white54,
+                        fontSize: 10
+                      ),
+                    ),
+                    Text(
+                      '${trans.commonPaid}: ${Formatters.formatCurrency(debt.paidAmount, currency: debt.currency, showDecimal: showDecimal)}',
+                       style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: Colors.white54,
+                         fontSize: 10
+                      ),
+                    )
+                  ],
+                )
+              ]
             ],
           ),
         ),
@@ -627,20 +664,26 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   Future<void> _showSettleDialog(Debt debt) async {
     final trans = ref.read(translationsProvider);
     final accountsAsync = ref.read(accountsStreamProvider);
-    final accounts = accountsAsync.valueOrNull ?? [];
+    final allAccounts = accountsAsync.valueOrNull ?? [];
+    // Filter accounts by currency
+    final accounts = allAccounts.where((a) => a.currency == debt.currency).toList();
 
     if (accounts.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No accounts available')),
+          SnackBar(content: Text(trans.entryNoAccounts)),
         );
       }
       return;
     }
 
     int? selectedAccountId;
+    final remaining = debt.amount - debt.paidAmount;
+    final amountController = TextEditingController(
+      text: IndonesianCurrencyInputFormatter.format(remaining.toStringAsFixed(0)),
+    );
 
-    final confirmed = await showDialog<bool>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -654,14 +697,44 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${debt.personName} - ${Formatters.formatCurrency(debt.amount, currency: debt.currency)}',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                debt.personName,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.bold),
+              ),
+             Text(
+                '${trans.goalRemaining}: ${Formatters.formatCurrency(remaining, currency: debt.currency)}',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
               ),
               const SizedBox(height: 16),
+              
+              // Amount Input
+              Text(trans.commonAmount, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 4),
+              TextFormField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [IndonesianCurrencyInputFormatter()],
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                   filled: true,
+                  fillColor: AppColors.glassBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: TextButton(
+                    onPressed: () {
+                      amountController.text = IndonesianCurrencyInputFormatter.format(remaining.toStringAsFixed(0));
+                    },
+                    child: Text(trans.commonMax, style: const TextStyle(color: AppColors.primaryGold)),
+                  )
+                ),
+              ),
+              const SizedBox(height: 12),
+
               Text(trans.debtSettleAccount,
                   style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+                      color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 4),
               DropdownButtonFormField<int>(
                 value: selectedAccountId,
                 dropdownColor: AppColors.cardSurface,
@@ -687,13 +760,26 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context, null),
               child: Text(trans.cancel,
-                  style: TextStyle(color: Colors.white54)),
+                  style: const TextStyle(color: Colors.white54)),
             ),
             ElevatedButton(
               onPressed: selectedAccountId != null
-                  ? () => Navigator.pop(context, true)
+                  ? () {
+                      final amountStr = amountController.text.replaceAll('.', '').replaceAll(',', '');
+                      final amount = double.tryParse(amountStr) ?? 0;
+                      if (amount <= 0 || amount > remaining) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                             SnackBar(content: Text(trans.errorInvalidAmount)),
+                          );
+                          return;
+                      }
+                      Navigator.pop(context, {
+                        'accountId': selectedAccountId,
+                        'amount': amount
+                      });
+                  }
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
@@ -708,9 +794,12 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
       ),
     );
 
-    if (confirmed == true && selectedAccountId != null) {
+    if (result != null) {
+      final accountId = result['accountId'] as int;
+      final amount = result['amount'] as double;
+      
       try {
-        await ref.read(debtDaoProvider).settleDebt(debt.id, selectedAccountId!);
+        await ref.read(debtDaoProvider).recordPayment(debt.id, amount);
 
         // Create transaction for the settlement
         final transactionDao = ref.read(transactionDaoProvider);
@@ -719,13 +808,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           await transactionDao.insertTransaction(
             TransactionsCompanion(
               profileId: drift.Value(profileId),
-              accountId: drift.Value(selectedAccountId!),
+              accountId: drift.Value(accountId),
               type: drift.Value(debt.type == DebtType.payable
                   ? TransactionType.expense
                   : TransactionType.income),
-              amount: drift.Value(debt.amount),
+              amount: drift.Value(amount),
               title: drift.Value(
-                  'Debt: ${debt.personName}'),
+                  'Debt Payment: ${debt.personName}'),
               note: drift.Value(debt.note ?? ''),
               date: drift.Value(DateTime.now()),
               createdAt: drift.Value(DateTime.now()),
@@ -744,7 +833,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
+            SnackBar(content: Text('${trans.error}: $e')),
           );
         }
       }

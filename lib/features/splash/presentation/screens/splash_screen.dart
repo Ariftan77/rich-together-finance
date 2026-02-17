@@ -87,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   
                   // Subtitle
                   Text(
-                    'EST. MMXXIV',
+                    'EST. MMXXVI',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 10,

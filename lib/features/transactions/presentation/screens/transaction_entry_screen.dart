@@ -17,6 +17,7 @@ import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../widgets/account_selector.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
@@ -556,7 +557,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
-  Widget _buildAccountDropdown({
+
+
+// ... inside the class ...
+
+  Widget _buildAccountSelector({
+    required BuildContext context,
     required List<Account> accounts,
     required bool isToAccount,
     required String label,
@@ -564,27 +570,90 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final selectedId = isToAccount ? _selectedToAccountId : _selectedAccountId;
     final selectedAccount = accounts.where((a) => a.id == selectedId).firstOrNull;
 
-    return GenericSearchableDropdown<Account>(
-      items: accounts,
-      selectedItem: selectedAccount,
-      itemLabelBuilder: (a) => a.name,
-      onItemSelected: (account) {
-        setState(() {
-          if (isToAccount) {
-            _selectedToAccountId = account.id;
-          } else {
-            _selectedAccountId = account.id;
-          }
-        });
-      },
-      label: label,
-      icon: Icons.account_balance_wallet_outlined,
-      hint: ref.read(translationsProvider).entrySelectAccount,
-      searchHint: ref.read(translationsProvider).entrySearchAccount,
-      noItemsFoundText: ref.read(translationsProvider).entryNoAccounts,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (modalContext) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                ),
+                child: AccountSelector(
+                  accounts: accounts,
+                  selectedAccountId: selectedId,
+                  onAccountSelected: (id) {
+                    setState(() {
+                      if (isToAccount) {
+                        _selectedToAccountId = id;
+                      } else {
+                        _selectedAccountId = id;
+                      }
+                    });
+                  },
+                ),
+              ),
+            );
+          },
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: AppColors.primaryGold.withValues(alpha: 0.8),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    selectedAccount?.name ?? ref.read(translationsProvider).entrySelectAccount,
+                    style: TextStyle(
+                      color: selectedAccount != null
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.4),
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
+// ... inside build method ...
+                    // Account Selection
   @override
   Widget build(BuildContext context) {
     // Watch translations
@@ -864,59 +933,120 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               ? categories.where((c) => c.type == categoryType).toList()
                               : <Category>[];
                           
-                          // Debug logs removed
-                          
-                          // Get selected category name
+                          // Get selected category
                           final selectedCategory = filteredCategories
                               .where((c) => c.id == _selectedCategoryId)
                               .firstOrNull;
                           
-                              return GenericSearchableDropdown<Category>(
-                                items: filteredCategories,
-                                selectedItem: selectedCategory,
-                                itemLabelBuilder: (c) => c.name,
-                                onItemSelected: (category) {
-                                  setState(() => _selectedCategoryId = category.id);
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                child: Text(
+                                  trans.entryCategory.toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (modalContext) => Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                      ),
+                                      child: CategorySelector(
+                                        categories: filteredCategories,
+                                        selectedCategoryId: _selectedCategoryId,
+                                        onCategorySelected: (id) {
+                                          setState(() => _selectedCategoryId = id);
+                                        },
+                                        onAddNew: (searchText) async {
+                                           // Safety check for category type
+                                          if (categoryType == null) return;
+        
+                                          // Direct create if search text is provided
+                                          final name = searchText.trim();
+                                          
+                                          if (name.isNotEmpty) {
+                                              // Direct creation path
+                                              await _createNewCategory(name, categoryType!);
+                                          } else {
+                                              // Fallback to dialog if no text entered
+                                              // Use parent 'context', not the disposed 'modalContext'
+                                              FocusScope.of(context).unfocus();
+                                              await Future.delayed(const Duration(milliseconds: 100));
+                                              
+                                              if (!mounted) return;
+        
+                                              final result = await showDialog<Map<String, dynamic>>(
+                                                context: context,
+                                                builder: (context) => AddCategoryDialog(
+                                                  type: categoryType!,
+                                                  initialName: '',
+                                                ),
+                                              );
+                                              
+                                              if (mounted) {
+                                                FocusScope.of(context).unfocus();
+                                              }
+        
+                                              if (result != null && result['name'] != null) {
+                                                 await _createNewCategory(result['name'] as String, categoryType!);
+                                              }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
                                 },
-                                label: trans.entryCategory,
-                                icon: Icons.category_outlined,
-                                hint: trans.entrySelectCategory,
-                                searchHint: trans.entrySearchCategory,
-                                onAddNew: (searchText) async {
-                                  // Safety check for category type
-                                  if (categoryType == null) return;
-
-                                  // Direct create if search text is provided
-                                  final name = searchText.trim();
-                                  
-                                  if (name.isNotEmpty) {
-                                      // Direct creation path
-                                      await _createNewCategory(name, categoryType!);
-                                  } else {
-                                      // Fallback to dialog if no text entered
-                                      FocusScope.of(context).unfocus();
-                                      await Future.delayed(const Duration(milliseconds: 100));
-                                      
-                                      if (!mounted) return;
-
-                                      final result = await showDialog<Map<String, dynamic>>(
-                                        context: context,
-                                        builder: (context) => AddCategoryDialog(
-                                          type: categoryType!,
-                                          initialName: '',
+                                child: Container(
+                                  height: 56,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.category_outlined,
+                                        color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          selectedCategory?.name ?? trans.entrySelectCategory,
+                                          style: TextStyle(
+                                            color: selectedCategory != null
+                                                ? Colors.white
+                                                : Colors.white.withValues(alpha: 0.4),
+                                            fontSize: 15,
+                                          ),
                                         ),
-                                      );
-                                      
-                                      if (mounted) {
-                                        FocusScope.of(context).unfocus();
-                                      }
-
-                                      if (result != null && result['name'] != null) {
-                                         await _createNewCategory(result['name'] as String, categoryType!);
-                                      }
-                                  }
-                                },
-                              );
+                                      ),
+                                      Icon(
+                                        Icons.expand_more,
+                                        color: Colors.white.withValues(alpha: 0.3),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
                         },
                         loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
                         error: (_, __) => const Text('Error loading categories'),
@@ -930,14 +1060,16 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                       data: (accounts) {
                         return Column(
                           children: [
-                            _buildAccountDropdown(
+                            _buildAccountSelector(
+                              context: context,
                               accounts: accounts,
                               isToAccount: false,
                               label: _selectedType == TransactionType.transfer ? trans.entryFromAccount : trans.entryAccount,
                             ),
                             if (_selectedType == TransactionType.transfer) ...[
                               const SizedBox(height: 16),
-                              _buildAccountDropdown(
+                              _buildAccountSelector(
+                                context: context,
                                 accounts: accounts,
                                 isToAccount: true,
                                 label: trans.entryToAccount,

@@ -14,6 +14,7 @@ import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
 
+
 class DebtEntryScreen extends ConsumerStatefulWidget {
   final Debt? debt;
 
@@ -31,6 +32,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   DebtType _selectedType = DebtType.payable;
   Currency _selectedCurrency = Currency.idr;
   DateTime? _dueDate;
+  int? _selectedAccountId; // For transaction creation
   bool _isLoading = false;
 
   @override
@@ -39,13 +41,16 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     _personController =
         TextEditingController(text: widget.debt?.personName ?? '');
     _amountController = TextEditingController(
-      text: widget.debt?.amount.toStringAsFixed(0) ?? '',
+      text: widget.debt != null 
+          ? IndonesianCurrencyInputFormatter.format(widget.debt!.amount.toStringAsFixed(0))
+          : '',
     );
     _noteController = TextEditingController(text: widget.debt?.note ?? '');
     if (widget.debt != null) {
       _selectedType = widget.debt!.type;
       _selectedCurrency = widget.debt!.currency;
       _dueDate = widget.debt!.dueDate;
+      _selectedAccountId = widget.debt!.creationAccountId;
     }
   }
 
@@ -83,6 +88,14 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   Future<void> _saveDebt() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // specific validation for creation: account required
+    if (widget.debt == null && _selectedAccountId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an account')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -103,6 +116,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
           }
           return;
         }
+
+        // 1. Create Debt
         await debtDao.createDebt(
           DebtsCompanion(
             profileId: drift.Value(profileId),
@@ -113,11 +128,33 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             dueDate: drift.Value(_dueDate),
             note: drift.Value(_noteController.text.trim()),
             isSettled: const drift.Value(false),
+            paidAmount: const drift.Value(0.0),
             createdAt: drift.Value(DateTime.now()),
             updatedAt: drift.Value(DateTime.now()),
+            creationAccountId: drift.Value(_selectedAccountId),
+          ),
+          _selectedAccountId!
+        );
+
+        // 2. Create Transaction (Balance Impact)
+        final transactionDao = ref.read(transactionDaoProvider);
+        await transactionDao.insertTransaction(
+          TransactionsCompanion(
+            profileId: drift.Value(profileId),
+            accountId: drift.Value(_selectedAccountId!),
+            type: drift.Value(_selectedType == DebtType.payable
+                ? TransactionType.income // I owe someone -> I got money -> Income
+                : TransactionType.expense), // Owed to me -> I gave money -> Expense
+            amount: drift.Value(amount),
+            title: drift.Value('Debt: ${_personController.text.trim()}'),
+            note: drift.Value(_noteController.text.trim()),
+            date: drift.Value(DateTime.now()),
+            createdAt: drift.Value(DateTime.now()),
           ),
         );
+
       } else {
+        // Edit mode - update debt only
         await debtDao.updateDebt(
           widget.debt!.copyWith(
             type: _selectedType,
@@ -129,6 +166,30 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             updatedAt: DateTime.now(),
           ),
         );
+
+        // Update linked transaction if type or amount changed
+        // Only if we have the creation link
+        if (widget.debt!.creationAccountId != null) {
+          final transactionDao = ref.read(transactionDaoProvider);
+          final oldTx = await transactionDao.findDebtTransaction(
+            accountId: widget.debt!.creationAccountId!,
+            amount: widget.debt!.amount,
+            date: widget.debt!.createdAt,
+          );
+
+          if (oldTx != null) {
+            await transactionDao.updateTransaction(
+              oldTx.id,
+              TransactionsCompanion(
+                type: drift.Value(_selectedType == DebtType.payable
+                    ? TransactionType.income
+                    : TransactionType.expense),
+                amount: drift.Value(amount), // Sync amount change too
+                title: drift.Value('Debt: ${_personController.text.trim()}'), // Sync name change
+              ),
+            );
+          }
+        }
       }
 
       if (mounted) Navigator.pop(context);
@@ -146,6 +207,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
+    final accountsAsync = ref.watch(accountsStreamProvider);
 
     return Stack(
       children: [
@@ -187,6 +249,12 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                             selected: isSelected,
                             onSelected: (selected) {
                               if (selected) {
+                                if (widget.debt != null && widget.debt!.paidAmount > 0) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Cannot change type of partially settled debt')),
+                                    );
+                                    return;
+                                }
                                 setState(() => _selectedType = type);
                               }
                             },
@@ -202,6 +270,14 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         );
                       }).toList(),
                     ),
+                    if (widget.debt != null && widget.debt!.paidAmount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Type cannot be changed because this debt has partial payments.',
+                          style: TextStyle(color: Colors.orange.shade300, fontSize: 12),
+                        ),
+                      ),
                     const SizedBox(height: 24),
 
                     // Person Name
@@ -233,32 +309,93 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-
-                    // Currency
-                    Text(trans.goalCurrency,
-                        style: AppTypography.textTheme.labelLarge),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: Currency.values.map((currency) {
-                        final isSelected = _selectedCurrency == currency;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: ChoiceChip(
-                            label: Text(currency.code),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() => _selectedCurrency = currency);
-                              }
-                            },
-                            selectedColor: AppColors.primaryGold,
-                            backgroundColor: AppColors.glassBackground,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.black : Colors.white,
+                    
+                    // Account Selection (Only for creation)
+                    if (widget.debt == null) ...[
+                      Text('Account (Impacts Balance)', style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      accountsAsync.when(
+                        data: (accounts) {
+                          if (accounts.isEmpty) {
+                            return const Text('No accounts found. Create one first.', style: TextStyle(color: Colors.red));
+                          }
+                          return DropdownButtonFormField<int>(
+                            value: _selectedAccountId,
+                            dropdownColor: AppColors.cardSurface,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: AppColors.glassBackground,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              hintText: 'Select Account',
+                              hintStyle: const TextStyle(color: Colors.white54),
                             ),
+                            items: accounts.map((account) {
+                              return DropdownMenuItem<int>(
+                                value: account.id,
+                                child: Text(account.name),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                                setState(() {
+                                  _selectedAccountId = val;
+                                  // Update currency based on account
+                                  final account = accounts.firstWhere((a) => a.id == val);
+                                  _selectedCurrency = account.currency;
+                                });
+                            },
+                            validator: (val) => val == null ? 'Required' : null,
+                          );
+                        },
+                        loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
+                        error: (e, s) => Text('Error loading accounts: $e', style: const TextStyle(color: Colors.red)),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Show Account in Edit Mode (Read Only)
+                    if (widget.debt != null && _selectedAccountId != null) ...[
+                      Text('Account (Affected)', style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      accountsAsync.when(
+                        data: (accounts) {
+                          final account = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
+                          return GlassInput(
+                            controller: TextEditingController(text: account?.name ?? 'Unknown Account'),
+                            readOnly: true,
+                            hintText: 'Account Name',
+                            prefixIcon: Icons.account_balance_wallet,
+                          );
+                        },
+                        loading: () => const SizedBox(),
+                        error: (_, __) => const SizedBox(),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Currency Display (Read-only, derived from Account)
+                    Text(trans.goalCurrency, style: AppTypography.textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.currency_exchange, color: Colors.white70, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            _selectedCurrency.code,
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
                           ),
-                        );
-                      }).toList(),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
 

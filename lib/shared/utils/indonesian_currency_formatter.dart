@@ -33,4 +33,10 @@ class IndonesianCurrencyInputFormatter extends TextInputFormatter {
       selection: TextSelection.collapsed(offset: formattedText.length),
     );
   }
+  static String format(String numericString) {
+    if (numericString.isEmpty) return '';
+    final amount = int.tryParse(numericString) ?? 0;
+    final formatter = NumberFormat('#,##0', 'id_ID');
+    return formatter.format(amount);
+  }
 }

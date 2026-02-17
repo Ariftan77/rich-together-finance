@@ -18,6 +18,7 @@ class GlassInput extends StatelessWidget {
   final bool autofocus;
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
+  final bool readOnly;
 
   const GlassInput({
     super.key,
@@ -34,6 +35,7 @@ class GlassInput extends StatelessWidget {
     this.autofocus = false,
     this.inputFormatters,
     this.maxLength,
+    this.readOnly = false,
   });
 
   @override
@@ -46,6 +48,7 @@ class GlassInput extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: TextFormField(
             controller: controller,
+            readOnly: readOnly,
             obscureText: obscureText,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,

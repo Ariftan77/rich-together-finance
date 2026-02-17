@@ -26,8 +26,16 @@ class BudgetDao extends DatabaseAccessor<AppDatabase> with _$BudgetDaoMixin {
       (select(budgets)..where((b) => b.period.equals(period.index) & b.isActive)).get();
 
   /// Watch all budgets (reactive stream)
-  Stream<List<Budget>> watchAllBudgets() =>
-      (select(budgets)..where((b) => b.isActive)).watch();
+  Stream<List<Budget>> watchAllBudgets() {
+    final query = select(budgets)..where((b) => b.isActive);
+    
+    // Join with categories to trigger updates when category details change
+    return query.join([
+      innerJoin(categories, categories.id.equalsExp(budgets.categoryId))
+    ]).watch().map((rows) {
+      return rows.map((row) => row.readTable(budgets)).toList();
+    });
+  }
 
   /// Create a new budget
   Future<int> createBudget(BudgetsCompanion budget) =>

@@ -250,6 +250,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void _showCurrencyBreakdown(BuildContext context) {
     final breakdownAsync = ref.read(dashboardBalanceByCurrencyProvider);
     final showDecimal = ref.read(showDecimalProvider);
+    final trans = ref.read(translationsProvider);
 
     breakdownAsync.whenData((breakdown) {
       if (breakdown.isEmpty) return;
@@ -267,13 +268,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 24),
-                    SizedBox(width: 12),
+                    const Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 24),
+                    const SizedBox(width: 12),
                     Text(
-                      'Balance by Currency',
-                      style: TextStyle(
+                      trans.dashboardBalanceCurrency,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -323,7 +324,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: Text(
-                      'Close',
+                      trans.close,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 14,
@@ -343,6 +344,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final summaryAsync = ref.watch(monthlySummaryProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
+    final trans = ref.watch(translationsProvider);
+    final locale = ref.watch(localeProvider);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -353,7 +356,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           if (summaries.isEmpty) {
             return Center(
               child: Text(
-                'No data yet',
+                trans.reportNoData,
                 style: AppTypography.textTheme.bodyLarge!.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
                 ),
@@ -368,7 +371,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             itemCount: summaries.length,
             itemBuilder: (context, index) {
               final s = summaries[index];
-              final monthLabel = DateFormat.yMMMM().format(s.month);
+              final monthLabel = DateFormat.yMMMM(locale.toString()).format(s.month);
               final hasDebt = s.debtPayable > 0 || s.debtReceivable > 0;
 
               return Padding(
@@ -390,7 +393,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       const SizedBox(height: 14),
                       // Income
                       _ReportRow(
-                        label: 'Income',
+                        label: trans.entryTypeIncome,
                         amount: s.income,
                         color: AppColors.success,
                         prefix: '+',
@@ -400,7 +403,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       const SizedBox(height: 8),
                       // Expense
                       _ReportRow(
-                        label: 'Expense',
+                        label: trans.entryTypeExpense,
                         amount: s.expense,
                         color: AppColors.error,
                         prefix: '-',
@@ -411,7 +414,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(height: 8),
                         if (s.debtPayable > 0)
                           _ReportRow(
-                            label: 'Debt (I Owe)',
+                            label: '${trans.debtTitle} (${trans.debtPayable})', // "Debts (I Owe)"
                             amount: s.debtPayable,
                             color: Colors.orange,
                             prefix: '-',
@@ -421,7 +424,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         if (s.debtReceivable > 0) ...[
                           const SizedBox(height: 8),
                           _ReportRow(
-                            label: 'Debt (Owed to Me)',
+                            label: '${trans.debtTitle} (${trans.debtReceivable})', // "Debts (Owed to Me)"
                             amount: s.debtReceivable,
                             color: const Color(0xFF60A5FA),
                             prefix: '+',
@@ -441,7 +444,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Net',
+                            trans.reportNet,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
@@ -469,7 +472,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
         error: (err, _) => Center(
-          child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+          child: Text('${trans.error}: $err', style: const TextStyle(color: Colors.red)),
         ),
       ),
     );

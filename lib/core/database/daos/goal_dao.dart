@@ -30,11 +30,18 @@ class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
       (select(goals)..orderBy([(g) => OrderingTerm.asc(g.deadline)])).watch();
 
   /// Watch active goals
-  Stream<List<Goal>> watchActiveGoals() =>
-      (select(goals)
-            ..where((g) => g.isAchieved.equals(false))
-            ..orderBy([(g) => OrderingTerm.asc(g.deadline)]))
-          .watch();
+  Stream<List<Goal>> watchActiveGoals() {
+    final query = select(goals)
+          ..where((g) => g.isAchieved.equals(false))
+          ..orderBy([(g) => OrderingTerm.asc(g.deadline)]);
+    
+    // Join with goalAccounts to trigger updates when accounts are linked/unlinked
+    return query.join([
+      leftOuterJoin(goalAccounts, goalAccounts.goalId.equalsExp(goals.id))
+    ]).watch().map((rows) {
+      return rows.map((row) => row.readTable(goals)).toSet().toList();
+    });
+  }
 
   /// Create a new goal
   Future<int> createGoal(GoalsCompanion goal) =>
@@ -78,4 +85,5 @@ class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
       (update(goalAccounts)
             ..where((ga) => ga.goalId.equals(goalId) & ga.accountId.equals(accountId)))
           .write(GoalAccountsCompanion(contributionAmount: Value(amount)));
+
 }

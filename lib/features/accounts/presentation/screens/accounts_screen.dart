@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/theme/typography.dart';
 import '../widgets/account_card.dart';
 import '../providers/balance_provider.dart';
@@ -13,6 +14,7 @@ class AccountsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);
+    final trans = ref.watch(translationsProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -24,7 +26,7 @@ class AccountsScreen extends ConsumerWidget {
             children: [
               // Header with title and add button
               Text(
-                'My Accounts',
+                trans.walletTitle,
                 style: AppTypography.textTheme.headlineMedium,
               ),
               const SizedBox(height: 16),
@@ -34,7 +36,7 @@ class AccountsScreen extends ConsumerWidget {
                     if (accounts.isEmpty) {
                       return Center(
                         child: Text(
-                          'No accounts yet.\nTap + to add one.',
+                          trans.walletNoAccounts,
                           textAlign: TextAlign.center,
                           style: AppTypography.textTheme.bodyLarge,
                         ),

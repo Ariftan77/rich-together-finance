@@ -91,4 +91,9 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
   Future<bool> setShowDecimal(int profileId, bool show) {
     return updateSettings(profileId: profileId, showDecimal: show);
   }
+
+  /// Update language
+  Future<bool> setLanguage(int profileId, String language) {
+    return updateSettings(profileId: profileId, language: language);
+  }
 }

@@ -118,20 +118,41 @@ class BackupService {
     }
   }
 
+  Future<GoogleSignInAccount?> signInSilently() async {
+    try {
+      return await _googleSignIn.signInSilently();
+    } catch (e) {
+      debugPrint('Error silent sign-in: $e');
+      return null;
+    }
+  }
+
   Future<void> signOutFromGoogle() async {
     await _googleSignIn.signOut();
   }
-  
+
   Stream<GoogleSignInAccount?> get currentUserStream => _googleSignIn.onCurrentUserChanged;
 
+  Future<dynamic> _getAuthenticatedClient() async {
+    if (_googleSignIn.currentUser == null) throw Exception('User not signed in');
+
+    final granted = await _googleSignIn.requestScopes([drive.DriveApi.driveAppdataScope]);
+    if (!granted) throw Exception('Drive access denied. Please reconnect Google Drive.');
+
+    var client = await _googleSignIn.authenticatedClient();
+    if (client == null) {
+      // Token is invalid/expired — force a fresh sign-in
+      final account = await _googleSignIn.signIn();
+      if (account == null) throw Exception('Sign in was cancelled');
+      client = await _googleSignIn.authenticatedClient();
+      if (client == null) throw Exception('Could not get authenticated client');
+    }
+    return client;
+  }
+
   Future<void> uploadToDrive() async {
-    final account = _googleSignIn.currentUser;
-    if (account == null) throw Exception('User not signed in');
-
     try {
-      final httpClient = await _googleSignIn.authenticatedClient();
-      if (httpClient == null) throw Exception('Could not authenticate');
-
+      final httpClient = await _getAuthenticatedClient();
       final driveApi = drive.DriveApi(httpClient);
       
       final dbPath = await _dbPath;
@@ -159,13 +180,8 @@ class BackupService {
   }
 
   Future<List<drive.File>> listBackups() async {
-    final account = _googleSignIn.currentUser;
-    if (account == null) throw Exception('User not signed in');
-
     try {
-      final httpClient = await _googleSignIn.authenticatedClient();
-      if (httpClient == null) throw Exception('Could not authenticate');
-
+      final httpClient = await _getAuthenticatedClient();
       final driveApi = drive.DriveApi(httpClient);
 
       final fileList = await driveApi.files.list(
@@ -182,13 +198,8 @@ class BackupService {
   }
 
   Future<void> restoreFromDrive(String fileId) async {
-    final account = _googleSignIn.currentUser;
-    if (account == null) throw Exception('User not signed in');
-
     try {
-      final httpClient = await _googleSignIn.authenticatedClient();
-      if (httpClient == null) throw Exception('Could not authenticate');
-
+      final httpClient = await _getAuthenticatedClient();
       final driveApi = drive.DriveApi(httpClient);
 
       // Download file

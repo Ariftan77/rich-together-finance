@@ -1,12 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Bar chart showing income vs expense for last 6 months
-class CashFlowChart extends StatelessWidget {
+class CashFlowChart extends ConsumerWidget {
   final List<MonthlyFlow> data;
   final String currencySymbol;
   final bool showDecimal;
@@ -19,14 +21,16 @@ class CashFlowChart extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trans = ref.watch(translationsProvider);
+
     if (data.isEmpty) {
       return GlassCard(
         child: Container(
           height: 250,
           alignment: Alignment.center,
           child: Text(
-            'No transaction data yet',
+            trans.reportNoData,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
@@ -53,9 +57,9 @@ class CashFlowChart extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Cash Flow (Last 6 Months)',
-              style: TextStyle(
+            Text(
+              trans.chartCashflow,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -64,9 +68,9 @@ class CashFlowChart extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildLegend('Income', AppColors.success),
+                _buildLegend(trans.entryTypeIncome, AppColors.success),
                 const SizedBox(width: 16),
-                _buildLegend('Expense', AppColors.error),
+                _buildLegend(trans.entryTypeExpense, AppColors.error),
               ],
             ),
             const SizedBox(height: 16),
@@ -85,7 +89,7 @@ class CashFlowChart extends StatelessWidget {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final flow = data[group.x.toInt()];
                         final value = rodIndex == 0 ? flow.income : flow.expense;
-                        final label = rodIndex == 0 ? 'Income' : 'Expense';
+                        final label = rodIndex == 0 ? trans.entryTypeIncome : trans.entryTypeExpense;
                         return BarTooltipItem(
                           '$label\n$currencySymbol ${Formatters.formatCurrency(value, showDecimal: showDecimal)}',
                           const TextStyle(

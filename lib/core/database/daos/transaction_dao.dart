@@ -84,6 +84,28 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   Future<int> deleteTransaction(int id) =>
       (delete(transactions)..where((t) => t.id.equals(id))).go();
 
+  /// Find a transaction that likely matches a debt creation
+  /// Matches on accountId, amount, and approximate time
+  Future<Transaction?> findDebtTransaction({
+    required int accountId,
+    required double amount,
+    required DateTime date,
+  }) async {
+    // Look for transactions within 1 minute of debt creation
+    final start = date.subtract(const Duration(minutes: 1));
+    final end = date.add(const Duration(minutes: 1));
+    
+    return (select(transactions)
+      ..where((t) => 
+        t.accountId.equals(accountId) & 
+        t.amount.equals(amount) & 
+        t.date.isBiggerOrEqualValue(start) & 
+        t.date.isSmallerOrEqualValue(end)
+      )
+      ..limit(1)
+    ).getSingleOrNull();
+  }
+
   /// Calculate account balance
   /// balance = initialBalance + sum(income) - sum(expense) + sum(transfer_in) - sum(transfer_out)
   Future<double> calculateAccountBalance(int accountId) async {

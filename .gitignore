@@ -43,3 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ============================================
+# SENSITIVE — Never commit these files
+# ============================================
+
+# Supabase credentials
+lib/core/constants/supabase_constants.dart
+
+# Google services (OAuth, Firebase)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Environment / secrets
+.env
+.env.*
+lib/core/constants/secrets.dart

@@ -7,6 +7,7 @@ import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 
@@ -19,6 +20,7 @@ class RecurringListScreen extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
     final showDecimal = ref.watch(showDecimalProvider);
+    final trans = ref.watch(translationsProvider);
 
     final categoryMap = categoriesAsync.valueOrNull != null
         ? {for (var c in categoriesAsync.value!) c.id: c}
@@ -47,7 +49,7 @@ class RecurringListScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Recurring Transactions',
+                      trans.recurringTitle,
                       style: AppTypography.textTheme.displaySmall?.copyWith(
                         color: AppColors.textPrimary,
                       ),
@@ -72,14 +74,14 @@ class RecurringListScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No recurring transactions',
+                              trans.recurringNoRecurring,
                               style: AppTypography.textTheme.bodyLarge!.copyWith(
                                 color: Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Create one from the transaction entry screen',
+                              trans.recurringNoRecurringHint,
                               style: AppTypography.textTheme.bodySmall!.copyWith(
                                 color: Colors.white.withValues(alpha: 0.3),
                               ),
@@ -175,7 +177,7 @@ class RecurringListScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Next: ${DateFormat.MMMd().format(item.nextDate)}',
+                                        '${trans.recurringNextRun}: ${DateFormat.MMMd().format(item.nextDate)}',
                                         style: AppTypography.textTheme.bodySmall!.copyWith(
                                           color: Colors.white.withValues(alpha: 0.4),
                                           fontSize: 11,
@@ -195,7 +197,7 @@ class RecurringListScreen extends ConsumerWidget {
                     child: CircularProgressIndicator(color: AppColors.primaryGold),
                   ),
                   error: (err, _) => Center(
-                    child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+                    child: Text('${trans.error}: $err', style: const TextStyle(color: Colors.red)),
                   ),
                 ),
               ),
@@ -267,6 +269,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
   Widget build(BuildContext context) {
     final isExpense = widget.item.type == TransactionType.expense;
     final color = isExpense ? const Color(0xFFFB7185) : const Color(0xFF34D399);
+    final trans = ref.watch(translationsProvider);
 
     return Dialog(
       backgroundColor: const Color(0xFF2D2416),
@@ -287,7 +290,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Edit Recurring',
+                      trans.recurringTitleEdit,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -299,7 +302,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                   IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
                     onPressed: () => _deleteRecurring(context),
-                    tooltip: 'Delete',
+                    tooltip: trans.delete,
                   ),
                 ],
               ),
@@ -307,28 +310,37 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
               const SizedBox(height: 20),
 
               // Name field
-              _buildLabel('NAME'),
+              _buildLabel(trans.goalName.toUpperCase()),
               const SizedBox(height: 8),
-              _buildTextField(_nameController, 'Enter name'),
+              _buildTextField(_nameController, trans.goalNameHint),
 
               const SizedBox(height: 16),
 
               // Amount field
-              _buildLabel('AMOUNT'),
+              _buildLabel(trans.entryAmount.toUpperCase()),
               const SizedBox(height: 8),
-              _buildTextField(_amountController, 'Enter amount',
+              _buildTextField(_amountController, trans.entryAmount,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true)),
 
               const SizedBox(height: 16),
 
               // Frequency
-              _buildLabel('FREQUENCY'),
+              _buildLabel(trans.recurringFrequency.toUpperCase()),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: RecurringFrequency.values.map((freq) {
                   final isSelected = _frequency == freq;
+                  String freqName = freq.displayName;
+                  // Map frequency enum to localized string manually since enum extension is hardcoded
+                  switch (freq) {
+                    case RecurringFrequency.daily: freqName = trans.recurringDaily; break;
+                    case RecurringFrequency.weekly: freqName = trans.recurringWeekly; break;
+                    case RecurringFrequency.monthly: freqName = trans.recurringMonthly; break;
+                    case RecurringFrequency.yearly: freqName = trans.recurringYearly; break;
+                  }
+
                   return GestureDetector(
                     onTap: () => setState(() => _frequency = freq),
                     child: Container(
@@ -345,7 +357,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                         ),
                       ),
                       child: Text(
-                        freq.displayName,
+                        freqName,
                         style: TextStyle(
                           color: isSelected
                               ? const Color(0xFF1A1410)
@@ -373,13 +385,13 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                 ),
                 child: Column(
                   children: [
-                    _buildInfoRow('Type', widget.item.type.displayName),
+                    _buildInfoRow(trans.accountType, widget.item.type.displayName),
                     const SizedBox(height: 6),
-                    _buildInfoRow('Category', widget.category?.name ?? '-'),
+                    _buildInfoRow(trans.entryCategory, widget.category?.name ?? '-'),
                     const SizedBox(height: 6),
-                    _buildInfoRow('Account', widget.account?.name ?? '-'),
+                    _buildInfoRow(trans.entryAccount, widget.account?.name ?? '-'),
                     const SizedBox(height: 6),
-                    _buildInfoRow('Next Date', DateFormat.yMMMd().format(widget.item.nextDate)),
+                    _buildInfoRow(trans.recurringNextRun, DateFormat.yMMMd().format(widget.item.nextDate)),
                   ],
                 ),
               ),
@@ -429,7 +441,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                         ),
                       ),
                       child: Text(
-                        'Cancel',
+                        trans.cancel,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 15,
@@ -449,10 +461,10 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Save',
+                      child: Text(
+                        trans.save,
                         style: TextStyle(
-                          color: Color(0xFF1A1410),
+                          color: const Color(0xFF1A1410),
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -533,10 +545,11 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
   }
 
   Future<void> _saveRecurring() async {
+    final trans = ref.read(translationsProvider);
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a name')),
+        const SnackBar(content: Text('Please enter a name')), // TODO: Add translation for validation
       );
       return;
     }
@@ -546,7 +559,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
     ) ?? 0.0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
+        SnackBar(content: Text(trans.errorInvalidAmount)),
       );
       return;
     }
@@ -564,8 +577,8 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recurring transaction updated'),
+          SnackBar(
+            content: Text(trans.success),
             backgroundColor: AppColors.success,
           ),
         );
@@ -574,7 +587,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('${trans.error}: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -583,6 +596,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
   }
 
   Future<void> _deleteRecurring(BuildContext context) async {
+    final trans = ref.read(translationsProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -595,20 +609,20 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
             const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
             const SizedBox(width: 12),
             const Text(
-              'Delete Recurring?',
+              'Delete Recurring?', // TODO: Add translation
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
           ],
         ),
         content: Text(
-          'This will permanently remove this recurring transaction.',
+          'This will permanently remove this recurring transaction.', // TODO: Add translation
           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
+              trans.cancel,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
             ),
           ),
@@ -620,9 +634,9 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            child: Text(
+              trans.delete,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -638,8 +652,8 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recurring transaction deleted'),
+          SnackBar(
+            content: Text(trans.success),
             backgroundColor: AppColors.success,
           ),
         );
@@ -648,7 +662,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('${trans.error}: $e'),
             backgroundColor: AppColors.error,
           ),
         );

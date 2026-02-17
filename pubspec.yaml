@@ -57,6 +57,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
   # Code Generation
   drift_dev: ^2.15.0
@@ -71,3 +72,11 @@ flutter:
     - assets/images/
 
   # Google Fonts are loaded dynamically, no need for local fonts
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0F172A"
+  adaptive_icon_foreground: "assets/images/app_icon.png"

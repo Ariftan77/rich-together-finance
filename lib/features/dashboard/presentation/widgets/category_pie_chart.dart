@@ -1,12 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../providers/dashboard_providers.dart';
 
 /// Pie chart showing expense breakdown by category
-class CategoryPieChart extends StatelessWidget {
+class CategoryPieChart extends ConsumerWidget {
   final List<CategoryBreakdown> data;
   final String currencySymbol;
   final bool showDecimal;
@@ -19,14 +21,16 @@ class CategoryPieChart extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trans = ref.watch(translationsProvider);
+
     if (data.isEmpty) {
       return GlassCard(
         child: Container(
           height: 250,
           alignment: Alignment.center,
           child: Text(
-            'No expense data for this month',
+            trans.reportNoData,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
@@ -51,9 +55,9 @@ class CategoryPieChart extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Top Spending Categories',
-              style: TextStyle(
+            Text(
+              trans.chartSpending,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -61,7 +65,7 @@ class CategoryPieChart extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'This month',
+              trans.commonThisMonth,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 12,

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 
-class HelpFaqScreen extends StatelessWidget {
+class HelpFaqScreen extends ConsumerWidget {
   const HelpFaqScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trans = ref.watch(translationsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bgDarkStart,
       appBar: AppBar(
-        title: const Text('Help & FAQ'),
+        title: Text(trans.helpTitle),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -28,54 +32,20 @@ class HelpFaqScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Help & FAQ',
+                trans.helpTitle,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   color: AppColors.primaryGold,
                 ),
               ),
               const SizedBox(height: 24),
 
-              _buildFaqItem(
-                context,
-                'How do I add a transaction?',
-                'Tap the + button on the Transactions screen, fill in the details (amount, category, account), and tap Save.',
-              ),
-
-              _buildFaqItem(
-                context,
-                'How do I create multiple profiles?',
-                'Go to Settings, tap on your profile card, then select "Add New Profile". Each profile keeps its data completely separate.',
-              ),
-
-              _buildFaqItem(
-                context,
-                'Can I track multiple currencies?',
-                'Yes! You can set different currencies for each account. Set your base currency in Settings to see consolidated totals.',
-              ),
-
-              _buildFaqItem(
-                context,
-                'How do I set up recurring transactions?',
-                'When adding a transaction, tap "Make Recurring" and choose the frequency (daily, weekly, monthly, yearly).',
-              ),
-
-              _buildFaqItem(
-                context,
-                'Is my data secure?',
-                'Yes! All data is stored locally on your device. We never send your financial data to external servers.',
-              ),
-
-              _buildFaqItem(
-                context,
-                'How do I backup my data?',
-                'Go to Settings > Data Management > Backup. You can save to Google Drive or export to file.',
-              ),
-
-              _buildFaqItem(
-                context,
-                'Can I use the app offline?',
-                'Absolutely! Rich Together works 100% offline. Internet is only needed for optional features like cloud backup.',
-              ),
+              _buildFaqItem(context, trans.helpFaq1Question, trans.helpFaq1Answer),
+              _buildFaqItem(context, trans.helpFaq2Question, trans.helpFaq2Answer),
+              _buildFaqItem(context, trans.helpFaq3Question, trans.helpFaq3Answer),
+              _buildFaqItem(context, trans.helpFaq4Question, trans.helpFaq4Answer),
+              _buildFaqItem(context, trans.helpFaq5Question, trans.helpFaq5Answer),
+              _buildFaqItem(context, trans.helpFaq6Question, trans.helpFaq6Answer),
+              _buildFaqItem(context, trans.helpFaq7Question, trans.helpFaq7Answer),
 
               const SizedBox(height: 32),
 
@@ -98,12 +68,12 @@ class HelpFaqScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Still need help?',
+                      trans.helpContactSupport,
                       style: AppTypography.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Contact our support team',
+                      trans.helpContactEmail,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
@@ -118,7 +88,7 @@ class HelpFaqScreen extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.email),
-                      label: const Text('support@richtogether.app'),
+                      label: Text(trans.helpContactEmail),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
                         foregroundColor: Colors.black,

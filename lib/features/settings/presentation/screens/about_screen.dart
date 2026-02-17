@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 
-class AboutScreen extends StatefulWidget {
+class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
   @override
-  State<AboutScreen> createState() => _AboutScreenState();
+  ConsumerState<AboutScreen> createState() => _AboutScreenState();
 }
 
-class _AboutScreenState extends State<AboutScreen> {
+class _AboutScreenState extends ConsumerState<AboutScreen> {
   String _version = '';
   String _buildNumber = '';
 
@@ -40,7 +42,7 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgDarkStart,
       appBar: AppBar(
-        title: const Text('About'),
+        title: Text(ref.watch(translationsProvider).settingsAboutTitle),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -83,7 +85,7 @@ class _AboutScreenState extends State<AboutScreen> {
               
               // Tagline
               Text(
-                'Your personal finance companion',
+                ref.watch(translationsProvider).aboutTagline,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 16,
@@ -99,7 +101,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Version $_version (Build $_buildNumber)',
+                  '${ref.watch(translationsProvider).settingsVersion} $_version (Build $_buildNumber)',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 14,
@@ -115,20 +117,20 @@ class _AboutScreenState extends State<AboutScreen> {
               // Developer Info
               _buildInfoTile(
                 icon: Icons.code,
-                title: 'Developer',
+                title: ref.watch(translationsProvider).aboutDeveloper,
                 subtitle: 'Arif Tan',
               ),
               const SizedBox(height: 12),
               _buildInfoTile(
                 icon: Icons.email_outlined,
-                title: 'Contact',
-                subtitle: 'support@richtogether.app',
+                title: ref.watch(translationsProvider).aboutContact,
+                subtitle: 'apexterminal.dev@gmail.com',
               ),
               const SizedBox(height: 48),
 
               // Copyright
               Text(
-                '© 2026 Rich Together. All rights reserved.',
+                ref.watch(translationsProvider).aboutCopyright,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.4),
@@ -145,18 +147,18 @@ class _AboutScreenState extends State<AboutScreen> {
 
   Widget _buildFeatureSection() {
     final features = [
-      {'emoji': '📊', 'text': 'Expense Tracking'},
-      {'emoji': '💰', 'text': 'Budget Management'},
-      {'emoji': '📈', 'text': 'Analytics & Reports'},
-      {'emoji': '👥', 'text': 'Multi-Profile Support'},
-      {'emoji': '🔒', 'text': 'Offline & Secure'},
+      {'emoji': '📊', 'text': ref.watch(translationsProvider).aboutFeatureExpense},
+      {'emoji': '💰', 'text': ref.watch(translationsProvider).aboutFeatureBudget},
+      {'emoji': '📈', 'text': ref.watch(translationsProvider).aboutFeatureAnalytics},
+      {'emoji': '👥', 'text': ref.watch(translationsProvider).aboutFeatureMultiProfile},
+      {'emoji': '🔒', 'text': ref.watch(translationsProvider).aboutFeatureOffline},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Features',
+          ref.watch(translationsProvider).aboutFeatures,
           style: AppTypography.textTheme.titleMedium?.copyWith(
             color: AppColors.primaryGold,
           ),

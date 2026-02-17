@@ -114,7 +114,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Version info at bottom
               Center(
                 child: Text(
-                  'Version $_appVersion',
+                  '${ref.watch(translationsProvider).settingsVersion} $_appVersion',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 12,
@@ -165,17 +165,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      profile?.name ?? 'No Profile',
+                      profile?.name ?? ref.watch(translationsProvider).settingsNoProfile,
                       style: AppTypography.textTheme.titleMedium,
                     ),
-                    Text(
-                      'Tap to switch profile',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
+                      Text(
+                        ref.watch(translationsProvider).settingsTapToSwitch,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
                 ),
               ),
               Icon(
@@ -191,7 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: SettingsTile(
             icon: Icons.cloud_sync,
             title: ref.watch(translationsProvider).settingsSyncBackup,
-            subtitle: 'Connect to Supabase', // Keep hardcoded or add key? generic is fine for now
+            subtitle: ref.watch(translationsProvider).settingsConnectSupabase,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SyncScreen()),
@@ -257,12 +257,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildSecuritySection(UserSetting? settings) {
-    final biometricEnabled = settings?.biometricEnabled ?? true;
+    // We ignore settings.biometricEnabled here and use AuthService instead
+    // because AuthScreen uses AuthService (secure storage) for the check.
+    
+    final authService = ref.watch(authServiceProvider);
 
-    return FutureBuilder<bool>(
-      future: ref.read(authServiceProvider).isAuthEnabled(),
+    return FutureBuilder<Map<String, bool>>(
+      future: Future.wait([
+        authService.isAuthEnabled(),
+        authService.isBiometricEnabled(),
+      ]).then((values) => {
+        'auth': values[0],
+        'biometric': values[1],
+      }),
       builder: (context, snapshot) {
-        final isAppLockEnabled = snapshot.data ?? false;
+        final isAppLockEnabled = snapshot.data?['auth'] ?? false;
+        final biometricEnabled = snapshot.data?['biometric'] ?? false;
 
         return GlassCard(
           padding: EdgeInsets.zero,
@@ -270,8 +280,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               SettingsTile(
                 icon: isAppLockEnabled ? Icons.lock : Icons.lock_open,
-                title: 'Lock App',
-                subtitle: isAppLockEnabled ? 'PIN/Biometric required' : 'App is unlocked',
+                title: ref.watch(translationsProvider).settingsLockApp,
+                subtitle: isAppLockEnabled ? ref.watch(translationsProvider).settingsLockAppSubtitleOn : ref.watch(translationsProvider).settingsLockAppSubtitleOff,
                 trailing: Switch(
                   value: isAppLockEnabled,
                   onChanged: (value) => _toggleAppLock(value),
@@ -285,7 +295,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   absorbing: !isAppLockEnabled,
                   child: SettingsTile(
                     icon: Icons.fingerprint,
-                    title: 'Biometric Login',
+                    title: ref.watch(translationsProvider).settingsBiometric,
                     trailing: Switch(
                       value: biometricEnabled,
                       onChanged: (value) => _toggleBiometric(value),
@@ -298,7 +308,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildDivider(),
                 SettingsTile(
                   icon: Icons.lock_outline,
-                  title: 'Change PIN',
+                  title: ref.watch(translationsProvider).settingsChangePin,
                   onTap: () => _showChangePinDialog(),
                 ),
               ],
@@ -316,7 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           SettingsTile(
             icon: Icons.info_outline,
-            title: 'About Rich Together',
+            title: ref.watch(translationsProvider).settingsAboutTitle,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AboutScreen()),
@@ -325,7 +335,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildDivider(),
           SettingsTile(
             icon: Icons.help_outline,
-            title: 'Help & FAQ',
+            title: ref.watch(translationsProvider).settingsHelp,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const HelpFaqScreen()),
@@ -334,7 +344,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildDivider(),
           SettingsTile(
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
+            title: ref.watch(translationsProvider).settingsPrivacy,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
@@ -343,7 +353,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildDivider(),
           SettingsTile(
             icon: Icons.description_outlined,
-            title: 'Terms of Service',
+            title: ref.watch(translationsProvider).settingsTerms,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const TermsScreen()),
@@ -384,7 +394,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Currency',
+              ref.watch(translationsProvider).settingsSelectCurrency,
               style: AppTypography.textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -449,13 +459,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.bgDarkEnd,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Verify Current PIN', style: AppTypography.textTheme.titleLarge),
+        title: Text(ref.watch(translationsProvider).settingsVerifyPin, style: AppTypography.textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             GlassInput(
               controller: pinController,
-              hintText: 'Enter current PIN',
+              hintText: ref.watch(translationsProvider).settingsEnterCurrentPin,
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: 6,
@@ -465,7 +475,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(ref.watch(translationsProvider).genericCancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () async {
@@ -477,11 +487,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 await _showNewPinDialog();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Incorrect PIN'), backgroundColor: AppColors.error),
+                   SnackBar(content: Text(ref.watch(translationsProvider).settingsIncorrectPin), backgroundColor: AppColors.error),
                 );
               }
             },
-            child: const Text('Verify', style: TextStyle(color: AppColors.primaryGold)),
+            child: Text(ref.watch(translationsProvider).genericVerify, style: const TextStyle(color: AppColors.primaryGold)),
           ),
         ],
       ),
@@ -498,13 +508,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.bgDarkEnd,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Set New PIN', style: AppTypography.textTheme.titleLarge),
+        title: Text(ref.watch(translationsProvider).settingsSetNewPin, style: AppTypography.textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             GlassInput(
               controller: pinController,
-              hintText: 'Enter new PIN (6 digits)',
+              hintText: ref.watch(translationsProvider).settingsEnterNewPin,
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: 6,
@@ -512,7 +522,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             GlassInput(
               controller: confirmController,
-              hintText: 'Confirm new PIN',
+              hintText: ref.watch(translationsProvider).settingsConfirmNewPin,
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: 6,
@@ -522,19 +532,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(ref.watch(translationsProvider).genericCancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () async {
               if (pinController.text.length != 6) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('PIN must be 6 digits')),
+                   SnackBar(content: Text(ref.watch(translationsProvider).settingsPinLengthError)),
                 );
                 return;
               }
               if (pinController.text != confirmController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('PINs do not match')),
+                   SnackBar(content: Text(ref.watch(translationsProvider).settingsPinMatchError)),
                 );
                 return;
               }
@@ -544,10 +554,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (!mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('PIN set & App Lock Enabled'), backgroundColor: AppColors.success),
+                 SnackBar(content: Text(ref.watch(translationsProvider).settingsPinSetSuccess), backgroundColor: AppColors.success),
               );
             },
-            child: const Text('Set PIN', style: TextStyle(color: AppColors.primaryGold)),
+            child: Text(ref.watch(translationsProvider).genericSet, style: const TextStyle(color: AppColors.primaryGold)),
           ),
         ],
       ),
@@ -574,6 +584,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (profileId != null) {
       await ref.read(settingsDaoProvider).setBiometricEnabled(profileId, enabled);
     }
+    
+    // Update AuthService (secure storage) which is used by AuthScreen
+    await ref.read(authServiceProvider).setBiometricEnabled(enabled);
+    
+    setState(() {});
   }
 
   Future<void> _showClearDataDialog() async {
@@ -586,26 +601,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         builder: (context, setState) => AlertDialog(
           backgroundColor: AppColors.bgDarkEnd,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Clear All Data?', style: TextStyle(color: AppColors.error)),
+          title: Text(ref.watch(translationsProvider).settingsClearDataTitle, style: const TextStyle(color: AppColors.error)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'This will permanently delete ALL your data (transactions, accounts, categories). This action cannot be undone.',
-                style: TextStyle(color: Colors.white70),
+               Text(
+                ref.watch(translationsProvider).settingsClearDataContent,
+                style: const TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Type "Confirm" to proceed:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+               Text(
+                ref.watch(translationsProvider).settingsClearDataConfirmPrompt,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               GlassInput(
                 controller: confirmController,
-                hintText: 'Confirm',
+                hintText: ref.watch(translationsProvider).settingsClearDataConfirmKeyword,
                 onChanged: (value) {
                   setState(() {
-                    canProceed = value == 'Confirm';
+                    canProceed = value == ref.watch(translationsProvider).settingsClearDataConfirmKeyword;
                   });
                 },
               ),
@@ -614,7 +629,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+              child: Text(ref.watch(translationsProvider).genericCancel, style: const TextStyle(color: Colors.white70)),
             ),
             TextButton(
               onPressed: canProceed
@@ -624,7 +639,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     }
                   : null,
               child: Text(
-                'Clear Everything',
+                ref.watch(translationsProvider).settingsClearEverything,
                 style: TextStyle(
                   color: canProceed ? AppColors.error : Colors.white24,
                   fontWeight: FontWeight.bold,
@@ -656,10 +671,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Show success and maybe restart or go home
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All data cleared successfully'),
+         SnackBar(
+          content: Text(ref.watch(translationsProvider).settingsClearSuccess),
           backgroundColor: AppColors.success,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
       
@@ -672,7 +687,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       Navigator.pop(context); // Close loading
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error clearing data: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('${ref.read(translationsProvider).settingsClearError}: $e'), backgroundColor: AppColors.error),
       );
     }
   }
@@ -703,9 +718,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailing: currentLocale.languageCode == 'en'
                     ? const Icon(Icons.check, color: AppColors.primaryGold)
                     : null,
-                onTap: () {
-                  ref.read(localeProvider.notifier).state = const Locale('en');
-                  Navigator.pop(context);
+                onTap: () async {
+                  final profileId = ref.read(activeProfileIdProvider);
+                  if (profileId != null) {
+                    await ref.read(settingsDaoProvider).setLanguage(profileId, 'en');
+                  }
+                  if (context.mounted) Navigator.pop(context);
                 },
               ),
               ListTile(
@@ -714,9 +732,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailing: currentLocale.languageCode == 'id'
                     ? const Icon(Icons.check, color: AppColors.primaryGold)
                     : null,
-                onTap: () {
-                  ref.read(localeProvider.notifier).state = const Locale('id');
-                  Navigator.pop(context);
+                onTap: () async {
+                  final profileId = ref.read(activeProfileIdProvider);
+                  if (profileId != null) {
+                    await ref.read(settingsDaoProvider).setLanguage(profileId, 'id');
+                  }
+                  if (context.mounted) Navigator.pop(context);
                 },
               ),
               const SizedBox(height: 16),

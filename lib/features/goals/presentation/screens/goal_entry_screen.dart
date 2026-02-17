@@ -38,7 +38,9 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.goal?.name ?? '');
     _amountController = TextEditingController(
-      text: widget.goal?.targetAmount.toStringAsFixed(0) ?? '',
+      text: widget.goal != null
+          ? IndonesianCurrencyInputFormatter.format(widget.goal!.targetAmount.toStringAsFixed(0))
+          : '',
     );
     if (widget.goal != null) {
       _selectedCurrency = widget.goal!.targetCurrency;

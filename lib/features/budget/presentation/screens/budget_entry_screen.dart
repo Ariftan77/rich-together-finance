@@ -8,6 +8,7 @@ import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
@@ -164,6 +165,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final trans = ref.watch(translationsProvider);
 
     return Stack(
       children: [
@@ -179,7 +181,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: const IconThemeData(color: Colors.white),
-            title: Text(widget.budget == null ? 'New Budget' : 'Edit Budget', style: const TextStyle(color: Colors.white)),
+            title: Text(widget.budget == null ? trans.budgetTitleAdd : trans.budgetTitleEdit, style: const TextStyle(color: Colors.white)),
           ),
           body: SafeArea(
         child: SingleChildScrollView(
@@ -192,13 +194,13 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 // Amount Input
                 GlassInput(
                   controller: _amountController,
-                  hintText: 'Budget Amount',
+                  hintText: trans.budgetAmount,
                   prefixIcon: Icons.monetization_on,
                   keyboardType: TextInputType.number,
                   inputFormatters: [IndonesianCurrencyInputFormatter()],
                   validator: (v) {
                     if (v == null || v.isEmpty || v == '0') {
-                      return 'Amount required';
+                      return trans.errorInvalidAmount;
                     }
                     return null;
                   },
@@ -220,10 +222,10 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                       onItemSelected: (category) {
                         setState(() => _selectedCategoryId = category.id);
                       },
-                      label: 'Category',
+                      label: trans.entryCategory,
                       icon: Icons.category_outlined,
-                      hint: 'Select category',
-                      searchHint: 'Search categories...',
+                      hint: trans.entrySelectCategory,
+                      searchHint: trans.entrySearchCategory,
                       onAddNew: (searchText) async {
                         final name = searchText.trim();
                         if (name.isNotEmpty) {
@@ -243,21 +245,34 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
-                  error: (err, stack) => Text('Error: $err'),
+                  error: (err, stack) => Text('${trans.error}: $err'),
                 ),
                 
                 const SizedBox(height: 24),
 
                 // Period Selector
-                Text('Period', style: AppTypography.textTheme.labelLarge),
+                Text(trans.budgetPeriod, style: AppTypography.textTheme.labelLarge),
                 const SizedBox(height: 8),
                 Row(
                   children: BudgetPeriod.values.map((period) {
                     final isSelected = _selectedPeriod == period;
+                    String periodName = period.displayName;
+                      switch (period) {
+                        case BudgetPeriod.weekly:
+                          periodName = trans.recurringWeekly;
+                          break;
+                        case BudgetPeriod.monthly:
+                          periodName = trans.recurringMonthly;
+                          break;
+                        case BudgetPeriod.yearly:
+                          periodName = trans.recurringYearly;
+                          break;
+                      }
+
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: ChoiceChip(
-                        label: Text(period.displayName),
+                        label: Text(periodName),
                         selected: isSelected,
                         onSelected: (selected) {
                           if (selected) setState(() => _selectedPeriod = period);
@@ -275,7 +290,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 const SizedBox(height: 32),
                 
                 GlassButton(
-                  text: 'Save Budget',
+                  text: trans.save,
                   isFullWidth: true,
                   size: GlassButtonSize.large,
                   onPressed: () => _saveBudget(),
@@ -291,11 +306,11 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                          final confirm = await showDialog<bool>(
                            context: context,
                            builder: (ctx) => AlertDialog(
-                             title: const Text('Delete Budget?'),
-                             content: const Text('This action cannot be undone.'),
+                             title: Text(trans.delete),
+                             content: const Text('This action cannot be undone.'), // TODO: Add translation
                              actions: [
-                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(trans.cancel)),
+                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(trans.delete, style: const TextStyle(color: Colors.red))),
                              ],
                            ),
                          );
@@ -305,7 +320,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                             navigator.pop();
                          }
                        },
-                       child: const Text('Delete Budget', style: TextStyle(color: Colors.red)),
+                       child: Text(trans.delete, style: const TextStyle(color: Colors.red)),
                      ),
                    ),
                 ]

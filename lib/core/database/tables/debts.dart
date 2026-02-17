@@ -10,6 +10,8 @@ class Debts extends Table {
   IntColumn get type => intEnum<DebtType>()();
   TextColumn get personName => text().withLength(min: 1, max: 100)();
   RealColumn get amount => real()();
+  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  IntColumn get creationAccountId => integer().nullable().references(Accounts, #id)();
   IntColumn get currency => intEnum<Currency>()();
   DateTimeColumn get dueDate => dateTime().nullable()();
   TextColumn get note => text().nullable()();

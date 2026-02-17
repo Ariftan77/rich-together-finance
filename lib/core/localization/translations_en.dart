@@ -4,6 +4,7 @@ class AppTranslationsEn implements AppTranslations {
   // Navigation
   @override String get navDashboard => 'Dashboard';
   @override String get navTransactions => 'Transactions';
+  @override String get navWallet => 'Wallet';
   @override String get navPlanning => 'Planning';
   @override String get navSettings => 'Settings';
   @override String get navReports => 'Reports';
@@ -32,6 +33,14 @@ class AppTranslationsEn implements AppTranslations {
   @override String get commonToday => 'Today';
   @override String get commonYesterday => 'Yesterday';
   @override String get commonThisMonth => 'This Month';
+  @override String get commonPastDue => 'Past due';
+  @override String get commonDueToday => 'Due today';
+  @override String get commonDaysLeft => 'days left';
+  @override String get commonTarget => 'Target';
+  @override String get commonOf => 'of';
+  @override String get commonPaid => 'Paid';
+  @override String get commonAmount => 'Amount';
+  @override String get commonMax => 'MAX';
   @override String get filterAll => 'All';
 
   // Transaction Entry
@@ -106,13 +115,92 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsBackupRestore => 'Backup & Restore';
   @override String get settingsBaseCurrency => 'Base Currency';
   @override String get settingsShowDecimals => 'Show Decimals';
-  @override String get settingsLockApp => 'Lock App';
-  @override String get settingsBiometric => 'Biometric Login';
-  @override String get settingsChangePin => 'Change PIN';
+
   @override String get settingsAboutApp => 'About Rich Together';
-  @override String get settingsHelp => 'Help & FAQ';
-  @override String get settingsPrivacy => 'Privacy Policy';
-  @override String get settingsTerms => 'Terms of Service';
+  
+  // About Screen
+  @override String get aboutTagline => 'Your personal finance companion';
+  @override String get aboutFeatures => 'Features';
+  @override String get aboutFeatureExpense => 'Expense Tracking';
+  @override String get aboutFeatureBudget => 'Budget Management';
+  @override String get aboutFeatureAnalytics => 'Analytics & Reports';
+  @override String get aboutFeatureMultiProfile => 'Multi-Profile Support';
+  @override String get aboutFeatureOffline => 'Offline & Secure';
+  @override String get aboutDeveloper => 'Developer';
+  @override String get aboutContact => 'Contact';
+  @override String get aboutCopyright => '© 2026 Rich Together. All rights reserved.';
+
+  // Help & FAQ
+  @override String get helpTitle => 'Help & FAQ';
+  @override String get helpFaq1Question => 'How do I add a transaction?';
+  @override String get helpFaq1Answer => 'Tap the + button on the Transactions screen, fill in the details (amount, category, account), and tap Save.';
+  @override String get helpFaq2Question => 'How do I create multiple profiles?';
+  @override String get helpFaq2Answer => 'Go to Settings, tap on your profile card, then select "Add New Profile". Each profile keeps its data completely separate.';
+  @override String get helpFaq3Question => 'Can I track multiple currencies?';
+  @override String get helpFaq3Answer => 'Yes! You can set different currencies for each account. Set your base currency in Settings to see consolidated totals.';
+  @override String get helpFaq4Question => 'How do I set up recurring transactions?';
+  @override String get helpFaq4Answer => 'When adding a transaction, tap "Make Recurring" and choose the frequency (daily, weekly, monthly, yearly).';
+  @override String get helpFaq5Question => 'Is my data secure?';
+  @override String get helpFaq5Answer => 'Yes! All data is stored locally on your device. We never send your financial data to external servers.';
+  @override String get helpFaq6Question => 'How do I backup my data?';
+  @override String get helpFaq6Answer => 'Go to Settings > Data Management > Backup. You can save to Google Drive or export to file.';
+  @override String get helpFaq7Question => 'Can I use the app offline?';
+  @override String get helpFaq7Answer => 'Absolutely! Rich Together works 100% offline. Internet is only needed for optional features like cloud backup.';
+  @override String get helpContactSupport => 'Contact our support team';
+  @override String get helpContactEmail => 'apexterminal.dev@gmail.com';
+
+  // Privacy Policy
+  @override String get privacyTitle => 'Privacy Policy';
+  @override String get privacyLastUpdated => 'Last updated: February 2026';
+  @override String get privacyDataCollectionTitle => 'Data Collection';
+  @override String get privacyDataCollectionContent => 'Rich Together is designed with your privacy in mind. All your financial data is stored locally on your device. We do not collect, transmit, or store any of your personal financial information on external servers.';
+  @override String get privacyLocalStorageTitle => 'Local Storage';
+  @override String get privacyLocalStorageContent => 'Your data is stored securely on your device using encrypted SQLite database. The app operates fully offline, meaning your data never leaves your phone unless you explicitly choose to backup.';
+  @override String get privacyBackupTitle => 'Optional Backup';
+  @override String get privacyBackupContent => 'If you choose to use Google Drive backup, your data will be encrypted and stored in your personal Google Drive account. We do not have access to your backup files.';
+  @override String get privacyAnalyticsTitle => 'No Third-Party Analytics';
+  @override String get privacyAnalyticsContent => 'We do not use third-party analytics services that track your behavior or collect personal information.';
+  @override String get privacyDeletionTitle => 'Data Deletion';
+  @override String get privacyDeletionContent => 'You can delete all your data at any time from the Settings menu. Deleting the app will also remove all locally stored data.';
+  @override String get privacyContactTitle => 'Contact';
+  @override String get privacyContactContent => 'If you have questions about this Privacy Policy, please contact us at privacy@richtogether.app';
+
+  // Terms of Service
+  @override String get termsTitle => 'Terms of Service';
+  @override String get termsLastUpdated => 'Last updated: February 2026';
+  @override String get termsAcceptanceTitle => '1. Acceptance of Terms';
+  @override String get termsAcceptanceContent => 'By using Rich Together, you agree to these Terms of Service. If you do not agree, please do not use this application.';
+  @override String get termsUsageTitle => '2. Use of the App';
+  @override String get termsUsageContent => 'Rich Together is a personal finance tracking tool designed for individual use. You are responsible for maintaining the confidentiality of your data and any PINs or passwords you set.';
+  @override String get termsAccuracyTitle => '3. Data Accuracy';
+  @override String get termsAccuracyContent => 'The app provides tools for tracking your finances, but we do not guarantee the accuracy of calculations. You should verify all financial information independently.';
+  @override String get termsAdviceTitle => '4. Not Financial Advice';
+  @override String get termsAdviceContent => 'Rich Together is not a substitute for professional financial advice. The app is for informational purposes only. Consult a qualified financial advisor for investment decisions.';
+  @override String get termsLiabilityTitle => '5. Limitation of Liability';
+  @override String get termsLiabilityContent => 'We are not liable for any financial losses, data loss, or damages arising from the use of this application.';
+  @override String get termsUpdatesTitle => '6. Updates';
+  @override String get termsUpdatesContent => 'We may update these terms from time to time. Continued use of the app constitutes acceptance of the updated terms.';
+  @override String get termsContactTitle => '7. Contact';
+  @override String get termsContactContent => 'For questions about these Terms of Service, contact us at legal@richtogether.app';
+
+  // Sync Screen
+  @override String get syncTitle => 'Sync & Backup';
+  @override String get syncSignIn => 'Sign In';
+  @override String get syncSignUp => 'Sign Up';
+  @override String get syncFullName => 'Full Name';
+  @override String get syncEmail => 'Email';
+  @override String get syncPassword => 'Password';
+  @override String get syncNoAccount => "Don't have an account? Sign Up";
+  @override String get syncHaveAccount => 'Already have an account? Sign In';
+  @override String get syncConnectedAs => 'Connected as';
+  @override String get syncBackedUp => 'Your data is backed up to the cloud.';
+  @override String get syncNow => 'Sync Now';
+  @override String get syncLogOut => 'Log Out';
+  @override String get syncLoggedIn => 'Logged in successfully!';
+  @override String get syncCompleted => 'Sync completed!';
+  @override String get syncFailed => 'Sync failed';
+  @override String get syncStillNeedHelp => 'Still need help?';
+
   @override String get settingsClearData => 'Clear All Data';
 
   // Wealth / Navigation
@@ -158,5 +246,85 @@ class AppTranslationsEn implements AppTranslations {
   // Investment
   @override String get investmentPlaceholder => 'Investment Tracking';
   @override String get investmentPlaceholderHint => 'Coming soon — track your portfolio here';
+
+  // Recurring
+  @override String get recurringTitle => 'Recurring';
+  @override String get recurringTitleAdd => 'New Recurring';
+  @override String get recurringTitleEdit => 'Edit Recurring';
+  @override String get recurringFrequency => 'Frequency';
+  @override String get recurringInterval => 'Repeat Every';
+  @override String get recurringStartDate => 'Start Date';
+  @override String get recurringEndDate => 'End Date';
+  @override String get recurringNoEndDate => 'No end date';
+  @override String get recurringLastRun => 'Last run';
+  @override String get recurringNextRun => 'Next run';
+  @override String get recurringNoRecurring => 'No recurring transactions';
+  @override String get recurringNoRecurringHint => 'Tap + to set up a recurring transaction';
+  @override String get recurringDaily => 'Daily';
+  @override String get recurringWeekly => 'Weekly';
+  @override String get recurringMonthly => 'Monthly';
+  @override String get recurringYearly => 'Yearly';
+
+  // Budget
+  @override String get budgetTitle => 'Budgets';
+  @override String get budgetTitleAdd => 'New Budget';
+  @override String get budgetTitleEdit => 'Edit Budget';
+  @override String get budgetAmount => 'Limit Amount';
+  @override String get budgetPeriod => 'Period';
+  @override String get budgetSpent => 'Spent';
+  @override String get budgetRemaining => 'Left';
+  @override String get budgetExceeded => 'Over by';
+  @override String get budgetLimit => 'Limit';
+  @override String get budgetNoBudgets => 'No budgets set';
+  @override String get budgetNoBudgetsHint => 'Tap + to create a spending limit';
+
+  // Dashboard & Reports
+  @override String get chartCashflow => 'Cash Flow';
+  @override String get chartSpending => 'Spending by Category';
+  @override String get reportTabIncomeExpr => 'Income'; // Wait, this might be duplicate or needed
+  @override String get reportTabCashflow => 'Cash Flow';
+  @override String get reportTabSpending => 'Spending';
+  @override String get reportNoData => 'No data available for this period';
+  @override String get reportNet => 'Net Income';
+  @override String get dashboardBalanceCurrency => 'Balance by Currency';
+  @override String get close => 'Close';
+
+  @override String get walletTitle => 'My Accounts';
+  @override String get walletNoAccounts => 'No accounts yet.\nTap + to add one.';
+
+  // Settings
+  @override String get settingsTapToSwitch => 'Tap to switch profile';
+  @override String get settingsConnectSupabase => 'Connect to Supabase';
+  @override String get settingsLockApp => 'Lock App';
+  @override String get settingsLockAppSubtitleOn => 'PIN/Biometric required';
+  @override String get settingsLockAppSubtitleOff => 'App is unlocked';
+  @override String get settingsBiometric => 'Biometric Login';
+  @override String get settingsChangePin => 'Change PIN';
+  @override String get settingsAboutTitle => 'About Rich Together';
+  @override String get settingsHelp => 'Help & FAQ';
+  @override String get settingsPrivacy => 'Privacy Policy';
+  @override String get settingsTerms => 'Terms of Service';
+  @override String get settingsSelectCurrency => 'Select Currency';
+  @override String get settingsVerifyPin => 'Verify Current PIN';
+  @override String get settingsEnterCurrentPin => 'Enter current PIN';
+  @override String get settingsSetNewPin => 'Set New PIN';
+  @override String get settingsEnterNewPin => 'Enter new PIN (6 digits)';
+  @override String get settingsConfirmNewPin => 'Confirm new PIN';
+  @override String get settingsPinLengthError => 'PIN must be 6 digits';
+  @override String get settingsPinMatchError => 'PINs do not match';
+  @override String get settingsPinSetSuccess => 'PIN set & App Lock Enabled';
+  @override String get settingsIncorrectPin => 'Incorrect PIN';
+  @override String get settingsClearDataTitle => 'Clear All Data?';
+  @override String get settingsClearDataContent => 'This will permanently delete ALL your data (transactions, accounts, categories). This action cannot be undone.';
+  @override String get settingsClearDataConfirmPrompt => 'Type "Confirm" to proceed:';
+  @override String get settingsClearDataConfirmKeyword => 'Confirm';
+  @override String get settingsClearEverything => 'Clear Everything';
+  @override String get settingsClearSuccess => 'All data cleared successfully';
+  @override String get settingsClearError => 'Error clearing data';
+  @override String get genericCancel => 'Cancel';
+  @override String get genericVerify => 'Verify';
+  @override String get genericSet => 'Set PIN';
+  @override String get settingsVersion => 'Version';
+  @override String get settingsNoProfile => 'No Profile';
 }
 

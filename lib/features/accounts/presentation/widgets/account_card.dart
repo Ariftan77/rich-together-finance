@@ -51,7 +51,7 @@ class AccountCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  account.name,
+                  '${account.name} (${account.currency.code})',
                   style: AppTypography.textTheme.titleMedium,
                 ),
                 Text(

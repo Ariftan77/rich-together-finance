@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 
-class PrivacyPolicyScreen extends StatelessWidget {
+class PrivacyPolicyScreen extends ConsumerWidget {
   const PrivacyPolicyScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trans = ref.watch(translationsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bgDarkStart,
       appBar: AppBar(
-        title: const Text('Privacy Policy'),
+        title: Text(trans.privacyTitle),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -28,14 +32,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Privacy Policy',
+                trans.privacyTitle,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   color: AppColors.primaryGold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Last updated: February 2026',
+                trans.privacyLastUpdated,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 12,
@@ -43,35 +47,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              _buildSection(
-                'Data Collection',
-                'Rich Together is designed with your privacy in mind. All your financial data is stored locally on your device. We do not collect, transmit, or store any of your personal financial information on external servers.',
-              ),
-
-              _buildSection(
-                'Local Storage',
-                'Your data is stored securely on your device using encrypted SQLite database. The app operates fully offline, meaning your data never leaves your phone unless you explicitly choose to backup.',
-              ),
-
-              _buildSection(
-                'Optional Backup',
-                'If you choose to use Google Drive backup, your data will be encrypted and stored in your personal Google Drive account. We do not have access to your backup files.',
-              ),
-
-              _buildSection(
-                'No Third-Party Analytics',
-                'We do not use third-party analytics services that track your behavior or collect personal information.',
-              ),
-
-              _buildSection(
-                'Data Deletion',
-                'You can delete all your data at any time from the Settings menu. Deleting the app will also remove all locally stored data.',
-              ),
-
-              _buildSection(
-                'Contact',
-                'If you have questions about this Privacy Policy, please contact us at privacy@richtogether.app',
-              ),
+              _buildSection(trans.privacyDataCollectionTitle, trans.privacyDataCollectionContent),
+              _buildSection(trans.privacyLocalStorageTitle, trans.privacyLocalStorageContent),
+              _buildSection(trans.privacyBackupTitle, trans.privacyBackupContent),
+              _buildSection(trans.privacyAnalyticsTitle, trans.privacyAnalyticsContent),
+              _buildSection(trans.privacyDeletionTitle, trans.privacyDeletionContent),
+              _buildSection(trans.privacyContactTitle, trans.privacyContactContent),
             ],
           ),
         ),

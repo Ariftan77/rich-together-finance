@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
-import 'package:collection/collection.dart';
+
 
 /// Model to hold budget data combined with spending info
 class BudgetWithSpending {

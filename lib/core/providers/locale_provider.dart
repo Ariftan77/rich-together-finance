@@ -4,10 +4,19 @@ import '../localization/app_translations.dart';
 import '../localization/translations_en.dart';
 import '../localization/translations_id.dart';
 
+import '../providers/profile_provider.dart';
+
 /// Provider for the current app locale.
-/// Default is English ('en').
-final localeProvider = StateProvider<Locale>((ref) {
-  return const Locale('en');
+/// Reactive to active profile settings.
+final localeProvider = Provider<Locale>((ref) {
+  final settingsAsync = ref.watch(activeProfileSettingsProvider);
+  
+  // Default to English if loading or null
+  final languageCode = settingsAsync.whenOrNull(
+    data: (settings) => settings?.language
+  ) ?? 'en';
+
+  return Locale(languageCode);
 });
 
 /// Computed provider that returns the correct [AppTranslations] instance

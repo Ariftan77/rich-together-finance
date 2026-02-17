@@ -9,11 +9,13 @@ import '../../accounts/presentation/screens/account_entry_screen.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
 import '../../../shared/widgets/fab_button.dart';
 import '../../../core/providers/app_init_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
 
 import '../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../wealth/presentation/screens/wealth_screen.dart';
+import '../../debts/presentation/screens/debt_entry_screen.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -59,27 +61,27 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
           BottomNavItem(
             icon: Icons.receipt_long_outlined, 
             activeIcon: Icons.receipt_long, 
-            label: 'Transactions'
+            label: ref.watch(translationsProvider).navTransactions,
           ),
           BottomNavItem(
             icon: Icons.account_balance_wallet_outlined, 
             activeIcon: Icons.account_balance_wallet, 
-            label: 'Wallet'
+            label: ref.watch(translationsProvider).navWallet,
           ),
           BottomNavItem(
             icon: Icons.dashboard_outlined,
             activeIcon: Icons.dashboard,
-            label: 'Overview'
+            label: ref.watch(translationsProvider).dashboardOverview,
           ),
           BottomNavItem(
             icon: Icons.trending_up_outlined,
             activeIcon: Icons.trending_up,
-            label: 'Wealth'
+            label: ref.watch(translationsProvider).navWealth,
           ),
           BottomNavItem(
             icon: Icons.settings_outlined,
             activeIcon: Icons.settings,
-            label: 'Settings'
+            label: ref.watch(translationsProvider).navSettings,
           ),
         ],
       ),
@@ -138,6 +140,19 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const GoalEntryScreen(),
+                ),
+              );
+            },
+          );
+        }
+        if (wealthTab == 2) {
+          return FabButton(
+            icon: Icons.add,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DebtEntryScreen(),
                 ),
               );
             },
