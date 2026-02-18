@@ -135,9 +135,18 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   }
 
   Future<void> _applyAdjustment() async {
-    final adjustmentAmount = double.tryParse(_adjustmentController.text) ?? 0.0;
-    
-    if (adjustmentAmount == 0) {
+    if (widget.account == null) return;
+
+    final targetBalance = Formatters.parseCurrency(
+      _adjustmentController.text,
+      currency: widget.account!.currency,
+    );
+
+    final balances = ref.read(accountBalanceProvider);
+    final currentBalance = balances[widget.account!.id] ?? widget.account!.initialBalance;
+    final delta = targetBalance - currentBalance;
+
+    if (delta == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ref.read(translationsProvider).accountAdjustmentRequired)),
       );
@@ -145,22 +154,20 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     }
 
     final profileId = ref.read(activeProfileIdProvider);
-    if (profileId == null || widget.account == null) return;
+    if (profileId == null) return;
 
     setState(() => _isAdjusting = true);
 
     try {
       final transactionDao = ref.read(transactionDaoProvider);
-
-      // Determine if positive (income) or negative (expense) adjustment
-      final isPositive = adjustmentAmount > 0;
+      final isPositive = delta > 0;
 
       await transactionDao.insertTransaction(
         TransactionsCompanion(
           profileId: drift.Value(profileId),
           accountId: drift.Value(widget.account!.id),
           type: drift.Value(isPositive ? TransactionType.income : TransactionType.expense),
-          amount: drift.Value(adjustmentAmount.abs()),
+          amount: drift.Value(delta.abs()),
           date: drift.Value(DateTime.now()),
           title: const drift.Value('Balance Adjustment'),
           note: drift.Value('Manual adjustment for ${widget.account!.name}'),
@@ -171,11 +178,11 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${ref.read(translationsProvider).accountAdjustmentApplied}: ${isPositive ? '+' : '-'}${Formatters.formatCurrency(adjustmentAmount.abs(), currency: widget.account!.currency, showDecimal: ref.read(showDecimalProvider))}'),
+            content: Text('${ref.read(translationsProvider).accountAdjustmentApplied}: ${isPositive ? '+' : '-'}${Formatters.formatCurrency(delta.abs(), currency: widget.account!.currency, showDecimal: ref.read(showDecimalProvider))}'),
             backgroundColor: AppColors.success,
           ),
         );
-        _adjustmentController.text = '0';
+        _adjustmentController.clear();
       }
     } catch (e) {
       if (mounted) {
@@ -339,11 +346,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                 Expanded(
                                   child: GlassInput(
                                     controller: _adjustmentController,
-                                    hintText: 'e.g. 50000 or -50000',
+                                    hintText: 'Enter target balance',
                                     prefixIcon: Icons.tune,
-                                    keyboardType: TextInputType.numberWithOptions(signed: true, decimal: showDecimal),
+                                    keyboardType: TextInputType.numberWithOptions(decimal: showDecimal),
                                     inputFormatters: [
-                                      FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*')),
+                                      CurrencyInputFormatter(
+                                        currency: widget.account!.currency,
+                                        showDecimal: showDecimal,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -400,10 +410,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                           ),
                         ],
                         validator: (v) {
-                          if (v == null || v.isEmpty) { // Allow '0' as valid start balance
-                            // But wait, if empty string, we might want to say required.
-                            // If user clears field, v is empty.
+                          if (v == null || v.isEmpty) {
                             return ref.watch(translationsProvider).accountBalanceRequired;
+                          }
+                          if (_selectedType.isCreditCard) {
+                            final parsed = Formatters.parseCurrency(v, currency: _selectedCurrency);
+                            if (parsed < 0) {
+                              return 'Credit card initial balance cannot be negative';
+                            }
                           }
                           return null;
                         },
@@ -441,7 +455,10 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             label: Text(currency.code),
                             selected: isSelected,
                             onSelected: (selected) {
-                              if (selected) setState(() => _selectedCurrency = currency);
+                              if (selected) setState(() {
+                                _selectedCurrency = currency;
+                                _balanceController.clear();
+                              });
                             },
                             selectedColor: AppColors.primaryGold,
                             backgroundColor: isDarkMode ? AppColors.glassBackground : AppColors.glassBackgroundLight,
@@ -478,6 +495,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
         return Icons.phone_android;
       case AccountType.investment:
         return Icons.trending_up;
+      case AccountType.creditCard:
+        return Icons.credit_card;
     }
   }
 }

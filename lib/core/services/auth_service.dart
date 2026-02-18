@@ -97,7 +97,9 @@ class AuthService {
 /// Provider for AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(
-    const FlutterSecureStorage(),
+    const FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    ),
     LocalAuthentication(),
   );
 });

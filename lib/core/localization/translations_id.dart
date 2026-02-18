@@ -147,7 +147,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get helpFaq7Question => 'Bisakah saya menggunakan aplikasi secara offline?';
   @override String get helpFaq7Answer => 'Tentu saja! Rich Together bekerja 100% offline. Internet hanya dibutuhkan untuk fitur opsional seperti cadangan cloud.';
   @override String get helpContactSupport => 'Hubungi tim dukungan kami';
-  @override String get helpContactEmail => 'apexterminal.dev@gmail.com';
+  @override String get helpContactEmail => 'axiomtech.dev@gmail.com';
 
   // Privacy Policy
   @override String get privacyTitle => 'Kebijakan Privasi';

@@ -19,6 +19,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String _confirmPin = '';
   bool _isConfirming = false;
   String _message = 'Enter PIN';
+  bool _biometricEnabled = false;
 
   @override
   void initState() {
@@ -27,16 +28,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _message = 'Create a PIN';
     } else {
       _message = 'Enter PIN';
-      _checkBiometric();
+      _loadBiometricState();
     }
   }
 
-  Future<void> _checkBiometric() async {
+  Future<void> _loadBiometricState() async {
     final authService = ref.read(authServiceProvider);
-    final bioEnabled = await authService.isBiometricEnabled();
-    if (bioEnabled) {
-      _authenticateBiometric();
-    }
+    final enabled = await authService.isBiometricEnabled();
+    if (mounted) setState(() => _biometricEnabled = enabled);
   }
 
   Future<void> _authenticateBiometric() async {
@@ -192,8 +191,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               PinPad(
                 onDigitPressed: _onDigitPressed,
                 onDeletePressed: _onDeletePressed,
-                showBiometric: !widget.isSetup,
-                onBiometricPressed: !widget.isSetup ? _authenticateBiometric : null,
+                showBiometric: !widget.isSetup && _biometricEnabled,
+                onBiometricPressed: !widget.isSetup && _biometricEnabled ? _authenticateBiometric : null,
               ),
               const SizedBox(height: 48),
             ],

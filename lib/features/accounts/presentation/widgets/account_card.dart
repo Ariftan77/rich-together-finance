@@ -65,11 +65,21 @@ class AccountCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '$currencySymbol ${Formatters.formatCurrency(balance, currency: account.currency, showDecimal: showDecimal)}', 
+                '${balance < 0 ? '-' : ''}$currencySymbol ${Formatters.formatCurrency(balance.abs(), currency: account.currency, showDecimal: showDecimal)}',
                 style: AppTypography.textTheme.labelLarge?.copyWith(
-                  color: AppColors.primaryGoldAccent,
+                  color: account.type.isCreditCard && balance < 0
+                      ? AppColors.error
+                      : AppColors.primaryGoldAccent,
                 ),
               ),
+              if (account.type.isCreditCard && balance < 0)
+                Text(
+                  'Outstanding',
+                  style: TextStyle(
+                    color: AppColors.error.withValues(alpha: 0.7),
+                    fontSize: 11,
+                  ),
+                ),
             ],
           ),
         ],
@@ -87,6 +97,8 @@ class AccountCard extends ConsumerWidget {
         return Icons.phone_android;
       case AccountType.investment:
         return Icons.trending_up;
+      case AccountType.creditCard:
+        return Icons.credit_card;
     }
   }
 }

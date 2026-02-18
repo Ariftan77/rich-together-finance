@@ -124,7 +124,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               _buildInfoTile(
                 icon: Icons.email_outlined,
                 title: ref.watch(translationsProvider).aboutContact,
-                subtitle: 'apexterminal.dev@gmail.com',
+                subtitle: 'axiomtech.dev@gmail.com',
               ),
               const SizedBox(height: 48),
 

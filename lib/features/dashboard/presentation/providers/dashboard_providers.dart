@@ -150,7 +150,7 @@ final dashboardBalanceByCurrencyProvider = StreamProvider.autoDispose<Map<Curren
   }
 });
 
-/// Net worth (assets - liabilities, converted to base currency)
+/// Net worth (cash + investments - liabilities, fully converted to base currency)
 final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async* {
   final profileId = ref.watch(activeProfileIdProvider);
   if (profileId == null) {
@@ -160,11 +160,13 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
 
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
+  final holdingDao = ref.watch(holdingDaoProvider);
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final exchangeService = ref.watch(exchangeRateServiceProvider);
 
   await for (final accounts in accountDao.watchAllAccounts(profileId)) {
+    // 1. Account balances (cash assets) — currency converted
     double totalAssets = 0;
     for (final account in accounts) {
       final balance = await transactionDao.calculateAccountBalance(account.id);
@@ -176,17 +178,34 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
       }
     }
 
-    // Get total liabilities (debts payable)
+    // 2. Investment holdings valued at quantity × averageBuyPrice — currency converted
+    final allHoldings = await holdingDao.getAllHoldings();
+    for (final holding in allHoldings.where((h) => h.profileId == profileId)) {
+      final holdingValue = holding.quantity * holding.averageBuyPrice;
+      if (holding.currency == baseCurrency) {
+        totalAssets += holdingValue;
+      } else {
+        final converted = await exchangeService.convert(holdingValue, holding.currency, baseCurrency);
+        totalAssets += converted ?? holdingValue;
+      }
+    }
+
+    // 3. Payable debts (liabilities) — remaining amount, currency converted
     final debts = await debtDao.getAllDebts();
     double totalLiabilities = 0;
     for (final debt in debts) {
       if (debt.type == DebtType.payable && !debt.isSettled) {
-        totalLiabilities += debt.amount;
+        final remaining = debt.amount - debt.paidAmount;
+        if (debt.currency == baseCurrency) {
+          totalLiabilities += remaining;
+        } else {
+          final converted = await exchangeService.convert(remaining, debt.currency, baseCurrency);
+          totalLiabilities += converted ?? remaining;
+        }
       }
     }
 
     yield totalAssets - totalLiabilities;
-    break;
   }
 });
 

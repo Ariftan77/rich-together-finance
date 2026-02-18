@@ -7,6 +7,7 @@ enum AccountType {
   bank,       // 1 - Bank accounts (BCA, Mandiri, etc.)
   eWallet,    // 2 - GoPay, OVO, Dana, ShopeePay
   investment, // 3 - Brokerage, Exchange accounts
+  creditCard, // 4 - Credit cards (balance can go negative)
 }
 
 /// Transaction types
@@ -76,6 +77,8 @@ extension AccountTypeX on AccountType {
         return 'E-Wallet';
       case AccountType.investment:
         return 'Investment';
+      case AccountType.creditCard:
+        return 'Credit Card';
     }
   }
 
@@ -89,8 +92,12 @@ extension AccountTypeX on AccountType {
         return 'phone_android';
       case AccountType.investment:
         return 'trending_up';
+      case AccountType.creditCard:
+        return 'credit_card';
     }
   }
+
+  bool get isCreditCard => this == AccountType.creditCard;
 }
 
 extension TransactionTypeX on TransactionType {

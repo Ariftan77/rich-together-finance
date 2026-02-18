@@ -35,7 +35,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
     return Dialog(
       backgroundColor: AppColors.bgDarkEnd,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -154,6 +154,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
   }
 
   Future<void> _createProfile() async {
+
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       setState(() => _errorMessage = 'Please enter a profile name');
@@ -167,24 +168,18 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
 
     try {
       final profileDao = ref.read(profileDaoProvider);
-      
-      // Check if name is unique
+
       final isUnique = await profileDao.isProfileNameUnique(name);
       if (!isUnique) {
-        setState(() {
-          _errorMessage = 'A profile with this name already exists';
-          _isLoading = false;
-        });
+        setState(() => _errorMessage = 'A profile with this name already exists');
         return;
       }
 
-      // Create the profile
       final profileId = await profileDao.createProfile(
         name: name,
         avatar: _selectedAvatar,
       );
 
-      // Create default settings for the profile
       await ref.read(settingsDaoProvider).createDefaultSettings(profileId);
 
       if (mounted) {
@@ -194,10 +189,9 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
         );
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

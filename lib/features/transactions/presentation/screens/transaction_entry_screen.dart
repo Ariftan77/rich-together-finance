@@ -161,8 +161,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     setState(() => _isSaving = true);
 
     try {
-      // Validate sufficient balance for expenses
-      if (_selectedType == TransactionType.expense) {
+      // Check if selected account is a credit card (no balance limit)
+      final selectedAccount = await ref.read(accountDaoProvider).getAccountById(_selectedAccountId!);
+      final isCreditCard = selectedAccount?.type.isCreditCard ?? false;
+
+      // Validate sufficient balance for expenses (skip for credit cards)
+      if (_selectedType == TransactionType.expense && !isCreditCard) {
         final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
         if (amount > accountBalance) {
           if (mounted) {
@@ -175,8 +179,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         }
       }
 
-      // Validate sufficient balance for transfers
-      if (_selectedType == TransactionType.transfer) {
+      // Validate sufficient balance for transfers (skip for credit cards)
+      if (_selectedType == TransactionType.transfer && !isCreditCard) {
         final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
         if (amount > accountBalance) {
           if (mounted) {

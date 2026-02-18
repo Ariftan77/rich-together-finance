@@ -23,10 +23,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
     String newText = newValue.text;
     
     if (newText.isEmpty) {
-      return const TextEditingValue(
-        text: '',
-        selection: TextSelection.collapsed(offset: 0),
-      );
+      return TextEditingValue.empty;
     }
 
     final String decimalSep = currency == Currency.idr ? ',' : '.';
@@ -71,6 +68,10 @@ class CurrencyInputFormatter extends TextInputFormatter {
     String finalText = integerPart;
     if (showDecimal && hasDecimalSep) {
       finalText += decimalSep + decimalPart;
+    }
+
+    if (finalText.isEmpty) {
+      return TextEditingValue.empty;
     }
 
     return TextEditingValue(
