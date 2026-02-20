@@ -11,6 +11,8 @@ import '../../../shared/widgets/fab_button.dart';
 import '../../../core/providers/app_init_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
+import '../../../core/services/ad_service.dart';
+import '../../../shared/widgets/ad_banner_widget.dart';
 
 import '../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
@@ -26,6 +28,15 @@ class DashboardShell extends ConsumerStatefulWidget {
 
 class _DashboardShellState extends ConsumerState<DashboardShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Show App Open ad once per day
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AdService().loadAndShowAppOpen(context);
+    });
+  }
 
   final List<Widget> _screens = const [
     TransactionsHistoryScreen(), // 0: Transactions
@@ -54,34 +65,40 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
           children: _screens,
         ),
       ),
-      bottomNavigationBar: GlassBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: [
-          BottomNavItem(
-            icon: Icons.receipt_long_outlined, 
-            activeIcon: Icons.receipt_long, 
-            label: ref.watch(translationsProvider).navTransactions,
-          ),
-          BottomNavItem(
-            icon: Icons.account_balance_wallet_outlined, 
-            activeIcon: Icons.account_balance_wallet, 
-            label: ref.watch(translationsProvider).navWallet,
-          ),
-          BottomNavItem(
-            icon: Icons.dashboard_outlined,
-            activeIcon: Icons.dashboard,
-            label: ref.watch(translationsProvider).dashboardOverview,
-          ),
-          BottomNavItem(
-            icon: Icons.trending_up_outlined,
-            activeIcon: Icons.trending_up,
-            label: ref.watch(translationsProvider).navWealth,
-          ),
-          BottomNavItem(
-            icon: Icons.settings_outlined,
-            activeIcon: Icons.settings,
-            label: ref.watch(translationsProvider).navSettings,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AdBannerWidget(),
+          GlassBottomNav(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            items: [
+              BottomNavItem(
+                icon: Icons.receipt_long_outlined, 
+                activeIcon: Icons.receipt_long, 
+                label: ref.watch(translationsProvider).navTransactions,
+              ),
+              BottomNavItem(
+                icon: Icons.account_balance_wallet_outlined, 
+                activeIcon: Icons.account_balance_wallet, 
+                label: ref.watch(translationsProvider).navWallet,
+              ),
+              BottomNavItem(
+                icon: Icons.dashboard_outlined,
+                activeIcon: Icons.dashboard,
+                label: ref.watch(translationsProvider).dashboardOverview,
+              ),
+              BottomNavItem(
+                icon: Icons.trending_up_outlined,
+                activeIcon: Icons.trending_up,
+                label: ref.watch(translationsProvider).navWealth,
+              ),
+              BottomNavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: ref.watch(translationsProvider).navSettings,
+              ),
+            ],
           ),
         ],
       ),

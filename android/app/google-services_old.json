@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188246340948",
+    "project_id": "richer-86cd4",
+    "storage_bucket": "richer-86cd4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188246340948:android:945ed51694a94ba43bc4c1",
+        "android_client_info": {
+          "package_name": "com.axiomtechdev.richtogether"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_NlpvhtB3u5Za8bpkvw8c9jOXbdZQFOI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

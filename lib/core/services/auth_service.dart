@@ -128,7 +128,8 @@ class AuthStatusNotifier extends StateNotifier<AuthStatus> {
     final isEnabled = await _authService.isAuthEnabled();
 
     if (!hasPin) {
-      state = AuthStatus.setupRequired;
+      // By default, if no PIN is set, the app is unlocked and usable.
+      state = AuthStatus.authenticated;
     } else if (!isEnabled) {
       state = AuthStatus.authenticated; // If auth disabled, consider authenticated
     } else {

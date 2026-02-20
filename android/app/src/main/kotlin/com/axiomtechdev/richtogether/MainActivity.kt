@@ -1,4 +1,4 @@
-package com.richtogether.rich_together
+package com.axiomtechdev.richtogether
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

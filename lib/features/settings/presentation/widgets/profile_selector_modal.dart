@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../core/services/ad_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
@@ -53,7 +55,7 @@ class ProfileSelectorModal extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: GlassButton(
-                    onPressed: () => _showAddProfileDialog(context),
+                    onPressed: () => _showAddProfileDialog(context, ref, profiles),
                     text: 'Add New Profile',
                     icon: Icons.add,
                     isFullWidth: true,
@@ -130,8 +132,51 @@ class ProfileSelectorModal extends ConsumerWidget {
     );
   }
 
-  void _showAddProfileDialog(BuildContext context) {
-    Navigator.pop(context);
+  Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
+    debugPrint("🧑 Add profile tapped — rewardedEnabled=${RemoteConfigService().rewardedEnabled}, profileCount=${profiles.length}");
+
+    if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
+      // Show confirmation BEFORE popping — context must still be attached
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.bgDarkEnd,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Add New Profile', style: AppTypography.textTheme.titleLarge),
+          content: const Text(
+            'Watch a short ad to create a new profile.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Watch Ad', style: TextStyle(color: AppColors.primaryGold)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+      if (!context.mounted) return;
+
+      debugPrint("🎬 User confirmed — calling showRewarded()");
+      final rewarded = await AdService().showRewarded();
+      if (!rewarded) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ad not completed. Please try again.')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // close modal after ad or if gate not needed
     showDialog(
       context: context,
       builder: (context) => const AddProfileDialog(),

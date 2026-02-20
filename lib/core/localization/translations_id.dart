@@ -110,11 +110,17 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsPreferences => 'Preferensi';
   @override String get settingsSecurity => 'Keamanan';
   @override String get settingsAbout => 'Tentang';
+  @override String get settingsNotifications => 'Notifikasi';
+  @override String get settingsDailyReminder => 'Pengingat Harian';
+  @override String get settingsReminderTime => 'Waktu Pengingat';
+  @override String get notificationReminderTitle => '💰 Waktunya mencatat!';
+  @override String get notificationReminderBody => "Jangan lupa catat transaksi Anda hari ini.";
   @override String get settingsSyncBackup => 'Sinkronisasi & Cadangan';
   @override String get settingsManageCategories => 'Kelola Kategori';
   @override String get settingsBackupRestore => 'Cadangan & Pemulihan';
   @override String get settingsBaseCurrency => 'Mata Uang Dasar';
   @override String get settingsShowDecimals => 'Tampilkan Desimal';
+  @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'Tentang Rich Together';
   
@@ -326,4 +332,25 @@ class AppTranslationsId implements AppTranslations {
   @override String get genericSet => 'Atur PIN';
   @override String get settingsVersion => 'Versi';
   @override String get settingsNoProfile => 'Tidak Ada Profil';
+
+  // Premium
+  @override String get premiumRedeemVoucher => 'Tukar Voucher';
+  @override String get premiumGetPremium => 'Dapatkan Premium';
+  @override String get premiumLifetimeSubtitle => 'Seumur hidup — tanpa iklan, multi profil';
+  @override String get premiumSyncSubscription => 'Langganan Sinkronisasi';
+  @override String get premiumSyncSubtitle => 'Sinkronisasi antar perangkat — tahunan';
+  @override String get premiumRestorePurchase => 'Pulihkan Pembelian';
+  @override String get premiumEnterVoucherCode => 'Masukkan kode voucher';
+  @override String get premiumRedeem => 'Tukar';
+  @override String get premiumActivated => 'Premium diaktifkan! 🎉';
+  @override String get premiumInvalidVoucher => 'Kode voucher tidak valid.';
+  @override String get premiumVoucherUsed => 'Voucher ini sudah digunakan.';
+  @override String get premiumNotSignedIn => 'Silakan masuk terlebih dahulu.';
+  @override String get premiumVoucherDisabled => 'Penukaran voucher tidak tersedia.';
+  @override String get premiumRestored => 'Premium dipulihkan: ';
+  @override String get premiumCheckingPlayStore => 'Memeriksa pembelian Play Store...';
+  @override String get premiumSignInGoogle => 'Masuk dengan Google';
+  @override String get premiumSignInRequired => 'Diperlukan untuk tukar voucher & pulihkan pembelian';
+  @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
+  @override String get premiumSignedInTryAgain => 'Berhasil masuk! Silakan coba lagi untuk menukar voucher Anda.';
 }

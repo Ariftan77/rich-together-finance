@@ -106,11 +106,17 @@ abstract class AppTranslations {
   String get settingsPreferences;
   String get settingsSecurity;
   String get settingsAbout;
+  String get settingsNotifications;
+  String get settingsDailyReminder;
+  String get settingsReminderTime;
+  String get notificationReminderTitle;
+  String get notificationReminderBody;
   String get settingsSyncBackup;
   String get settingsManageCategories;
   String get settingsBackupRestore;
   String get settingsBaseCurrency;
   String get settingsShowDecimals;
+  String get settingsPremium;
 
   String get settingsAboutApp;
   
@@ -323,4 +329,25 @@ abstract class AppTranslations {
   String get genericSet;
   String get settingsVersion;
   String get settingsNoProfile;
+
+  // Premium
+  String get premiumRedeemVoucher;
+  String get premiumGetPremium;
+  String get premiumLifetimeSubtitle;
+  String get premiumSyncSubscription;
+  String get premiumSyncSubtitle;
+  String get premiumRestorePurchase;
+  String get premiumEnterVoucherCode;
+  String get premiumRedeem;
+  String get premiumActivated;
+  String get premiumInvalidVoucher;
+  String get premiumVoucherUsed;
+  String get premiumNotSignedIn;
+  String get premiumVoucherDisabled;
+  String get premiumRestored;
+  String get premiumCheckingPlayStore;
+  String get premiumSignInGoogle;
+  String get premiumSignInRequired;
+  String get premiumSignInFailed;
+  String get premiumSignedInTryAgain;
 }

@@ -79,6 +79,7 @@ flutter run
 
 **Android:**
 ```bash
+flutter build apk --debug (this one for debug mode, specially ad test)
 flutter build apk --release
 flutter build apk --release --split-per-abi
 (Note: This might take a few minutes)

@@ -110,11 +110,17 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsPreferences => 'Preferences';
   @override String get settingsSecurity => 'Security';
   @override String get settingsAbout => 'About';
+  @override String get settingsNotifications => 'Notifications';
+  @override String get settingsDailyReminder => 'Daily Reminder';
+  @override String get settingsReminderTime => 'Reminder Time';
+  @override String get notificationReminderTitle => '💰 Time to track!';
+  @override String get notificationReminderBody => "Don't forget to record today's transactions.";
   @override String get settingsSyncBackup => 'Sync & Backup';
   @override String get settingsManageCategories => 'Manage Categories';
   @override String get settingsBackupRestore => 'Backup & Restore';
   @override String get settingsBaseCurrency => 'Base Currency';
   @override String get settingsShowDecimals => 'Show Decimals';
+  @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'About Rich Together';
   
@@ -326,5 +332,26 @@ class AppTranslationsEn implements AppTranslations {
   @override String get genericSet => 'Set PIN';
   @override String get settingsVersion => 'Version';
   @override String get settingsNoProfile => 'No Profile';
+
+  // Premium
+  @override String get premiumRedeemVoucher => 'Redeem Voucher';
+  @override String get premiumGetPremium => 'Get Premium';
+  @override String get premiumLifetimeSubtitle => 'Lifetime — no ads, multi profile';
+  @override String get premiumSyncSubscription => 'Sync Subscription';
+  @override String get premiumSyncSubtitle => 'Cross-device sync — yearly';
+  @override String get premiumRestorePurchase => 'Restore Purchase';
+  @override String get premiumEnterVoucherCode => 'Enter voucher code';
+  @override String get premiumRedeem => 'Redeem';
+  @override String get premiumActivated => 'Premium activated! 🎉';
+  @override String get premiumInvalidVoucher => 'Invalid voucher code.';
+  @override String get premiumVoucherUsed => 'This voucher has already been used.';
+  @override String get premiumNotSignedIn => 'Please sign in first.';
+  @override String get premiumVoucherDisabled => 'Voucher redemption is not available.';
+  @override String get premiumRestored => 'Premium restored: ';
+  @override String get premiumCheckingPlayStore => 'Checking Play Store purchases...';
+  @override String get premiumSignInGoogle => 'Sign in with Google';
+  @override String get premiumSignInRequired => 'Required for voucher redemption & purchase restore';
+  @override String get premiumSignInFailed => 'Sign in failed. Please try again.';
+  @override String get premiumSignedInTryAgain => 'Signed in! Please try again to redeem your voucher.';
 }
 

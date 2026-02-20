@@ -20,7 +20,11 @@ import 'terms_screen.dart';
 import 'help_faq_screen.dart';
 import 'categories_screen.dart';
 import 'backup_screen.dart';
-import 'sync_screen.dart';
+import '../../providers/notification_settings_provider.dart';
+import '../../../../core/services/remote_config_service.dart';
+import '../../../../core/services/premium_auth_service.dart';
+import '../../../../core/services/voucher_service.dart';
+import '../../../../core/services/iap_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +35,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
+  bool _premiumSignInLoading = false;
 
   @override
   void initState() {
@@ -96,6 +101,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 12),
               _buildSecuritySection(settings.valueOrNull),
               const SizedBox(height: 24),
+
+              // Notifications Section
+              _buildSectionHeader(ref.watch(translationsProvider).settingsNotifications),
+              const SizedBox(height: 12),
+              _buildNotificationsSection(),
+              const SizedBox(height: 24),
+
+              // Premium Section (gated by Remote Config)
+              if (RemoteConfigService().premiumEnabled) ...[
+                _buildSectionHeader(ref.watch(translationsProvider).settingsPremium),
+                const SizedBox(height: 12),
+                _buildPremiumSection(),
+                const SizedBox(height: 24),
+              ],
 
               // App Info Section
               _buildSectionHeader(ref.watch(translationsProvider).settingsAbout),
@@ -183,19 +202,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: Colors.white.withValues(alpha: 0.5),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
-          padding: EdgeInsets.zero,
-          child: SettingsTile(
-            icon: Icons.cloud_sync,
-            title: ref.watch(translationsProvider).settingsSyncBackup,
-            subtitle: ref.watch(translationsProvider).settingsConnectSupabase,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SyncScreen()),
-            ),
           ),
         ),
       ],
@@ -747,4 +753,284 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       },
     );
   }
+
+  Widget _buildNotificationsSection() {
+    final notifSettings = ref.watch(notificationSettingsProvider);
+    final trans = ref.watch(translationsProvider);
+
+    return GlassCard(
+      child: Column(
+        children: [
+          SettingsTile(
+            icon: Icons.notifications_active,
+            title: trans.settingsDailyReminder,
+            trailing: Switch(
+              value: notifSettings.isReminderEnabled,
+              onChanged: (value) {
+                ref.read(notificationSettingsProvider.notifier).toggleReminder(value);
+              },
+              activeColor: AppColors.primaryGold,
+            ),
+          ),
+          if (notifSettings.isReminderEnabled) ...[
+            Divider(color: Colors.white.withValues(alpha: 0.1)),
+            SettingsTile(
+              icon: Icons.access_time,
+              title: trans.settingsReminderTime,
+              subtitle: notifSettings.reminderTime.format(context),
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: notifSettings.reminderTime,
+                );
+                if (picked != null) {
+                  ref.read(notificationSettingsProvider.notifier).setReminderTime(picked);
+                }
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumSection() {
+    final auth = PremiumAuthService();
+    final trans = ref.watch(translationsProvider);
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          // Google account tile — always visible at the top
+          if (auth.isSignedIn)
+            _buildSignedInAccountTile(auth)
+          else
+            SettingsTile(
+              icon: Icons.account_circle_outlined,
+              title: trans.premiumSignInGoogle,
+              subtitle: trans.premiumSignInRequired,
+              trailing: _premiumSignInLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primaryGold,
+                      ),
+                    )
+                  : null,
+              onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
+            ),
+          Divider(color: Colors.white.withValues(alpha: 0.1)),
+
+          if (RemoteConfigService().voucherEnabled) ...[
+            SettingsTile(
+              icon: Icons.card_giftcard,
+              title: trans.premiumRedeemVoucher,
+              onTap: _showVoucherDialog,
+            ),
+          ],
+          if (RemoteConfigService().iapEnabled) ...[
+            if (RemoteConfigService().voucherEnabled)
+              Divider(color: Colors.white.withValues(alpha: 0.1)),
+            SettingsTile(
+              icon: Icons.star,
+              title: trans.premiumGetPremium,
+              subtitle: trans.premiumLifetimeSubtitle,
+              onTap: () => IapService().buyPremium(),
+            ),
+            Divider(color: Colors.white.withValues(alpha: 0.1)),
+            SettingsTile(
+              icon: Icons.cloud_sync,
+              title: trans.premiumSyncSubscription,
+              subtitle: trans.premiumSyncSubtitle,
+              onTap: () => IapService().buySync(),
+            ),
+          ],
+          Divider(color: Colors.white.withValues(alpha: 0.1)),
+          SettingsTile(
+            icon: Icons.restore,
+            title: trans.premiumRestorePurchase,
+            onTap: _handleRestorePurchase,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignedInAccountTile(PremiumAuthService auth) {
+    final photoUrl = auth.photoUrl;
+    return InkWell(
+      onTap: null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.primaryGold.withValues(alpha: 0.15),
+              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+              child: photoUrl == null
+                  ? Text(
+                      (auth.displayName?.isNotEmpty == true)
+                          ? auth.displayName![0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auth.displayName ?? 'Google Account',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (auth.email != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        auth.email!,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.logout, color: Colors.white.withValues(alpha: 0.6), size: 20),
+              onPressed: _handleGoogleSignOut,
+              tooltip: 'Sign out',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _premiumSignInLoading = true);
+    final ok = await PremiumAuthService().signIn();
+    if (!mounted) return;
+    setState(() => _premiumSignInLoading = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.read(translationsProvider).premiumSignInFailed)),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleSignOut() async {
+    await PremiumAuthService().signOut();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _showVoucherDialog() async {
+    final trans = ref.read(translationsProvider);
+    final codeController = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.bgDarkEnd,
+        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+        title: Text(trans.premiumRedeemVoucher, style: const TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: codeController,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: trans.premiumEnterVoucherCode,
+            hintStyle: const TextStyle(color: Colors.white38),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.primaryGold),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(trans.genericCancel, style: const TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, codeController.text.trim()),
+            child: Text(trans.premiumRedeem, style: const TextStyle(color: AppColors.primaryGold)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      final voucherResult = await VoucherService().redeem(result);
+      if (!mounted) return;
+
+      if (voucherResult == VoucherResult.notSignedIn) {
+        // Auto-trigger sign in instead of a dead-end snackbar
+        final ok = await PremiumAuthService().signIn();
+        if (!mounted) return;
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(trans.premiumSignedInTryAgain)),
+          );
+          setState(() {});
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(trans.premiumSignInFailed)),
+          );
+        }
+        return;
+      }
+
+      final message = switch (voucherResult) {
+        VoucherResult.success => trans.premiumActivated,
+        VoucherResult.invalid => trans.premiumInvalidVoucher,
+        VoucherResult.alreadyUsed => trans.premiumVoucherUsed,
+        VoucherResult.notSignedIn => trans.premiumNotSignedIn,
+        VoucherResult.disabled => trans.premiumVoucherDisabled,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
+  Future<void> _handleRestorePurchase() async {
+    final trans = ref.read(translationsProvider);
+    final auth = PremiumAuthService();
+    if (!auth.isSignedIn) {
+      final ok = await auth.signIn();
+      if (!ok || !mounted) return;
+    }
+
+    // Check Supabase
+    final status = await auth.getPremiumStatus();
+    if (status != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
+      );
+      return;
+    }
+
+    // Fallback: check Play Store
+    await IapService().restorePurchases();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(trans.premiumCheckingPlayStore)),
+      );
+    }
+  }
 }
+
