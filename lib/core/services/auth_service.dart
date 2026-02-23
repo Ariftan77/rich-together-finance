@@ -109,6 +109,7 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   setupRequired, // No PIN set
+  loading, // Checking auth status
 }
 
 final authStatusProvider = StateNotifierProvider<AuthStatusNotifier, AuthStatus>((ref) {
@@ -119,7 +120,7 @@ final authStatusProvider = StateNotifierProvider<AuthStatusNotifier, AuthStatus>
 class AuthStatusNotifier extends StateNotifier<AuthStatus> {
   final AuthService _authService;
 
-  AuthStatusNotifier(this._authService) : super(AuthStatus.unauthenticated) {
+  AuthStatusNotifier(this._authService) : super(AuthStatus.loading) {
     checkAuthStatus();
   }
 

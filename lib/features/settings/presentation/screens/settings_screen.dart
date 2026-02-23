@@ -24,7 +24,7 @@ import '../../providers/notification_settings_provider.dart';
 import '../../../../core/services/remote_config_service.dart';
 import '../../../../core/services/premium_auth_service.dart';
 import '../../../../core/services/voucher_service.dart';
-import '../../../../core/services/iap_service.dart';
+import '../../../../core/services/iap_service.dart' show IapService, IapResult;
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -75,6 +75,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 style: AppTypography.textTheme.displaySmall,
               ),
               const SizedBox(height: 24),
+
+              // Premium Badge (if premium user)
+              FutureBuilder<String?>(
+                future: PremiumAuthService().getPremiumStatus(),
+                builder: (context, snapshot) {
+                  if (snapshot.data != null) {
+                    return Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primaryGold.withValues(alpha: 0.3),
+                                  AppColors.primaryGold.withValues(alpha: 0.1),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppColors.primaryGold.withValues(alpha: 0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.workspace_premium,
+                                  color: AppColors.primaryGold,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'PREMIUM',
+                                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
 
               // Profile Section
               _buildSectionHeader(ref.watch(translationsProvider).settingsProfile),
@@ -837,14 +889,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.star,
               title: trans.premiumGetPremium,
               subtitle: trans.premiumLifetimeSubtitle,
-              onTap: () => IapService().buyPremium(),
+              onTap: () => _handleBuyPremium(),
             ),
             Divider(color: Colors.white.withValues(alpha: 0.1)),
             SettingsTile(
               icon: Icons.cloud_sync,
               title: trans.premiumSyncSubscription,
               subtitle: trans.premiumSyncSubtitle,
-              onTap: () => IapService().buySync(),
+              onTap: () => _handleBuySync(),
             ),
           ],
           Divider(color: Colors.white.withValues(alpha: 0.1)),
@@ -1007,6 +1059,197 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _handleBuyPremium() async {
+    final trans = ref.read(translationsProvider);
+    final auth = PremiumAuthService();
+
+    // Check if signed in
+    if (!auth.isSignedIn) {
+      final shouldSignIn = await _showSignInRequiredDialog();
+      if (!shouldSignIn) return;
+
+      // Sign in
+      setState(() => _premiumSignInLoading = true);
+      final ok = await auth.signIn();
+      if (!mounted) return;
+      setState(() => _premiumSignInLoading = false);
+
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(trans.premiumSignInFailed), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+    }
+
+    // Show loading
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGold),
+      ),
+    );
+
+    // Make purchase
+    final result = await IapService().buyPremium();
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading
+
+    // Handle result
+    final message = switch (result) {
+      IapResult.success => trans.premiumActivated,
+      IapResult.notSignedIn => trans.premiumNotSignedIn,
+      IapResult.productNotFound => 'Product not found. Please try again later.',
+      IapResult.purchaseFailed => 'Purchase failed. Please try again.',
+      IapResult.activationFailed => 'Activation failed. Please contact support.',
+      IapResult.disabled => 'In-app purchases are currently disabled.',
+    };
+
+    final isSuccess = result == IapResult.success;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? AppColors.success : AppColors.error,
+      ),
+    );
+
+    if (isSuccess) setState(() {}); // Refresh UI to show premium badge
+  }
+
+  Future<void> _handleBuySync() async {
+    final trans = ref.read(translationsProvider);
+    final auth = PremiumAuthService();
+
+    // Check if signed in
+    if (!auth.isSignedIn) {
+      final shouldSignIn = await _showSignInRequiredDialog();
+      if (!shouldSignIn) return;
+
+      // Sign in
+      setState(() => _premiumSignInLoading = true);
+      final ok = await auth.signIn();
+      if (!mounted) return;
+      setState(() => _premiumSignInLoading = false);
+
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(trans.premiumSignInFailed), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+    }
+
+    // Show loading
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGold),
+      ),
+    );
+
+    // Make purchase
+    final result = await IapService().buySync();
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading
+
+    // Handle result
+    final message = switch (result) {
+      IapResult.success => trans.premiumActivated,
+      IapResult.notSignedIn => trans.premiumNotSignedIn,
+      IapResult.productNotFound => 'Product not found. Please try again later.',
+      IapResult.purchaseFailed => 'Purchase failed. Please try again.',
+      IapResult.activationFailed => 'Activation failed. Please contact support.',
+      IapResult.disabled => 'In-app purchases are currently disabled.',
+    };
+
+    final isSuccess = result == IapResult.success;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? AppColors.success : AppColors.error,
+      ),
+    );
+
+    if (isSuccess) setState(() {}); // Refresh UI to show premium badge
+  }
+
+  Future<bool> _showSignInRequiredDialog() async {
+    final trans = ref.read(translationsProvider);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.bgDarkEnd,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.account_circle, color: AppColors.primaryGold),
+            const SizedBox(width: 12),
+            Text(
+              'Google Sign-In Required',
+              style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 18),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You need to sign in with Google to purchase premium features.',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryGold.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: AppColors.primaryGold, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This allows you to restore your purchase on any device.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(trans.genericCancel, style: const TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.login, size: 18),
+            label: const Text('Sign In'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   Future<void> _handleRestorePurchase() async {
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
@@ -1021,6 +1264,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
       );
+      setState(() {}); // Refresh to show premium badge
       return;
     }
 

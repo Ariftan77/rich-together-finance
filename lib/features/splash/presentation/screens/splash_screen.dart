@@ -1,17 +1,20 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
-import '../../../auth/presentation/auth_wrapper.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../dashboard/presentation/dashboard_shell.dart';
+import '../../../auth/presentation/screens/auth_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -19,13 +22,32 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToHome() async {
-    // Simulate loading or wait for initialization
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait minimum 1 second for splash animation
+    final splashDelay = Future.delayed(const Duration(seconds: 1));
+
+    // Wait for auth status to be determined
+    final authService = ref.read(authServiceProvider);
+    final hasPin = await authService.hasPin();
+    final isEnabled = await authService.isAuthEnabled();
+
+    // Ensure splash shows for at least 1 second
+    await splashDelay;
+
     if (!mounted) return;
+
+    // Navigate to appropriate screen based on auth status
+    Widget destination;
+    if (!hasPin) {
+      destination = const DashboardShell();
+    } else if (!isEnabled) {
+      destination = const DashboardShell();
+    } else {
+      destination = const AuthScreen(isSetup: false);
+    }
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const AuthWrapper()),
+      MaterialPageRoute(builder: (context) => destination),
     );
   }
 

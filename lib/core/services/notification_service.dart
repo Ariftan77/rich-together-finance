@@ -65,23 +65,13 @@ class NotificationService {
 
   Future<void> requestPermissions({bool pushOnly = false}) async {
     // Request FCM permission (iOS + Android 13+) if available
+    // This covers both FCM and local notifications on Android 13+
     if (_fcm != null) {
-    // Request FCM permission (iOS + Android 13+)
     await _fcm!.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    }
-
-    if (pushOnly) return;
-
-    // Request local notification permission (Android 13+)
-    if (Platform.isAndroid) {
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
     }
   }
 

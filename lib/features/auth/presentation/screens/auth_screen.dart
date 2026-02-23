@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../widgets/pin_pad.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -148,6 +149,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen to auth status changes and navigate when authenticated
+    ref.listen<AuthStatus>(authStatusProvider, (previous, next) {
+      if (next == AuthStatus.authenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardShell()),
+        );
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.bgDarkStart,
       body: Container(

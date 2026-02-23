@@ -59,3 +59,8 @@ ios/Runner/GoogleService-Info.plist
 .env
 .env.*
 lib/core/constants/secrets.dart
+
+# Android keystore
+android/key.properties
+android/app/upload-keystore.jks
+android/app/debug.jks

@@ -18,6 +18,12 @@ class AuthWrapper extends ConsumerWidget {
         return const AuthScreen(isSetup: true);
       case AuthStatus.unauthenticated:
         return const AuthScreen(isSetup: false);
+      case AuthStatus.loading:
+        // Keep showing nothing while auth status is being checked
+        // This shouldn't normally be seen since splash screen handles initial auth check
+        return const Scaffold(
+          body: SizedBox.shrink(),
+        );
     }
   }
 }
