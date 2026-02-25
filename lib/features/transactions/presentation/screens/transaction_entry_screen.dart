@@ -45,8 +45,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   double? _exchangeRate;
   
   // Suggested Titles
-  Future<List<String>>? _frequentTitlesFuture;
-  
+  List<String> _frequentTitles = [];
+  String _titleFilter = '';
+
   // Raw amount value (without formatting)
   String _rawAmount = '';
 
@@ -54,14 +55,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   void initState() {
     super.initState();
     _amountController.text = '0';  // Default to single zero
-    
+
+    // Filter bubbles as user types
+    _titleController.addListener(_onTitleChanged);
+
     // Auto focus amount field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _amountFocusNode.requestFocus();
-      // Fetch frequent titles
-      setState(() {
-         _frequentTitlesFuture = ref.read(transactionDaoProvider).getMostFrequentTitles(5);
-      });
+      _loadFrequentTitles();
     });
 
     // Load transaction data if editing
@@ -109,11 +110,33 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
   @override
   void dispose() {
+    _titleController.removeListener(_onTitleChanged);
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
     _amountFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onTitleChanged() {
+    final text = _titleController.text.trim();
+    if (text != _titleFilter) {
+      setState(() => _titleFilter = text);
+    }
+  }
+
+  Future<void> _loadFrequentTitles() async {
+    final titles = await ref.read(transactionDaoProvider)
+        .getMostFrequentTitlesByType(_selectedType, 10);
+    if (mounted) {
+      setState(() => _frequentTitles = titles);
+    }
+  }
+
+  List<String> get _filteredTitles {
+    if (_titleFilter.isEmpty) return _frequentTitles;
+    final q = _titleFilter.toLowerCase();
+    return _frequentTitles.where((t) => t.toLowerCase().contains(q)).toList();
   }
 
   bool _isSaving = false;
@@ -808,6 +831,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         labels: [trans.entryTypeIncome, trans.entryTypeExpense, trans.entryTypeTransfer],
                         onChanged: (type) {
                           setState(() => _selectedType = type);
+                          _loadFrequentTitles();
                           if (type == TransactionType.transfer) {
                             _amountFocusNode.requestFocus();
                           }
@@ -824,7 +848,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
                           child: Text(
-                            'TITLE',
+                            trans.entryTitle.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 11,
@@ -860,7 +884,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   ),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
-                                    hintText: 'Enter title...',
+                                    hintText: trans.entryTitleHint,
                                     hintStyle: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.4),
                                       fontSize: 15,
@@ -872,47 +896,44 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                           ),
                         ),
                         
-                        // Frequent Titles Suggestions
-                        if (_frequentTitlesFuture != null && _selectedType != TransactionType.transfer)
-                          FutureBuilder<List<String>>(
-                            future: _frequentTitlesFuture,
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
-                              return Container(
-                                height: 36,
-                                margin: const EdgeInsets.only(top: 12),
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: snapshot.data!.length,
-                                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                                  itemBuilder: (context, index) {
-                                    final title = snapshot.data![index];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        _titleController.text = title;
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(18),
-                                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          title,
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.9),
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
+                        // Frequent Titles Suggestions (filtered by type + text input)
+                        if (_filteredTitles.isNotEmpty)
+                          Container(
+                            height: 36,
+                            margin: const EdgeInsets.only(top: 12),
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _filteredTitles.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                final title = _filteredTitles[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    _titleController.text = title;
+                                    _titleController.selection = TextSelection.fromPosition(
+                                      TextPosition(offset: title.length),
                                     );
                                   },
-                                ),
-                              );
-                            },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                       ],
                     ),
@@ -1200,19 +1221,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle, size: 24),
-                      SizedBox(width: 12),
+                      const Icon(Icons.check_circle, size: 24),
+                      const SizedBox(width: 12),
                       Text(
-                        // 'Save Transaction' -> trans.entrySaveButton
-                        // Needs to be accessed via ref in build method context to be cleaner
-                        // But here we are inside a method? No, this is build method structure
-                        // Wait, I need access to `trans` variable.
-                        // I'll add `final trans = ref.watch(translationsProvider);` at start of build.
-                        'Save Transaction', 
-                        style: TextStyle(
+                        trans.entrySaveButton,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),

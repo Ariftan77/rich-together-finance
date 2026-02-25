@@ -51,6 +51,8 @@ abstract class AppTranslations {
   String get entryAccount;
   String get entryFromAccount;
   String get entryToAccount;
+  String get entryTitle;
+  String get entryTitleHint;
   String get entryNote;
   String get entryNoteHint;
   String get entryDate;
@@ -253,6 +255,7 @@ abstract class AppTranslations {
   String get recurringTitle;
   String get recurringTitleAdd;
   String get recurringTitleEdit;
+  String get recurringName;
   String get recurringFrequency;
   String get recurringInterval;
   String get recurringStartDate;
@@ -294,6 +297,8 @@ abstract class AppTranslations {
   // Wallet
   String get walletTitle;
   String get walletNoAccounts;
+  String get walletSearch;
+  String get walletNoResults;
 
   // Settings
   String get settingsTapToSwitch;

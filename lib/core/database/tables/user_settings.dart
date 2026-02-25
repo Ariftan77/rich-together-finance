@@ -11,7 +11,7 @@ class UserSettings extends Table {
   TextColumn get numberFormat => text().withDefault(const Constant('id_ID'))();
   IntColumn get themeMode => integer().withDefault(const Constant(0))();  // 0=dark, 1=light, 2=system
   TextColumn get language => text().withDefault(const Constant('en'))();
-  BoolColumn get biometricEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get biometricEnabled => boolean().withDefault(const Constant(false))();
   BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get showDecimal => boolean().withDefault(const Constant(false))();
   TextColumn get remoteId => text().nullable()();

@@ -36,7 +36,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         ref.read(wealthTabIndexProvider.notifier).state = _tabController.index;
@@ -98,8 +98,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       tabs: [
                         Tab(text: trans.wealthBudget),
                         Tab(text: trans.wealthGoals),
-                        Tab(text: trans.debtTitle), // New Tab
-                        Tab(text: trans.wealthInvestment),
+                        Tab(text: trans.debtTitle),
+                        // Tab(text: trans.wealthInvestment), // TODO: Re-enable when investment feature is ready
                       ],
                     ),
                   ),
@@ -114,8 +114,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 children: [
                   _buildBudgetTab(),
                   _buildGoalsTab(),
-                  _buildDebtsTab(), // New Tab
-                  _buildInvestmentTab(),
+                  _buildDebtsTab(),
+                  // _buildInvestmentTab(), // TODO: Re-enable when investment feature is ready
                 ],
               ),
             ),

@@ -55,6 +55,8 @@ class AppTranslationsId implements AppTranslations {
   @override String get entryAccount => 'Akun';
   @override String get entryFromAccount => 'Dari Akun';
   @override String get entryToAccount => 'Ke Akun';
+  @override String get entryTitle => 'Judul';
+  @override String get entryTitleHint => 'Masukkan judul...';
   @override String get entryNote => 'Catatan';
   @override String get entryNoteHint => 'Tambah catatan...';
   @override String get entryDate => 'Tanggal';
@@ -257,6 +259,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get recurringTitle => 'Transaksi Berulang';
   @override String get recurringTitleAdd => 'Buat Transaksi Berulang';
   @override String get recurringTitleEdit => 'Edit Transaksi Berulang';
+  @override String get recurringName => 'Judul';
   @override String get recurringFrequency => 'Frekuensi';
   @override String get recurringInterval => 'Setiap';
   @override String get recurringStartDate => 'Tanggal Mulai';
@@ -297,6 +300,8 @@ class AppTranslationsId implements AppTranslations {
 
   @override String get walletTitle => 'Akun Saya';
   @override String get walletNoAccounts => 'Belum ada akun.\nKetuk + untuk menambahkan.';
+  @override String get walletSearch => 'Cari akun...';
+  @override String get walletNoResults => 'Akun tidak ditemukan';
 
   // Settings
   @override String get settingsTapToSwitch => 'Ketuk untuk ganti profil';
@@ -338,7 +343,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumGetPremium => 'Dapatkan Premium';
   @override String get premiumLifetimeSubtitle => 'Seumur hidup — tanpa iklan, multi profil';
   @override String get premiumSyncSubscription => 'Langganan Sinkronisasi';
-  @override String get premiumSyncSubtitle => 'Sinkronisasi antar perangkat — tahunan';
+  @override String get premiumSyncSubtitle => 'Fitur Premium + Sinkronisasi antar perangkat — tahunan';
   @override String get premiumRestorePurchase => 'Pulihkan Pembelian';
   @override String get premiumEnterVoucherCode => 'Masukkan kode voucher';
   @override String get premiumRedeem => 'Tukar';

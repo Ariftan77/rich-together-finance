@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
-import '../../../../core/providers/service_providers.dart';
+import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/models/enums.dart';
-import '../../../../core/services/exchange_rate_service.dart';
+import '../../../../core/services/currency_exchange_service.dart';
 
 // ---------------------------------------------------------------------------
 // Data classes
@@ -68,37 +68,35 @@ class MonthlySummary {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Pre-fetch exchange rates for all currencies → baseCurrency.
-/// Returns a map where key is source currency and value is the rate to
-/// multiply by to get baseCurrency amount. BaseCurrency maps to 1.0.
-Future<Map<Currency, double>> _preloadRates(
-  ExchangeRateService service,
-  Currency baseCurrency,
+/// Pre-fetch exchange rates via CurrencyExchangeService.
+/// Returns the USD-based rates map from RateResult.
+Future<Map<String, double>> _preloadRates(
+  CurrencyExchangeService service,
 ) async {
-  final rates = <Currency, double>{baseCurrency: 1.0};
-  for (final currency in Currency.values) {
-    if (currency != baseCurrency) {
-      final rate = await service.getRate(currency, baseCurrency);
-      rates[currency] = rate ?? 1.0;
-    }
-  }
-  return rates;
+  final rateResult = await service.getRates();
+  return rateResult.rates;
 }
 
 /// Convert a transaction amount to base currency using pre-loaded rates.
 double _convertAmount(
   Transaction tx,
   Map<int, Account> accountMap,
-  Map<Currency, double> rates,
+  Map<String, double> rates,
+  Currency baseCurrency,
 ) {
   final account = accountMap[tx.accountId];
   if (account == null) return tx.amount;
-  final rate = rates[account.currency] ?? 1.0;
-  return tx.amount * rate;
+  if (account.currency == baseCurrency) return tx.amount;
+  return CurrencyExchangeService.convertCurrency(
+    tx.amount,
+    account.currency.code,
+    baseCurrency.code,
+    rates,
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Balance providers (already currency-aware — unchanged)
+// Balance providers (currency-aware)
 // ---------------------------------------------------------------------------
 
 /// Total balance across all accounts (converted to base currency)
@@ -112,7 +110,9 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+
+  final rates = await _preloadRates(exchangeService);
 
   await for (final accounts in accountDao.watchAllAccounts(profileId)) {
     double total = 0;
@@ -121,8 +121,9 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
       if (account.currency == baseCurrency) {
         total += balance;
       } else {
-        final converted = await exchangeService.convert(balance, account.currency, baseCurrency);
-        total += converted ?? balance;
+        total += CurrencyExchangeService.convertCurrency(
+          balance, account.currency.code, baseCurrency.code, rates,
+        );
       }
     }
     yield total;
@@ -163,7 +164,9 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
   final holdingDao = ref.watch(holdingDaoProvider);
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+
+  final rates = await _preloadRates(exchangeService);
 
   await for (final accounts in accountDao.watchAllAccounts(profileId)) {
     // 1. Account balances (cash assets) — currency converted
@@ -173,20 +176,22 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
       if (account.currency == baseCurrency) {
         totalAssets += balance;
       } else {
-        final converted = await exchangeService.convert(balance, account.currency, baseCurrency);
-        totalAssets += converted ?? balance;
+        totalAssets += CurrencyExchangeService.convertCurrency(
+          balance, account.currency.code, baseCurrency.code, rates,
+        );
       }
     }
 
-    // 2. Investment holdings valued at quantity × averageBuyPrice — currency converted
+    // 2. Investment holdings valued at quantity * averageBuyPrice — currency converted
     final allHoldings = await holdingDao.getAllHoldings();
     for (final holding in allHoldings.where((h) => h.profileId == profileId)) {
       final holdingValue = holding.quantity * holding.averageBuyPrice;
       if (holding.currency == baseCurrency) {
         totalAssets += holdingValue;
       } else {
-        final converted = await exchangeService.convert(holdingValue, holding.currency, baseCurrency);
-        totalAssets += converted ?? holdingValue;
+        totalAssets += CurrencyExchangeService.convertCurrency(
+          holdingValue, holding.currency.code, baseCurrency.code, rates,
+        );
       }
     }
 
@@ -199,8 +204,9 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
         if (debt.currency == baseCurrency) {
           totalLiabilities += remaining;
         } else {
-          final converted = await exchangeService.convert(remaining, debt.currency, baseCurrency);
-          totalLiabilities += converted ?? remaining;
+          totalLiabilities += CurrencyExchangeService.convertCurrency(
+            remaining, debt.currency.code, baseCurrency.code, rates,
+          );
         }
       }
     }
@@ -224,7 +230,7 @@ final convertedMonthlyTransactionsProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
 
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
@@ -234,17 +240,24 @@ final convertedMonthlyTransactionsProvider =
   // and rates once, then stream transactions
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService, baseCurrency);
+  final rates = await _preloadRates(exchangeService);
 
   await for (final transactions
       in transactionDao.watchTransactionsInRange(profileId, startOfMonth, endOfMonth)) {
     final converted = transactions.map((tx) {
       final account = accountMap[tx.accountId];
       final currency = account?.currency ?? baseCurrency;
-      final rate = rates[currency] ?? 1.0;
+      double convertedAmount;
+      if (currency == baseCurrency) {
+        convertedAmount = tx.amount;
+      } else {
+        convertedAmount = CurrencyExchangeService.convertCurrency(
+          tx.amount, currency.code, baseCurrency.code, rates,
+        );
+      }
       return ConvertedTransaction(
         transaction: tx,
-        convertedAmount: tx.amount * rate,
+        convertedAmount: convertedAmount,
         originalCurrency: currency,
       );
     }).toList();
@@ -329,7 +342,7 @@ final dashboardCashFlowProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final now = DateTime.now();
 
   final startOfPeriod = DateTime(now.year, now.month - 5, 1);
@@ -338,7 +351,7 @@ final dashboardCashFlowProvider =
   // Pre-load accounts (including inactive) and rates once
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService, baseCurrency);
+  final rates = await _preloadRates(exchangeService);
 
   await for (final transactions
       in transactionDao.watchTransactionsInRange(profileId, startOfPeriod, endOfPeriod)) {
@@ -354,7 +367,7 @@ final dashboardCashFlowProvider =
 
       for (final t in transactions) {
         if (t.date.isAfter(startOfMonth) && t.date.isBefore(endOfMonth)) {
-          final converted = _convertAmount(t, accountMap, rates);
+          final converted = _convertAmount(t, accountMap, rates, baseCurrency);
           if (t.type == TransactionType.income) {
             income += converted;
           } else if (t.type == TransactionType.expense) {
@@ -413,13 +426,13 @@ final monthlySummaryProvider =
   final transactionDao = ref.watch(transactionDaoProvider);
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final now = DateTime.now();
 
   // Pre-load accounts (including inactive) and rates once for all months
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService, baseCurrency);
+  final rates = await _preloadRates(exchangeService);
 
   // Fetch all transactions in the full date range at once
   final earliest = DateTime(now.year, now.month - monthCount + 1, 1);
@@ -440,7 +453,7 @@ final monthlySummaryProvider =
 
     for (final tx in allTransactions) {
       if (tx.date.isAfter(startOfMonth) && tx.date.isBefore(endOfMonth)) {
-        final converted = _convertAmount(tx, accountMap, rates);
+        final converted = _convertAmount(tx, accountMap, rates, baseCurrency);
         if (tx.type == TransactionType.income) {
           income += converted;
         } else if (tx.type == TransactionType.expense) {
@@ -455,10 +468,18 @@ final monthlySummaryProvider =
     for (final debt in allDebts) {
       if (debt.createdAt.isAfter(startOfMonth) &&
           debt.createdAt.isBefore(endOfMonth)) {
-        if (debt.type == DebtType.payable) {
-          payable += debt.amount;
+        double convertedAmount;
+        if (debt.currency == baseCurrency) {
+          convertedAmount = debt.amount;
         } else {
-          receivable += debt.amount;
+          convertedAmount = CurrencyExchangeService.convertCurrency(
+            debt.amount, debt.currency.code, baseCurrency.code, rates,
+          );
+        }
+        if (debt.type == DebtType.payable) {
+          payable += convertedAmount;
+        } else {
+          receivable += convertedAmount;
         }
       }
     }

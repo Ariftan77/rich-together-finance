@@ -879,19 +879,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SettingsTile(
               icon: Icons.card_giftcard,
               title: trans.premiumRedeemVoucher,
+              subtitle: trans.premiumLifetimeSubtitle,
               onTap: _showVoucherDialog,
             ),
-          ],
-          if (RemoteConfigService().iapEnabled) ...[
-            if (RemoteConfigService().voucherEnabled)
-              Divider(color: Colors.white.withValues(alpha: 0.1)),
+            Divider(color: Colors.white.withValues(alpha: 0.1)),
             SettingsTile(
               icon: Icons.star,
               title: trans.premiumGetPremium,
               subtitle: trans.premiumLifetimeSubtitle,
               onTap: () => _handleBuyPremium(),
             ),
-            Divider(color: Colors.white.withValues(alpha: 0.1)),
+          ],
+          if (RemoteConfigService().iapEnabled) ...[
+            if (RemoteConfigService().voucherEnabled)
+              Divider(color: Colors.white.withValues(alpha: 0.1)),
+            if (!RemoteConfigService().voucherEnabled) ...[
+              SettingsTile(
+                icon: Icons.star,
+                title: trans.premiumGetPremium,
+                subtitle: trans.premiumLifetimeSubtitle,
+                onTap: () => _handleBuyPremium(),
+              ),
+              Divider(color: Colors.white.withValues(alpha: 0.1)),
+            ],
             SettingsTile(
               icon: Icons.cloud_sync,
               title: trans.premiumSyncSubscription,

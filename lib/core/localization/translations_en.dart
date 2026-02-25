@@ -55,6 +55,8 @@ class AppTranslationsEn implements AppTranslations {
   @override String get entryAccount => 'Account';
   @override String get entryFromAccount => 'From Account';
   @override String get entryToAccount => 'To Account';
+  @override String get entryTitle => 'Title';
+  @override String get entryTitleHint => 'Enter title...';
   @override String get entryNote => 'Note';
   @override String get entryNoteHint => 'Add a note...';
   @override String get entryDate => 'Date';
@@ -257,6 +259,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get recurringTitle => 'Recurring';
   @override String get recurringTitleAdd => 'New Recurring';
   @override String get recurringTitleEdit => 'Edit Recurring';
+  @override String get recurringName => 'Title';
   @override String get recurringFrequency => 'Frequency';
   @override String get recurringInterval => 'Repeat Every';
   @override String get recurringStartDate => 'Start Date';
@@ -297,6 +300,8 @@ class AppTranslationsEn implements AppTranslations {
 
   @override String get walletTitle => 'My Accounts';
   @override String get walletNoAccounts => 'No accounts yet.\nTap + to add one.';
+  @override String get walletSearch => 'Search accounts...';
+  @override String get walletNoResults => 'No accounts found';
 
   // Settings
   @override String get settingsTapToSwitch => 'Tap to switch profile';
@@ -338,7 +343,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumGetPremium => 'Get Premium';
   @override String get premiumLifetimeSubtitle => 'Lifetime — no ads, multi profile';
   @override String get premiumSyncSubscription => 'Sync Subscription';
-  @override String get premiumSyncSubtitle => 'Cross-device sync — yearly';
+  @override String get premiumSyncSubtitle => 'Premium Feature + Cross-device sync — yearly';
   @override String get premiumRestorePurchase => 'Restore Purchase';
   @override String get premiumEnterVoucherCode => 'Enter voucher code';
   @override String get premiumRedeem => 'Redeem';

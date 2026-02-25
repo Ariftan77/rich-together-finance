@@ -48,7 +48,7 @@ class RecurringService {
           type: Value(recurring.type),
           amount: Value(recurring.amount),
           date: Value(contextDate),
-          note: Value(recurring.name), // Use recurring name as note
+          title: Value(recurring.name),
           recurringId: Value(recurring.id),
           createdAt: Value(DateTime.now()),
         ),

@@ -14,12 +14,12 @@ import 'tables/categories.dart';
 import 'tables/holdings.dart';
 import 'tables/investment_transactions.dart';
 import 'tables/price_cache.dart';
-import 'tables/exchange_rates.dart';
 import 'tables/budgets.dart';
 import 'tables/goals.dart';
 import 'tables/goal_accounts.dart';
 import 'tables/debts.dart';
 import 'tables/recurring.dart';
+import 'tables/daily_exchange_rates.dart';
 
 part 'database.g.dart';
 
@@ -33,12 +33,12 @@ part 'database.g.dart';
   Holdings,
   InvestmentTransactions,
   PriceCache,
-  ExchangeRates,
   Budgets,
   Goals,
   GoalAccounts,
   Debts,
   Recurring,
+  DailyExchangeRates,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -105,6 +105,16 @@ class AppDatabase extends _$AppDatabase {
           } catch (e) {
             // Ignore
           }
+        }
+        if (from < 10) {
+          try {
+            await m.createTable(dailyExchangeRates);
+          } catch (e) {
+            // Ignore — table may already exist
+          }
+        }
+        if (from < 11) {
+          await customStatement('DROP TABLE IF EXISTS exchange_rates');
         }
       },
     );
@@ -329,7 +339,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(investmentTransactions).go();
       await delete(recurring).go();
       await delete(priceCache).go();
-      await delete(exchangeRates).go();
+      await delete(dailyExchangeRates).go();
       await delete(budgets).go();
       await delete(goals).go();
       await delete(goalAccounts).go();

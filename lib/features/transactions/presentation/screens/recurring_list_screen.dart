@@ -310,9 +310,9 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
               const SizedBox(height: 20),
 
               // Name field
-              _buildLabel(trans.goalName.toUpperCase()),
+              _buildLabel(trans.recurringName.toUpperCase()),
               const SizedBox(height: 8),
-              _buildTextField(_nameController, trans.goalNameHint),
+              _buildTextField(_nameController, trans.entryTitleHint),
 
               const SizedBox(height: 16),
 

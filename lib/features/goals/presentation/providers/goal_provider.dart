@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
-import '../../../../core/providers/service_providers.dart';
+import '../../../../core/models/enums.dart';
+import '../../../../core/providers/currency_exchange_providers.dart';
+import '../../../../core/services/currency_exchange_service.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class GoalWithProgress {
@@ -23,12 +25,15 @@ class GoalWithProgress {
 final goalsWithProgressProvider =
     StreamProvider.autoDispose<List<GoalWithProgress>>((ref) async* {
   final goalDao = ref.watch(goalDaoProvider);
-  final exchangeService = ref.watch(exchangeRateServiceProvider);
   final goalsStream = goalDao.watchActiveGoals();
 
   // Watch transactions & accounts so balances recalculate reactively
   ref.watch(transactionsStreamProvider);
   ref.watch(accountsStreamProvider);
+
+  // Pre-load rates once
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rateResult = await exchangeService.getRates();
 
   await for (final goals in goalsStream) {
     if (goals.isEmpty) {
@@ -58,12 +63,12 @@ final goalsWithProgressProvider =
 
         // Convert to goal's target currency if different
         if (account.currency != goal.targetCurrency) {
-          final converted = await exchangeService.convert(
+          currentAmount += CurrencyExchangeService.convertCurrency(
             balance,
-            account.currency,
-            goal.targetCurrency,
+            account.currency.code,
+            goal.targetCurrency.code,
+            rateResult.rates,
           );
-          currentAmount += converted ?? balance;
         } else {
           currentAmount += balance;
         }
