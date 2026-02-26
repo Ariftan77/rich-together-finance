@@ -517,12 +517,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final String appKey = RemoteConfigService().emailAppKey;
       final String targetEmail = 'axiomtech.dev@gmail.com'; 
 
-      debugPrint('================ EMAIL SEND DEBUG ================');
-      debugPrint('Target Email: $targetEmail');
-      debugPrint('App Key (from RemoteConfig): ${appKey.isEmpty ? "EMPTY STRING" : appKey}');
-      debugPrint('App Key Length: ${appKey.length}');
-      debugPrint('==================================================');
-
       final smtpServer = gmail(targetEmail, appKey);
 
       // Create our message.
@@ -535,7 +529,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await send(message, smtpServer);
       return true;
     } on MailerException catch (e) {
-      debugPrint('Message not sent. \n${e.toString()}');
       if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(content: Text('${ref.read(translationsProvider).settingsSendFeedbackError}${e.message}'), backgroundColor: AppColors.error),
@@ -543,7 +536,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
       return false;
     } catch (e) {
-      debugPrint('Generic email error: \n$e');
       if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(content: Text('${ref.read(translationsProvider).settingsSendFeedbackError}$e'), backgroundColor: AppColors.error),

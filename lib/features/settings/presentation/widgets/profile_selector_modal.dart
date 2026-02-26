@@ -133,7 +133,7 @@ class ProfileSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
-    debugPrint("🧑 Add profile tapped — rewardedEnabled=${RemoteConfigService().rewardedEnabled}, profileCount=${profiles.length}");
+
 
     if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
       // Show confirmation BEFORE popping — context must still be attached
@@ -163,7 +163,7 @@ class ProfileSelectorModal extends ConsumerWidget {
       if (confirmed != true) return;
       if (!context.mounted) return;
 
-      debugPrint("🎬 User confirmed — calling showRewarded()");
+
       final rewarded = await AdService().showRewarded();
       if (!rewarded) {
         if (context.mounted) {

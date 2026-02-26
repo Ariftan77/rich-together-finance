@@ -57,7 +57,7 @@ class BackupService {
         text: 'Rich Together Database Backup',
       );
     } catch (e) {
-      debugPrint('Error exporting database: $e');
+
       rethrow;
     }
   }
@@ -100,7 +100,7 @@ class BackupService {
       // Assuming it's a Singleton/Provider, we might need a way to reset it.
       
     } catch (e) {
-      debugPrint('Error importing database: $e');
+
       rethrow;
     }
   }
@@ -113,7 +113,7 @@ class BackupService {
     try {
       return await _googleSignIn.signIn();
     } catch (e) {
-      debugPrint('Error signing in with Google: $e');
+
       rethrow;
     }
   }
@@ -122,7 +122,7 @@ class BackupService {
     try {
       return await _googleSignIn.signInSilently();
     } catch (e) {
-      debugPrint('Error silent sign-in: $e');
+
       return null;
     }
   }
@@ -174,7 +174,7 @@ class BackupService {
       );
       
     } catch (e) {
-      debugPrint('Error uploading to Drive: $e');
+
       rethrow;
     }
   }
@@ -192,7 +192,7 @@ class BackupService {
 
       return fileList.files ?? [];
     } catch (e) {
-      debugPrint('Error listing backups: $e');
+
       rethrow;
     }
   }
@@ -229,7 +229,7 @@ class BackupService {
       await tempFile.delete();
 
     } catch (e) {
-      debugPrint('Error restoring from Drive: $e');
+
       rethrow;
     }
   }

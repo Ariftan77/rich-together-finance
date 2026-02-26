@@ -52,10 +52,10 @@ class PremiumAuthService {
         if (isStale) {
           await _refreshPremiumCache();
         }
-        debugPrint('✅ PremiumAuth restored: ${_currentUser!.email}, isPremium=$isPremium');
+
       }
     } catch (e) {
-      debugPrint('⚠️ PremiumAuth silent sign-in failed: $e');
+
     }
   }
 
@@ -124,7 +124,7 @@ class PremiumAuthService {
     _premiumType = premiumType;
     _expiresAt = expiresAt;
     await _writePremiumCache(premiumType, expiresAt: expiresAt);
-    debugPrint('⭐ Premium activated: $premiumType, expires: $expiresAt');
+
   }
 
   Future<void> _refreshPremiumCache() async {
@@ -173,10 +173,10 @@ class PremiumAuthService {
         if (expiresAtMs != null) {
           _expiresAt = DateTime.fromMillisecondsSinceEpoch(expiresAtMs, isUtc: true);
         }
-        debugPrint('📦 PremiumAuth loaded from cache: $cachedType, expires: $_expiresAt');
+
       }
     } catch (e) {
-      debugPrint('⚠️ PremiumAuth cache load failed: $e');
+
     }
   }
 
@@ -200,7 +200,7 @@ class PremiumAuthService {
         await prefs.remove(_kPremiumExpiresAt);
       }
     } catch (e) {
-      debugPrint('⚠️ PremiumAuth cache write failed: $e');
+
     }
   }
 
@@ -211,7 +211,7 @@ class PremiumAuthService {
       await prefs.remove(_kPremiumCacheTs);
       await prefs.remove(_kPremiumExpiresAt);
     } catch (e) {
-      debugPrint('⚠️ PremiumAuth cache clear failed: $e');
+
     }
   }
 }

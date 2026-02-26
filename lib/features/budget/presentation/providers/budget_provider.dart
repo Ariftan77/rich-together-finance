@@ -41,7 +41,7 @@ final budgetsWithSpendingProvider =
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final profileId = ref.watch(activeProfileIdProvider);
 
-  debugPrint('🏦 budgetsWithSpendingProvider: building, profileId=$profileId');
+
 
   if (profileId == null) return Stream.value([]);
 
@@ -50,11 +50,11 @@ final budgetsWithSpendingProvider =
   // so the first trigger fires right away to produce an initial result.
   final controller = StreamController<void>();
   void trigger() {
-    debugPrint('🏦 trigger() called');
+
     if (!controller.isClosed) controller.add(null);
   }
   void propagateError(Object e, StackTrace s) {
-    debugPrint('🏦 Drift stream error: $e');
+
     if (!controller.isClosed) controller.addError(e, s);
   }
 
@@ -75,14 +75,14 @@ final budgetsWithSpendingProvider =
   });
 
   return controller.stream.asyncMap((_) async {
-    debugPrint('🏦 asyncMap: computing...');
+
     final rateResult = await exchangeService.getRates();
-    debugPrint('🏦 getRates() completed');
+
     final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
     final accountMap = {for (final a in accounts) a.id: a};
 
     final budgets = await budgetDao.getAllBudgets();
-    debugPrint('🏦 getAllBudgets() returned ${budgets.length} rows');
+
     if (budgets.isEmpty) return <BudgetWithSpending>[];
 
     final categories = await categoryDao.getAllCategories();
@@ -144,7 +144,7 @@ final budgetsWithSpendingProvider =
       ));
     }
 
-    debugPrint('🏦 emitting ${result.length} BudgetWithSpending items');
+
     return result;
   });
 });

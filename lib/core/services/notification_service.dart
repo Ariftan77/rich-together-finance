@@ -53,12 +53,12 @@ class NotificationService {
 
       // Get and log FCM token for testing
       final token = await _fcm!.getToken();
-      debugPrint('🔔 FCM Token: $token');
+
 
       // Handle foreground messages
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     } catch (e) {
-      debugPrint('⚠️ FCM init skipped (missing config?): $e');
+
       _fcm = null;
     }
   }
@@ -153,5 +153,5 @@ class NotificationService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Background messages are automatically shown as notifications by FCM.
   // This handler is for any custom processing you want to do.
-  debugPrint('🔔 Background message: ${message.notification?.title}');
+
 }

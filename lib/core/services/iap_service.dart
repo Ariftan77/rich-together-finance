@@ -62,7 +62,7 @@ class IapService {
       // Blocks until _onPurchaseUpdate completes the purchase
       return _pendingCompleter!.future;
     } catch (e) {
-      debugPrint('❌ IAP buyPremium error: $e');
+
       _pendingCompleter = null;
       _pendingProductId = null;
       return IapResult.purchaseFailed;
@@ -94,7 +94,7 @@ class IapService {
       // Blocks until _onPurchaseUpdate completes the purchase
       return _pendingCompleter!.future;
     } catch (e) {
-      debugPrint('❌ IAP buySync error: $e');
+
       _pendingCompleter = null;
       _pendingProductId = null;
       return IapResult.purchaseFailed;
@@ -110,9 +110,9 @@ class IapService {
         IapResult result = IapResult.success;
         try {
           await _activateOnBackend(p.productID);
-          debugPrint('✅ IAP: Successfully activated ${p.productID}');
+
         } catch (e) {
-          debugPrint('❌ IAP: Backend activation failed for ${p.productID}: $e');
+
           result = IapResult.activationFailed;
         }
         await _iap.completePurchase(p);
@@ -121,7 +121,7 @@ class IapService {
         await _iap.completePurchase(p);
         _completeIfPending(p.productID, IapResult.purchaseFailed);
       } else if (p.status == PurchaseStatus.error) {
-        debugPrint('❌ IAP: Purchase error: ${p.error}');
+
         await _iap.completePurchase(p);
         _completeIfPending(p.productID, IapResult.purchaseFailed);
       }

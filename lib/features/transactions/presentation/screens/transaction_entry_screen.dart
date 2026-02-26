@@ -316,8 +316,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         navigator.pop();
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ ERROR saving transaction: $e');
-      debugPrint('Stack trace: $stackTrace');
+
+
       if (mounted) {
         setState(() => _isSaving = false);
         messenger.showSnackBar(
@@ -440,7 +440,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       final dao = ref.read(transactionDaoProvider);
       await dao.deleteTransaction(widget.transactionId!);
     } catch (e) {
-      debugPrint('Error deleting transaction: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1330,7 +1330,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         );
       }
     } catch (e) {
-      debugPrint('Error creating recurring transaction: $e');
+
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -1372,7 +1372,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         );
       }
     } catch (e) {
-      debugPrint('❌ Error creating category: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

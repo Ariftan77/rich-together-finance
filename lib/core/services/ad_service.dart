@@ -15,11 +15,11 @@ class AdService {
 
   // ── Banner ──────────────────────────────────────────────────
   Future<BannerAd?> loadBanner() async {
-    debugPrint("Attributes: bannerEnabled=${RemoteConfigService().bannerEnabled}");
+
     if (!RemoteConfigService().bannerEnabled) return null;
     if (_bannerAd != null) return _bannerAd; // already loaded, reuse
 
-    debugPrint("Loading Banner Ad with ID: $_bannerId");
+
 
     _bannerAd = BannerAd(
       adUnitId: _bannerId,
@@ -28,7 +28,7 @@ class AdService {
       listener: BannerAdListener(
         onAdLoaded: (_) => debugPrint("✅ Banner Ad Loaded!"),
         onAdFailedToLoad: (ad, error) {
-          debugPrint("❌ Banner Ad Failed: $error");
+
           ad.dispose();
           _bannerAd = null;
         },
@@ -65,7 +65,7 @@ class AdService {
   Future<bool> showRewarded() async {
     if (!RemoteConfigService().rewardedEnabled) return true; // allow if disabled
 
-    debugPrint("🎬 Loading Rewarded Ad with ID: $_rewardedId");
+
 
     final completer = Completer<bool>();
     bool rewardEarned = false;
@@ -75,28 +75,28 @@ class AdService {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          debugPrint("✅ Rewarded Ad Loaded, showing...");
+
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
-              debugPrint("🎬 Rewarded Ad dismissed (reward earned: $rewardEarned)");
+
               ad.dispose();
               if (!completer.isCompleted) completer.complete(rewardEarned);
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              debugPrint("❌ Rewarded Ad failed to show: $error");
+
               ad.dispose();
               if (!completer.isCompleted) completer.complete(false);
             },
           );
           ad.show(
             onUserEarnedReward: (_, reward) {
-              debugPrint("🏆 Reward earned: ${reward.amount} ${reward.type}");
+
               rewardEarned = true;
             },
           );
         },
         onAdFailedToLoad: (error) {
-          debugPrint("❌ Rewarded Ad failed to load: $error");
+
           completer.complete(false);
         },
       ),
