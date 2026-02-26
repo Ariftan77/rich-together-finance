@@ -38,11 +38,19 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
   bool _premiumSignInLoading = false;
+  late Future<String?> _premiumFuture;
 
   @override
   void initState() {
     super.initState();
     _loadAppInfo();
+    _premiumFuture = PremiumAuthService().getPremiumStatus();
+  }
+
+  void _refreshPremiumStatus() {
+    setState(() {
+      _premiumFuture = PremiumAuthService().getPremiumStatus();
+    });
   }
 
   Future<void> _loadAppInfo() async {
@@ -80,7 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               // Premium Badge (if premium user)
               FutureBuilder<String?>(
-                future: PremiumAuthService().getPremiumStatus(),
+                future: _premiumFuture,
                 builder: (context, snapshot) {
                   if (snapshot.data != null) {
                     return Column(
@@ -997,7 +1005,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
             ),
           FutureBuilder<String?>(
-            future: PremiumAuthService().getPremiumStatus(),
+            future: _premiumFuture,
             builder: (context, snapshot) {
               final isPremium = snapshot.data != null;
               return Column(
@@ -1127,6 +1135,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
       return;
     }
+    // Refresh badge/section now that we're signed in
+    _refreshPremiumStatus();
     // Show reopen-app dialog if the signed-in account already has premium
     final premiumStatus = await PremiumAuthService().getPremiumStatus();
     if (!mounted) return;
@@ -1291,8 +1301,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isSuccess = result == IapResult.success;
     if (isSuccess) {
       if (mounted) {
-         setState(() {}); // Refresh UI to show premium badge
-         _showRestartAppDialog();
+        _refreshPremiumStatus();
+        _showRestartAppDialog();
       }
     } else {
       if (mounted) {
@@ -1357,8 +1367,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isSuccess = result == IapResult.success;
     if (isSuccess) {
       if (mounted) {
-         setState(() {}); // Refresh UI to show premium badge
-         _showRestartAppDialog();
+        _refreshPremiumStatus();
+        _showRestartAppDialog();
       }
     } else {
       if (mounted) {
@@ -1459,7 +1469,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
       );
-      setState(() {}); // Refresh to show premium badge
+      _refreshPremiumStatus();
       _showRestartAppDialog();
       return;
     }

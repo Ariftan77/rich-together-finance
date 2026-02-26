@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'premium_auth_service.dart';
@@ -22,14 +24,22 @@ class IapService {
 
   final _iap = InAppPurchase.instance;
 
+  // Stored so we can cancel before re-subscribing (Bug 4 fix)
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSub;
+
+  // Tracks the in-flight purchase so _onPurchaseUpdate can complete it (Bug 1/2 fix)
+  Completer<IapResult>? _pendingCompleter;
+  String? _pendingProductId;
+
   Future<void> init() async {
-    _iap.purchaseStream.listen(_onPurchaseUpdate);
+    // Cancel any previous subscription to prevent duplicate listeners
+    await _purchaseSub?.cancel();
+    _purchaseSub = _iap.purchaseStream.listen(_onPurchaseUpdate);
   }
 
   Future<IapResult> buyPremium() async {
     if (!RemoteConfigService().iapEnabled) return IapResult.disabled;
 
-    // Check Google sign-in first
     final auth = PremiumAuthService();
     if (!auth.isSignedIn) return IapResult.notSignedIn;
 
@@ -37,11 +47,24 @@ class IapService {
       final details = await _iap.queryProductDetails({_premiumId});
       if (details.productDetails.isEmpty) return IapResult.productNotFound;
 
-      final param = PurchaseParam(productDetails: details.productDetails.first);
-      final success = await _iap.buyNonConsumable(purchaseParam: param);
-      return success ? IapResult.success : IapResult.purchaseFailed;
+      _pendingCompleter = Completer<IapResult>();
+      _pendingProductId = _premiumId;
+
+      final ok = await _iap.buyNonConsumable(
+        purchaseParam: PurchaseParam(productDetails: details.productDetails.first),
+      );
+      if (!ok) {
+        _pendingCompleter = null;
+        _pendingProductId = null;
+        return IapResult.purchaseFailed;
+      }
+
+      // Blocks until _onPurchaseUpdate completes the purchase
+      return _pendingCompleter!.future;
     } catch (e) {
       debugPrint('❌ IAP buyPremium error: $e');
+      _pendingCompleter = null;
+      _pendingProductId = null;
       return IapResult.purchaseFailed;
     }
   }
@@ -49,7 +72,6 @@ class IapService {
   Future<IapResult> buySync() async {
     if (!RemoteConfigService().iapEnabled) return IapResult.disabled;
 
-    // Check Google sign-in first
     final auth = PremiumAuthService();
     if (!auth.isSignedIn) return IapResult.notSignedIn;
 
@@ -57,34 +79,65 @@ class IapService {
       final details = await _iap.queryProductDetails({_syncId});
       if (details.productDetails.isEmpty) return IapResult.productNotFound;
 
-      final param = PurchaseParam(productDetails: details.productDetails.first);
-      final success = await _iap.buyNonConsumable(purchaseParam: param);
-      return success ? IapResult.success : IapResult.purchaseFailed;
+      _pendingCompleter = Completer<IapResult>();
+      _pendingProductId = _syncId;
+
+      final ok = await _iap.buyNonConsumable(
+        purchaseParam: PurchaseParam(productDetails: details.productDetails.first),
+      );
+      if (!ok) {
+        _pendingCompleter = null;
+        _pendingProductId = null;
+        return IapResult.purchaseFailed;
+      }
+
+      // Blocks until _onPurchaseUpdate completes the purchase
+      return _pendingCompleter!.future;
     } catch (e) {
       debugPrint('❌ IAP buySync error: $e');
+      _pendingCompleter = null;
+      _pendingProductId = null;
       return IapResult.purchaseFailed;
     }
   }
 
   Future<void> restorePurchases() => _iap.restorePurchases();
 
-  void _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
+  Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final p in purchases) {
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
-        // CRITICAL FIX: Await backend activation before completing purchase
+        IapResult result = IapResult.success;
         try {
           await _activateOnBackend(p.productID);
           debugPrint('✅ IAP: Successfully activated ${p.productID}');
         } catch (e) {
           debugPrint('❌ IAP: Backend activation failed for ${p.productID}: $e');
-          // Still complete purchase to avoid stuck pending state
+          result = IapResult.activationFailed;
         }
         await _iap.completePurchase(p);
+        _completeIfPending(p.productID, result);
+      } else if (p.status == PurchaseStatus.canceled) {
+        await _iap.completePurchase(p);
+        _completeIfPending(p.productID, IapResult.purchaseFailed);
       } else if (p.status == PurchaseStatus.error) {
         debugPrint('❌ IAP: Purchase error: ${p.error}');
         await _iap.completePurchase(p);
+        _completeIfPending(p.productID, IapResult.purchaseFailed);
       }
+      // PurchaseStatus.pending: waiting for external action (e.g. parental approval)
+    }
+  }
+
+  /// Completes the pending Completer only if the product ID matches.
+  /// No-op for purchases that arrive after a cold-start (no active Completer).
+  void _completeIfPending(String productId, IapResult result) {
+    if (_pendingCompleter != null &&
+        !_pendingCompleter!.isCompleted &&
+        _pendingProductId == productId) {
+      _pendingCompleter!.complete(result);
+      _pendingCompleter = null;
+      _pendingProductId = null;
     }
   }
 

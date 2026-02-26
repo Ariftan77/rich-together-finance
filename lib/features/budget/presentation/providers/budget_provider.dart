@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
@@ -38,7 +39,9 @@ final budgetsWithSpendingProvider =
   final categoryDao = ref.watch(categoryDaoProvider);
   final accountDao = ref.watch(accountDaoProvider);
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
-  final profileId = ref.read(activeProfileIdProvider);
+  final profileId = ref.watch(activeProfileIdProvider);
+
+  debugPrint('🏦 budgetsWithSpendingProvider: building, profileId=$profileId');
 
   if (profileId == null) return Stream.value([]);
 
@@ -47,12 +50,23 @@ final budgetsWithSpendingProvider =
   // so the first trigger fires right away to produce an initial result.
   final controller = StreamController<void>();
   void trigger() {
+    debugPrint('🏦 trigger() called');
     if (!controller.isClosed) controller.add(null);
   }
+  void propagateError(Object e, StackTrace s) {
+    debugPrint('🏦 Drift stream error: $e');
+    if (!controller.isClosed) controller.addError(e, s);
+  }
 
-  final budgetSub = budgetDao.watchAllBudgets().listen((_) => trigger());
-  final txSub =
-      transactionDao.watchAllTransactions(profileId).listen((_) => trigger());
+  final budgetSub = budgetDao
+      .watchAllBudgets()
+      .listen((_) => trigger(), onError: propagateError);
+  final txSub = transactionDao
+      .watchAllTransactions(profileId)
+      .listen((_) => trigger(), onError: propagateError);
+
+  // Trigger an immediate first computation without waiting for Drift to emit.
+  Future.microtask(trigger);
 
   ref.onDispose(() {
     budgetSub.cancel();
@@ -61,11 +75,14 @@ final budgetsWithSpendingProvider =
   });
 
   return controller.stream.asyncMap((_) async {
+    debugPrint('🏦 asyncMap: computing...');
     final rateResult = await exchangeService.getRates();
+    debugPrint('🏦 getRates() completed');
     final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
     final accountMap = {for (final a in accounts) a.id: a};
 
     final budgets = await budgetDao.getAllBudgets();
+    debugPrint('🏦 getAllBudgets() returned ${budgets.length} rows');
     if (budgets.isEmpty) return <BudgetWithSpending>[];
 
     final categories = await categoryDao.getAllCategories();
@@ -127,6 +144,7 @@ final budgetsWithSpendingProvider =
       ));
     }
 
+    debugPrint('🏦 emitting ${result.length} BudgetWithSpending items');
     return result;
   });
 });
