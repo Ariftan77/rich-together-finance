@@ -50,6 +50,10 @@ class AppTranslationsId implements AppTranslations {
   @override String get entryTypeIncome => 'Pemasukan';
   @override String get entryTypeExpense => 'Pengeluaran';
   @override String get entryTypeTransfer => 'Transfer';
+  @override String get entryTypeAdjustmentIn => 'Penyesuaian +';
+  @override String get entryTypeAdjustmentOut => 'Penyesuaian -';
+  @override String get entryTypeDebtIn => 'Dipinjam';
+  @override String get entryTypeDebtOut => 'Dipinjamkan';
   @override String get entryCategoryCreated => 'Kategori berhasil dibuat';
   @override String get entryCategory => 'Kategori';
   @override String get entryAccount => 'Akun';
@@ -211,6 +215,12 @@ class AppTranslationsId implements AppTranslations {
 
   @override String get settingsClearData => 'Hapus Semua Data';
 
+  @override  String get settingsSendFeedback => 'Kirim Masukan';
+  @override String get settingsSendFeedbackHint => 'Beri tahu kami pendapat Anda atau laporkan masalah...';
+  @override String get settingsSendFeedbackSuccess => 'Masukan berhasil dikirim!';
+  @override String get settingsSendFeedbackError => 'Gagal mengirim masukan: ';
+  @override String get settingsSendFeedbackEmpty => 'Masukan tidak boleh kosong';
+
   // Wealth / Navigation
   @override String get navWealth => 'Kekayaan';
   @override String get wealthBudget => 'Anggaran';
@@ -355,6 +365,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumRestored => 'Premium dipulihkan: ';
   @override String get premiumCheckingPlayStore => 'Memeriksa pembelian Play Store...';
   @override String get premiumSignInGoogle => 'Masuk dengan Google';
+  @override String get premiumRestartAppToHideAds => 'Muat ulang aplikasi agar iklan hilang sepenuhnya';
   @override String get premiumSignInRequired => 'Diperlukan untuk tukar voucher & pulihkan pembelian';
   @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
   @override String get premiumSignedInTryAgain => 'Berhasil masuk! Silakan coba lagi untuk menukar voucher Anda.';

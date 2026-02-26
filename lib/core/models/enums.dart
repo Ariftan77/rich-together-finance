@@ -12,9 +12,13 @@ enum AccountType {
 
 /// Transaction types
 enum TransactionType {
-  income,     // 0
-  expense,    // 1
-  transfer,   // 2
+  income,        // 0
+  expense,       // 1
+  transfer,      // 2
+  adjustmentIn,  // 3 - balance adjustment (adds to balance)
+  adjustmentOut, // 4 - balance adjustment (subtracts from balance)
+  debtIn,        // 5 - debt transaction (borrowed money, adds to balance)
+  debtOut,       // 6 - debt transaction (lent money, subtracts from balance)
 }
 
 /// Category types (income or expense categories)
@@ -109,6 +113,14 @@ extension TransactionTypeX on TransactionType {
         return 'Expense';
       case TransactionType.transfer:
         return 'Transfer';
+      case TransactionType.adjustmentIn:
+        return 'Adjustment +';
+      case TransactionType.adjustmentOut:
+        return 'Adjustment -';
+      case TransactionType.debtIn:
+        return 'Borrowed';
+      case TransactionType.debtOut:
+        return 'Lent';
     }
   }
 }

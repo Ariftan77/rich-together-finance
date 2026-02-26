@@ -9,6 +9,7 @@ class Budgets extends Table {
   IntColumn get profileId => integer().references(Profiles, #id)();
   IntColumn get categoryId => integer().references(Categories, #id)();
   RealColumn get amount => real()();
+  IntColumn get currency => intEnum<Currency>().withDefault(const Constant(0))();
   IntColumn get period => intEnum<BudgetPeriod>()();
   DateTimeColumn get startDate => dateTime()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();

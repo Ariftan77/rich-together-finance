@@ -13,6 +13,7 @@ import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../transactions/presentation/widgets/account_selector.dart';
 
 
 class DebtEntryScreen extends ConsumerStatefulWidget {
@@ -143,8 +144,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             profileId: drift.Value(profileId),
             accountId: drift.Value(_selectedAccountId!),
             type: drift.Value(_selectedType == DebtType.payable
-                ? TransactionType.income // I owe someone -> I got money -> Income
-                : TransactionType.expense), // Owed to me -> I gave money -> Expense
+                ? TransactionType.debtIn // I owe someone -> I got money -> adds to balance
+                : TransactionType.debtOut), // Owed to me -> I gave money -> subtracts from balance
             amount: drift.Value(amount),
             title: drift.Value('Debt: ${_personController.text.trim()}'),
             note: drift.Value(_noteController.text.trim()),
@@ -182,8 +183,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
               oldTx.id,
               TransactionsCompanion(
                 type: drift.Value(_selectedType == DebtType.payable
-                    ? TransactionType.income
-                    : TransactionType.expense),
+                    ? TransactionType.debtIn
+                    : TransactionType.debtOut),
                 amount: drift.Value(amount), // Sync amount change too
                 title: drift.Value('Debt: ${_personController.text.trim()}'), // Sync name change
               ),
@@ -319,35 +320,66 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                           if (accounts.isEmpty) {
                             return const Text('No accounts found. Create one first.', style: TextStyle(color: Colors.red));
                           }
-                          return DropdownButtonFormField<int>(
-                            value: _selectedAccountId,
-                            dropdownColor: AppColors.cardSurface,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: AppColors.glassBackground,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              hintText: 'Select Account',
-                              hintStyle: const TextStyle(color: Colors.white54),
-                            ),
-                            items: accounts.map((account) {
-                              return DropdownMenuItem<int>(
-                                value: account.id,
-                                child: Text(account.name),
+                          final selectedAccount = _selectedAccountId != null
+                              ? accounts.where((a) => a.id == _selectedAccountId).firstOrNull
+                              : null;
+                          return GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => AccountSelector(
+                                  accounts: accounts,
+                                  selectedAccountId: _selectedAccountId,
+                                  onAccountSelected: (id) {
+                                    if (id != null) {
+                                      setState(() {
+                                        _selectedAccountId = id;
+                                        final account = accounts.firstWhere((a) => a.id == id);
+                                        _selectedCurrency = account.currency;
+                                      });
+                                    }
+                                  },
+                                ),
                               );
-                            }).toList(),
-                            onChanged: (val) {
-                                setState(() {
-                                  _selectedAccountId = val;
-                                  // Update currency based on account
-                                  final account = accounts.firstWhere((a) => a.id == val);
-                                  _selectedCurrency = account.currency;
-                                });
                             },
-                            validator: (val) => val == null ? 'Required' : null,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: AppColors.glassBackground,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _selectedAccountId == null
+                                      ? Colors.red.withValues(alpha: 0.5)
+                                      : Colors.white.withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet_outlined,
+                                    color: AppColors.primaryGold,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      selectedAccount?.name ?? 'Select Account',
+                                      style: TextStyle(
+                                        color: selectedAccount != null ? Colors.white : Colors.white54,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
                           );
                         },
                         loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),

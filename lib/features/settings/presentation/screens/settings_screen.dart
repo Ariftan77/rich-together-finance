@@ -25,6 +25,8 @@ import '../../../../core/services/remote_config_service.dart';
 import '../../../../core/services/premium_auth_service.dart';
 import '../../../../core/services/voucher_service.dart';
 import '../../../../core/services/iap_service.dart' show IapService, IapResult;
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -401,6 +403,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           _buildDivider(),
           SettingsTile(
+            icon: Icons.feedback_outlined,
+            title: ref.watch(translationsProvider).settingsSendFeedback,
+            onTap: () => _showFeedbackDialog(),
+          ),
+          _buildDivider(),
+          SettingsTile(
             icon: Icons.privacy_tip_outlined,
             title: ref.watch(translationsProvider).settingsPrivacy,
             onTap: () => Navigator.push(
@@ -420,6 +428,121 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showFeedbackDialog() async {
+    final controller = TextEditingController();
+    bool isSending = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppColors.bgDarkEnd,
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+          title: Text(ref.watch(translationsProvider).settingsSendFeedback, style: const TextStyle(color: Colors.white)),
+          content: TextField(
+            controller: controller,
+            maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: ref.watch(translationsProvider).settingsSendFeedbackHint,
+              hintStyle: const TextStyle(color: Colors.white38),
+              enabledBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryGold),
+              ),
+            ),
+          ),
+          actions: [
+            if (!isSending)
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(ref.watch(translationsProvider).genericCancel, style: const TextStyle(color: Colors.white70)),
+              ),
+            isSending
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGold),
+                    ),
+                  )
+                : TextButton(
+                    onPressed: () async {
+                      if (controller.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(ref.watch(translationsProvider).settingsSendFeedbackEmpty), backgroundColor: AppColors.error),
+                        );
+                        return;
+                      }
+
+                      setState(() => isSending = true);
+                      final success = await _sendEmailFeedback(controller.text.trim());
+                      setState(() => isSending = false);
+
+                      if (success && mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(ref.watch(translationsProvider).settingsSendFeedbackSuccess), backgroundColor: AppColors.success),
+                        );
+                      }
+                    },
+                    child: Text(ref.watch(translationsProvider).settingsSendFeedback, style: const TextStyle(color: AppColors.primaryGold)),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _sendEmailFeedback(String body) async {
+    try {
+      // The user specified the remote config key is the app key for axiomtech.dev@gmail.com
+      // The email address itself is axiomtech.dev@gmail.com. We fetch the password (app key) from RC.
+      final String appKey = RemoteConfigService().emailAppKey;
+      final String targetEmail = 'axiomtech.dev@gmail.com'; 
+
+      debugPrint('================ EMAIL SEND DEBUG ================');
+      debugPrint('Target Email: $targetEmail');
+      debugPrint('App Key (from RemoteConfig): ${appKey.isEmpty ? "EMPTY STRING" : appKey}');
+      debugPrint('App Key Length: ${appKey.length}');
+      debugPrint('==================================================');
+
+      final smtpServer = gmail(targetEmail, appKey);
+
+      // Create our message.
+      final message = Message()
+        ..from = Address(targetEmail, 'RichTogether Feedback')
+        ..recipients.add(targetEmail) // send it to ourselves
+        ..subject = 'App Feedback / Bug Report: ${DateTime.now().toIso8601String()}'
+        ..text = 'Feedback:\n\n$body\n\nApp Version: $_appVersion\nUserId: ${PremiumAuthService().email ?? "Not logged in"}';
+
+      await send(message, smtpServer);
+      return true;
+    } on MailerException catch (e) {
+      debugPrint('Message not sent. \n${e.toString()}');
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('${ref.read(translationsProvider).settingsSendFeedbackError}${e.message}'), backgroundColor: AppColors.error),
+         );
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Generic email error: \n$e');
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('${ref.read(translationsProvider).settingsSendFeedbackError}$e'), backgroundColor: AppColors.error),
+         );
+      }
+      return false;
+    }
   }
 
   Widget _buildDivider() {
@@ -873,47 +996,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   : null,
               onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
             ),
-          Divider(color: Colors.white.withValues(alpha: 0.1)),
-
-          if (RemoteConfigService().voucherEnabled) ...[
-            SettingsTile(
-              icon: Icons.card_giftcard,
-              title: trans.premiumRedeemVoucher,
-              subtitle: trans.premiumLifetimeSubtitle,
-              onTap: _showVoucherDialog,
-            ),
-            Divider(color: Colors.white.withValues(alpha: 0.1)),
-            SettingsTile(
-              icon: Icons.star,
-              title: trans.premiumGetPremium,
-              subtitle: trans.premiumLifetimeSubtitle,
-              onTap: () => _handleBuyPremium(),
-            ),
-          ],
-          if (RemoteConfigService().iapEnabled) ...[
-            if (RemoteConfigService().voucherEnabled)
-              Divider(color: Colors.white.withValues(alpha: 0.1)),
-            if (!RemoteConfigService().voucherEnabled) ...[
-              SettingsTile(
-                icon: Icons.star,
-                title: trans.premiumGetPremium,
-                subtitle: trans.premiumLifetimeSubtitle,
-                onTap: () => _handleBuyPremium(),
-              ),
-              Divider(color: Colors.white.withValues(alpha: 0.1)),
-            ],
-            SettingsTile(
-              icon: Icons.cloud_sync,
-              title: trans.premiumSyncSubscription,
-              subtitle: trans.premiumSyncSubtitle,
-              onTap: () => _handleBuySync(),
-            ),
-          ],
-          Divider(color: Colors.white.withValues(alpha: 0.1)),
-          SettingsTile(
-            icon: Icons.restore,
-            title: trans.premiumRestorePurchase,
-            onTap: _handleRestorePurchase,
+          FutureBuilder<String?>(
+            future: PremiumAuthService().getPremiumStatus(),
+            builder: (context, snapshot) {
+              final isPremium = snapshot.data != null;
+              return Column(
+                children: [
+                  if (!isPremium) ...[
+                    Divider(color: Colors.white.withValues(alpha: 0.1)),
+                    if (RemoteConfigService().voucherEnabled) ...[
+                      SettingsTile(
+                        icon: Icons.card_giftcard,
+                        title: trans.premiumRedeemVoucher,
+                        subtitle: trans.premiumLifetimeSubtitle,
+                        onTap: _showVoucherDialog,
+                      ),
+                      Divider(color: Colors.white.withValues(alpha: 0.1)),
+                      SettingsTile(
+                        icon: Icons.star,
+                        title: trans.premiumGetPremium,
+                        subtitle: trans.premiumLifetimeSubtitle,
+                        onTap: () => _handleBuyPremium(),
+                      ),
+                    ],
+                    if (RemoteConfigService().iapEnabled) ...[
+                      if (RemoteConfigService().voucherEnabled)
+                        Divider(color: Colors.white.withValues(alpha: 0.1)),
+                      if (!RemoteConfigService().voucherEnabled) ...[
+                        SettingsTile(
+                          icon: Icons.star,
+                          title: trans.premiumGetPremium,
+                          subtitle: trans.premiumLifetimeSubtitle,
+                          onTap: () => _handleBuyPremium(),
+                        ),
+                        Divider(color: Colors.white.withValues(alpha: 0.1)),
+                      ],
+                      SettingsTile(
+                        icon: Icons.cloud_sync,
+                        title: trans.premiumSyncSubscription,
+                        subtitle: trans.premiumSyncSubtitle,
+                        onTap: () => _handleBuySync(),
+                      ),
+                    ],
+                  ],
+                  Divider(color: Colors.white.withValues(alpha: 0.1)),
+                  SettingsTile(
+                    icon: Icons.restore,
+                    title: trans.premiumRestorePurchase,
+                    onTap: _handleRestorePurchase,
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -991,6 +1125,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ref.read(translationsProvider).premiumSignInFailed)),
       );
+      return;
+    }
+    // Show reopen-app dialog if the signed-in account already has premium
+    final premiumStatus = await PremiumAuthService().getPremiumStatus();
+    if (!mounted) return;
+    if (premiumStatus != null) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF2D2416),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.workspace_premium, color: AppColors.primaryGold, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'PREMIUM',
+                style: TextStyle(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Please reopen the app to completely remove ads.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK', style: TextStyle(color: AppColors.primaryGold)),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -1063,9 +1234,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         VoucherResult.notSignedIn => trans.premiumNotSignedIn,
         VoucherResult.disabled => trans.premiumVoucherDisabled,
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      if (voucherResult == VoucherResult.success) {
+        _showRestartAppDialog();
+      }
     }
   }
 
@@ -1118,14 +1289,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     };
 
     final isSuccess = result == IapResult.success;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? AppColors.success : AppColors.error,
-      ),
-    );
-
-    if (isSuccess) setState(() {}); // Refresh UI to show premium badge
+    if (isSuccess) {
+      if (mounted) {
+         setState(() {}); // Refresh UI to show premium badge
+         _showRestartAppDialog();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleBuySync() async {
@@ -1177,14 +1355,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     };
 
     final isSuccess = result == IapResult.success;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? AppColors.success : AppColors.error,
-      ),
-    );
-
-    if (isSuccess) setState(() {}); // Refresh UI to show premium badge
+    if (isSuccess) {
+      if (mounted) {
+         setState(() {}); // Refresh UI to show premium badge
+         _showRestartAppDialog();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<bool> _showSignInRequiredDialog() async {
@@ -1275,6 +1460,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
       );
       setState(() {}); // Refresh to show premium badge
+      _showRestartAppDialog();
       return;
     }
 
@@ -1285,6 +1471,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(content: Text(trans.premiumCheckingPlayStore)),
       );
     }
+  }
+
+  void _showRestartAppDialog() {
+    final trans = ref.read(translationsProvider);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.bgDarkEnd,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.primaryGold),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Premium Activated',
+                style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          trans.premiumRestartAppToHideAds,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

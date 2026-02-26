@@ -27,6 +27,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _amountController;
   int? _selectedCategoryId;
+  Currency _selectedCurrency = Currency.idr;
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
   bool _isLoading = false;
 
@@ -34,10 +35,13 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   void initState() {
     super.initState();
     _amountController = TextEditingController(
-      text: widget.budget?.amount.toStringAsFixed(0) ?? '',
+      text: widget.budget != null
+          ? IndonesianCurrencyInputFormatter.format(widget.budget!.amount.toStringAsFixed(0))
+          : '',
     );
     if (widget.budget != null) {
       _selectedCategoryId = widget.budget!.categoryId;
+      _selectedCurrency = widget.budget!.currency;
       _selectedPeriod = widget.budget!.period;
     }
   }
@@ -85,6 +89,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
             profileId: drift.Value(profileId),
             categoryId: drift.Value(_selectedCategoryId!),
             amount: drift.Value(amount),
+            currency: drift.Value(_selectedCurrency),
             period: drift.Value(_selectedPeriod),
             startDate: drift.Value(DateTime.now()),
             isActive: const drift.Value(true),
@@ -97,6 +102,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
           widget.budget!.copyWith(
             categoryId: _selectedCategoryId!,
             amount: amount,
+            currency: _selectedCurrency,
             period: _selectedPeriod,
           ),
         );
@@ -206,7 +212,32 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                
+
+                // Currency Selector
+                Text(trans.goalCurrency, style: AppTypography.textTheme.labelLarge),
+                const SizedBox(height: 8),
+                Row(
+                  children: Currency.values.map((currency) {
+                    final isSelected = _selectedCurrency == currency;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(currency.code),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => _selectedCurrency = currency);
+                        },
+                        selectedColor: AppColors.primaryGold,
+                        backgroundColor: AppColors.glassBackground,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+
                 // Category Selector
                 categoriesAsync.when(
                   data: (categories) {

@@ -22,9 +22,9 @@ final accountBalanceProvider = Provider<Map<int, double>>((ref) {
 
     // Source Account
     if (balances.containsKey(trans.accountId)) {
-      if (type == TransactionType.income) {
+      if (type == TransactionType.income || type == TransactionType.adjustmentIn || type == TransactionType.debtIn) {
         balances[trans.accountId] = balances[trans.accountId]! + amount;
-      } else if (type == TransactionType.expense) {
+      } else if (type == TransactionType.expense || type == TransactionType.adjustmentOut || type == TransactionType.debtOut) {
         balances[trans.accountId] = balances[trans.accountId]! - amount;
       } else if (type == TransactionType.transfer) {
         balances[trans.accountId] = balances[trans.accountId]! - amount;

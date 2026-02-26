@@ -46,6 +46,10 @@ abstract class AppTranslations {
   String get entryTypeIncome;
   String get entryTypeExpense;
   String get entryTypeTransfer;
+  String get entryTypeAdjustmentIn;
+  String get entryTypeAdjustmentOut;
+  String get entryTypeDebtIn;
+  String get entryTypeDebtOut;
   String get entryCategoryCreated;
   String get entryCategory;
   String get entryAccount;
@@ -206,6 +210,11 @@ abstract class AppTranslations {
   String get syncStillNeedHelp;
 
   String get settingsClearData;
+  String get settingsSendFeedback;
+  String get settingsSendFeedbackHint;
+  String get settingsSendFeedbackSuccess;
+  String get settingsSendFeedbackError;
+  String get settingsSendFeedbackEmpty;
 
   // Wealth / Navigation
   String get navWealth;
@@ -352,6 +361,7 @@ abstract class AppTranslations {
   String get premiumRestored;
   String get premiumCheckingPlayStore;
   String get premiumSignInGoogle;
+  String get premiumRestartAppToHideAds;
   String get premiumSignInRequired;
   String get premiumSignInFailed;
   String get premiumSignedInTryAgain;

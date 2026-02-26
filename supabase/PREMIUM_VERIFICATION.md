@@ -19,9 +19,7 @@ ON CONFLICT (code) DO NOTHING;
 ## 1. Schema — `expires_at` column exists
 
 ```sql
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_name = 'users' AND column_name = 'expires_at';
+
 ```
 
 **Expected:** one row, `data_type = timestamp with time zone`, `is_nullable = YES`

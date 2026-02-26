@@ -380,8 +380,22 @@ class _TransactionItem extends ConsumerWidget {
     final showDecimal = ref.watch(showDecimalProvider);
     final isExpense = transaction.type == TransactionType.expense;
     final isIncome = transaction.type == TransactionType.income;
-    final color = isExpense ? const Color(0xFFFB7185) : (isIncome ? const Color(0xFF34D399) : const Color(0xFF60A5FA));
-    final prefix = isExpense ? '-' : (isIncome ? '+' : '');
+    final isAdjustmentIn = transaction.type == TransactionType.adjustmentIn;
+    final isAdjustmentOut = transaction.type == TransactionType.adjustmentOut;
+    final isDebtIn = transaction.type == TransactionType.debtIn;
+    final isDebtOut = transaction.type == TransactionType.debtOut;
+    final color = isExpense
+        ? const Color(0xFFFB7185)
+        : isIncome
+            ? const Color(0xFF34D399)
+            : (isAdjustmentIn || isAdjustmentOut)
+                ? Colors.amber
+                : isDebtIn
+                    ? Colors.orange   // borrowed (I owe) — matches overview orange
+                    : isDebtOut
+                        ? const Color(0xFF60A5FA) // lent (owed to me) — matches overview blue
+                        : const Color(0xFF60A5FA);
+    final prefix = isExpense || isAdjustmentOut || isDebtOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn ? '+' : '');
     
     // Data is now passed in, no need for Futures
 
@@ -502,9 +516,13 @@ class _TransactionItem extends ConsumerWidget {
 
   IconData _getIcon(TransactionType type) {
     switch (type) {
-      case TransactionType.income: return Icons.arrow_downward;  // Money coming in
-      case TransactionType.expense: return Icons.arrow_upward;   // Money going out
+      case TransactionType.income: return Icons.arrow_downward;
+      case TransactionType.expense: return Icons.arrow_upward;
       case TransactionType.transfer: return Icons.swap_horiz;
+      case TransactionType.adjustmentIn: return Icons.tune;
+      case TransactionType.adjustmentOut: return Icons.tune;
+      case TransactionType.debtIn: return Icons.people_outline;
+      case TransactionType.debtOut: return Icons.people_outline;
     }
   }
 }

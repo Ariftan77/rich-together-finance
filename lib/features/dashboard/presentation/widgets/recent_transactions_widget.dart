@@ -89,6 +89,12 @@ class RecentTransactionsWidget extends ConsumerWidget {
                     
                     final isIncome = transaction.type == TransactionType.income;
                     final isExpense = transaction.type == TransactionType.expense;
+                    final isAdjustmentIn = transaction.type == TransactionType.adjustmentIn;
+                    final isAdjustmentOut = transaction.type == TransactionType.adjustmentOut;
+                    final isAdjustment = isAdjustmentIn || isAdjustmentOut;
+                    final isDebtIn = transaction.type == TransactionType.debtIn;
+                    final isDebtOut = transaction.type == TransactionType.debtOut;
+                    final isDebt = isDebtIn || isDebtOut;
                     
                     return InkWell(
                       onTap: () {
@@ -122,7 +128,13 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                         ? AppColors.success
                                         : isExpense
                                             ? AppColors.error
-                                            : AppColors.info)
+                                            : isAdjustment
+                                                ? Colors.amber
+                                                : isDebtIn
+                                                    ? Colors.orange
+                                                    : isDebtOut
+                                                        ? const Color(0xFF60A5FA)
+                                                        : AppColors.info)
                                     .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -131,12 +143,22 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                     ? Icons.arrow_downward
                                     : isExpense
                                         ? Icons.arrow_upward
-                                        : Icons.swap_horiz,
+                                        : isAdjustment
+                                            ? Icons.tune
+                                            : isDebt
+                                                ? Icons.people_outline
+                                                : Icons.swap_horiz,
                                 color: isIncome
                                     ? AppColors.success
                                     : isExpense
                                         ? AppColors.error
-                                        : AppColors.info,
+                                        : isAdjustment
+                                            ? Colors.amber
+                                            : isDebtIn
+                                                ? Colors.orange
+                                                : isDebtOut
+                                                    ? const Color(0xFF60A5FA)
+                                                    : AppColors.info,
                                 size: 20,
                               ),
                             ),
@@ -187,13 +209,19 @@ class RecentTransactionsWidget extends ConsumerWidget {
                             ),
                             // Amount
                             Text(
-                              '${isIncome ? '+' : isExpense ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
+                              '${isIncome || isAdjustmentIn || isDebtIn ? '+' : isExpense || isAdjustmentOut || isDebtOut ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
                               style: TextStyle(
                                 color: isIncome
                                     ? AppColors.success
                                     : isExpense
                                         ? AppColors.error
-                                        : Colors.white,
+                                        : isAdjustment
+                                            ? Colors.amber
+                                            : isDebtIn
+                                                ? Colors.orange
+                                                : isDebtOut
+                                                    ? const Color(0xFF60A5FA)
+                                                    : Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -7084,6 +7084,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     ),
   );
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  static const VerificationMeta _currencyMeta = const VerificationMeta('currency');
   @override
   late final GeneratedColumn<double> amount = GeneratedColumn<double>(
     'amount',
@@ -7092,6 +7093,16 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<Currency, int> currency =
+      GeneratedColumn<int>(
+        'currency',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      ).withConverter<Currency>($BudgetsTable.$convertercurrency);
   @override
   late final GeneratedColumnWithTypeConverter<BudgetPeriod, int> period =
       GeneratedColumn<int>(
@@ -7192,6 +7203,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     profileId,
     categoryId,
     amount,
+    currency,
     period,
     startDate,
     isActive,
@@ -7239,6 +7251,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
       );
     } else if (isInserting) {
       context.missing(_amountMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
     }
     if (data.containsKey('start_date')) {
       context.handle(
@@ -7315,6 +7333,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         DriftSqlType.double,
         data['${effectivePrefix}amount'],
       )!,
+      currency: $BudgetsTable.$convertercurrency.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}currency'],
+        ) ?? 0,
+      ),
       period: $BudgetsTable.$converterperiod.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.int,
@@ -7359,6 +7383,8 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
 
   static JsonTypeConverter2<BudgetPeriod, int, int> $converterperiod =
       const EnumIndexConverter<BudgetPeriod>(BudgetPeriod.values);
+  static JsonTypeConverter2<Currency, int, int> $convertercurrency =
+      const EnumIndexConverter<Currency>(Currency.values);
 }
 
 class Budget extends DataClass implements Insertable<Budget> {
@@ -7366,6 +7392,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   final int profileId;
   final int categoryId;
   final double amount;
+  final Currency currency;
   final BudgetPeriod period;
   final DateTime startDate;
   final bool isActive;
@@ -7379,6 +7406,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     required this.profileId,
     required this.categoryId,
     required this.amount,
+    required this.currency,
     required this.period,
     required this.startDate,
     required this.isActive,
@@ -7395,6 +7423,11 @@ class Budget extends DataClass implements Insertable<Budget> {
     map['profile_id'] = Variable<int>(profileId);
     map['category_id'] = Variable<int>(categoryId);
     map['amount'] = Variable<double>(amount);
+    {
+      map['currency'] = Variable<int>(
+        $BudgetsTable.$convertercurrency.toSql(currency),
+      );
+    }
     {
       map['period'] = Variable<int>(
         $BudgetsTable.$converterperiod.toSql(period),
@@ -7422,6 +7455,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       profileId: Value(profileId),
       categoryId: Value(categoryId),
       amount: Value(amount),
+      currency: Value(currency),
       period: Value(period),
       startDate: Value(startDate),
       isActive: Value(isActive),
@@ -7449,6 +7483,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       profileId: serializer.fromJson<int>(json['profileId']),
       categoryId: serializer.fromJson<int>(json['categoryId']),
       amount: serializer.fromJson<double>(json['amount']),
+      currency: $BudgetsTable.$convertercurrency.fromJson(
+        serializer.fromJson<int>(json['currency'] ?? 0),
+      ),
       period: $BudgetsTable.$converterperiod.fromJson(
         serializer.fromJson<int>(json['period']),
       ),
@@ -7469,6 +7506,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       'profileId': serializer.toJson<int>(profileId),
       'categoryId': serializer.toJson<int>(categoryId),
       'amount': serializer.toJson<double>(amount),
+      'currency': serializer.toJson<int>(
+        $BudgetsTable.$convertercurrency.toJson(currency),
+      ),
       'period': serializer.toJson<int>(
         $BudgetsTable.$converterperiod.toJson(period),
       ),
@@ -7487,6 +7527,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     int? profileId,
     int? categoryId,
     double? amount,
+    Currency? currency,
     BudgetPeriod? period,
     DateTime? startDate,
     bool? isActive,
@@ -7500,6 +7541,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     profileId: profileId ?? this.profileId,
     categoryId: categoryId ?? this.categoryId,
     amount: amount ?? this.amount,
+    currency: currency ?? this.currency,
     period: period ?? this.period,
     startDate: startDate ?? this.startDate,
     isActive: isActive ?? this.isActive,
@@ -7517,6 +7559,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ? data.categoryId.value
           : this.categoryId,
       amount: data.amount.present ? data.amount.value : this.amount,
+      currency: data.currency.present ? data.currency.value : this.currency,
       period: data.period.present ? data.period.value : this.period,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
@@ -7535,6 +7578,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           ..write('profileId: $profileId, ')
           ..write('categoryId: $categoryId, ')
           ..write('amount: $amount, ')
+          ..write('currency: $currency, ')
           ..write('period: $period, ')
           ..write('startDate: $startDate, ')
           ..write('isActive: $isActive, ')
@@ -7553,6 +7597,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     profileId,
     categoryId,
     amount,
+    currency,
     period,
     startDate,
     isActive,
@@ -7570,6 +7615,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.profileId == this.profileId &&
           other.categoryId == this.categoryId &&
           other.amount == this.amount &&
+          other.currency == this.currency &&
           other.period == this.period &&
           other.startDate == this.startDate &&
           other.isActive == this.isActive &&
@@ -7585,6 +7631,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<int> profileId;
   final Value<int> categoryId;
   final Value<double> amount;
+  final Value<Currency> currency;
   final Value<BudgetPeriod> period;
   final Value<DateTime> startDate;
   final Value<bool> isActive;
@@ -7598,6 +7645,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.profileId = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.amount = const Value.absent(),
+    this.currency = const Value.absent(),
     this.period = const Value.absent(),
     this.startDate = const Value.absent(),
     this.isActive = const Value.absent(),
@@ -7612,6 +7660,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     required int profileId,
     required int categoryId,
     required double amount,
+    this.currency = const Value.absent(),
     required BudgetPeriod period,
     required DateTime startDate,
     this.isActive = const Value.absent(),
@@ -7631,6 +7680,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<int>? profileId,
     Expression<int>? categoryId,
     Expression<double>? amount,
+    Expression<int>? currency,
     Expression<int>? period,
     Expression<DateTime>? startDate,
     Expression<bool>? isActive,
@@ -7645,6 +7695,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       if (profileId != null) 'profile_id': profileId,
       if (categoryId != null) 'category_id': categoryId,
       if (amount != null) 'amount': amount,
+      if (currency != null) 'currency': currency,
       if (period != null) 'period': period,
       if (startDate != null) 'start_date': startDate,
       if (isActive != null) 'is_active': isActive,
@@ -7661,6 +7712,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<int>? profileId,
     Value<int>? categoryId,
     Value<double>? amount,
+    Value<Currency>? currency,
     Value<BudgetPeriod>? period,
     Value<DateTime>? startDate,
     Value<bool>? isActive,
@@ -7675,6 +7727,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       profileId: profileId ?? this.profileId,
       categoryId: categoryId ?? this.categoryId,
       amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
       period: period ?? this.period,
       startDate: startDate ?? this.startDate,
       isActive: isActive ?? this.isActive,
@@ -7700,6 +7753,11 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     }
     if (amount.present) {
       map['amount'] = Variable<double>(amount.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<int>(
+        $BudgetsTable.$convertercurrency.toSql(currency.value),
+      );
     }
     if (period.present) {
       map['period'] = Variable<int>(
@@ -7737,6 +7795,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('profileId: $profileId, ')
           ..write('categoryId: $categoryId, ')
           ..write('amount: $amount, ')
+          ..write('currency: $currency, ')
           ..write('period: $period, ')
           ..write('startDate: $startDate, ')
           ..write('isActive: $isActive, ')

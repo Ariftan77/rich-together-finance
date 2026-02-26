@@ -25,25 +25,27 @@ class GoalWithProgress {
 final goalsWithProgressProvider =
     StreamProvider.autoDispose<List<GoalWithProgress>>((ref) async* {
   final goalDao = ref.watch(goalDaoProvider);
-  final goalsStream = goalDao.watchActiveGoals();
 
   // Watch transactions & accounts so balances recalculate reactively
   ref.watch(transactionsStreamProvider);
   ref.watch(accountsStreamProvider);
 
-  // Pre-load rates once
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  // Capture values SYNCHRONOUSLY before any await — ref cannot be used after async gaps
+  final balances = ref.read(accountBalanceProvider);
+  final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
+  final accountsMap = {for (var a in accounts) a.id: a};
+
+  // Pre-load rates once (first async gap — no ref calls after this)
+  final exchangeService = ref.read(currencyExchangeServiceProvider);
   final rateResult = await exchangeService.getRates();
+
+  final goalsStream = goalDao.watchActiveGoals();
 
   await for (final goals in goalsStream) {
     if (goals.isEmpty) {
       yield [];
       continue;
     }
-
-    final balances = ref.read(accountBalanceProvider);
-    final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
-    final accountsMap = {for (var a in accounts) a.id: a};
     final result = <GoalWithProgress>[];
 
     for (final goal in goals) {

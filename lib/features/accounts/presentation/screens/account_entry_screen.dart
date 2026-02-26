@@ -166,7 +166,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
         TransactionsCompanion(
           profileId: drift.Value(profileId),
           accountId: drift.Value(widget.account!.id),
-          type: drift.Value(isPositive ? TransactionType.income : TransactionType.expense),
+          type: drift.Value(isPositive ? TransactionType.adjustmentIn : TransactionType.adjustmentOut),
           amount: drift.Value(delta.abs()),
           date: drift.Value(DateTime.now()),
           title: const drift.Value('Balance Adjustment'),

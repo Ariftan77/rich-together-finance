@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration {
@@ -115,6 +115,33 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 11) {
           await customStatement('DROP TABLE IF EXISTS exchange_rates');
+        }
+        if (from < 12) {
+          // Backfill: re-type existing balance adjustment transactions from income/expense
+          // to the dedicated adjustmentIn (3) / adjustmentOut (4) enum values.
+          await customStatement(
+            "UPDATE transactions SET type = 3 WHERE title = 'Balance Adjustment' AND type = 0",
+          );
+          await customStatement(
+            "UPDATE transactions SET type = 4 WHERE title = 'Balance Adjustment' AND type = 1",
+          );
+        }
+        if (from < 13) {
+          // Backfill: re-type existing debt transactions from income/expense
+          // to the dedicated debtIn (5) / debtOut (6) enum values.
+          await customStatement(
+            "UPDATE transactions SET type = 5 WHERE title LIKE 'Debt: %' AND type = 0",
+          );
+          await customStatement(
+            "UPDATE transactions SET type = 6 WHERE title LIKE 'Debt: %' AND type = 1",
+          );
+        }
+        if (from < 14) {
+          try {
+            await m.addColumn(budgets, budgets.currency);
+          } catch (e) {
+            // Ignore
+          }
         }
       },
     );

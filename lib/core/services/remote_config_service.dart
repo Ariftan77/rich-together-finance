@@ -26,6 +26,7 @@ class RemoteConfigService {
         'premium_enabled': false,
         'voucher_enabled': false,
         'iap_enabled': false,
+        'email_app_key': 'axiomtech.dev@gmail.com', // Default placeholder
       });
 
       final activated = await _rc!.fetchAndActivate();
@@ -37,6 +38,7 @@ class RemoteConfigService {
       debugPrint("   premium_enabled:       ${_rc!.getBool('premium_enabled')}");
       debugPrint("   voucher_enabled:       ${_rc!.getBool('voucher_enabled')}");
       debugPrint("   iap_enabled:       ${_rc!.getBool('iap_enabled')}");
+      debugPrint("   email_app_key:     ${_rc!.getString('email_app_key')}");
       debugPrint("   ── computed ──");
       debugPrint("   adsEnabled:    $adsEnabled");
       debugPrint("   bannerEnabled: $bannerEnabled");
@@ -57,4 +59,7 @@ class RemoteConfigService {
   bool get premiumEnabled => _rc?.getBool('premium_enabled') ?? false;
   bool get voucherEnabled => premiumEnabled && (_rc?.getBool('voucher_enabled') ?? false);
   bool get iapEnabled => premiumEnabled && (_rc?.getBool('iap_enabled') ?? false);
+
+  // ── App Config ───────────────────────────────────
+  String get emailAppKey => _rc?.getString('email_app_key') ?? 'axiomtech.dev@gmail.com';
 }

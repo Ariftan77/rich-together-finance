@@ -1190,51 +1190,50 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     ),
 
                     const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
 
-            // Save Button
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Container(
-                width: double.infinity,
-                height: 64,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGold.withValues(alpha: 0.3),
-                      blurRadius: 30,
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _saveTransaction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: const Color(0xFF221D10),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        trans.entrySaveButton,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    // Save Button
+                    Container(
+                      width: double.infinity,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGold.withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _saveTransaction,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: const Color(0xFF221D10),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check_circle, size: 24),
+                            const SizedBox(width: 12),
+                            Text(
+                              trans.entrySaveButton,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),

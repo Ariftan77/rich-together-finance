@@ -50,6 +50,8 @@ class MonthlySummary {
   final DateTime month;
   final double income;
   final double expense;
+  final double adjustmentIn;
+  final double adjustmentOut;
   final double debtPayable;
   final double debtReceivable;
 
@@ -57,11 +59,31 @@ class MonthlySummary {
     required this.month,
     required this.income,
     required this.expense,
+    required this.adjustmentIn,
+    required this.adjustmentOut,
     required this.debtPayable,
     required this.debtReceivable,
   });
 
   double get net => income - expense;
+}
+
+class ActiveDebtSummary {
+  final double payable;    // total I owe (remaining, converted to base)
+  final double receivable; // total owed to me (remaining, converted to base)
+  final Map<Currency, double> payableByCurrency;   // remaining per currency (original)
+  final Map<Currency, double> receivableByCurrency; // remaining per currency (original)
+
+  ActiveDebtSummary({
+    required this.payable,
+    required this.receivable,
+    required this.payableByCurrency,
+    required this.receivableByCurrency,
+  });
+
+  bool get hasPayable => payable > 0;
+  bool get hasReceivable => receivable > 0;
+  bool get hasAny => hasPayable || hasReceivable;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,24 +217,94 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
       }
     }
 
-    // 3. Payable debts (liabilities) — remaining amount, currency converted
+    // 3. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
     final debts = await debtDao.getAllDebts();
     double totalLiabilities = 0;
-    for (final debt in debts) {
-      if (debt.type == DebtType.payable && !debt.isSettled) {
-        final remaining = debt.amount - debt.paidAmount;
-        if (debt.currency == baseCurrency) {
-          totalLiabilities += remaining;
-        } else {
-          totalLiabilities += CurrencyExchangeService.convertCurrency(
-            remaining, debt.currency.code, baseCurrency.code, rates,
-          );
-        }
+    for (final debt in debts.where((d) => !d.isSettled)) {
+      final remaining = debt.amount - debt.paidAmount;
+      final converted = debt.currency == baseCurrency
+          ? remaining
+          : CurrencyExchangeService.convertCurrency(
+              remaining, debt.currency.code, baseCurrency.code, rates);
+      if (debt.type == DebtType.payable) {
+        totalLiabilities += converted; // I owe → liability
+      } else {
+        totalAssets += converted; // owed to me → asset
       }
     }
 
     yield totalAssets - totalLiabilities;
   }
+});
+
+/// All active (unsettled) debts for current profile, converted to base currency
+final dashboardActiveDebtProvider =
+    StreamProvider.autoDispose<ActiveDebtSummary>((ref) async* {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield ActiveDebtSummary(
+      payable: 0, receivable: 0,
+      payableByCurrency: {}, receivableByCurrency: {},
+    );
+    return;
+  }
+
+  final debtDao = ref.watch(debtDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = await _preloadRates(exchangeService);
+
+  await for (final allDebts in debtDao.watchUnsettledDebts()) {
+    final profileDebts = allDebts.where((d) => d.profileId == profileId);
+
+    double payable = 0;
+    double receivable = 0;
+    final payableByCurrency = <Currency, double>{};
+    final receivableByCurrency = <Currency, double>{};
+
+    for (final debt in profileDebts) {
+      final remaining = debt.amount - debt.paidAmount;
+      if (remaining <= 0) continue;
+
+      final converted = debt.currency == baseCurrency
+          ? remaining
+          : CurrencyExchangeService.convertCurrency(
+              remaining, debt.currency.code, baseCurrency.code, rates);
+
+      if (debt.type == DebtType.payable) {
+        payable += converted;
+        payableByCurrency[debt.currency] =
+            (payableByCurrency[debt.currency] ?? 0) + remaining;
+      } else {
+        receivable += converted;
+        receivableByCurrency[debt.currency] =
+            (receivableByCurrency[debt.currency] ?? 0) + remaining;
+      }
+    }
+
+    yield ActiveDebtSummary(
+      payable: payable,
+      receivable: receivable,
+      payableByCurrency: payableByCurrency,
+      receivableByCurrency: receivableByCurrency,
+    );
+  }
+});
+
+/// Payable breakdown by currency (for detail dialog)
+final dashboardActivePayableByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref
+      .watch(dashboardActiveDebtProvider)
+      .whenData((s) => s.payableByCurrency);
+});
+
+/// Receivable breakdown by currency (for detail dialog)
+final dashboardActiveReceivableByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref
+      .watch(dashboardActiveDebtProvider)
+      .whenData((s) => s.receivableByCurrency);
 });
 
 // ---------------------------------------------------------------------------
@@ -270,7 +362,7 @@ final convertedMonthlyTransactionsProvider =
 // Derived providers (from master — no conversion logic, just filtering)
 // ---------------------------------------------------------------------------
 
-/// Monthly income for current month (converted to base currency)
+/// Monthly income for current month (converted to base currency, excludes adjustments)
 final dashboardMonthlyIncomeProvider =
     Provider.autoDispose<AsyncValue<double>>((ref) {
   return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
@@ -280,13 +372,105 @@ final dashboardMonthlyIncomeProvider =
   });
 });
 
-/// Monthly expenses for current month (converted to base currency)
+/// Monthly income breakdown by original currency (for detail dialog)
+final dashboardMonthlyIncomeByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    final map = <Currency, double>{};
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.income) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) + t.transaction.amount;
+      }
+    }
+    return map;
+  });
+});
+
+/// Monthly expenses for current month (converted to base currency, excludes adjustments)
 final dashboardMonthlyExpenseProvider =
     Provider.autoDispose<AsyncValue<double>>((ref) {
   return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
     return txs
         .where((t) => t.transaction.type == TransactionType.expense)
         .fold(0.0, (sum, t) => sum + t.convertedAmount);
+  });
+});
+
+/// Monthly expense breakdown by original currency (for detail dialog)
+final dashboardMonthlyExpenseByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    final map = <Currency, double>{};
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.expense) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) + t.transaction.amount;
+      }
+    }
+    return map;
+  });
+});
+
+/// Net adjustment for current month in base currency (adjustmentIn - adjustmentOut)
+final dashboardMonthlyAdjustmentProvider =
+    Provider.autoDispose<AsyncValue<double>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    double net = 0;
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.adjustmentIn) {
+        net += t.convertedAmount;
+      } else if (t.transaction.type == TransactionType.adjustmentOut) {
+        net -= t.convertedAmount;
+      }
+    }
+    return net;
+  });
+});
+
+/// Monthly adjustment breakdown by original currency — net per currency (for detail dialog)
+final dashboardMonthlyAdjustmentByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    final map = <Currency, double>{};
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.adjustmentIn) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) + t.transaction.amount;
+      } else if (t.transaction.type == TransactionType.adjustmentOut) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) - t.transaction.amount;
+      }
+    }
+    return map;
+  });
+});
+
+/// Net debt for current month in base currency (debtIn - debtOut)
+final dashboardMonthlyDebtProvider =
+    Provider.autoDispose<AsyncValue<double>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    double net = 0;
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.debtIn) {
+        net += t.convertedAmount;
+      } else if (t.transaction.type == TransactionType.debtOut) {
+        net -= t.convertedAmount;
+      }
+    }
+    return net;
+  });
+});
+
+/// Monthly debt breakdown by original currency — net per currency (for detail dialog)
+final dashboardMonthlyDebtByCurrencyProvider =
+    Provider.autoDispose<AsyncValue<Map<Currency, double>>>((ref) {
+  return ref.watch(convertedMonthlyTransactionsProvider).whenData((txs) {
+    final map = <Currency, double>{};
+    for (final t in txs) {
+      if (t.transaction.type == TransactionType.debtIn) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) + t.transaction.amount;
+      } else if (t.transaction.type == TransactionType.debtOut) {
+        map[t.originalCurrency] = (map[t.originalCurrency] ?? 0) - t.transaction.amount;
+      }
+    }
+    return map;
   });
 });
 
@@ -373,6 +557,7 @@ final dashboardCashFlowProvider =
           } else if (t.type == TransactionType.expense) {
             expense += converted;
           }
+          // adjustmentIn/adjustmentOut are intentionally excluded from cash flow chart
         }
       }
 
@@ -424,7 +609,6 @@ final monthlySummaryProvider =
   final monthCount = ref.watch(reportMonthCountProvider);
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
-  final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final now = DateTime.now();
@@ -440,7 +624,6 @@ final monthlySummaryProvider =
   final allTransactions =
       await transactionDao.getTransactionsInRange(profileId, earliest, latest);
 
-  final allDebts = await debtDao.getAllDebts();
   final List<MonthlySummary> summaries = [];
 
   for (int i = 0; i < monthCount; i++) {
@@ -450,6 +633,10 @@ final monthlySummaryProvider =
 
     double income = 0;
     double expense = 0;
+    double adjustmentIn = 0;
+    double adjustmentOut = 0;
+    double debtPayable = 0;
+    double debtReceivable = 0;
 
     for (final tx in allTransactions) {
       if (tx.date.isAfter(startOfMonth) && tx.date.isBefore(endOfMonth)) {
@@ -458,28 +645,14 @@ final monthlySummaryProvider =
           income += converted;
         } else if (tx.type == TransactionType.expense) {
           expense += converted;
-        }
-      }
-    }
-
-    // Debts created in this month
-    double payable = 0;
-    double receivable = 0;
-    for (final debt in allDebts) {
-      if (debt.createdAt.isAfter(startOfMonth) &&
-          debt.createdAt.isBefore(endOfMonth)) {
-        double convertedAmount;
-        if (debt.currency == baseCurrency) {
-          convertedAmount = debt.amount;
-        } else {
-          convertedAmount = CurrencyExchangeService.convertCurrency(
-            debt.amount, debt.currency.code, baseCurrency.code, rates,
-          );
-        }
-        if (debt.type == DebtType.payable) {
-          payable += convertedAmount;
-        } else {
-          receivable += convertedAmount;
+        } else if (tx.type == TransactionType.adjustmentIn) {
+          adjustmentIn += converted;
+        } else if (tx.type == TransactionType.adjustmentOut) {
+          adjustmentOut += converted;
+        } else if (tx.type == TransactionType.debtIn) {
+          debtPayable += converted;
+        } else if (tx.type == TransactionType.debtOut) {
+          debtReceivable += converted;
         }
       }
     }
@@ -488,8 +661,10 @@ final monthlySummaryProvider =
       month: startOfMonth,
       income: income,
       expense: expense,
-      debtPayable: payable,
-      debtReceivable: receivable,
+      adjustmentIn: adjustmentIn,
+      adjustmentOut: adjustmentOut,
+      debtPayable: debtPayable,
+      debtReceivable: debtReceivable,
     ));
   }
 

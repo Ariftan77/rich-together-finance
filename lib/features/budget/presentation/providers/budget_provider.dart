@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
+import '../../../../core/providers/currency_exchange_providers.dart';
+import '../../../../core/services/currency_exchange_service.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 
@@ -20,27 +25,48 @@ class BudgetWithSpending {
     required this.categoryIcon,
     required this.categoryColor,
     required this.spentAmount,
-  }) : 
+  }) :
     remainingAmount = budget.amount - spentAmount,
     progress = (budget.amount > 0) ? (spentAmount / budget.amount) : 0.0;
 }
 
 /// Provider to get all budgets with spending calculations
-final budgetsWithSpendingProvider = StreamProvider.autoDispose<List<BudgetWithSpending>>((ref) async* {
+final budgetsWithSpendingProvider =
+    StreamProvider.autoDispose<List<BudgetWithSpending>>((ref) {
   final budgetDao = ref.watch(budgetDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final categoryDao = ref.watch(categoryDaoProvider);
+  final accountDao = ref.watch(accountDaoProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final profileId = ref.read(activeProfileIdProvider);
 
-  // Watch transactions stream so this provider re-fires when transactions change
-  ref.watch(transactionsStreamProvider);
+  if (profileId == null) return Stream.value([]);
 
-  final budgetsStream = budgetDao.watchAllBudgets();
+  // Merge budget and transaction change events into a single trigger.
+  // Both Drift streams emit their current value immediately on subscription,
+  // so the first trigger fires right away to produce an initial result.
+  final controller = StreamController<void>();
+  void trigger() {
+    if (!controller.isClosed) controller.add(null);
+  }
 
-  await for (final budgets in budgetsStream) {
-    if (budgets.isEmpty) {
-      yield [];
-      continue;
-    }
+  final budgetSub = budgetDao.watchAllBudgets().listen((_) => trigger());
+  final txSub =
+      transactionDao.watchAllTransactions(profileId).listen((_) => trigger());
+
+  ref.onDispose(() {
+    budgetSub.cancel();
+    txSub.cancel();
+    controller.close();
+  });
+
+  return controller.stream.asyncMap((_) async {
+    final rateResult = await exchangeService.getRates();
+    final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+    final accountMap = {for (final a in accounts) a.id: a};
+
+    final budgets = await budgetDao.getAllBudgets();
+    if (budgets.isEmpty) return <BudgetWithSpending>[];
 
     final categories = await categoryDao.getAllCategories();
     final categoriesMap = {for (var c in categories) c.id: c};
@@ -62,7 +88,8 @@ final budgetsWithSpendingProvider = StreamProvider.autoDispose<List<BudgetWithSp
       } else if (budget.period == BudgetPeriod.weekly) {
         startDate = now.subtract(Duration(days: now.weekday - 1));
         startDate = DateTime(startDate.year, startDate.month, startDate.day);
-        endDate = startDate.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+        endDate = startDate.add(
+            const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
       } else {
         startDate = DateTime(now.year, 1, 1);
         endDate = DateTime(now.year, 12, 31, 23, 59, 59);
@@ -74,8 +101,22 @@ final budgetsWithSpendingProvider = StreamProvider.autoDispose<List<BudgetWithSp
         endDate,
       );
 
-      final expenses = transactions.where((t) => t.type == TransactionType.expense);
-      final totalSpent = expenses.fold(0.0, (sum, t) => sum + t.amount);
+      // Sum expenses, converting each to the budget's own currency
+      double totalSpent = 0;
+      for (final tx in transactions) {
+        if (tx.type != TransactionType.expense) continue;
+        final account = accountMap[tx.accountId];
+        if (account == null || account.currency == budget.currency) {
+          totalSpent += tx.amount;
+        } else {
+          totalSpent += CurrencyExchangeService.convertCurrency(
+            tx.amount,
+            account.currency.code,
+            budget.currency.code,
+            rateResult.rates,
+          );
+        }
+      }
 
       result.add(BudgetWithSpending(
         budget: budget,
@@ -86,6 +127,6 @@ final budgetsWithSpendingProvider = StreamProvider.autoDispose<List<BudgetWithSp
       ));
     }
 
-    yield result;
-  }
+    return result;
+  });
 });

@@ -102,7 +102,15 @@ class RecurringListScreen extends ConsumerWidget {
                         final isIncome = item.type == TransactionType.income;
                         final color = isExpense
                             ? const Color(0xFFFB7185)
-                            : (isIncome ? const Color(0xFF34D399) : const Color(0xFF60A5FA));
+                            : isIncome
+                                ? const Color(0xFF34D399)
+                                : (item.type == TransactionType.adjustmentIn || item.type == TransactionType.adjustmentOut)
+                                    ? Colors.amber
+                                    : item.type == TransactionType.debtIn
+                                        ? Colors.orange
+                                        : item.type == TransactionType.debtOut
+                                            ? const Color(0xFF60A5FA)
+                                            : const Color(0xFF60A5FA);
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -268,7 +276,19 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
   @override
   Widget build(BuildContext context) {
     final isExpense = widget.item.type == TransactionType.expense;
-    final color = isExpense ? const Color(0xFFFB7185) : const Color(0xFF34D399);
+    final isAdjustment = widget.item.type == TransactionType.adjustmentIn || widget.item.type == TransactionType.adjustmentOut;
+    final isDebtIn = widget.item.type == TransactionType.debtIn;
+    final isDebtOut = widget.item.type == TransactionType.debtOut;
+    final isDebt = isDebtIn || isDebtOut;
+    final color = isExpense
+        ? const Color(0xFFFB7185)
+        : isAdjustment
+            ? Colors.amber
+            : isDebtIn
+                ? Colors.orange
+                : isDebtOut
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF34D399);
     final trans = ref.watch(translationsProvider);
 
     return Dialog(

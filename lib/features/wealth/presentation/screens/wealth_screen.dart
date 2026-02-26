@@ -128,7 +128,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   // ===================== BUDGET TAB =====================
   Widget _buildBudgetTab() {
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
-    final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
 
@@ -207,13 +206,21 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(item.categoryName,
-                                          style: AppTypography
-                                              .textTheme.titleMedium),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(item.categoryName,
+                                                style: AppTypography
+                                                    .textTheme.titleMedium),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          _buildCurrencyBadge(item.budget.currency.code),
+                                        ],
+                                      ),
                                       Text(
                                         isOverBudget
-                                            ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
-                                            : '${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
+                                            ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}'
+                                            : '${Formatters.formatCurrency(item.remainingAmount, currency: item.budget.currency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
                                         style: AppTypography
                                             .textTheme.bodySmall
                                             ?.copyWith(
@@ -230,7 +237,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                   children: [
                                     Text(
                                       Formatters.formatCurrency(item.budget.amount,
-                                          currency: baseCurrency, showDecimal: showDecimal),
+                                          currency: item.budget.currency, showDecimal: showDecimal),
                                       style: AppTypography.textTheme.bodyLarge
                                           ?.copyWith(
                                               fontWeight: FontWeight.bold),
@@ -265,7 +272,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                       ?.copyWith(color: progressColor),
                                 ),
                                 Text(
-                                  '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
+                                  '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: item.budget.currency, showDecimal: showDecimal)}',
                                   style: AppTypography.textTheme.bodySmall
                                       ?.copyWith(color: Colors.white70),
                                 ),
@@ -418,8 +425,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.goal.name,
-                            style: AppTypography.textTheme.titleMedium),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(item.goal.name,
+                                  style: AppTypography.textTheme.titleMedium),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildCurrencyBadge(item.goal.targetCurrency.code),
+                          ],
+                        ),
                         if (item.goal.deadline != null) ...[
                           Text(
                             DateFormat.yMMMd().format(item.goal.deadline!),
@@ -555,8 +570,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(debt.personName,
-                            style: AppTypography.textTheme.titleMedium),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(debt.personName,
+                                  style: AppTypography.textTheme.titleMedium),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildCurrencyBadge(debt.currency.code),
+                          ],
+                        ),
                         Text(
                           isPayable ? trans.debtPayable : trans.debtReceivable,
                           style: AppTypography.textTheme.bodySmall
@@ -868,6 +891,29 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   // ===================== HELPERS =====================
+  Widget _buildCurrencyBadge(String code) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.primaryGold.withValues(alpha: 0.4),
+          width: 0.8,
+        ),
+      ),
+      child: Text(
+        code,
+        style: const TextStyle(
+          color: AppColors.primaryGold,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState(IconData icon, String title, String subtitle) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),

@@ -50,6 +50,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get entryTypeIncome => 'Income';
   @override String get entryTypeExpense => 'Expense';
   @override String get entryTypeTransfer => 'Transfer';
+  @override String get entryTypeAdjustmentIn => 'Adjustment +';
+  @override String get entryTypeAdjustmentOut => 'Adjustment -';
+  @override String get entryTypeDebtIn => 'Borrowed';
+  @override String get entryTypeDebtOut => 'Lent';
   @override String get entryCategoryCreated => 'Category created successfully';
   @override String get entryCategory => 'Category';
   @override String get entryAccount => 'Account';
@@ -210,6 +214,11 @@ class AppTranslationsEn implements AppTranslations {
   @override String get syncStillNeedHelp => 'Still need help?';
 
   @override String get settingsClearData => 'Clear All Data';
+  @override String get settingsSendFeedback => 'Send Feedback';
+  @override String get settingsSendFeedbackHint => 'Tell us what you think or report a bug...';
+  @override String get settingsSendFeedbackSuccess => 'Feedback sent successfully!';
+  @override String get settingsSendFeedbackError => 'Failed to send feedback: ';
+  @override String get settingsSendFeedbackEmpty => 'Feedback cannot be empty';
 
   // Wealth / Navigation
   @override String get navWealth => 'Wealth';
@@ -352,11 +361,11 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumVoucherUsed => 'This voucher has already been used.';
   @override String get premiumNotSignedIn => 'Please sign in first.';
   @override String get premiumVoucherDisabled => 'Voucher redemption is not available.';
-  @override String get premiumRestored => 'Premium restored: ';
-  @override String get premiumCheckingPlayStore => 'Checking Play Store purchases...';
-  @override String get premiumSignInGoogle => 'Sign in with Google';
-  @override String get premiumSignInRequired => 'Required for voucher redemption & purchase restore';
-  @override String get premiumSignInFailed => 'Sign in failed. Please try again.';
-  @override String get premiumSignedInTryAgain => 'Signed in! Please try again to redeem your voucher.';
+  @override String get premiumRestored => 'Restored premium for: ';
+  @override String get premiumCheckingPlayStore => 'Checking Play Store for purchases...';
+  @override String get premiumSignInGoogle => 'Sign in with Google to sync premium purchase forever.';
+  @override String get premiumRestartAppToHideAds => 'Restart app to completely remove ads';
+  @override String get premiumSignInRequired => 'Google Sign-In Required';
+  @override String get premiumSignInFailed => 'Sign-In Failed';
+  @override String get premiumSignedInTryAgain => 'Signed in. Please tap the button again.';
 }
-

@@ -91,3 +91,26 @@ CREATE POLICY "redemptions_select_own" ON voucher_redemptions
 CREATE POLICY "redemptions_insert" ON voucher_redemptions
   FOR INSERT TO anon
   WITH CHECK (true);  -- uniqueness constraint on voucher_code prevents double-dip
+
+CREATE TABLE IF NOT EXISTS exchange_rates (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    rate_date    DATE NOT NULL,
+    base_currency TEXT NOT NULL DEFAULT 'USD',
+    rates        JSONB NOT NULL,
+    fetched_at   TIMESTAMPTZ DEFAULT now(),
+    source       TEXT DEFAULT 'frankfurter',
+    UNIQUE (rate_date, base_currency)
+  );
+
+  -- Allow anyone (anon or authenticated) to read
+  CREATE POLICY "exchange_rates_read" ON exchange_rates
+    FOR SELECT USING (true);
+
+  -- Allow authenticated users to write (or use service role for server-side inserts)
+  CREATE POLICY "exchange_rates_write" ON exchange_rates
+    FOR INSERT WITH CHECK (true);
+
+  CREATE POLICY "exchange_rates_upsert" ON exchange_rates
+    FOR UPDATE USING (true);
+
+  ALTER TABLE exchange_rates ENABLE ROW LEVEL SECURITY;

@@ -19,6 +19,7 @@ class GlassInput extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
   final bool readOnly;
+  final TextInputAction? textInputAction;
 
   const GlassInput({
     super.key,
@@ -36,6 +37,7 @@ class GlassInput extends StatelessWidget {
     this.inputFormatters,
     this.maxLength,
     this.readOnly = false,
+    this.textInputAction,
   });
 
   @override
@@ -51,6 +53,7 @@ class GlassInput extends StatelessWidget {
             readOnly: readOnly,
             obscureText: obscureText,
             keyboardType: keyboardType,
+            textInputAction: textInputAction,
             inputFormatters: inputFormatters,
             maxLength: maxLength,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null, // Hide counter text but keep enforcement? Or show it? TextFields usually show it.

@@ -8,6 +8,8 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/services/currency_exchange_service.dart';
+import '../../../../core/providers/currency_exchange_providers.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/cash_flow_chart.dart';
 import '../widgets/category_pie_chart.dart';
@@ -117,19 +119,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildDashboardTab() {
     final totalBalanceAsync = ref.watch(dashboardTotalBalanceProvider);
     final netWorthAsync = ref.watch(dashboardNetWorthProvider);
+    final activeDebtAsync = ref.watch(dashboardActiveDebtProvider);
     final monthlyIncomeAsync = ref.watch(dashboardMonthlyIncomeProvider);
     final monthlyExpenseAsync = ref.watch(dashboardMonthlyExpenseProvider);
+    final monthlyAdjustmentAsync = ref.watch(dashboardMonthlyAdjustmentProvider);
     final categoryBreakdownAsync = ref.watch(dashboardCategoryBreakdownProvider);
     final cashFlowAsync = ref.watch(dashboardCashFlowProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
-    // Pre-load so data is ready when user taps Total Balance / Net Worth
+    final trans = ref.watch(translationsProvider);
+    // Pre-load by-currency maps so data is ready when user taps rows
     ref.watch(dashboardBalanceByCurrencyProvider);
+    ref.watch(dashboardMonthlyIncomeByCurrencyProvider);
+    ref.watch(dashboardMonthlyExpenseByCurrencyProvider);
+    ref.watch(dashboardActivePayableByCurrencyProvider);
+    ref.watch(dashboardActiveReceivableByCurrencyProvider);
+    final adjustmentByCurrencyAsync = ref.watch(dashboardMonthlyAdjustmentByCurrencyProvider);
+    final hasAdjustments = adjustmentByCurrencyAsync.valueOrNull?.isNotEmpty ?? false;
+    final activeDebt = activeDebtAsync.valueOrNull;
 
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(dashboardTotalBalanceProvider);
         ref.invalidate(dashboardNetWorthProvider);
+        ref.invalidate(dashboardActiveDebtProvider);
         ref.invalidate(convertedMonthlyTransactionsProvider);
         ref.invalidate(dashboardCashFlowProvider);
         ref.invalidate(dashboardBalanceByCurrencyProvider);
@@ -148,7 +161,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   _SummaryRow(
                     icon: Icons.account_balance_wallet,
                     iconColor: AppColors.primaryGold,
-                    title: ref.watch(translationsProvider).dashboardTotalBalance,
+                    title: trans.dashboardTotalBalance,
                     value: totalBalanceAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
@@ -161,7 +174,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   _SummaryRow(
                     icon: Icons.trending_up,
                     iconColor: AppColors.success,
-                    title: ref.watch(translationsProvider).dashboardNetWorth,
+                    title: trans.dashboardNetWorth,
                     value: netWorthAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
@@ -170,30 +183,104 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     onTap: () => _showCurrencyBreakdown(context),
                     onLongPress: () => _showCurrencyBreakdown(context),
                   ),
+                  // Active debts below Net Worth (all-time outstanding, cleared when settled)
+                  if (activeDebt?.hasPayable == true) ...[
+                    _buildDivider(),
+                    _SummaryRow(
+                      icon: Icons.people_outline,
+                      iconColor: Colors.orange,
+                      title: '${trans.debtTitle} (${trans.debtPayable})',
+                      subtitle: null,
+                      value: '${baseCurrency.symbol} ${Formatters.formatCurrency(activeDebt!.payable, showDecimal: showDecimal)}',
+                      onTap: () => _showAmountBreakdown(
+                        context,
+                        title: '${trans.debtTitle} (${trans.debtPayable})',
+                        icon: Icons.people_outline,
+                        iconColor: Colors.orange,
+                        breakdownAsync: ref.read(dashboardActivePayableByCurrencyProvider),
+                      ),
+                    ),
+                  ],
+                  if (activeDebt?.hasReceivable == true) ...[
+                    _buildDivider(),
+                    _SummaryRow(
+                      icon: Icons.people_outline,
+                      iconColor: const Color(0xFF60A5FA),
+                      title: '${trans.debtTitle} (${trans.debtReceivable})',
+                      subtitle: null,
+                      value: '${baseCurrency.symbol} ${Formatters.formatCurrency(activeDebt!.receivable, showDecimal: showDecimal)}',
+                      onTap: () => _showAmountBreakdown(
+                        context,
+                        title: '${trans.debtTitle} (${trans.debtReceivable})',
+                        icon: Icons.people_outline,
+                        iconColor: const Color(0xFF60A5FA),
+                        breakdownAsync: ref.read(dashboardActiveReceivableByCurrencyProvider),
+                      ),
+                    ),
+                  ],
                   _buildDivider(),
                   _SummaryRow(
                     icon: Icons.arrow_downward,
                     iconColor: AppColors.success,
-                    title: ref.watch(translationsProvider).dashboardIncome,
-                    subtitle: ref.watch(translationsProvider).commonThisMonth,
+                    title: trans.dashboardIncome,
+                    subtitle: trans.commonThisMonth,
                     value: monthlyIncomeAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
                       error: (_, __) => 'Error',
+                    ),
+                    onTap: () => _showAmountBreakdown(
+                      context,
+                      title: trans.dashboardIncome,
+                      icon: Icons.arrow_downward,
+                      iconColor: AppColors.success,
+                      breakdownAsync: ref.read(dashboardMonthlyIncomeByCurrencyProvider),
                     ),
                   ),
                   _buildDivider(),
                   _SummaryRow(
                     icon: Icons.arrow_upward,
                     iconColor: AppColors.error,
-                    title: ref.watch(translationsProvider).dashboardExpense,
-                    subtitle: ref.watch(translationsProvider).commonThisMonth,
+                    title: trans.dashboardExpense,
+                    subtitle: trans.commonThisMonth,
                     value: monthlyExpenseAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
                       error: (_, __) => 'Error',
                     ),
+                    onTap: () => _showAmountBreakdown(
+                      context,
+                      title: trans.dashboardExpense,
+                      icon: Icons.arrow_upward,
+                      iconColor: AppColors.error,
+                      breakdownAsync: ref.read(dashboardMonthlyExpenseByCurrencyProvider),
+                    ),
                   ),
+                  if (hasAdjustments) ...[
+                    _buildDivider(),
+                    _SummaryRow(
+                      icon: Icons.tune,
+                      iconColor: const Color(0xFFa78bfa),
+                      title: trans.accountBalanceAdjustment,
+                      subtitle: trans.commonThisMonth,
+                      value: monthlyAdjustmentAsync.when(
+                        data: (v) {
+                          final prefix = v >= 0 ? '+' : '-';
+                          return '$prefix${baseCurrency.symbol} ${Formatters.formatCurrency(v.abs(), showDecimal: showDecimal)}';
+                        },
+                        loading: () => '...',
+                        error: (_, __) => 'Error',
+                      ),
+                      onTap: () => _showAmountBreakdown(
+                        context,
+                        title: trans.accountBalanceAdjustment,
+                        icon: Icons.tune,
+                        iconColor: const Color(0xFFa78bfa),
+                        breakdownAsync: ref.read(dashboardMonthlyAdjustmentByCurrencyProvider),
+                        signed: true,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -247,97 +334,276 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  void _showCurrencyBreakdown(BuildContext context) {
-    final breakdownAsync = ref.read(dashboardBalanceByCurrencyProvider);
+  void _showAmountBreakdown(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required AsyncValue<Map<Currency, double>> breakdownAsync,
+    bool signed = false,
+  }) async {
+    final breakdown = breakdownAsync.valueOrNull;
+    if (breakdown == null || breakdown.isEmpty) return;
+
     final showDecimal = ref.read(showDecimalProvider);
+    final baseCurrency = ref.read(defaultCurrencyProvider);
     final trans = ref.read(translationsProvider);
+    final exchangeService = ref.read(currencyExchangeServiceProvider);
 
-    breakdownAsync.whenData((breakdown) {
-      if (breakdown.isEmpty) return;
+    final rateResult = await exchangeService.getRates();
+    final rates = rateResult.rates;
 
-      showDialog(
-        context: context,
-        builder: (context) => Dialog(
-          backgroundColor: const Color(0xFF2D2416),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 24),
-                    const SizedBox(width: 12),
-                    Text(
-                      trans.dashboardBalanceCurrency,
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF2D2416),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: iconColor, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ...breakdown.entries.map((entry) {
-                  final currency = entry.key;
-                  final amount = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ...breakdown.entries.map((entry) {
+                final currency = entry.key;
+                final originalAmount = entry.value;
+                final isForeign = currency != baseCurrency;
+                final isNegative = originalAmount < 0;
+                final absOriginal = originalAmount.abs();
+
+                double convertedAmount;
+                double rate = 1.0;
+                if (isForeign) {
+                  rate = CurrencyExchangeService.convertCurrency(
+                    1.0, currency.code, baseCurrency.code, rates,
+                  );
+                  convertedAmount = absOriginal * rate;
+                } else {
+                  convertedAmount = absOriginal;
+                }
+
+                final prefix = signed ? (isNegative ? '-' : '+') : (isNegative ? '-' : '');
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: iconColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              currency.code,
+                              style: TextStyle(
+                                color: iconColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            currency.code,
+                          const Spacer(),
+                          Text(
+                            '$prefix${baseCurrency.symbol} ${Formatters.formatCurrency(convertedAmount, showDecimal: showDecimal)}',
                             style: const TextStyle(
-                              color: AppColors.primaryGold,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isForeign) ...[
+                        const SizedBox(height: 3),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${Formatters.formatNumber(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 11,
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        Text(
-                          '${currency.symbol} ${Formatters.formatCurrency(amount, showDecimal: showDecimal)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      trans.close,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 14,
-                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    trans.close,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    });
+      ),
+    );
+  }
+
+  void _showCurrencyBreakdown(BuildContext context) async {
+    final breakdownAsync = ref.read(dashboardBalanceByCurrencyProvider);
+    final breakdown = breakdownAsync.valueOrNull;
+    if (breakdown == null || breakdown.isEmpty) return;
+
+    final showDecimal = ref.read(showDecimalProvider);
+    final baseCurrency = ref.read(defaultCurrencyProvider);
+    final trans = ref.read(translationsProvider);
+    final exchangeService = ref.read(currencyExchangeServiceProvider);
+
+    final rateResult = await exchangeService.getRates();
+    final rates = rateResult.rates;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF2D2416),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    trans.dashboardBalanceCurrency,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ...breakdown.entries.map((entry) {
+                final currency = entry.key;
+                final originalAmount = entry.value;
+                final isForeign = currency != baseCurrency;
+                final isNegative = originalAmount < 0;
+                final absOriginal = originalAmount.abs();
+
+                double convertedAmount;
+                double rate = 1.0;
+                if (isForeign) {
+                  rate = CurrencyExchangeService.convertCurrency(
+                    1.0, currency.code, baseCurrency.code, rates,
+                  );
+                  convertedAmount = absOriginal * rate;
+                } else {
+                  convertedAmount = absOriginal;
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              currency.code,
+                              style: const TextStyle(
+                                color: AppColors.primaryGold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${isNegative ? '-' : ''}${baseCurrency.symbol} ${Formatters.formatCurrency(convertedAmount, showDecimal: showDecimal)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isForeign) ...[
+                        const SizedBox(height: 3),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${Formatters.formatNumber(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    trans.close,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildReportsTab() {
@@ -373,6 +639,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               final s = summaries[index];
               final monthLabel = DateFormat.yMMMM(locale.toString()).format(s.month);
               final hasDebt = s.debtPayable > 0 || s.debtReceivable > 0;
+              final hasAdjustment = s.adjustmentIn > 0 || s.adjustmentOut > 0;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -410,6 +677,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         currency: baseCurrency,
                         showDecimal: showDecimal,
                       ),
+                      if (hasAdjustment) ...[
+                        const SizedBox(height: 8),
+                        if (s.adjustmentIn > 0)
+                          _ReportRow(
+                            label: trans.entryTypeAdjustmentIn,
+                            amount: s.adjustmentIn,
+                            color: const Color(0xFFa78bfa),
+                            prefix: '+',
+                            currency: baseCurrency,
+                            showDecimal: showDecimal,
+                          ),
+                        if (s.adjustmentOut > 0) ...[
+                          const SizedBox(height: 8),
+                          _ReportRow(
+                            label: trans.entryTypeAdjustmentOut,
+                            amount: s.adjustmentOut,
+                            color: Colors.amber,
+                            prefix: '-',
+                            currency: baseCurrency,
+                            showDecimal: showDecimal,
+                          ),
+                        ],
+                      ],
                       if (hasDebt) ...[
                         const SizedBox(height: 8),
                         if (s.debtPayable > 0)
