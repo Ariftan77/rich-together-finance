@@ -82,13 +82,11 @@ class BudgetScreen extends ConsumerWidget {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: item.categoryColor.isNotEmpty 
-                                          ? Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF'))) 
-                                          : Colors.grey,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primaryGold,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Text(item.categoryIcon, style: const TextStyle(fontSize: 20)),
+                                      child: const Icon(Icons.category_outlined, color: Colors.black, size: 20),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(

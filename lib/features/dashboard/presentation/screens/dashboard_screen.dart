@@ -833,26 +833,26 @@ class _SummaryRow extends StatelessWidget {
               ),
             ),
             // Amount
-            Flexible(
-              child: Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12, // Reduced by 20% from 15
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.right,
             ),
-            if (onTap != null) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.white.withValues(alpha: 0.3),
-                size: 16,
-              ),
-            ],
+            const SizedBox(width: 4),
+            SizedBox(
+              width: 16,
+              child: onTap != null
+                  ? Icon(
+                      Icons.chevron_right,
+                      color: Colors.white.withValues(alpha: 0.3),
+                      size: 16,
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),

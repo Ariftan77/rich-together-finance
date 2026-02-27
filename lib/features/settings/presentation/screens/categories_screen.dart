@@ -11,6 +11,7 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../core/models/enums.dart';
 import '../../../transactions/presentation/widgets/add_category_dialog.dart';
+import '../widgets/category_icon_picker.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
@@ -20,16 +21,20 @@ class CategoriesScreen extends ConsumerStatefulWidget {
 }
 
 class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
-  // Track which category is being edited
   int? _editingCategoryId;
+  String? _editingIcon;
+  String? _editingColor;
   final TextEditingController _editController = TextEditingController();
-  
+  final TextEditingController _searchController = TextEditingController();
+
   // Filter state: null = All, otherwise specific type
   CategoryType? _selectedFilter;
+  String _searchQuery = '';
 
   @override
   void dispose() {
     _editController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -71,6 +76,40 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           ),
           body: Column(
             children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    decoration: InputDecoration(
+                      hintText: 'Search categories...',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 15),
+                      prefixIcon: Icon(Icons.search, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ),
+              ),
+
               // Filter Bubbles
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -84,7 +123,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   ],
                 ),
               ),
-              
+
               // List
               Expanded(
                 child: StreamBuilder<List<CategoryWithUsage>>(
@@ -93,16 +132,19 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
                     }
-                    
+
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
                     }
-          
+
                     // Filter logic
                     final allCategories = snapshot.data!;
-                    final categories = _selectedFilter == null 
-                        ? allCategories 
-                        : allCategories.where((c) => c.category.type == _selectedFilter).toList();
+                    final categories = allCategories.where((c) {
+                      final matchesType = _selectedFilter == null || c.category.type == _selectedFilter;
+                      final matchesSearch = _searchQuery.isEmpty ||
+                          c.category.name.toLowerCase().contains(_searchQuery.toLowerCase());
+                      return matchesType && matchesSearch;
+                    }).toList();
           
                     if (categories.isEmpty) {
                       return Center(child: Text('No categories found', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
@@ -170,8 +212,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
               profileId: drift.Value(profileId),
               name: drift.Value(result['name']),
               type: drift.Value(result['type']),
-              icon: const drift.Value('category'), // Default icon
-              color: const drift.Value('0xFFFFFFFF'), // Default color (String)
+              icon: drift.Value(result['icon'] ?? '📦'), // Custom icon
+              color: drift.Value(result['color'] ?? '#BDC3C7'), // Custom color (String)
               isSystem: const drift.Value(false),
             ),
           );
@@ -200,16 +242,18 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       child: Row(
         children: [
           // Icon
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.category_outlined,
-              color: AppColors.primaryGold,
-              size: 20,
+          GestureDetector(
+            onTap: isEditing ? () => _showIconPicker(item.category) : null,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Color(int.parse((isEditing ? (_editingColor ?? item.category.color) : item.category.color)?.replaceFirst('#', '0xFF') ?? '0xFF808080')).withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -288,14 +332,32 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     setState(() {
       _editingCategoryId = category.id;
       _editController.text = category.name;
+      _editingIcon = category.icon;
+      _editingColor = category.color;
     });
   }
 
   void _cancelEdit() {
     setState(() {
       _editingCategoryId = null;
+      _editingIcon = null;
+      _editingColor = null;
       _editController.clear();
     });
+  }
+
+  Future<void> _showIconPicker(Category category) async {
+    final result = await CategoryIconPicker.show(
+      context,
+      initialIcon: _editingIcon ?? category.icon,
+      initialColorHex: _editingColor ?? category.color ?? '#BDC3C7',
+    );
+    if (result != null) {
+      setState(() {
+        _editingIcon = result['icon'];
+        _editingColor = result['color'];
+      });
+    }
   }
 
   Future<void> _saveCategory(Category category) async {
@@ -303,7 +365,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     if (newName.isEmpty) return;
 
     try {
-      final updatedCategory = category.copyWith(name: newName);
+      final updatedCategory = category.copyWith(
+        name: newName,
+        icon: _editingIcon ?? category.icon,
+        color: drift.Value(_editingColor ?? category.color),
+      );
       await ref.read(categoryDaoProvider).updateCategory(updatedCategory);
       _cancelEdit();
       if (mounted) {

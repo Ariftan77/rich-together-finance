@@ -771,7 +771,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                     prefix.trim(),
                                     style: const TextStyle(
                                       color: AppColors.primaryGold,
-                                      fontSize: 36,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -793,7 +793,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                       onChanged: (val) => _updateAmount(val, accounts),
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 56,  // Reduced from 72
+                                        fontSize: 34,
                                         fontWeight: FontWeight.w800,
                                         height: 1.0,
                                       ),

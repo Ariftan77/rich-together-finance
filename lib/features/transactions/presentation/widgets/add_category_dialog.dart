@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../settings/presentation/widgets/category_icon_picker.dart';
 
 /// Dialog for creating a new category
 class AddCategoryDialog extends ConsumerStatefulWidget {
@@ -24,6 +25,8 @@ class AddCategoryDialog extends ConsumerStatefulWidget {
 class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
   final TextEditingController _nameController = TextEditingController();
   late CategoryType _selectedType;
+  late String _icon;
+  late String _colorHex;
   bool _isLoading = false;
 
   @override
@@ -34,6 +37,8 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
     if (widget.initialName != null && widget.initialName!.isNotEmpty) {
       _nameController.text = widget.initialName!;
     }
+    _icon = '📦';
+    _colorHex = '#BDC3C7';
   }
 
   @override
@@ -58,10 +63,12 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
     setState(() => _isLoading = true);
 
     try {
-      // Return Map with name and type
+      // Return Map with name, type, icon, and color
       Navigator.pop(context, {
         'name': name,
         'type': _selectedType,
+        'icon': _icon,
+        'color': _colorHex,
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -177,43 +184,76 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
               const SizedBox(height: 16),
             ],
             
-            // Name input
-            Text(
-              trans.entryCategory.toUpperCase(),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
-                ),
-              ),
-              child: TextField(
-                controller: _nameController,
-                autofocus: true,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                ),
-                decoration: InputDecoration(
-                  hintText: trans.entrySearchCategory,
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 15,
+            // Name input & Icon Picker Row
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final result = await CategoryIconPicker.show(context, initialIcon: _icon, initialColorHex: _colorHex);
+                    if (result != null) {
+                      setState(() {
+                         _icon = result['icon']!;
+                         _colorHex = result['color']!;
+                      });
+                    }
+                  },
+                   child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(_icon, style: const TextStyle(fontSize: 24)),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
                 ),
-                onSubmitted: (_) => _saveCategory(),
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        trans.entryCategory.toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _nameController,
+                          autofocus: true,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: trans.entrySearchCategory,
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 15,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                          onSubmitted: (_) => _saveCategory(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             
             const SizedBox(height: 24),
