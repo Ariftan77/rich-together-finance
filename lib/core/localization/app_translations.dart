@@ -365,4 +365,5 @@ abstract class AppTranslations {
   String get premiumSignInRequired;
   String get premiumSignInFailed;
   String get premiumSignedInTryAgain;
+  String get categoryTapToEditIcon;
 }

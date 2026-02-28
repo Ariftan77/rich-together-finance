@@ -369,4 +369,5 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumSignInRequired => 'Diperlukan untuk tukar voucher & pulihkan pembelian';
   @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
   @override String get premiumSignedInTryAgain => 'Berhasil masuk! Silakan coba lagi untuk menukar voucher Anda.';
+  @override String get categoryTapToEditIcon => 'Ketuk untuk ganti ikon';
 }

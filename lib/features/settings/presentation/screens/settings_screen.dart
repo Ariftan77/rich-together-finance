@@ -1169,7 +1169,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _handleGoogleSignOut() async {
     await PremiumAuthService().signOut();
-    if (mounted) setState(() {});
+    if (mounted) _refreshPremiumStatus();
   }
 
   Future<void> _showVoucherDialog() async {

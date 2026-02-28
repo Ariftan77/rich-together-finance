@@ -368,4 +368,5 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumSignInRequired => 'Google Sign-In Required';
   @override String get premiumSignInFailed => 'Sign-In Failed';
   @override String get premiumSignedInTryAgain => 'Signed in. Please tap the button again.';
+  @override String get categoryTapToEditIcon => 'Tap to edit icon';
 }

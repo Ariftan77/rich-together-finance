@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/database.dart';
 import '../../../../core/database/daos/transaction_dao.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../shared/theme/colors.dart';
@@ -244,16 +245,31 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           // Icon
           GestureDetector(
             onTap: isEditing ? () => _showIconPicker(item.category) : null,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Color(int.parse((isEditing ? (_editingColor ?? item.category.color) : item.category.color)?.replaceFirst('#', '0xFF') ?? '0xFF808080')).withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
-                style: const TextStyle(fontSize: 20),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Color(int.parse((isEditing ? (_editingColor ?? item.category.color) : item.category.color)?.replaceFirst('#', '0xFF') ?? '0xFF808080')).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+                if (isEditing) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    ref.watch(translationsProvider).categoryTapToEditIcon,
+                    style: TextStyle(
+                      color: AppColors.primaryGold.withValues(alpha: 0.8),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 16),
