@@ -59,7 +59,7 @@ final budgetsWithSpendingProvider =
   }
 
   final budgetSub = budgetDao
-      .watchAllBudgets()
+      .watchAllBudgets(profileId)
       .listen((_) => trigger(), onError: propagateError);
   final txSub = transactionDao
       .watchAllTransactions(profileId)
@@ -81,7 +81,7 @@ final budgetsWithSpendingProvider =
     final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
     final accountMap = {for (final a in accounts) a.id: a};
 
-    final budgets = await budgetDao.getAllBudgets();
+    final budgets = await budgetDao.getAllBudgets(profileId);
 
     if (budgets.isEmpty) return <BudgetWithSpending>[];
 

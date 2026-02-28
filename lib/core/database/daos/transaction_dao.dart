@@ -299,6 +299,43 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return query.map((row) => row.read(transactions.title)!).get();
   }
 
+  /// Get the most frequently used account ID for a given title and type
+  Future<int?> getMostUsedAccountForTitle(String title, TransactionType type) async {
+    final count = transactions.id.count();
+    final query = selectOnly(transactions)
+      ..addColumns([transactions.accountId, count])
+      ..where(
+        transactions.title.equals(title) &
+        transactions.type.equalsValue(type),
+      )
+      ..groupBy([transactions.accountId])
+      ..orderBy([OrderingTerm.desc(count)])
+      ..limit(1);
+
+    final rows = await query.get();
+    if (rows.isEmpty) return null;
+    return rows.first.read(transactions.accountId);
+  }
+
+  /// Get the most frequently used category ID for a given title and type
+  Future<int?> getMostUsedCategoryForTitle(String title, TransactionType type) async {
+    final count = transactions.id.count();
+    final query = selectOnly(transactions)
+      ..addColumns([transactions.categoryId, count])
+      ..where(
+        transactions.title.equals(title) &
+        transactions.type.equalsValue(type) &
+        transactions.categoryId.isNotNull(),
+      )
+      ..groupBy([transactions.categoryId])
+      ..orderBy([OrderingTerm.desc(count)])
+      ..limit(1);
+
+    final rows = await query.get();
+    if (rows.isEmpty) return null;
+    return rows.first.read(transactions.categoryId);
+  }
+
   /// Watch categories with usage count
   Stream<List<CategoryWithUsage>> watchCategoriesWithUsageCount(int profileId) {
     final usageCount = transactions.id.count();

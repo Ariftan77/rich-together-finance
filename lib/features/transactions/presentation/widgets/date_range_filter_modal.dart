@@ -77,7 +77,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
 
     if (picked != null) {
       setState(() {
-        _dateTo = picked;
+        _dateTo = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
         _errorMessage = null;
         // Validate: dateTo must be > dateFrom
         if (_dateFrom != null && picked.isBefore(_dateFrom!)) {

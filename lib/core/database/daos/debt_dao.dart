@@ -10,21 +10,24 @@ part 'debt_dao.g.dart';
 class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
   DebtDao(super.db);
 
-  /// Get all debts
-  Future<List<Debt>> getAllDebts() =>
-      (select(debts)..orderBy([(d) => OrderingTerm.asc(d.dueDate)])).get();
-
-  /// Get unsettled debts
-  Future<List<Debt>> getUnsettledDebts() =>
+  /// Get all debts for a profile
+  Future<List<Debt>> getAllDebts(int profileId) =>
       (select(debts)
-            ..where((d) => d.isSettled.equals(false))
+            ..where((d) => d.profileId.equals(profileId))
             ..orderBy([(d) => OrderingTerm.asc(d.dueDate)]))
           .get();
 
-  /// Get debts by type
-  Future<List<Debt>> getDebtsByType(DebtType type) =>
+  /// Get unsettled debts for a profile
+  Future<List<Debt>> getUnsettledDebts(int profileId) =>
       (select(debts)
-            ..where((d) => d.type.equals(type.index) & d.isSettled.equals(false))
+            ..where((d) => d.profileId.equals(profileId) & d.isSettled.equals(false))
+            ..orderBy([(d) => OrderingTerm.asc(d.dueDate)]))
+          .get();
+
+  /// Get debts by type for a profile
+  Future<List<Debt>> getDebtsByType(int profileId, DebtType type) =>
+      (select(debts)
+            ..where((d) => d.profileId.equals(profileId) & d.type.equals(type.index) & d.isSettled.equals(false))
             ..orderBy([(d) => OrderingTerm.asc(d.dueDate)]))
           .get();
 
@@ -32,17 +35,17 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
   Future<Debt?> getDebtById(int id) =>
       (select(debts)..where((d) => d.id.equals(id))).getSingleOrNull();
 
-  /// Watch unsettled debts (reactive stream)
-  Stream<List<Debt>> watchUnsettledDebts() =>
+  /// Watch unsettled debts for a profile (reactive stream)
+  Stream<List<Debt>> watchUnsettledDebts(int profileId) =>
       (select(debts)
-            ..where((d) => d.isSettled.equals(false))
+            ..where((d) => d.profileId.equals(profileId) & d.isSettled.equals(false))
             ..orderBy([(d) => OrderingTerm.asc(d.dueDate)]))
           .watch();
 
-  /// Watch debts by type
-  Stream<List<Debt>> watchDebtsByType(DebtType type) =>
+  /// Watch debts by type for a profile
+  Stream<List<Debt>> watchDebtsByType(int profileId, DebtType type) =>
       (select(debts)
-            ..where((d) => d.type.equals(type.index) & d.isSettled.equals(false))
+            ..where((d) => d.profileId.equals(profileId) & d.type.equals(type.index) & d.isSettled.equals(false))
             ..orderBy([(d) => OrderingTerm.asc(d.dueDate)]))
           .watch();
 
@@ -94,14 +97,14 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
       (delete(debts)..where((d) => d.id.equals(id))).go();
 
   /// Calculate total payable (I owe) - remaining amount
-  Future<double> getTotalPayable() async {
-    final payables = await getDebtsByType(DebtType.payable);
+  Future<double> getTotalPayable(int profileId) async {
+    final payables = await getDebtsByType(profileId, DebtType.payable);
     return payables.fold<double>(0.0, (sum, debt) => sum + (debt.amount - debt.paidAmount));
   }
 
   /// Calculate total receivable (Owed to me) - remaining amount
-  Future<double> getTotalReceivable() async {
-    final receivables = await getDebtsByType(DebtType.receivable);
+  Future<double> getTotalReceivable(int profileId) async {
+    final receivables = await getDebtsByType(profileId, DebtType.receivable);
     return receivables.fold<double>(0.0, (sum, debt) => sum + (debt.amount - debt.paidAmount));
   }
 }

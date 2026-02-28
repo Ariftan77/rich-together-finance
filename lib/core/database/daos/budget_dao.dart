@@ -11,24 +11,24 @@ part 'budget_dao.g.dart';
 class BudgetDao extends DatabaseAccessor<AppDatabase> with _$BudgetDaoMixin {
   BudgetDao(super.db);
 
-  /// Get all active budgets
-  Future<List<Budget>> getAllBudgets() =>
-      (select(budgets)..where((b) => b.isActive)).get();
+  /// Get all active budgets for a profile
+  Future<List<Budget>> getAllBudgets(int profileId) =>
+      (select(budgets)..where((b) => b.profileId.equals(profileId) & b.isActive)).get();
 
-  /// Get budget by category
-  Future<Budget?> getBudgetByCategory(int categoryId) =>
+  /// Get budget by category for a profile
+  Future<Budget?> getBudgetByCategory(int profileId, int categoryId) =>
       (select(budgets)
-            ..where((b) => b.categoryId.equals(categoryId) & b.isActive))
+            ..where((b) => b.profileId.equals(profileId) & b.categoryId.equals(categoryId) & b.isActive))
           .getSingleOrNull();
 
-  /// Get budgets by period
-  Future<List<Budget>> getBudgetsByPeriod(BudgetPeriod period) =>
-      (select(budgets)..where((b) => b.period.equals(period.index) & b.isActive)).get();
+  /// Get budgets by period for a profile
+  Future<List<Budget>> getBudgetsByPeriod(int profileId, BudgetPeriod period) =>
+      (select(budgets)..where((b) => b.profileId.equals(profileId) & b.period.equals(period.index) & b.isActive)).get();
 
-  /// Watch all budgets (reactive stream)
-  Stream<List<Budget>> watchAllBudgets() {
-    final query = select(budgets)..where((b) => b.isActive);
-    
+  /// Watch all budgets for a profile (reactive stream)
+  Stream<List<Budget>> watchAllBudgets(int profileId) {
+    final query = select(budgets)..where((b) => b.profileId.equals(profileId) & b.isActive);
+
     // Join with categories to trigger updates when category details change
     return query.join([
       innerJoin(categories, categories.id.equalsExp(budgets.categoryId))

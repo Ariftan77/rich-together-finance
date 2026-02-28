@@ -271,6 +271,14 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
                           final date = sortedDates[index];
                           final txs = grouped[date]!;
+                          final showDecimal = ref.watch(showDecimalProvider);
+
+                          final dayIncome = txs
+                              .where((tx) => tx.type == TransactionType.income || tx.type == TransactionType.adjustmentIn || tx.type == TransactionType.debtIn)
+                              .fold(0.0, (sum, tx) => sum + tx.amount);
+                          final dayExpense = txs
+                              .where((tx) => tx.type == TransactionType.expense || tx.type == TransactionType.adjustmentOut || tx.type == TransactionType.debtOut)
+                              .fold(0.0, (sum, tx) => sum + tx.amount);
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,6 +287,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
                                       _formatDateSection(date).toUpperCase(),
@@ -286,16 +295,43 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                         color: Colors.white.withValues(alpha: 0.4),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.5,
-                                        fontSize: 10,
+                                        fontSize: 13,
                                       ),
                                     ),
-                                    Text(
-                                      '${txs.length} Transaction${txs.length > 1 ? 's' : ''}',
-                                      style: AppTypography.textTheme.labelSmall!.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.3),
-                                        fontStyle: FontStyle.italic,
-                                        fontSize: 10,
-                                      ),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        if (dayIncome > 0) ...[
+                                          Text(
+                                            '+${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
+                                            style: AppTypography.textTheme.labelSmall!.copyWith(
+                                              color: const Color(0xFF34D399).withValues(alpha: 0.7),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        if (dayExpense > 0) ...[
+                                          Text(
+                                            '-${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
+                                            style: AppTypography.textTheme.labelSmall!.copyWith(
+                                              color: const Color(0xFFFB7185).withValues(alpha: 0.7),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        Text(
+                                          '${txs.length} Txn${txs.length > 1 ? 's' : ''}',
+                                          style: AppTypography.textTheme.labelSmall!.copyWith(
+                                            color: Colors.white.withValues(alpha: 0.3),
+                                            fontStyle: FontStyle.italic,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

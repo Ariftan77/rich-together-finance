@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
@@ -25,6 +26,11 @@ class GoalWithProgress {
 final goalsWithProgressProvider =
     StreamProvider.autoDispose<List<GoalWithProgress>>((ref) async* {
   final goalDao = ref.watch(goalDaoProvider);
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    yield [];
+    return;
+  }
 
   // Watch transactions & accounts so balances recalculate reactively
   ref.watch(transactionsStreamProvider);
@@ -39,7 +45,7 @@ final goalsWithProgressProvider =
   final exchangeService = ref.read(currencyExchangeServiceProvider);
   final rateResult = await exchangeService.getRates();
 
-  final goalsStream = goalDao.watchActiveGoals();
+  final goalsStream = goalDao.watchActiveGoals(profileId);
 
   await for (final goals in goalsStream) {
     if (goals.isEmpty) {

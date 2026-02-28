@@ -441,7 +441,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${Formatters.formatNumber(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
+                            '${Formatters.formatRate(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.4),
                               fontSize: 11,
@@ -573,7 +573,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${Formatters.formatNumber(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
+                            '${Formatters.formatRate(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.4),
                               fontSize: 11,

@@ -218,7 +218,7 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
     }
 
     // 3. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
-    final debts = await debtDao.getAllDebts();
+    final debts = await debtDao.getAllDebts(profileId);
     double totalLiabilities = 0;
     for (final debt in debts.where((d) => !d.isSettled)) {
       final remaining = debt.amount - debt.paidAmount;
@@ -254,8 +254,7 @@ final dashboardActiveDebtProvider =
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final rates = await _preloadRates(exchangeService);
 
-  await for (final allDebts in debtDao.watchUnsettledDebts()) {
-    final profileDebts = allDebts.where((d) => d.profileId == profileId);
+  await for (final profileDebts in debtDao.watchUnsettledDebts(profileId)) {
 
     double payable = 0;
     double receivable = 0;

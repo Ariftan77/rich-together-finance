@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
@@ -12,7 +11,7 @@ import '../../../../shared/widgets/glass_segmented_control.dart';
 
 import '../../../../shared/utils/formatters.dart';
 
-import '../../../../shared/utils/currency_input_formatter.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
@@ -32,7 +31,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
   final _noteController = TextEditingController();
-  final _amountFocusNode = FocusNode();
   
   TransactionType _selectedType = TransactionType.expense;
   DateTime _selectedDate = DateTime.now();
@@ -51,6 +49,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   // Raw amount value (without formatting)
   String _rawAmount = '';
 
+  // Focus node for title field (to detect when user finishes typing)
+  final _titleFocusNode = FocusNode();
+
+  // Track if auto-select has been applied (only once per title)
+  bool _autoSelectApplied = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,9 +63,13 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     // Filter bubbles as user types
     _titleController.addListener(_onTitleChanged);
 
-    // Auto focus amount field
+    // Listen for title field focus loss to auto-select account/category (new only)
+    if (widget.transactionId == null) {
+      _titleFocusNode.addListener(_onTitleFocusChanged);
+    }
+
+    // Load frequent titles
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _amountFocusNode.requestFocus();
       _loadFrequentTitles();
     });
 
@@ -69,6 +77,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (widget.transactionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadTransaction();
+      });
+    } else {
+      // Auto-open calculator for new transactions
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoOpenCalculator();
       });
     }
   }
@@ -110,18 +123,78 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
   @override
   void dispose() {
+    _titleFocusNode.removeListener(_onTitleFocusChanged);
+    _titleFocusNode.dispose();
     _titleController.removeListener(_onTitleChanged);
     _amountController.dispose();
     _titleController.dispose();
     _noteController.dispose();
-    _amountFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _autoOpenCalculator() async {
+    if (!mounted) return;
+    final accountsAsync = ref.read(accountsStreamProvider);
+    final accounts = accountsAsync.valueOrNull;
+    final currency = accounts != null ? _getCurrency(accounts) : Currency.idr;
+    final showDecimal = ref.read(showDecimalProvider);
+
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: 0,
+      currency: currency,
+      showDecimal: showDecimal,
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _rawAmount = result.toString();
+        _amountController.text = Formatters.formatCurrency(
+          result,
+          currency: currency,
+          showDecimal: showDecimal,
+        );
+      });
+    }
+  }
+
+  void _onTitleFocusChanged() {
+    if (!_titleFocusNode.hasFocus) {
+      _autoSelectFromTitle(_titleController.text.trim());
+    }
+  }
+
+  Future<void> _autoSelectFromTitle(String title) async {
+    if (title.isEmpty) return;
+    if (widget.transactionId != null) return; // edit mode, skip
+    if (_autoSelectApplied && _selectedAccountId != null) return;
+
+    final dao = ref.read(transactionDaoProvider);
+
+    // Auto-select account if not already selected
+    if (_selectedAccountId == null) {
+      final accountId = await dao.getMostUsedAccountForTitle(title, _selectedType);
+      if (accountId != null && mounted) {
+        setState(() => _selectedAccountId = accountId);
+      }
+    }
+
+    // Auto-select category if not already selected (skip for transfers)
+    if (_selectedCategoryId == null && _selectedType != TransactionType.transfer) {
+      final categoryId = await dao.getMostUsedCategoryForTitle(title, _selectedType);
+      if (categoryId != null && mounted) {
+        setState(() => _selectedCategoryId = categoryId);
+      }
+    }
+
+    _autoSelectApplied = true;
   }
 
   void _onTitleChanged() {
     final text = _titleController.text.trim();
     if (text != _titleFilter) {
       setState(() => _titleFilter = text);
+      // Reset auto-select when title changes so it can re-trigger
+      _autoSelectApplied = false;
     }
   }
 
@@ -149,7 +222,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final navigator = Navigator.of(context);
     
     // Unfocus to prevent keyboard/focus issues during navigation
-    _amountFocusNode.unfocus();
     FocusScope.of(context).unfocus();
 
     if (_selectedAccountId == null) {
@@ -327,21 +399,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
-  void _updateAmount(String value, List<Account> accounts) {
-    if (value.isEmpty) {
-      setState(() {
-        _rawAmount = '';
-      });
-      return;
-    }
-
-    final currency = _getCurrency(accounts);
-    final amount = Formatters.parseCurrency(value, currency: currency);
-    
-    setState(() {
-      _rawAmount = amount.toString();
-    });
-  }
 
   Currency _getCurrency(List<Account> accounts) {
     if (_selectedAccountId == null) return Currency.idr;
@@ -381,7 +438,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (widget.transactionId == null) return;
 
     // Unfocus to prevent keyboard/focus issues during navigation
-    _amountFocusNode.unfocus();
     FocusScope.of(context).unfocus();
 
     final messenger = ScaffoldMessenger.of(context);
@@ -761,13 +817,36 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         accountsAsync.when(
                           data: (accounts) {
                             final prefix = _getCurrencyPrefix(accounts);
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
+                            final currency = _getCurrency(accounts);
+                            final showDecimal = ref.watch(showDecimalProvider);
+                            return GestureDetector(
+                              onTap: () async {
+                                // Dismiss any active keyboard
+                                FocusScope.of(context).unfocus();
+
+                                final currentAmount = double.tryParse(_rawAmount) ?? 0.0;
+                                final result = await CalculatorBottomSheet.show(
+                                  context,
+                                  initialValue: currentAmount,
+                                  currency: currency,
+                                  showDecimal: showDecimal,
+                                );
+                                if (result != null && mounted) {
+                                  setState(() {
+                                    _rawAmount = result.toString();
+                                    _amountController.text = Formatters.formatCurrency(
+                                      result,
+                                      currency: currency,
+                                      showDecimal: showDecimal,
+                                    );
+                                  });
+                                }
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
                                     prefix.trim(),
                                     style: const TextStyle(
                                       color: AppColors.primaryGold,
@@ -775,40 +854,31 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: IntrinsicWidth(
-                                    child: TextField(
-                                      controller: _amountController,
-                                      focusNode: _amountFocusNode,
-                                      keyboardType: TextInputType.numberWithOptions(decimal: ref.watch(showDecimalProvider)),
-                                      textInputAction: TextInputAction.next,
-                                      inputFormatters: [
-                                        CurrencyInputFormatter(
-                                          currency: _getCurrency(accounts),
-                                          showDecimal: ref.watch(showDecimalProvider),
-                                        ),
-                                      ],
-                                      onChanged: (val) => _updateAmount(val, accounts),
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      _amountController.text.isEmpty || _amountController.text == '0'
+                                          ? '0'
+                                          : _amountController.text,
+                                      style: TextStyle(
+                                        color: _amountController.text.isEmpty || _amountController.text == '0'
+                                            ? Colors.white24
+                                            : Colors.white,
                                         fontSize: 34,
                                         fontWeight: FontWeight.w800,
                                         height: 1.0,
                                       ),
                                       textAlign: TextAlign.center,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: '0',
-                                        hintStyle: TextStyle(
-                                          color: Colors.white24,
-                                        ),
-                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.calculate_outlined,
+                                    color: AppColors.primaryGold.withValues(alpha: 0.5),
+                                    size: 24,
+                                  ),
+                                ],
+                              ),
                             );
                           },
                           loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
@@ -832,9 +902,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         onChanged: (type) {
                           setState(() => _selectedType = type);
                           _loadFrequentTitles();
-                          if (type == TransactionType.transfer) {
-                            _amountFocusNode.requestFocus();
-                          }
                         },
                         highlightValue: TransactionType.expense,
                       ),
@@ -878,6 +945,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               Expanded(
                                 child: TextField(
                                   controller: _titleController,
+                                  focusNode: _titleFocusNode,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
@@ -890,6 +958,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                       fontSize: 15,
                                     ),
                                   ),
+                                  onSubmitted: (_) {
+                                    if (widget.transactionId == null) {
+                                      _autoSelectFromTitle(_titleController.text.trim());
+                                    }
+                                  },
                                 ),
                               ),
                             ],
@@ -913,6 +986,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                     _titleController.selection = TextSelection.fromPosition(
                                       TextPosition(offset: title.length),
                                     );
+                                    // Auto-select account/category for new transactions
+                                    if (widget.transactionId == null) {
+                                      _autoSelectFromTitle(title);
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12),

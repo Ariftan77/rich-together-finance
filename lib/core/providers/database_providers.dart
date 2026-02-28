@@ -100,22 +100,31 @@ final holdingsStreamProvider = StreamProvider<List<Holding>>((ref) {
   return holdingDao.watchAllHoldings();
 });
 
-/// All budgets stream
+/// All budgets stream (filtered by active profile)
 final budgetsStreamProvider = StreamProvider<List<Budget>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
   final budgetDao = ref.watch(budgetDaoProvider);
-  return budgetDao.watchAllBudgets();
+  return budgetDao.watchAllBudgets(profileId);
 });
 
-/// Active goals stream
+/// Active goals stream (filtered by active profile)
 final goalsStreamProvider = StreamProvider<List<Goal>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
   final goalDao = ref.watch(goalDaoProvider);
-  return goalDao.watchActiveGoals();
+  return goalDao.watchActiveGoals(profileId);
 });
 
-/// Unsettled debts stream
+/// Unsettled debts stream (filtered by active profile)
 final debtsStreamProvider = StreamProvider<List<Debt>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
   final debtDao = ref.watch(debtDaoProvider);
-  return debtDao.watchUnsettledDebts();
+  return debtDao.watchUnsettledDebts(profileId);
 });
 
 /// Active recurring stream

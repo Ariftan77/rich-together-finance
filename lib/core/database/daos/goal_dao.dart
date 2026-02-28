@@ -10,14 +10,17 @@ part 'goal_dao.g.dart';
 class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
   GoalDao(super.db);
 
-  /// Get all goals
-  Future<List<Goal>> getAllGoals() =>
-      (select(goals)..orderBy([(g) => OrderingTerm.asc(g.deadline)])).get();
-
-  /// Get active (not achieved) goals
-  Future<List<Goal>> getActiveGoals() =>
+  /// Get all goals for a profile
+  Future<List<Goal>> getAllGoals(int profileId) =>
       (select(goals)
-            ..where((g) => g.isAchieved.equals(false))
+            ..where((g) => g.profileId.equals(profileId))
+            ..orderBy([(g) => OrderingTerm.asc(g.deadline)]))
+          .get();
+
+  /// Get active (not achieved) goals for a profile
+  Future<List<Goal>> getActiveGoals(int profileId) =>
+      (select(goals)
+            ..where((g) => g.profileId.equals(profileId) & g.isAchieved.equals(false))
             ..orderBy([(g) => OrderingTerm.asc(g.deadline)]))
           .get();
 
@@ -25,16 +28,19 @@ class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
   Future<Goal?> getGoalById(int id) =>
       (select(goals)..where((g) => g.id.equals(id))).getSingleOrNull();
 
-  /// Watch all goals (reactive stream)
-  Stream<List<Goal>> watchAllGoals() =>
-      (select(goals)..orderBy([(g) => OrderingTerm.asc(g.deadline)])).watch();
+  /// Watch all goals for a profile (reactive stream)
+  Stream<List<Goal>> watchAllGoals(int profileId) =>
+      (select(goals)
+            ..where((g) => g.profileId.equals(profileId))
+            ..orderBy([(g) => OrderingTerm.asc(g.deadline)]))
+          .watch();
 
-  /// Watch active goals
-  Stream<List<Goal>> watchActiveGoals() {
+  /// Watch active goals for a profile
+  Stream<List<Goal>> watchActiveGoals(int profileId) {
     final query = select(goals)
-          ..where((g) => g.isAchieved.equals(false))
+          ..where((g) => g.profileId.equals(profileId) & g.isAchieved.equals(false))
           ..orderBy([(g) => OrderingTerm.asc(g.deadline)]);
-    
+
     // Join with goalAccounts to trigger updates when accounts are linked/unlinked
     return query.join([
       leftOuterJoin(goalAccounts, goalAccounts.goalId.equalsExp(goals.id))

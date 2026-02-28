@@ -659,7 +659,7 @@ class $UserSettingsTable extends UserSettings
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("biometric_enabled" IN (0, 1))',
     ),
-    defaultValue: const Constant(true),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _notificationsEnabledMeta =
       const VerificationMeta('notificationsEnabled');
@@ -7084,7 +7084,6 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     ),
   );
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
-  static const VerificationMeta _currencyMeta = const VerificationMeta('currency');
   @override
   late final GeneratedColumn<double> amount = GeneratedColumn<double>(
     'amount',
@@ -7252,12 +7251,6 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
-    if (data.containsKey('currency')) {
-      context.handle(
-        _currencyMeta,
-        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
-      );
-    }
     if (data.containsKey('start_date')) {
       context.handle(
         _startDateMeta,
@@ -7337,7 +7330,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         attachedDatabase.typeMapping.read(
           DriftSqlType.int,
           data['${effectivePrefix}currency'],
-        ) ?? 0,
+        )!,
       ),
       period: $BudgetsTable.$converterperiod.fromSql(
         attachedDatabase.typeMapping.read(
@@ -7381,10 +7374,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     return $BudgetsTable(attachedDatabase, alias);
   }
 
-  static JsonTypeConverter2<BudgetPeriod, int, int> $converterperiod =
-      const EnumIndexConverter<BudgetPeriod>(BudgetPeriod.values);
   static JsonTypeConverter2<Currency, int, int> $convertercurrency =
       const EnumIndexConverter<Currency>(Currency.values);
+  static JsonTypeConverter2<BudgetPeriod, int, int> $converterperiod =
+      const EnumIndexConverter<BudgetPeriod>(BudgetPeriod.values);
 }
 
 class Budget extends DataClass implements Insertable<Budget> {
@@ -7484,7 +7477,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       categoryId: serializer.fromJson<int>(json['categoryId']),
       amount: serializer.fromJson<double>(json['amount']),
       currency: $BudgetsTable.$convertercurrency.fromJson(
-        serializer.fromJson<int>(json['currency'] ?? 0),
+        serializer.fromJson<int>(json['currency']),
       ),
       period: $BudgetsTable.$converterperiod.fromJson(
         serializer.fromJson<int>(json['period']),
@@ -17198,6 +17191,7 @@ typedef $$BudgetsTableCreateCompanionBuilder =
       required int profileId,
       required int categoryId,
       required double amount,
+      Value<Currency> currency,
       required BudgetPeriod period,
       required DateTime startDate,
       Value<bool> isActive,
@@ -17213,6 +17207,7 @@ typedef $$BudgetsTableUpdateCompanionBuilder =
       Value<int> profileId,
       Value<int> categoryId,
       Value<double> amount,
+      Value<Currency> currency,
       Value<BudgetPeriod> period,
       Value<DateTime> startDate,
       Value<bool> isActive,
@@ -17282,6 +17277,12 @@ class $$BudgetsTableFilterComposer
     column: $table.amount,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<Currency, Currency, int> get currency =>
+      $composableBuilder(
+        column: $table.currency,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   ColumnWithTypeConverterFilters<BudgetPeriod, BudgetPeriod, int> get period =>
       $composableBuilder(
@@ -17390,6 +17391,11 @@ class $$BudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get period => $composableBuilder(
     column: $table.period,
     builder: (column) => ColumnOrderings(column),
@@ -17491,6 +17497,9 @@ class $$BudgetsTableAnnotationComposer
 
   GeneratedColumn<double> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Currency, int> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<BudgetPeriod, int> get period =>
       $composableBuilder(column: $table.period, builder: (column) => column);
@@ -17595,6 +17604,7 @@ class $$BudgetsTableTableManager
                 Value<int> profileId = const Value.absent(),
                 Value<int> categoryId = const Value.absent(),
                 Value<double> amount = const Value.absent(),
+                Value<Currency> currency = const Value.absent(),
                 Value<BudgetPeriod> period = const Value.absent(),
                 Value<DateTime> startDate = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
@@ -17608,6 +17618,7 @@ class $$BudgetsTableTableManager
                 profileId: profileId,
                 categoryId: categoryId,
                 amount: amount,
+                currency: currency,
                 period: period,
                 startDate: startDate,
                 isActive: isActive,
@@ -17623,6 +17634,7 @@ class $$BudgetsTableTableManager
                 required int profileId,
                 required int categoryId,
                 required double amount,
+                Value<Currency> currency = const Value.absent(),
                 required BudgetPeriod period,
                 required DateTime startDate,
                 Value<bool> isActive = const Value.absent(),
@@ -17636,6 +17648,7 @@ class $$BudgetsTableTableManager
                 profileId: profileId,
                 categoryId: categoryId,
                 amount: amount,
+                currency: currency,
                 period: period,
                 startDate: startDate,
                 isActive: isActive,
