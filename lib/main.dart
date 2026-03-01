@@ -15,36 +15,50 @@ import 'core/services/iap_service.dart';
 import 'core/services/premium_auth_service.dart';
 
 void main() async {
+  final totalSw = Stopwatch()..start();
+
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
-  
+
   // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize Firebase first so AdMob can integrate with it.
+  // Initialize Firebase first — everything depends on it.
   try {
+    var sw = Stopwatch()..start();
     await Firebase.initializeApp();
-    debugPrint('✅ Firebase initialized');
+    debugPrint('⏱️ [main] Firebase: ${sw.elapsedMilliseconds}ms');
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    await RemoteConfigService().init();
-    await NotificationService().init();
-    await IapService().init();
+
+    // These are all independent of each other — run in parallel.
+    int rcMs = 0, notifMs = 0, iapMs = 0, adsMs = 0, supaMs = 0;
+    sw = Stopwatch()..start();
+    await Future.wait([
+      () async { final s = Stopwatch()..start(); await RemoteConfigService().init(); rcMs = s.elapsedMilliseconds; }(),
+      () async { final s = Stopwatch()..start(); await NotificationService().init(); notifMs = s.elapsedMilliseconds; }(),
+      () async { final s = Stopwatch()..start(); await IapService().init(); iapMs = s.elapsedMilliseconds; }(),
+      () async { final s = Stopwatch()..start(); await MobileAds.instance.initialize(); adsMs = s.elapsedMilliseconds; }(),
+      () async { final s = Stopwatch()..start(); await SyncService.initialize(); supaMs = s.elapsedMilliseconds; }(),
+    ]);
+    debugPrint('⏱️ [main] Parallel group done: ${sw.elapsedMilliseconds}ms');
+    debugPrint('⏱️   ├─ RemoteConfig: ${rcMs}ms');
+    debugPrint('⏱️   ├─ Notifications: ${notifMs}ms');
+    debugPrint('⏱️   ├─ IAP: ${iapMs}ms');
+    debugPrint('⏱️   ├─ MobileAds: ${adsMs}ms');
+    debugPrint('⏱️   └─ Supabase: ${supaMs}ms');
+
+    // PremiumAuthService needs Supabase (SyncService) ready first.
+    sw = Stopwatch()..start();
+    await PremiumAuthService().init();
+    debugPrint('⏱️ [main] PremiumAuth: ${sw.elapsedMilliseconds}ms');
   } catch (e) {
-    debugPrint('⚠️ Firebase init skipped (missing config?): $e');
+    debugPrint('⚠️ Init error: $e');
   }
 
-  // Initialize AdMob after Firebase so it can detect Firebase and suppress the warning.
-  await MobileAds.instance.initialize();
-  debugPrint('✅ MobileAds initialized');
-
-  // Initialize Supabase
-  await SyncService.initialize();
-
-  // Restore premium session after Supabase is ready
-  await PremiumAuthService().init();
+  debugPrint('⏱️ [main] Total before runApp(): ${totalSw.elapsedMilliseconds}ms');
 
   runApp(
     const ProviderScope(

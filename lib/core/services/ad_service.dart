@@ -48,6 +48,8 @@ class AdService {
     if (!RemoteConfigService().appOpenEnabled) return;
     if (_appOpenShownToday) return;
 
+    final completer = Completer<void>();
+
     AppOpenAd.load(
       adUnitId: _appOpenId,
       request: const AdRequest(),
@@ -55,9 +57,18 @@ class AdService {
         onAdLoaded: (ad) {
           _appOpenShownToday = true;
           ad.show();
+          if (!completer.isCompleted) completer.complete();
         },
-        onAdFailedToLoad: (_) {},
+        onAdFailedToLoad: (_) {
+          if (!completer.isCompleted) completer.complete();
+        },
       ),
+    );
+
+    // Skip if ad doesn't load within 5 seconds
+    await completer.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {},
     );
   }
 
