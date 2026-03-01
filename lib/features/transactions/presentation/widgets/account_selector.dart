@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../../../core/database/database.dart';
+import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/utils/formatters.dart';
 
 /// A searchable account selector with "Add New" option
 class AccountSelector extends StatefulWidget {
   final List<Account> accounts;
   final int? selectedAccountId;
   final ValueChanged<int?> onAccountSelected;
+  final Map<int, double>? balances;
+  final bool showDecimal;
 
   const AccountSelector({
     super.key,
     required this.accounts,
     required this.selectedAccountId,
     required this.onAccountSelected,
+    this.balances,
+    this.showDecimal = false,
   });
 
   @override
@@ -183,15 +189,34 @@ class _AccountSelectorState extends State<AccountSelector> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? AppColors.primaryGold
-                                        : Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      account.name,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? AppColors.primaryGold
+                                            : Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      ),
+                                    ),
+                                    if (widget.balances != null)
+                                      Text(
+                                        '${account.currency.code} ${Formatters.formatCurrency(
+                                          widget.balances![account.id] ?? 0,
+                                          currency: account.currency,
+                                          showDecimal: widget.showDecimal,
+                                        )}',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? AppColors.primaryGold.withValues(alpha: 0.75)
+                                              : Colors.white.withValues(alpha: 0.5),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                               if (isSelected)

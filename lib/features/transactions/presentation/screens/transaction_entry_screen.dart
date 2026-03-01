@@ -16,7 +16,9 @@ import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/recurring_service.dart';
 import '../widgets/account_selector.dart';
+import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
@@ -681,6 +683,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 child: AccountSelector(
                   accounts: accounts,
                   selectedAccountId: selectedId,
+                  balances: ref.read(accountBalanceProvider),
+                  showDecimal: ref.read(showDecimalProvider),
                   onAccountSelected: (id) {
                     setState(() {
                       if (isToAccount) {
@@ -1392,6 +1396,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         ),
       );
 
+      // If the start date is in the past, immediately generate due transactions
+      if (nextDate.isBefore(DateTime.now())) {
+        await ref.read(recurringServiceProvider).checkAndGenerateRecurringTransactions();
+      }
+
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -1425,21 +1434,40 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       final profileId = ref.read(activeProfileIdProvider);
       if (profileId == null) return;
 
+      // Check for existing category with same name (case-insensitive) and type
+      final allByType = await dao.getCategoriesByType(type);
+      final trimmedName = name.trim();
+      Category? existing;
+      for (final c in allByType) {
+        if (c.profileId == profileId &&
+            c.name.toLowerCase() == trimmedName.toLowerCase()) {
+          existing = c;
+          break;
+        }
+      }
+
+      if (existing != null) {
+        setState(() {
+          _selectedCategoryId = existing!.id;
+        });
+        return;
+      }
+
       final newCategoryId = await dao.createCategory(
         CategoriesCompanion(
           profileId: drift.Value(profileId),
-          name: drift.Value(name),
+          name: drift.Value(trimmedName),
           type: drift.Value(type),
           icon: const drift.Value('category'),
           isSystem: const drift.Value(false),
           sortOrder: const drift.Value(999),
         ),
       );
-      
+
       setState(() {
         _selectedCategoryId = newCategoryId;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

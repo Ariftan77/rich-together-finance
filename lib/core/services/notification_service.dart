@@ -31,9 +31,9 @@ class NotificationService {
     // Initialize local notifications
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     const settings = InitializationSettings(
       android: androidSettings,
@@ -45,9 +45,6 @@ class NotificationService {
     try {
       _fcm = FirebaseMessaging.instance;
       
-      // Request permissions
-      await requestPermissions();
-
       // Subscribe to 'all_users' topic for broadcast notifications
       await _fcm!.subscribeToTopic('all_users');
 

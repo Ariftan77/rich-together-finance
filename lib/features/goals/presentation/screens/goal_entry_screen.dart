@@ -12,7 +12,8 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class GoalEntryScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class GoalEntryScreen extends ConsumerStatefulWidget {
 class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _amountController;
+  double _rawAmount = 0;
   Currency _selectedCurrency = Currency.idr;
   DateTime? _deadline;
   bool _isLoading = false;
@@ -37,12 +38,8 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.goal?.name ?? '');
-    _amountController = TextEditingController(
-      text: widget.goal != null
-          ? IndonesianCurrencyInputFormatter.format(widget.goal!.targetAmount.toStringAsFixed(0))
-          : '',
-    );
     if (widget.goal != null) {
+      _rawAmount = widget.goal!.targetAmount;
       _selectedCurrency = widget.goal!.targetCurrency;
       _deadline = widget.goal!.deadline;
     }
@@ -63,10 +60,21 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
     }
   }
 
+  Future<void> _openAmountCalculator() async {
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: _rawAmount > 0 ? _rawAmount : null,
+      currency: _selectedCurrency,
+      showDecimal: ref.read(showDecimalProvider),
+    );
+    if (result != null && mounted) {
+      setState(() => _rawAmount = result);
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
-    _amountController.dispose();
     super.dispose();
   }
 
@@ -95,13 +103,17 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
 
   Future<void> _saveGoal() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_rawAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.read(translationsProvider).errorInvalidAmount)),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final amountStr =
-          _amountController.text.replaceAll('.', '').replaceAll(',', '');
-      final amount = double.parse(amountStr);
+      final amount = _rawAmount;
       final goalDao = ref.read(goalDaoProvider);
 
       if (widget.goal == null) {
@@ -181,6 +193,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
     final trans = ref.watch(translationsProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return Stack(
       children: [
@@ -222,18 +235,30 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                     const SizedBox(height: 24),
 
                     // Target Amount
-                    GlassInput(
-                      controller: _amountController,
-                      hintText: trans.goalTargetAmount,
-                      prefixIcon: Icons.monetization_on,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [IndonesianCurrencyInputFormatter()],
-                      validator: (v) {
-                        if (v == null || v.isEmpty || v == '0') {
-                          return trans.goalTargetAmount;
-                        }
-                        return null;
-                      },
+                    GestureDetector(
+                      onTap: _openAmountCalculator,
+                      child: GlassCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        borderRadius: 12,
+                        child: Row(
+                          children: [
+                            Icon(Icons.monetization_on, color: AppColors.primaryGold, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _rawAmount > 0
+                                    ? Formatters.formatCurrency(_rawAmount, currency: _selectedCurrency, showDecimal: showDecimal)
+                                    : trans.goalTargetAmount,
+                                style: TextStyle(
+                                  color: _rawAmount > 0 ? Colors.white : Colors.white54,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
 

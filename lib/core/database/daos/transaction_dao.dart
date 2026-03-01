@@ -177,7 +177,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     required int limit,
     String? searchQuery,
     int? accountId,
-    TransactionType? type,
+    List<TransactionType>? types,
     DateTime? dateFrom,
     DateTime? dateTo,
   }) {
@@ -192,8 +192,8 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
       query.where(transactions.accountId.equals(accountId) | transactions.toAccountId.equals(accountId));
     }
 
-    if (type != null) {
-      query.where(transactions.type.equals(type.index));
+    if (types != null && types.isNotEmpty) {
+      query.where(transactions.type.isIn(types.map((t) => t.index).toList()));
     }
 
     if (dateFrom != null) {
@@ -258,6 +258,15 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
         );
       }).toList();
     });
+  }
+
+  /// Watch the latest (max) transaction date for a profile — used to determine upper bound for month navigation
+  Stream<DateTime?> watchLatestTransactionDate(int profileId) {
+    final maxDate = transactions.date.max();
+    final query = selectOnly(transactions)
+      ..addColumns([maxDate])
+      ..where(transactions.profileId.equals(profileId));
+    return query.watchSingle().map((row) => row.read(maxDate));
   }
 
   /// Watch transactions within date range (Optimized for CashFlow)

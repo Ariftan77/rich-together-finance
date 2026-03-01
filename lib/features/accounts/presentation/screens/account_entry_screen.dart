@@ -15,8 +15,7 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/utils/currency_input_formatter.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../providers/balance_provider.dart';
-import '../../../transactions/presentation/screens/transactions_history_screen.dart';
-import '../../../transactions/presentation/providers/search_provider.dart';
+import 'account_transaction_history_screen.dart';
 
 class AccountEntryScreen extends ConsumerStatefulWidget {
   final Account? account; // Null for new, non-null for edit
@@ -199,20 +198,11 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
 
   void _viewTransactionHistory() {
     if (widget.account == null) return;
-    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProviderScope(
-          overrides: [
-            transactionAccountFilterProvider.overrideWith((ref) => widget.account!.id),
-            transactionSearchQueryProvider.overrideWith((ref) => ''),
-            transactionTypeFilterProvider.overrideWith((ref) => null),
-            dateFromFilterProvider.overrideWith((ref) => null),
-            dateToFilterProvider.overrideWith((ref) => null),
-          ],
-          child: const TransactionsHistoryScreen(),
-        ),
+        builder: (context) =>
+            AccountTransactionHistoryScreen(account: widget.account!),
       ),
     );
   }
@@ -317,7 +307,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                 style: AppTypography.textTheme.displaySmall?.copyWith(
                                   color: AppColors.primaryGold,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 32,
+                                  fontSize: 25.6,
                                 ),
                               ),
                             ),

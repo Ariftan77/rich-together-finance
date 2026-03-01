@@ -9,12 +9,14 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 // import '../../../../shared/widgets/glass_item.dart'; // Removed
-import '../../../../shared/widgets/glass_card.dart'; // Added
+import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_input.dart';
 
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../providers/search_provider.dart';
 import '../widgets/date_range_filter_modal.dart';
+import '../widgets/month_year_picker_modal.dart';
 import 'transaction_entry_screen.dart';
 import 'recurring_list_screen.dart';
 
@@ -33,32 +35,57 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(); // Removed initial text
-    
-    // Listen for scroll to bottom to load more
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-        final currentLimit = ref.read(transactionLimitProvider);
-        final transactionsValue = ref.read(filteredTransactionsProvider);
-        
-        if (transactionsValue.hasValue) {
-          final transactions = transactionsValue.value!;
-          // Only increase limit if we have enough items to justify it (not end of list)
-          if (transactions.length >= currentLimit) {
-             // Debounce/Throttling is handled by Riverpod state update equality, 
-             // but we can check if we are already loading to be safe? 
-             // StreamProvider doesn't expose 'isReloading' easily in read().
-             // Just updating state is fine, if it's same value it won't trigger update.
-             // We update to currentLimit + 20.
-             ref.read(transactionLimitProvider.notifier).state = currentLimit + 20;
-          }
-        }
-      }
-    });
-    
+    _searchController = TextEditingController();
     _searchController.addListener(() {
       ref.read(transactionSearchQueryProvider.notifier).state = _searchController.text;
     });
+  }
+
+  void _changeMonth(DateTime newMonth) {
+    ref.read(selectedMonthProvider.notifier).state = newMonth;
+    ref.read(dateFromFilterProvider.notifier).state = null;
+    ref.read(dateToFilterProvider.notifier).state = null;
+    ref.read(transactionLimitProvider.notifier).state = 20;
+  }
+
+  void _onHorizontalSwipe(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() < 200) return;
+    if (ref.read(dateFromFilterProvider) != null) return;
+
+    final selectedMonth = ref.read(selectedMonthProvider);
+    if (velocity < 0) {
+      // swipe left = next month
+      final latestTxDate = ref.read(latestTransactionDateProvider).valueOrNull;
+      final latestTxMonth = latestTxDate != null
+          ? DateTime(latestTxDate.year, latestTxDate.month, 1)
+          : DateTime(DateTime.now().year, DateTime.now().month, 1);
+      if (!selectedMonth.isBefore(latestTxMonth)) return;
+      _changeMonth(DateTime(selectedMonth.year, selectedMonth.month + 1, 1));
+    } else {
+      // swipe right = previous month
+      _changeMonth(DateTime(selectedMonth.year, selectedMonth.month - 1, 1));
+    }
+  }
+
+  Future<void> _openMonthPicker() async {
+    final currentMonth = ref.read(selectedMonthProvider);
+    final latestTxDate = ref.read(latestTransactionDateProvider).valueOrNull;
+    final maxMonth = latestTxDate != null
+        ? DateTime(latestTxDate.year, latestTxDate.month, 1)
+        : DateTime(DateTime.now().year, DateTime.now().month, 1);
+    final result = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MonthYearPickerModal(
+        initialMonth: currentMonth,
+        maxMonth: maxMonth,
+      ),
+    );
+    if (result != null) {
+      _changeMonth(result);
+    }
   }
 
   @override
@@ -70,11 +97,18 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
   @override
   Widget build(BuildContext context) {
-    final filteredHelper = ref.watch(filteredTransactionsProvider);
+    final filteredHelper = ref.watch(convertedFilteredTransactionsProvider);
     final currentTypeFilter = ref.watch(transactionTypeFilterProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
     final trans = ref.watch(translationsProvider);
+    final selectedMonth = ref.watch(selectedMonthProvider);
+    final hasCustomRange = ref.watch(dateFromFilterProvider) != null || ref.watch(dateToFilterProvider) != null;
+    final latestTxDate = ref.watch(latestTransactionDateProvider).valueOrNull;
+    final latestTxMonth = latestTxDate != null
+        ? DateTime(latestTxDate.year, latestTxDate.month, 1)
+        : DateTime(DateTime.now().year, DateTime.now().month, 1);
+    final canGoNext = selectedMonth.isBefore(latestTxMonth);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPop = Navigator.canPop(context);
@@ -174,6 +208,66 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   ),
                 ),
                 
+                // Month Navigation Row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left, color: Colors.white),
+                        onPressed: () {
+                          final prev = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
+                          _changeMonth(prev);
+                        },
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _openMonthPicker,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                hasCustomRange
+                                    ? 'Custom Range'
+                                    : DateFormat('MMMM yyyy').format(selectedMonth),
+                                style: AppTypography.textTheme.titleMedium?.copyWith(
+                                  color: hasCustomRange
+                                      ? AppColors.primaryGold
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: hasCustomRange
+                                    ? AppColors.primaryGold
+                                    : Colors.white.withValues(alpha: 0.7),
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.chevron_right,
+                          color: canGoNext || hasCustomRange
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.25),
+                        ),
+                        onPressed: canGoNext || hasCustomRange
+                            ? () {
+                                final next = DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
+                                _changeMonth(next);
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+
                 // Search Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -198,20 +292,32 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         const SizedBox(width: 8),
                         _FilterChip(
                           label: trans.entryTypeIncome,
-                          isSelected: currentTypeFilter == TransactionType.income,
-                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.income,
+                          isSelected: currentTypeFilter?.contains(TransactionType.income) == true,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.income],
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
                           label: trans.entryTypeExpense,
-                          isSelected: currentTypeFilter == TransactionType.expense,
-                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.expense,
+                          isSelected: currentTypeFilter?.contains(TransactionType.expense) == true,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.expense],
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
                           label: trans.entryTypeTransfer,
-                          isSelected: currentTypeFilter == TransactionType.transfer,
-                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = TransactionType.transfer,
+                          isSelected: currentTypeFilter?.contains(TransactionType.transfer) == true,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.transfer],
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Debt',
+                          isSelected: currentTypeFilter?.contains(TransactionType.debtIn) == true,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.debtIn, TransactionType.debtOut],
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Adjustment',
+                          isSelected: currentTypeFilter?.contains(TransactionType.adjustmentIn) == true,
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.adjustmentIn, TransactionType.adjustmentOut],
                         ),
                       ],
                   ),
@@ -219,9 +325,11 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
                 // List
                 Expanded(
-                  child: filteredHelper.when(
-                    data: (transactions) {
-                      if (transactions.isEmpty) {
+                  child: GestureDetector(
+                    onHorizontalDragEnd: _onHorizontalSwipe,
+                    child: filteredHelper.when(
+                    data: (convertedTxs) {
+                      if (convertedTxs.isEmpty) {
                         return Center(
                           child: Text(
                             'No transactions found',
@@ -232,26 +340,22 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         );
                       }
 
-                      // Group by Date
-                      final grouped = <DateTime, List<Transaction>>{};
-                      for (var tx in transactions) {
-                        final date = DateTime(tx.date.year, tx.date.month, tx.date.day);
-                        if (grouped.containsKey(date)) {
-                          grouped[date]!.add(tx);
-                        } else {
-                          grouped[date] = [tx];
-                        }
+                      // Group by Date (use ConvertedTransaction)
+                      final grouped = <DateTime, List<ConvertedTransaction>>{};
+                      for (var ct in convertedTxs) {
+                        final date = DateTime(ct.transaction.date.year, ct.transaction.date.month, ct.transaction.date.day);
+                        grouped.putIfAbsent(date, () => []).add(ct);
                       }
-                      
+
                       final sortedDates = grouped.keys.toList()
                         ..sort((a, b) => b.compareTo(a));
 
                       // Pre-fetch maps for efficient lookup
-                      final categoryMap = categoriesAsync.valueOrNull != null 
-                          ? {for (var c in categoriesAsync.value!) c.id: c} 
+                      final categoryMap = categoriesAsync.valueOrNull != null
+                          ? {for (var c in categoriesAsync.value!) c.id: c}
                           : <int, Category>{};
-                      final accountMap = accountsAsync.valueOrNull != null 
-                          ? {for (var a in accountsAsync.value!) a.id: a} 
+                      final accountMap = accountsAsync.valueOrNull != null
+                          ? {for (var a in accountsAsync.value!) a.id: a}
                           : <int, Account>{};
 
                       return ListView.builder(
@@ -259,87 +363,78 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                         itemCount: sortedDates.length + (filteredHelper.isLoading && filteredHelper.hasValue ? 1 : 0),
                         itemBuilder: (context, index) {
-                          // Show Bottom Loader if loading more
                           if (index == sortedDates.length) {
-                             return const Center(
-                               child: Padding(
-                                 padding: EdgeInsets.all(16.0),
-                                 child: CircularProgressIndicator(color: AppColors.primaryGold),
-                               ),
-                             );
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(color: AppColors.primaryGold),
+                              ),
+                            );
                           }
 
                           final date = sortedDates[index];
-                          final txs = grouped[date]!;
+                          final cts = grouped[date]!;
                           final showDecimal = ref.watch(showDecimalProvider);
 
-                          final dayIncome = txs
-                              .where((tx) => tx.type == TransactionType.income || tx.type == TransactionType.adjustmentIn || tx.type == TransactionType.debtIn)
-                              .fold(0.0, (sum, tx) => sum + tx.amount);
-                          final dayExpense = txs
-                              .where((tx) => tx.type == TransactionType.expense || tx.type == TransactionType.adjustmentOut || tx.type == TransactionType.debtOut)
-                              .fold(0.0, (sum, tx) => sum + tx.amount);
+                          // Use convertedAmount so cross-currency totals are correct
+                          final dayIncome = cts
+                              .where((ct) => ct.transaction.type == TransactionType.income || ct.transaction.type == TransactionType.adjustmentIn || ct.transaction.type == TransactionType.debtIn)
+                              .fold(0.0, (sum, ct) => sum + ct.convertedAmount);
+                          final dayExpense = cts
+                              .where((ct) => ct.transaction.type == TransactionType.expense || ct.transaction.type == TransactionType.adjustmentOut || ct.transaction.type == TransactionType.debtOut)
+                              .fold(0.0, (sum, ct) => sum + ct.convertedAmount);
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                              GlassCard(
+                                margin: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                borderRadius: 12,
+                                backgroundColor: Colors.black.withValues(alpha: 0.15),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
                                       _formatDateSection(date).toUpperCase(),
+                                      textAlign: TextAlign.center,
                                       style: AppTypography.textTheme.labelSmall!.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.4),
+                                        color: Colors.white.withValues(alpha: 0.7),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.5,
-                                        fontSize: 13,
+                                        fontSize: 12,
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        if (dayIncome > 0) ...[
-                                          Text(
-                                            '+${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
-                                            style: AppTypography.textTheme.labelSmall!.copyWith(
-                                              color: const Color(0xFF34D399).withValues(alpha: 0.7),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        if (dayIncome > 0)
+                                          _DayStatChip(
+                                            label: 'Income',
+                                            value: '+${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
+                                            color: const Color(0xFF34D399).withValues(alpha: 0.7),
                                           ),
-                                          const SizedBox(width: 8),
-                                        ],
-                                        if (dayExpense > 0) ...[
-                                          Text(
-                                            '-${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
-                                            style: AppTypography.textTheme.labelSmall!.copyWith(
-                                              color: const Color(0xFFFB7185).withValues(alpha: 0.7),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        if (dayExpense > 0)
+                                          _DayStatChip(
+                                            label: 'Expense',
+                                            value: '-${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
+                                            color: const Color(0xFFFB7185).withValues(alpha: 0.7),
                                           ),
-                                          const SizedBox(width: 8),
-                                        ],
-                                        Text(
-                                          '${txs.length} Txn${txs.length > 1 ? 's' : ''}',
-                                          style: AppTypography.textTheme.labelSmall!.copyWith(
-                                            color: Colors.white.withValues(alpha: 0.3),
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 13,
-                                          ),
+                                        _DayStatChip(
+                                          label: 'Txn',
+                                          value: '${cts.length}',
+                                          color: Colors.white.withValues(alpha: 0.5),
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
                               ),
-                              ...txs.map((tx) => _TransactionItem(
-                                transaction: tx,
-                                category: categoryMap[tx.categoryId],
-                                account: accountMap[tx.accountId],
+                              ...cts.map((ct) => _TransactionItem(
+                                transaction: ct.transaction,
+                                category: categoryMap[ct.transaction.categoryId],
+                                account: accountMap[ct.transaction.accountId],
                               )),
                             ],
                           );
@@ -348,6 +443,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                     },
                     loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
                     error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+                  ),
                   ),
                 ),
               ],
@@ -365,6 +461,46 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     if (date == today) return 'Today';
     if (date == yesterday) return 'Yesterday';
     return DateFormat('EEE, d MMM').format(date);
+  }
+}
+
+
+
+class _DayStatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DayStatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: AppTypography.textTheme.labelSmall!.copyWith(
+            color: Colors.white.withValues(alpha: 0.35),
+            fontSize: 10,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTypography.textTheme.labelSmall!.copyWith(
+            color: color,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
   }
 }
 

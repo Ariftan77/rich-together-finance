@@ -51,7 +51,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
   // Whether the last action was pressing OK (to allow fresh start)
   bool _resultApplied = false;
 
-  static const _operators = {'+', '-', '×', '÷'};
+  static const _operators = {'+', '-', '×', '÷', '%'};
 
   @override
   void initState() {
@@ -104,6 +104,8 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     for (int i = 0; i < safeOps.length; i++) {
       if (safeOps[i] == '×') {
         reducedNumbers.last = reducedNumbers.last * numbers[i + 1];
+      } else if (safeOps[i] == '%') {
+        reducedNumbers.last = reducedNumbers.last * numbers[i + 1] / 100;
       } else if (safeOps[i] == '÷') {
         final divisor = numbers[i + 1];
         if (divisor == 0) {
@@ -274,6 +276,23 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     HapticFeedback.lightImpact();
   }
 
+  void _onEquals() {
+    setState(() {
+      if (_tokens.isEmpty) return;
+      final result = _evaluate();
+      _tokens.clear();
+      if (result == result.truncateToDouble()) {
+        _currentNumber = result.toInt().toString();
+      } else {
+        _currentNumber = result.toString();
+      }
+      _resultApplied = true;
+    });
+    HapticFeedback.mediumImpact();
+  }
+
+  void _onPercent() => _onOperator('%');
+
   void _onClear() {
     setState(() {
       _tokens.clear();
@@ -386,9 +405,10 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
             padding: EdgeInsets.fromLTRB(12, 0, 12, bottomPadding + 12),
             child: Column(
               children: [
-                // Row 1: C, ÷, ×, ⌫
+                // Row 1: C, %, ÷, ×, ⌫
                 _buildRow([
                   _CalcButton(label: 'C', onTap: _onClear, type: _ButtonType.function),
+                  _CalcButton(label: '%', onTap: _onPercent, type: _ButtonType.function),
                   _CalcButton(label: '÷', onTap: () => _onOperator('÷'), type: _ButtonType.operator),
                   _CalcButton(label: '×', onTap: () => _onOperator('×'), type: _ButtonType.operator),
                   _CalcButton(icon: Icons.backspace_outlined, onTap: _onBackspace, type: _ButtonType.function),
@@ -434,12 +454,34 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    // Cancel + OK buttons spanning 2 rows
+                    // =, Cancel, OK buttons spanning 2 rows
                     Expanded(
                       flex: 1,
                       child: Column(
                         children: [
-                          // Cancel button (1/3)
+                          // = button
+                          GestureDetector(
+                            onTap: _onEquals,
+                            child: Container(
+                              height: 34,
+                              margin: const EdgeInsets.only(bottom: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '=',
+                                  style: TextStyle(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Cancel button
                           GestureDetector(
                             onTap: () => Navigator.of(context).pop(),
                             child: Container(
@@ -454,18 +496,18 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                                   'Cancel',
                                   style: TextStyle(
                                     color: Colors.white60,
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          // OK button (2/3)
+                          // OK button
                           GestureDetector(
                             onTap: _onOk,
                             child: Container(
-                              height: 76,
+                              height: 52,
                               decoration: BoxDecoration(
                                 color: AppColors.primaryGold,
                                 borderRadius: BorderRadius.circular(16),

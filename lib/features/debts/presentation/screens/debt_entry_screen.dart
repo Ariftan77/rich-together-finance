@@ -12,8 +12,10 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/account_selector.dart';
+import '../../../accounts/presentation/providers/balance_provider.dart';
 
 
 class DebtEntryScreen extends ConsumerStatefulWidget {
@@ -28,7 +30,7 @@ class DebtEntryScreen extends ConsumerStatefulWidget {
 class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _personController;
-  late TextEditingController _amountController;
+  double _rawAmount = 0;
   late TextEditingController _noteController;
   DebtType _selectedType = DebtType.payable;
   Currency _selectedCurrency = Currency.idr;
@@ -41,13 +43,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     super.initState();
     _personController =
         TextEditingController(text: widget.debt?.personName ?? '');
-    _amountController = TextEditingController(
-      text: widget.debt != null 
-          ? IndonesianCurrencyInputFormatter.format(widget.debt!.amount.toStringAsFixed(0))
-          : '',
-    );
     _noteController = TextEditingController(text: widget.debt?.note ?? '');
     if (widget.debt != null) {
+      _rawAmount = widget.debt!.amount;
       _selectedType = widget.debt!.type;
       _selectedCurrency = widget.debt!.currency;
       _dueDate = widget.debt!.dueDate;
@@ -55,10 +53,21 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     }
   }
 
+  Future<void> _openAmountCalculator() async {
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: _rawAmount > 0 ? _rawAmount : null,
+      currency: _selectedCurrency,
+      showDecimal: ref.read(showDecimalProvider),
+    );
+    if (result != null && mounted) {
+      setState(() => _rawAmount = result);
+    }
+  }
+
   @override
   void dispose() {
     _personController.dispose();
-    _amountController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -88,11 +97,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
   Future<void> _saveDebt() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // specific validation for creation: account required
-    if (widget.debt == null && _selectedAccountId == null) {
+    if (_rawAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an account')),
+        SnackBar(content: Text(ref.read(translationsProvider).errorInvalidAmount)),
       );
       return;
     }
@@ -100,9 +107,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final amountStr =
-          _amountController.text.replaceAll('.', '').replaceAll(',', '');
-      final amount = double.parse(amountStr);
+      final amount = _rawAmount;
       final debtDao = ref.read(debtDaoProvider);
 
       if (widget.debt == null) {
@@ -119,6 +124,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
         }
 
         // 1. Create Debt
+        final now = DateTime.now();
         await debtDao.createDebt(
           DebtsCompanion(
             profileId: drift.Value(profileId),
@@ -130,29 +136,30 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             note: drift.Value(_noteController.text.trim()),
             isSettled: const drift.Value(false),
             paidAmount: const drift.Value(0.0),
-            createdAt: drift.Value(DateTime.now()),
-            updatedAt: drift.Value(DateTime.now()),
+            createdAt: drift.Value(now),
+            updatedAt: drift.Value(now),
             creationAccountId: drift.Value(_selectedAccountId),
           ),
-          _selectedAccountId!
         );
 
-        // 2. Create Transaction (Balance Impact)
-        final transactionDao = ref.read(transactionDaoProvider);
-        await transactionDao.insertTransaction(
-          TransactionsCompanion(
-            profileId: drift.Value(profileId),
-            accountId: drift.Value(_selectedAccountId!),
-            type: drift.Value(_selectedType == DebtType.payable
-                ? TransactionType.debtIn // I owe someone -> I got money -> adds to balance
-                : TransactionType.debtOut), // Owed to me -> I gave money -> subtracts from balance
-            amount: drift.Value(amount),
-            title: drift.Value('Debt: ${_personController.text.trim()}'),
-            note: drift.Value(_noteController.text.trim()),
-            date: drift.Value(DateTime.now()),
-            createdAt: drift.Value(DateTime.now()),
-          ),
-        );
+        // 2. Create Transaction (Balance Impact) — only if account was selected
+        if (_selectedAccountId != null) {
+          final transactionDao = ref.read(transactionDaoProvider);
+          await transactionDao.insertTransaction(
+            TransactionsCompanion(
+              profileId: drift.Value(profileId),
+              accountId: drift.Value(_selectedAccountId!),
+              type: drift.Value(_selectedType == DebtType.payable
+                  ? TransactionType.debtIn // I owe someone -> I got money -> adds to balance
+                  : TransactionType.debtOut), // Owed to me -> I gave money -> subtracts from balance
+              amount: drift.Value(amount),
+              title: drift.Value('Debt: ${_personController.text.trim()}'),
+              note: drift.Value(_noteController.text.trim()),
+              date: drift.Value(now),
+              createdAt: drift.Value(now),
+            ),
+          );
+        }
 
       } else {
         // Edit mode - update debt only
@@ -209,6 +216,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return Stack(
       children: [
@@ -296,24 +304,36 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                     const SizedBox(height: 24),
 
                     // Amount
-                    GlassInput(
-                      controller: _amountController,
-                      hintText: trans.goalTargetAmount,
-                      prefixIcon: Icons.monetization_on,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [IndonesianCurrencyInputFormatter()],
-                      validator: (v) {
-                        if (v == null || v.isEmpty || v == '0') {
-                          return 'Amount required';
-                        }
-                        return null;
-                      },
+                    GestureDetector(
+                      onTap: _openAmountCalculator,
+                      child: GlassCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        borderRadius: 12,
+                        child: Row(
+                          children: [
+                            Icon(Icons.monetization_on, color: AppColors.primaryGold, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _rawAmount > 0
+                                    ? Formatters.formatCurrency(_rawAmount, currency: _selectedCurrency, showDecimal: showDecimal)
+                                    : trans.goalTargetAmount,
+                                style: TextStyle(
+                                  color: _rawAmount > 0 ? Colors.white : Colors.white54,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     
                     // Account Selection (Only for creation)
                     if (widget.debt == null) ...[
-                      Text('Account (Impacts Balance)', style: AppTypography.textTheme.labelLarge),
+                      Text('Account (Optional — Impacts Balance)', style: AppTypography.textTheme.labelLarge),
                       const SizedBox(height: 8),
                       accountsAsync.when(
                         data: (accounts) {
@@ -332,6 +352,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                 builder: (_) => AccountSelector(
                                   accounts: accounts,
                                   selectedAccountId: _selectedAccountId,
+                                  balances: ref.read(accountBalanceProvider),
+                                  showDecimal: ref.read(showDecimalProvider),
                                   onAccountSelected: (id) {
                                     if (id != null) {
                                       setState(() {
@@ -350,9 +372,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                 color: AppColors.glassBackground,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: _selectedAccountId == null
-                                      ? Colors.red.withValues(alpha: 0.5)
-                                      : Colors.white.withValues(alpha: 0.1),
+                                  color: Colors.white.withValues(alpha: 0.1),
                                 ),
                               ),
                               child: Row(

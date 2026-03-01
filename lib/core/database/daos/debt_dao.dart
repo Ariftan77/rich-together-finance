@@ -50,8 +50,8 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
           .watch();
 
   /// Create a new debt
-  Future<int> createDebt(DebtsCompanion debt, int creationAccountId) {
-    return into(debts).insert(debt.copyWith(creationAccountId: Value(creationAccountId)));
+  Future<int> createDebt(DebtsCompanion debt) {
+    return into(debts).insert(debt);
   }
 
   /// Update a debt

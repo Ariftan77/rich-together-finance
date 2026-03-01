@@ -336,7 +336,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsPinSetSuccess => 'PIN berhasil diatur';
   @override String get settingsIncorrectPin => 'PIN salah';
   @override String get settingsClearDataTitle => 'Hapus Semua Data?';
-  @override String get settingsClearDataContent => 'Ini akan menghapus SEMUA data Anda secara permanen (transaksi, akun, kategori). Tindakan ini tidak dapat dibatalkan.';
+  @override String get settingsClearDataContent => 'Ini akan menghapus SEMUA data Anda secara permanen termasuk semua profil, transaksi, akun, dan kategori. Tindakan ini tidak dapat dibatalkan.';
   @override String get settingsClearDataConfirmPrompt => 'Ketik "Konfirmasi" untuk melanjutkan:';
   @override String get settingsClearDataConfirmKeyword => 'Konfirmasi';
   @override String get settingsClearEverything => 'Hapus Semuanya';

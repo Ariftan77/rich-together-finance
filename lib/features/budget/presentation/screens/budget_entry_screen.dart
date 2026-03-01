@@ -9,9 +9,10 @@ import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../core/providers/locale_provider.dart';
-import '../../../../shared/widgets/glass_input.dart';
+import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/generic_searchable_dropdown.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/add_category_dialog.dart';
 
 class BudgetEntryScreen extends ConsumerStatefulWidget {
@@ -25,7 +26,7 @@ class BudgetEntryScreen extends ConsumerStatefulWidget {
 
 class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _amountController;
+  double _rawAmount = 0;
   int? _selectedCategoryId;
   Currency _selectedCurrency = Currency.idr;
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
@@ -34,26 +35,34 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(
-      text: widget.budget != null
-          ? IndonesianCurrencyInputFormatter.format(widget.budget!.amount.toStringAsFixed(0))
-          : '',
-    );
     if (widget.budget != null) {
+      _rawAmount = widget.budget!.amount;
       _selectedCategoryId = widget.budget!.categoryId;
       _selectedCurrency = widget.budget!.currency;
       _selectedPeriod = widget.budget!.period;
     }
   }
 
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
+  Future<void> _openAmountCalculator() async {
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: _rawAmount > 0 ? _rawAmount : null,
+      currency: _selectedCurrency,
+      showDecimal: ref.read(showDecimalProvider),
+    );
+    if (result != null && mounted) {
+      setState(() => _rawAmount = result);
+    }
   }
 
   Future<void> _saveBudget() async {
-    if (!_formKey.currentState!.validate()) return;
+    final trans = ref.read(translationsProvider);
+    if (_rawAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(trans.errorInvalidAmount)),
+      );
+      return;
+    }
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a category')),
@@ -64,8 +73,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final amountStr = _amountController.text.replaceAll('.', '').replaceAll(',', '');
-      final amount = double.parse(amountStr);
+      final amount = _rawAmount;
       final dao = ref.read(budgetDaoProvider);
 
       // Check if a budget already exists for this category and period
@@ -172,6 +180,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final trans = ref.watch(translationsProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return Stack(
       children: [
@@ -198,18 +207,30 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Amount Input
-                GlassInput(
-                  controller: _amountController,
-                  hintText: trans.budgetAmount,
-                  prefixIcon: Icons.monetization_on,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [IndonesianCurrencyInputFormatter()],
-                  validator: (v) {
-                    if (v == null || v.isEmpty || v == '0') {
-                      return trans.errorInvalidAmount;
-                    }
-                    return null;
-                  },
+                GestureDetector(
+                  onTap: _openAmountCalculator,
+                  child: GlassCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    borderRadius: 12,
+                    child: Row(
+                      children: [
+                        Icon(Icons.monetization_on, color: AppColors.primaryGold, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _rawAmount > 0
+                                ? Formatters.formatCurrency(_rawAmount, currency: _selectedCurrency, showDecimal: showDecimal)
+                                : trans.budgetAmount,
+                            style: TextStyle(
+                              color: _rawAmount > 0 ? Colors.white : Colors.white54,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
 

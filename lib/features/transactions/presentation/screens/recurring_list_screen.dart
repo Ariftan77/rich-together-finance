@@ -11,11 +11,25 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 
-class RecurringListScreen extends ConsumerWidget {
+class RecurringListScreen extends ConsumerStatefulWidget {
   const RecurringListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecurringListScreen> createState() => _RecurringListScreenState();
+}
+
+class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final recurringAsync = ref.watch(recurringStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
@@ -58,10 +72,54 @@ class RecurringListScreen extends ConsumerWidget {
                 ),
               ),
 
+              // Search box
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
+                      hintText: 'Search recurring...',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+
               // List
               Expanded(
                 child: recurringAsync.when(
                   data: (recurringList) {
+                    final filtered = _searchQuery.isEmpty
+                        ? recurringList
+                        : recurringList.where((item) {
+                            final category = categoryMap[item.categoryId];
+                            final account = accountMap[item.accountId];
+                            return item.name.toLowerCase().contains(_searchQuery) ||
+                                (category?.name.toLowerCase().contains(_searchQuery) ?? false) ||
+                                (account?.name.toLowerCase().contains(_searchQuery) ?? false);
+                          }).toList();
+
                     if (recurringList.isEmpty) {
                       return Center(
                         child: Column(
@@ -91,11 +149,22 @@ class RecurringListScreen extends ConsumerWidget {
                       );
                     }
 
+                    if (filtered.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No results for "$_searchQuery"',
+                          style: AppTypography.textTheme.bodyMedium!.copyWith(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      );
+                    }
+
                     return ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                      itemCount: recurringList.length,
+                      itemCount: filtered.length,
                       itemBuilder: (context, index) {
-                        final item = recurringList[index];
+                        final item = filtered[index];
                         final category = categoryMap[item.categoryId];
                         final account = accountMap[item.accountId];
                         final isExpense = item.type == TransactionType.expense;
@@ -112,88 +181,120 @@ class RecurringListScreen extends ConsumerWidget {
                                             ? const Color(0xFF60A5FA)
                                             : const Color(0xFF60A5FA);
 
+                        final isActive = item.isActive;
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: GestureDetector(
-                            onTap: () => _showEditDialog(context, ref, item, category, account),
-                            child: GlassCard(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // Icon
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: color.withValues(alpha: 0.3),
-                                        width: 1,
+                            onTap: () => _showEditDialog(context, item, category, account),
+                            child: Opacity(
+                              opacity: isActive ? 1.0 : 0.5,
+                              child: GlassCard(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Icon
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: color.withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        isActive ? Icons.repeat : Icons.repeat_outlined,
+                                        color: color,
+                                        size: 22,
                                       ),
                                     ),
-                                    child: Icon(
-                                      Icons.repeat,
-                                      color: color,
-                                      size: 22,
+                                    const SizedBox(width: 14),
+                                    // Details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  style: AppTypography.textTheme.bodyMedium!.copyWith(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (!isActive)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white.withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(
+                                                      color: Colors.white.withValues(alpha: 0.2),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    'INACTIVE',
+                                                    style: TextStyle(
+                                                      color: Colors.white.withValues(alpha: 0.5),
+                                                      fontSize: 9,
+                                                      fontWeight: FontWeight.bold,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${item.frequency.displayName} • ${category?.name ?? item.type.displayName} • ${account?.name ?? 'Unknown'}',
+                                            style: AppTypography.textTheme.bodySmall!.copyWith(
+                                              color: Colors.white.withValues(alpha: 0.4),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Created ${DateFormat.yMMMd().format(item.createdAt)}',
+                                            style: AppTypography.textTheme.bodySmall!.copyWith(
+                                              color: Colors.white.withValues(alpha: 0.3),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  // Details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    // Amount & next date
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          item.name,
+                                          '${isExpense ? '-' : '+'}${Formatters.formatCurrency(item.amount, showDecimal: showDecimal)}',
                                           style: AppTypography.textTheme.bodyMedium!.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
+                                            color: color,
+                                            fontWeight: FontWeight.bold,
                                             fontSize: 14,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          '${item.frequency.displayName} • ${category?.name ?? item.type.displayName} • ${account?.name ?? 'Unknown'}',
-                                          style: AppTypography.textTheme.bodySmall!.copyWith(
-                                            color: Colors.white.withValues(alpha: 0.4),
-                                            fontSize: 11,
+                                        if (isActive)
+                                          Text(
+                                            '${trans.recurringNextRun}: ${DateFormat.MMMd().format(item.nextDate)}',
+                                            style: AppTypography.textTheme.bodySmall!.copyWith(
+                                              color: Colors.white.withValues(alpha: 0.4),
+                                              fontSize: 11,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Created ${DateFormat.yMMMd().format(item.createdAt)}',
-                                          style: AppTypography.textTheme.bodySmall!.copyWith(
-                                            color: Colors.white.withValues(alpha: 0.3),
-                                            fontSize: 10,
-                                          ),
-                                        ),
                                       ],
                                     ),
-                                  ),
-                                  // Amount & next date
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '${isExpense ? '-' : '+'}${Formatters.formatCurrency(item.amount, showDecimal: showDecimal)}',
-                                        style: AppTypography.textTheme.bodyMedium!.copyWith(
-                                          color: color,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${trans.recurringNextRun}: ${DateFormat.MMMd().format(item.nextDate)}',
-                                        style: AppTypography.textTheme.bodySmall!.copyWith(
-                                          color: Colors.white.withValues(alpha: 0.4),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -218,7 +319,6 @@ class RecurringListScreen extends ConsumerWidget {
 
   void _showEditDialog(
     BuildContext context,
-    WidgetRef ref,
     RecurringData item,
     Category? category,
     Account? account,
@@ -586,11 +686,19 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
 
     try {
       final dao = ref.read(recurringDaoProvider);
+
+      // If frequency changed, recalculate nextDate from today
+      DateTime nextDate = widget.item.nextDate;
+      if (_frequency != widget.item.frequency) {
+        nextDate = dao.calculateNextDate(DateTime.now(), _frequency);
+      }
+
       final updated = widget.item.copyWith(
         name: name,
         amount: amount,
         frequency: _frequency,
         isActive: _isActive,
+        nextDate: nextDate,
       );
       await dao.updateRecurring(updated);
 

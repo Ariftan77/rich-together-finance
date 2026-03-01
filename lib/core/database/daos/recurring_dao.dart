@@ -28,6 +28,10 @@ class RecurringDao extends DatabaseAccessor<AppDatabase> with _$RecurringDaoMixi
   Stream<List<RecurringData>> watchAllRecurring() =>
       (select(recurring)..where((r) => r.isActive)).watch();
 
+  /// Watch all recurring including inactive (reactive stream)
+  Stream<List<RecurringData>> watchAllRecurringIncludingInactive() =>
+      (select(recurring)..orderBy([(r) => OrderingTerm.desc(r.createdAt)])).watch();
+
   /// Create a new recurring transaction
   Future<int> createRecurring(RecurringCompanion recurringData) =>
       into(recurring).insert(recurringData);

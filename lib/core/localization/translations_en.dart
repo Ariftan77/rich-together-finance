@@ -335,7 +335,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsPinSetSuccess => 'PIN set & App Lock Enabled';
   @override String get settingsIncorrectPin => 'Incorrect PIN';
   @override String get settingsClearDataTitle => 'Clear All Data?';
-  @override String get settingsClearDataContent => 'This will permanently delete ALL your data (transactions, accounts, categories). This action cannot be undone.';
+  @override String get settingsClearDataContent => 'This will permanently delete ALL your data including all profiles, transactions, accounts, and categories. This action cannot be undone.';
   @override String get settingsClearDataConfirmPrompt => 'Type "Confirm" to proceed:';
   @override String get settingsClearDataConfirmKeyword => 'Confirm';
   @override String get settingsClearEverything => 'Clear Everything';
