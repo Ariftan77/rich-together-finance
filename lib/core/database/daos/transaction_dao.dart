@@ -46,12 +46,18 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
-  /// Get transactions by category within date range
-  Future<List<Transaction>> getTransactionsByCategoryAndDate(int categoryId, DateTime start, DateTime end) =>
+  /// Get transactions by category within date range, optionally filtered by profile
+  Future<List<Transaction>> getTransactionsByCategoryAndDate(int categoryId, DateTime start, DateTime end, {int? profileId}) =>
       (select(transactions)
-            ..where((t) => t.categoryId.equals(categoryId) & 
-                           t.date.isBiggerOrEqualValue(start) & 
-                           t.date.isSmallerOrEqualValue(end))
+            ..where((t) {
+              var condition = t.categoryId.equals(categoryId) &
+                           t.date.isBiggerOrEqualValue(start) &
+                           t.date.isSmallerOrEqualValue(end);
+              if (profileId != null) {
+                condition = condition & t.profileId.equals(profileId);
+              }
+              return condition;
+            })
             ..orderBy([(t) => OrderingTerm.desc(t.date)]))
           .get();
 
@@ -291,16 +297,18 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return query.map((row) => row.read(transactions.title)!).get();
   }
 
-  /// Get most frequent transaction titles filtered by transaction type
-  Future<List<String>> getMostFrequentTitlesByType(TransactionType type, int limit) {
+  /// Get most frequent transaction titles filtered by transaction type and profile
+  Future<List<String>> getMostFrequentTitlesByType(TransactionType type, int limit, {int? profileId}) {
     final count = transactions.id.count();
+    var condition = transactions.title.isNotNull() &
+        transactions.title.length.isBiggerThanValue(0) &
+        transactions.type.equalsValue(type);
+    if (profileId != null) {
+      condition = condition & transactions.profileId.equals(profileId);
+    }
     final query = selectOnly(transactions)
       ..addColumns([transactions.title, count])
-      ..where(
-        transactions.title.isNotNull() &
-        transactions.title.length.isBiggerThanValue(0) &
-        transactions.type.equalsValue(type),
-      )
+      ..where(condition)
       ..groupBy([transactions.title])
       ..orderBy([OrderingTerm.desc(count)])
       ..limit(limit);
@@ -309,14 +317,16 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   }
 
   /// Get the most frequently used account ID for a given title and type
-  Future<int?> getMostUsedAccountForTitle(String title, TransactionType type) async {
+  Future<int?> getMostUsedAccountForTitle(String title, TransactionType type, {int? profileId}) async {
     final count = transactions.id.count();
+    var condition = transactions.title.equals(title) &
+        transactions.type.equalsValue(type);
+    if (profileId != null) {
+      condition = condition & transactions.profileId.equals(profileId);
+    }
     final query = selectOnly(transactions)
       ..addColumns([transactions.accountId, count])
-      ..where(
-        transactions.title.equals(title) &
-        transactions.type.equalsValue(type),
-      )
+      ..where(condition)
       ..groupBy([transactions.accountId])
       ..orderBy([OrderingTerm.desc(count)])
       ..limit(1);
@@ -327,15 +337,17 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   }
 
   /// Get the most frequently used category ID for a given title and type
-  Future<int?> getMostUsedCategoryForTitle(String title, TransactionType type) async {
+  Future<int?> getMostUsedCategoryForTitle(String title, TransactionType type, {int? profileId}) async {
     final count = transactions.id.count();
+    var condition = transactions.title.equals(title) &
+        transactions.type.equalsValue(type) &
+        transactions.categoryId.isNotNull();
+    if (profileId != null) {
+      condition = condition & transactions.profileId.equals(profileId);
+    }
     final query = selectOnly(transactions)
       ..addColumns([transactions.categoryId, count])
-      ..where(
-        transactions.title.equals(title) &
-        transactions.type.equalsValue(type) &
-        transactions.categoryId.isNotNull(),
-      )
+      ..where(condition)
       ..groupBy([transactions.categoryId])
       ..orderBy([OrderingTerm.desc(count)])
       ..limit(1);

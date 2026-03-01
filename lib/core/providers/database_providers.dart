@@ -88,10 +88,13 @@ final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
   return transactionDao.watchAllTransactions(profileId);
 });
 
-/// All categories stream
+/// All categories stream (filtered by active profile + system categories)
 final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
   final categoryDao = ref.watch(categoryDaoProvider);
-  return categoryDao.watchAllCategories();
+  return categoryDao.watchCategoriesByProfile(profileId);
 });
 
 /// All holdings stream

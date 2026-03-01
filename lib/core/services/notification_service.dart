@@ -41,34 +41,73 @@ class NotificationService {
     );
     await _localNotifications.initialize(settings);
 
-    // ── FCM Setup ──────────────────────────────────────────────
+    // ── Create notification channels eagerly (Android 8+) ──────
+    // Ensures the app appears in system notification settings immediately.
+    if (Platform.isAndroid) {
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        await androidPlugin.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _reminderChannelId,
+            _reminderChannelName,
+            importance: Importance.high,
+          ),
+        );
+        await androidPlugin.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _fcmChannelId,
+            _fcmChannelName,
+            importance: Importance.high,
+          ),
+        );
+      }
+    }
+
+    // ── FCM Setup (non-blocking) ───────────────────────────────
+    // Topic subscription & token fetch are network calls — not needed at startup.
+    // Fire-and-forget so they don't block main().
+    _initFcmAsync();
+  }
+
+  void _initFcmAsync() async {
     try {
       _fcm = FirebaseMessaging.instance;
-      
-      // Subscribe to 'all_users' topic for broadcast notifications
-      await _fcm!.subscribeToTopic('all_users');
 
-      // Get and log FCM token for testing
-      final token = await _fcm!.getToken();
-
-
-      // Handle foreground messages
+      // Handle foreground messages (sync, no network)
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    } catch (e) {
 
+      // Network calls — run in background
+      await Future.wait([
+        _fcm!.subscribeToTopic('all_users'),
+        _fcm!.getToken().then((token) {
+          debugPrint('📱 FCM token: $token');
+        }),
+      ]);
+    } catch (e) {
+      debugPrint('⚠️ FCM async init failed: $e');
       _fcm = null;
     }
   }
 
   Future<void> requestPermissions({bool pushOnly = false}) async {
-    // Request FCM permission (iOS + Android 13+) if available
-    // This covers both FCM and local notifications on Android 13+
+    // Request via local notifications plugin (Android 13+ POST_NOTIFICATIONS).
+    // This works independently of FCM initialization state.
+    if (Platform.isAndroid) {
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.requestNotificationsPermission();
+    }
+
+    // Also request via FCM (covers iOS + additional Android logic)
     if (_fcm != null) {
-    await _fcm!.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      await _fcm!.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
     }
   }
 

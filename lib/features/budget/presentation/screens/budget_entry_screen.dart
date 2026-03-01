@@ -10,7 +10,7 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../../shared/widgets/generic_searchable_dropdown.dart';
+import '../../../transactions/presentation/widgets/category_selector.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/add_category_dialog.dart';
@@ -259,7 +259,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Category Selector
+                // Category Selector (bottom sheet — same as transaction entry)
                 categoriesAsync.when(
                   data: (categories) {
                     final expenseCategories = categories.where((c) => c.type == CategoryType.expense).toList();
@@ -267,33 +267,105 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                         ? expenseCategories.where((c) => c.id == _selectedCategoryId).firstOrNull
                         : null;
 
-                    return GenericSearchableDropdown<Category>(
-                      items: expenseCategories,
-                      selectedItem: selectedCategory,
-                      itemLabelBuilder: (c) => c.name,
-                      onItemSelected: (category) {
-                        setState(() => _selectedCategoryId = category.id);
-                      },
-                      label: trans.entryCategory,
-                      icon: Icons.category_outlined,
-                      hint: trans.entrySelectCategory,
-                      searchHint: trans.entrySearchCategory,
-                      onAddNew: (searchText) async {
-                        final name = searchText.trim();
-                        if (name.isNotEmpty) {
-                          await _createNewCategory(name);
-                        } else {
-                          final result = await showDialog<Map<String, dynamic>>(
-                            context: context,
-                            builder: (context) => const AddCategoryDialog(
-                              type: CategoryType.expense,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
+                          child: Text(
+                            trans.entryCategory.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
                             ),
-                          );
-                          if (result != null && result['name'] != null) {
-                            await _createNewCategory(result['name'] as String);
-                          }
-                        }
-                      },
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (modalContext) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                ),
+                                child: CategorySelector(
+                                  categories: expenseCategories,
+                                  selectedCategoryId: _selectedCategoryId,
+                                  onCategorySelected: (id) {
+                                    setState(() => _selectedCategoryId = id);
+                                  },
+                                  onAddNew: (searchText) async {
+                                    final name = searchText.trim();
+                                    if (name.isNotEmpty) {
+                                      await _createNewCategory(name);
+                                    } else {
+                                      FocusScope.of(context).unfocus();
+                                      await Future.delayed(const Duration(milliseconds: 100));
+
+                                      if (!mounted) return;
+
+                                      final result = await showDialog<Map<String, dynamic>>(
+                                        context: context,
+                                        builder: (context) => const AddCategoryDialog(
+                                          type: CategoryType.expense,
+                                        ),
+                                      );
+
+                                      if (mounted) {
+                                        FocusScope.of(context).unfocus();
+                                      }
+
+                                      if (result != null && result['name'] != null) {
+                                        await _createNewCategory(result['name'] as String);
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            height: 56,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.category_outlined,
+                                  color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    selectedCategory?.name ?? trans.entrySelectCategory,
+                                    style: TextStyle(
+                                      color: selectedCategory != null
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.4),
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.expand_more,
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   },
                   loading: () => const CircularProgressIndicator(),

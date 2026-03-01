@@ -116,6 +116,7 @@ final budgetsWithSpendingProvider =
         budget.categoryId,
         startDate,
         endDate,
+        profileId: profileId,
       );
 
       // Sum expenses, converting each to the budget's own currency

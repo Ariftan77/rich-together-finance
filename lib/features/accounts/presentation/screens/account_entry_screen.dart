@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -12,7 +11,7 @@ import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
-import '../../../../shared/utils/currency_input_formatter.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../providers/balance_provider.dart';
 import 'account_transaction_history_screen.dart';
@@ -29,8 +28,8 @@ class AccountEntryScreen extends ConsumerStatefulWidget {
 class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _balanceController;
-  late TextEditingController _adjustmentController;
+  double _rawBalance = 0;
+  double _rawAdjustment = 0;
   AccountType _selectedType = AccountType.cash;
   Currency _selectedCurrency = Currency.idr;
   bool _isAdjusting = false;
@@ -39,11 +38,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.account?.name ?? '');
-    _balanceController = TextEditingController(
-      text: widget.account?.initialBalance.toString() ?? '',
-    );
-    _adjustmentController = TextEditingController();
     if (widget.account != null) {
+      _rawBalance = widget.account!.initialBalance;
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
     }
@@ -52,17 +48,38 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _balanceController.dispose();
-    _adjustmentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openBalanceCalculator() async {
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: _rawBalance > 0 ? _rawBalance : null,
+      currency: _selectedCurrency,
+      showDecimal: ref.read(showDecimalProvider),
+    );
+    if (result != null && mounted) {
+      setState(() => _rawBalance = result);
+    }
+  }
+
+  Future<void> _openAdjustmentCalculator() async {
+    final result = await CalculatorBottomSheet.show(
+      context,
+      initialValue: _rawAdjustment > 0 ? _rawAdjustment : null,
+      currency: widget.account!.currency,
+      showDecimal: ref.read(showDecimalProvider),
+    );
+    if (result != null && mounted) {
+      setState(() => _rawAdjustment = result);
+    }
   }
 
   Future<void> _saveAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
-    // Parse using Formatters helper
-    final balance = Formatters.parseCurrency(_balanceController.text, currency: _selectedCurrency);
+    final balance = _rawBalance;
 
     // Check for duplicate account name (only for new accounts or if name changed)
     final dao = ref.read(accountDaoProvider);
@@ -135,11 +152,9 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
 
   Future<void> _applyAdjustment() async {
     if (widget.account == null) return;
+    if (_rawAdjustment <= 0) return;
 
-    final targetBalance = Formatters.parseCurrency(
-      _adjustmentController.text,
-      currency: widget.account!.currency,
-    );
+    final targetBalance = _rawAdjustment;
 
     final balances = ref.read(accountBalanceProvider);
     final currentBalance = balances[widget.account!.id] ?? widget.account!.initialBalance;
@@ -181,7 +196,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        _adjustmentController.clear();
+        setState(() => _rawAdjustment = 0);
       }
     } catch (e) {
       if (mounted) {
@@ -334,17 +349,30 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: GlassInput(
-                                    controller: _adjustmentController,
-                                    hintText: 'Enter target balance',
-                                    prefixIcon: Icons.tune,
-                                    keyboardType: TextInputType.numberWithOptions(decimal: showDecimal),
-                                    inputFormatters: [
-                                      CurrencyInputFormatter(
-                                        currency: widget.account!.currency,
-                                        showDecimal: showDecimal,
+                                  child: GestureDetector(
+                                    onTap: _openAdjustmentCalculator,
+                                    child: GlassCard(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      borderRadius: 12,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.tune, color: AppColors.primaryGold, size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              _rawAdjustment > 0
+                                                  ? Formatters.formatCurrency(_rawAdjustment, currency: widget.account!.currency, showDecimal: showDecimal)
+                                                  : 'Enter target balance',
+                                              style: TextStyle(
+                                                color: _rawAdjustment > 0 ? Colors.white : Colors.white54,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -388,29 +416,30 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                         validator: (v) => v!.isEmpty ? ref.watch(translationsProvider).accountNameExists : null, // Reusing localized error or add specific one. Wait "Name required"
                       ),
                       const SizedBox(height: 16),
-                        GlassInput(
-                        controller: _balanceController,
-                        hintText: isEditing ? ref.watch(translationsProvider).accountStartingBalanceHint : ref.watch(translationsProvider).accountBalanceHint,
-                        prefixIcon: Icons.monetization_on,
-                        keyboardType: TextInputType.numberWithOptions(decimal: showDecimal),
-                        inputFormatters: [
-                          CurrencyInputFormatter(
-                            currency: _selectedCurrency,
-                            showDecimal: showDecimal,
+                      GestureDetector(
+                        onTap: _openBalanceCalculator,
+                        child: GlassCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          borderRadius: 12,
+                          child: Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: AppColors.primaryGold, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _rawBalance > 0
+                                      ? Formatters.formatCurrency(_rawBalance, currency: _selectedCurrency, showDecimal: showDecimal)
+                                      : (isEditing ? ref.watch(translationsProvider).accountStartingBalanceHint : ref.watch(translationsProvider).accountBalanceHint),
+                                  style: TextStyle(
+                                    color: _rawBalance > 0 ? Colors.white : Colors.white54,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                              Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                            ],
                           ),
-                        ],
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return ref.watch(translationsProvider).accountBalanceRequired;
-                          }
-                          if (_selectedType.isCreditCard) {
-                            final parsed = Formatters.parseCurrency(v, currency: _selectedCurrency);
-                            if (parsed < 0) {
-                              return 'Credit card initial balance cannot be negative';
-                            }
-                          }
-                          return null;
-                        },
+                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -447,7 +476,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             onSelected: (selected) {
                               if (selected) setState(() {
                                 _selectedCurrency = currency;
-                                _balanceController.clear();
+                                _rawBalance = 0;
                               });
                             },
                             selectedColor: AppColors.primaryGold,

@@ -214,6 +214,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                                     .textTheme.titleMedium),
                                           ),
                                           const SizedBox(width: 6),
+                                          _buildPeriodBadge(item.budget.period),
+                                          const SizedBox(width: 4),
                                           _buildCurrencyBadge(item.budget.currency.code),
                                         ],
                                       ),
@@ -891,6 +893,35 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   // ===================== HELPERS =====================
+  Widget _buildPeriodBadge(BudgetPeriod period) {
+    final trans = ref.watch(translationsProvider);
+    final label = switch (period) {
+      BudgetPeriod.weekly => trans.recurringWeekly,
+      BudgetPeriod.monthly => trans.recurringMonthly,
+      BudgetPeriod.yearly => trans.recurringYearly,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 0.8,
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCurrencyBadge(String code) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

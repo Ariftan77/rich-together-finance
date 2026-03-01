@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'features/auth/presentation/widgets/app_lock_overlay.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'shared/theme/app_theme.dart';
 import 'core/providers/profile_provider.dart';
@@ -33,27 +34,33 @@ void main() async {
     debugPrint('⏱️ [main] Firebase: ${sw.elapsedMilliseconds}ms');
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // These are all independent of each other — run in parallel.
-    int rcMs = 0, notifMs = 0, iapMs = 0, adsMs = 0, supaMs = 0;
+    // Parallel — all independent. Network-heavy parts of Notifications and
+    // PremiumAuth are fire-and-forget internally, so they resolve fast.
+    // MobileAds moved out (conditional on RemoteConfig).
+    int rcMs = 0, notifMs = 0, iapMs = 0, supaMs = 0, premMs = 0;
     sw = Stopwatch()..start();
     await Future.wait([
       () async { final s = Stopwatch()..start(); await RemoteConfigService().init(); rcMs = s.elapsedMilliseconds; }(),
       () async { final s = Stopwatch()..start(); await NotificationService().init(); notifMs = s.elapsedMilliseconds; }(),
       () async { final s = Stopwatch()..start(); await IapService().init(); iapMs = s.elapsedMilliseconds; }(),
-      () async { final s = Stopwatch()..start(); await MobileAds.instance.initialize(); adsMs = s.elapsedMilliseconds; }(),
       () async { final s = Stopwatch()..start(); await SyncService.initialize(); supaMs = s.elapsedMilliseconds; }(),
+      () async { final s = Stopwatch()..start(); await PremiumAuthService().init(); premMs = s.elapsedMilliseconds; }(),
     ]);
     debugPrint('⏱️ [main] Parallel group done: ${sw.elapsedMilliseconds}ms');
     debugPrint('⏱️   ├─ RemoteConfig: ${rcMs}ms');
     debugPrint('⏱️   ├─ Notifications: ${notifMs}ms');
     debugPrint('⏱️   ├─ IAP: ${iapMs}ms');
-    debugPrint('⏱️   ├─ MobileAds: ${adsMs}ms');
-    debugPrint('⏱️   └─ Supabase: ${supaMs}ms');
+    debugPrint('⏱️   ├─ Supabase: ${supaMs}ms');
+    debugPrint('⏱️   └─ PremiumAuth: ${premMs}ms');
 
-    // PremiumAuthService needs Supabase (SyncService) ready first.
-    sw = Stopwatch()..start();
-    await PremiumAuthService().init();
-    debugPrint('⏱️ [main] PremiumAuth: ${sw.elapsedMilliseconds}ms');
+    // Phase 3: Conditional — only init MobileAds if ads are enabled via RemoteConfig.
+    if (RemoteConfigService().adsEnabled) {
+      sw = Stopwatch()..start();
+      await MobileAds.instance.initialize();
+      debugPrint('⏱️ [main] MobileAds: ${sw.elapsedMilliseconds}ms');
+    } else {
+      debugPrint('⏱️ [main] MobileAds: SKIPPED (ads disabled)');
+    }
   } catch (e) {
     debugPrint('⚠️ Init error: $e');
   }
@@ -82,6 +89,7 @@ class RichTogetherApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: const SplashScreen(),
+      builder: (context, child) => AppLockOverlay(child: child!),
     );
   }
 }

@@ -133,23 +133,24 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  // Re-create when transactions change (not just accounts)
+  ref.watch(transactionsStreamProvider);
 
   final rates = await _preloadRates(exchangeService);
 
-  await for (final accounts in accountDao.watchAllAccounts(profileId)) {
-    double total = 0;
-    for (final account in accounts) {
-      final balance = await transactionDao.calculateAccountBalance(account.id);
-      if (account.currency == baseCurrency) {
-        total += balance;
-      } else {
-        total += CurrencyExchangeService.convertCurrency(
-          balance, account.currency.code, baseCurrency.code, rates,
-        );
-      }
+  final accounts = await accountDao.getAllAccounts(profileId);
+  double total = 0;
+  for (final account in accounts) {
+    final balance = await transactionDao.calculateAccountBalance(account.id);
+    if (account.currency == baseCurrency) {
+      total += balance;
+    } else {
+      total += CurrencyExchangeService.convertCurrency(
+        balance, account.currency.code, baseCurrency.code, rates,
+      );
     }
-    yield total;
   }
+  yield total;
 });
 
 /// Balance breakdown by currency (each currency in its own denomination)
@@ -162,15 +163,16 @@ final dashboardBalanceByCurrencyProvider = StreamProvider.autoDispose<Map<Curren
 
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
+  // Re-create when transactions change (not just accounts)
+  ref.watch(transactionsStreamProvider);
 
-  await for (final accounts in accountDao.watchAllAccounts(profileId)) {
-    final map = <Currency, double>{};
-    for (final account in accounts) {
-      final balance = await transactionDao.calculateAccountBalance(account.id);
-      map[account.currency] = (map[account.currency] ?? 0) + balance;
-    }
-    yield map;
+  final accounts = await accountDao.getAllAccounts(profileId);
+  final map = <Currency, double>{};
+  for (final account in accounts) {
+    final balance = await transactionDao.calculateAccountBalance(account.id);
+    map[account.currency] = (map[account.currency] ?? 0) + balance;
   }
+  yield map;
 });
 
 /// Net worth (cash + investments - liabilities, fully converted to base currency)
@@ -187,54 +189,56 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  // Re-create when transactions change (not just accounts)
+  ref.watch(transactionsStreamProvider);
 
   final rates = await _preloadRates(exchangeService);
 
-  await for (final accounts in accountDao.watchAllAccounts(profileId)) {
-    // 1. Account balances (cash assets) — currency converted
-    double totalAssets = 0;
-    for (final account in accounts) {
-      final balance = await transactionDao.calculateAccountBalance(account.id);
-      if (account.currency == baseCurrency) {
-        totalAssets += balance;
-      } else {
-        totalAssets += CurrencyExchangeService.convertCurrency(
-          balance, account.currency.code, baseCurrency.code, rates,
-        );
-      }
-    }
+  final accounts = await accountDao.getAllAccounts(profileId);
 
-    // 2. Investment holdings valued at quantity * averageBuyPrice — currency converted
-    final allHoldings = await holdingDao.getAllHoldings();
-    for (final holding in allHoldings.where((h) => h.profileId == profileId)) {
-      final holdingValue = holding.quantity * holding.averageBuyPrice;
-      if (holding.currency == baseCurrency) {
-        totalAssets += holdingValue;
-      } else {
-        totalAssets += CurrencyExchangeService.convertCurrency(
-          holdingValue, holding.currency.code, baseCurrency.code, rates,
-        );
-      }
+  // 1. Account balances (cash assets) — currency converted
+  double totalAssets = 0;
+  for (final account in accounts) {
+    final balance = await transactionDao.calculateAccountBalance(account.id);
+    if (account.currency == baseCurrency) {
+      totalAssets += balance;
+    } else {
+      totalAssets += CurrencyExchangeService.convertCurrency(
+        balance, account.currency.code, baseCurrency.code, rates,
+      );
     }
-
-    // 3. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
-    final debts = await debtDao.getAllDebts(profileId);
-    double totalLiabilities = 0;
-    for (final debt in debts.where((d) => !d.isSettled)) {
-      final remaining = debt.amount - debt.paidAmount;
-      final converted = debt.currency == baseCurrency
-          ? remaining
-          : CurrencyExchangeService.convertCurrency(
-              remaining, debt.currency.code, baseCurrency.code, rates);
-      if (debt.type == DebtType.payable) {
-        totalLiabilities += converted; // I owe → liability
-      } else {
-        totalAssets += converted; // owed to me → asset
-      }
-    }
-
-    yield totalAssets - totalLiabilities;
   }
+
+  // 2. Investment holdings valued at quantity * averageBuyPrice — currency converted
+  final allHoldings = await holdingDao.getAllHoldings();
+  for (final holding in allHoldings.where((h) => h.profileId == profileId)) {
+    final holdingValue = holding.quantity * holding.averageBuyPrice;
+    if (holding.currency == baseCurrency) {
+      totalAssets += holdingValue;
+    } else {
+      totalAssets += CurrencyExchangeService.convertCurrency(
+        holdingValue, holding.currency.code, baseCurrency.code, rates,
+      );
+    }
+  }
+
+  // 3. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
+  final debts = await debtDao.getAllDebts(profileId);
+  double totalLiabilities = 0;
+  for (final debt in debts.where((d) => !d.isSettled)) {
+    final remaining = debt.amount - debt.paidAmount;
+    final converted = debt.currency == baseCurrency
+        ? remaining
+        : CurrencyExchangeService.convertCurrency(
+            remaining, debt.currency.code, baseCurrency.code, rates);
+    if (debt.type == DebtType.payable) {
+      totalLiabilities += converted; // I owe → liability
+    } else {
+      totalAssets += converted; // owed to me → asset
+    }
+  }
+
+  yield totalAssets - totalLiabilities;
 });
 
 /// All active (unsettled) debts for current profile, converted to base currency

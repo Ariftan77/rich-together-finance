@@ -29,6 +29,13 @@ class CategoryDao extends DatabaseAccessor<AppDatabase> with _$CategoryDaoMixin 
   Stream<List<Category>> watchAllCategories() =>
       (select(categories)..orderBy([(c) => OrderingTerm.asc(c.sortOrder)])).watch();
 
+  /// Watch categories for a specific profile (includes system categories where profileId is null)
+  Stream<List<Category>> watchCategoriesByProfile(int profileId) =>
+      (select(categories)
+            ..where((c) => c.profileId.isNull() | c.profileId.equals(profileId))
+            ..orderBy([(c) => OrderingTerm.asc(c.sortOrder)]))
+          .watch();
+
   /// Watch categories by type
   Stream<List<Category>> watchCategoriesByType(CategoryType type) =>
       (select(categories)

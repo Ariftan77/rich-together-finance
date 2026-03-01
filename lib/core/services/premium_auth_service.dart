@@ -42,7 +42,12 @@ class PremiumAuthService {
     // 1. Load cache immediately — user sees premium features right away
     await _loadCachedPremium();
 
-    // 2. Background: restore Google session + conditionally refresh from Supabase
+    // 2. Fire-and-forget: restore Google session + conditionally refresh.
+    //    signInSilently() is a slow network call (~2-4s) — don't block startup.
+    _restoreSessionAsync();
+  }
+
+  void _restoreSessionAsync() async {
     try {
       _currentUser = await _googleSignIn.signInSilently();
       if (_currentUser != null) {
@@ -52,10 +57,10 @@ class PremiumAuthService {
         if (isStale) {
           await _refreshPremiumCache();
         }
-
+        debugPrint('✅ [PremiumAuth] Session restored: ${_currentUser!.email}');
       }
     } catch (e) {
-
+      debugPrint('⚠️ [PremiumAuth] Session restore failed: $e');
     }
   }
 

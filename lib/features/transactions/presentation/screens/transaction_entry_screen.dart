@@ -171,10 +171,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (_autoSelectApplied && _selectedAccountId != null) return;
 
     final dao = ref.read(transactionDaoProvider);
+    final profileId = ref.read(activeProfileIdProvider);
 
     // Auto-select account if not already selected
     if (_selectedAccountId == null) {
-      final accountId = await dao.getMostUsedAccountForTitle(title, _selectedType);
+      final accountId = await dao.getMostUsedAccountForTitle(title, _selectedType, profileId: profileId);
       if (accountId != null && mounted) {
         setState(() => _selectedAccountId = accountId);
       }
@@ -182,7 +183,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
     // Auto-select category if not already selected (skip for transfers)
     if (_selectedCategoryId == null && _selectedType != TransactionType.transfer) {
-      final categoryId = await dao.getMostUsedCategoryForTitle(title, _selectedType);
+      final categoryId = await dao.getMostUsedCategoryForTitle(title, _selectedType, profileId: profileId);
       if (categoryId != null && mounted) {
         setState(() => _selectedCategoryId = categoryId);
       }
@@ -201,8 +202,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   }
 
   Future<void> _loadFrequentTitles() async {
+    final profileId = ref.read(activeProfileIdProvider);
     final titles = await ref.read(transactionDaoProvider)
-        .getMostFrequentTitlesByType(_selectedType, 10);
+        .getMostFrequentTitlesByType(_selectedType, 10, profileId: profileId);
     if (mounted) {
       setState(() => _frequentTitles = titles);
     }
