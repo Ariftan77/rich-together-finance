@@ -53,6 +53,7 @@ class TermsScreen extends ConsumerWidget {
               _buildSection(trans.termsAdviceTitle, trans.termsAdviceContent),
               _buildSection(trans.termsLiabilityTitle, trans.termsLiabilityContent),
               _buildSection(trans.termsUpdatesTitle, trans.termsUpdatesContent),
+              _buildSection(trans.termsSecurityTitle, trans.termsSecurityContent),
               _buildSection(trans.termsContactTitle, trans.termsContactContent),
             ],
           ),

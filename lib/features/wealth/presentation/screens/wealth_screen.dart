@@ -213,10 +213,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                                 style: AppTypography
                                                     .textTheme.titleMedium),
                                           ),
-                                          const SizedBox(width: 6),
-                                          _buildPeriodBadge(item.budget.period),
-                                          const SizedBox(width: 4),
-                                          _buildCurrencyBadge(item.budget.currency.code),
                                         ],
                                       ),
                                       Text(
@@ -237,14 +233,25 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      Formatters.formatCurrency(item.budget.amount,
-                                          currency: item.budget.currency, showDecimal: showDecimal),
-                                      style: AppTypography.textTheme.bodyLarge
-                                          ?.copyWith(
-                                              fontWeight: FontWeight.bold),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          Formatters.formatCurrency(item.budget.amount,
+                                              currency: item.budget.currency, showDecimal: showDecimal),
+                                          style: AppTypography.textTheme.bodyLarge
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        _buildCurrencyBadge(item.budget.currency.code),
+                                      ],
                                     ),
-                                    Text(trans.budgetLimit,
+                                    Text(trans.budgetPeriodLimit(switch (item.budget.period) {
+                                          BudgetPeriod.weekly => trans.recurringWeekly,
+                                          BudgetPeriod.monthly => trans.recurringMonthly,
+                                          BudgetPeriod.yearly => trans.recurringYearly,
+                                        }),
                                         style: AppTypography
                                             .textTheme.bodySmall
                                             ?.copyWith(
@@ -427,16 +434,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(item.goal.name,
-                                  style: AppTypography.textTheme.titleMedium),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildCurrencyBadge(item.goal.targetCurrency.code),
-                          ],
-                        ),
+                        Text(item.goal.name,
+                            style: AppTypography.textTheme.titleMedium),
                         if (item.goal.deadline != null) ...[
                           Text(
                             DateFormat.yMMMd().format(item.goal.deadline!),
@@ -473,12 +472,19 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        Formatters.formatCurrency(item.goal.targetAmount,
-                            currency: item.goal.targetCurrency,
-                            showDecimal: showDecimal),
-                        style: AppTypography.textTheme.bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            Formatters.formatCurrency(item.goal.targetAmount,
+                                currency: item.goal.targetCurrency,
+                                showDecimal: showDecimal),
+                            style: AppTypography.textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          _buildCurrencyBadge(item.goal.targetCurrency.code),
+                        ],
                       ),
                       Text(trans.commonTarget,
                           style: AppTypography.textTheme.bodySmall
@@ -572,16 +578,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(debt.personName,
-                                  style: AppTypography.textTheme.titleMedium),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildCurrencyBadge(debt.currency.code),
-                          ],
-                        ),
+                        Text(debt.personName,
+                            style: AppTypography.textTheme.titleMedium),
                         Text(
                           isPayable ? trans.debtPayable : trans.debtReceivable,
                           style: AppTypography.textTheme.bodySmall
@@ -600,15 +598,22 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        Formatters.formatCurrency(remaining,
-                            currency: debt.currency, showDecimal: showDecimal),
-                        style: AppTypography.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: typeColor,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            Formatters.formatCurrency(remaining,
+                                currency: debt.currency, showDecimal: showDecimal),
+                            style: AppTypography.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: typeColor,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          _buildCurrencyBadge(debt.currency.code),
+                        ],
                       ),
-                       Text(
+                      Text(
                         '${trans.commonOf} ${Formatters.formatCurrency(debt.amount, currency: debt.currency, showDecimal: false)}',
                         style: AppTypography.textTheme.bodySmall?.copyWith(
                           color: Colors.white38,

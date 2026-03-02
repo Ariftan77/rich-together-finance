@@ -146,19 +146,30 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   }
 
   Widget _buildFeatureSection() {
+    final t = ref.watch(translationsProvider);
     final features = [
-      {'emoji': '📊', 'text': ref.watch(translationsProvider).aboutFeatureExpense},
-      {'emoji': '💰', 'text': ref.watch(translationsProvider).aboutFeatureBudget},
-      {'emoji': '📈', 'text': ref.watch(translationsProvider).aboutFeatureAnalytics},
-      {'emoji': '👥', 'text': ref.watch(translationsProvider).aboutFeatureMultiProfile},
-      {'emoji': '🔒', 'text': ref.watch(translationsProvider).aboutFeatureOffline},
+      {'emoji': '📊', 'text': t.aboutFeatureExpense},
+      {'emoji': '💰', 'text': t.aboutFeatureBudget},
+      {'emoji': '📈', 'text': t.aboutFeatureAnalytics},
+      {'emoji': '🎯', 'text': t.aboutFeatureGoals},
+      {'emoji': '📋', 'text': t.aboutFeatureDebts},
+      {'emoji': '🔄', 'text': t.aboutFeatureRecurring},
+      {'emoji': '💱', 'text': t.aboutFeatureMultiCurrency},
+      {'emoji': '👥', 'text': t.aboutFeatureMultiProfile},
+      // {'emoji': '🔐', 'text': t.aboutFeatureEncrypted},
+      {'emoji': '🔒', 'text': t.aboutFeatureOffline},
+    ];
+
+    final comingSoonFeatures = [
+      {'emoji': '📉', 'text': t.aboutFeatureInvestment},
+      {'emoji': '☁️', 'text': t.aboutFeatureSync},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          ref.watch(translationsProvider).aboutFeatures,
+          t.aboutFeatures,
           style: AppTypography.textTheme.titleMedium?.copyWith(
             color: AppColors.primaryGold,
           ),
@@ -167,26 +178,48 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: features.map((f) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(f['emoji']!, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
-                Text(
-                  f['text']!,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-              ],
-            ),
-          )).toList(),
+          children: [
+            ...features.map((f) => _buildFeatureChip(f['emoji']!, f['text']!)),
+            ...comingSoonFeatures.map((f) => _buildFeatureChip(
+              f['emoji']!,
+              '${f['text']!} (${t.aboutComingSoon})',
+              isComingSoon: true,
+            )),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _buildFeatureChip(String emoji, String text, {bool isComingSoon = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isComingSoon
+            ? AppColors.primaryGold.withValues(alpha: 0.1)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: isComingSoon
+            ? Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3))
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: isComingSoon
+                  ? AppColors.primaryGold.withValues(alpha: 0.8)
+                  : Colors.white,
+              fontSize: 13,
+              fontStyle: isComingSoon ? FontStyle.italic : FontStyle.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

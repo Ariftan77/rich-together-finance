@@ -134,6 +134,14 @@ abstract class AppTranslations {
   String get aboutFeatureAnalytics;
   String get aboutFeatureMultiProfile;
   String get aboutFeatureOffline;
+  String get aboutFeatureGoals;
+  String get aboutFeatureDebts;
+  String get aboutFeatureRecurring;
+  String get aboutFeatureMultiCurrency;
+  String get aboutFeatureSync;
+  String get aboutFeatureInvestment;
+  String get aboutFeatureEncrypted;
+  String get aboutComingSoon;
   String get aboutDeveloper;
   String get aboutContact;
   String get aboutCopyright;
@@ -154,6 +162,8 @@ abstract class AppTranslations {
   String get helpFaq6Answer;
   String get helpFaq7Question;
   String get helpFaq7Answer;
+  String get helpFaq8Question;
+  String get helpFaq8Answer;
   String get helpContactSupport;
   String get helpContactEmail;
 
@@ -164,6 +174,8 @@ abstract class AppTranslations {
   String get privacyDataCollectionContent;
   String get privacyLocalStorageTitle;
   String get privacyLocalStorageContent;
+  String get privacyEncryptionTitle;
+  String get privacyEncryptionContent;
   String get privacyBackupTitle;
   String get privacyBackupContent;
   String get privacyAnalyticsTitle;
@@ -188,6 +200,8 @@ abstract class AppTranslations {
   String get termsLiabilityContent;
   String get termsUpdatesTitle;
   String get termsUpdatesContent;
+  String get termsSecurityTitle;
+  String get termsSecurityContent;
   String get termsContactTitle;
   String get termsContactContent;
 
@@ -289,6 +303,7 @@ abstract class AppTranslations {
   String get budgetRemaining;
   String get budgetExceeded;
   String get budgetLimit;
+  String budgetPeriodLimit(String period);
   String get budgetNoBudgets;
   String get budgetNoBudgetsHint;
   

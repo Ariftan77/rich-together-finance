@@ -130,8 +130,11 @@ final debtsStreamProvider = StreamProvider<List<Debt>>((ref) {
   return debtDao.watchUnsettledDebts(profileId);
 });
 
-/// All recurring stream (active + inactive)
+/// All recurring stream (filtered by active profile, active + inactive)
 final recurringStreamProvider = StreamProvider<List<RecurringData>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
   final recurringDao = ref.watch(recurringDaoProvider);
-  return recurringDao.watchAllRecurringIncludingInactive();
+  return recurringDao.watchAllRecurringIncludingInactive(profileId);
 });

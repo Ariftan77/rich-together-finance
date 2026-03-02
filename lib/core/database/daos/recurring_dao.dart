@@ -10,12 +10,18 @@ part 'recurring_dao.g.dart';
 class RecurringDao extends DatabaseAccessor<AppDatabase> with _$RecurringDaoMixin {
   RecurringDao(super.db);
 
-  /// Get all active recurring transactions
-  Future<List<RecurringData>> getAllRecurring() =>
-      (select(recurring)..where((r) => r.isActive)).get();
+  /// Get all active recurring transactions for a profile
+  Future<List<RecurringData>> getAllRecurring(int profileId) =>
+      (select(recurring)..where((r) => r.isActive & r.profileId.equals(profileId))).get();
 
-  /// Get recurring transactions due today or earlier
-  Future<List<RecurringData>> getDueRecurring() =>
+  /// Get recurring transactions due today or earlier for a profile
+  Future<List<RecurringData>> getDueRecurring(int profileId) =>
+      (select(recurring)
+            ..where((r) => r.isActive & r.profileId.equals(profileId) & r.nextDate.isSmallerOrEqualValue(DateTime.now())))
+          .get();
+
+  /// Get all due recurring transactions across all profiles (for background processing)
+  Future<List<RecurringData>> getAllDueRecurring() =>
       (select(recurring)
             ..where((r) => r.isActive & r.nextDate.isSmallerOrEqualValue(DateTime.now())))
           .get();
@@ -24,13 +30,13 @@ class RecurringDao extends DatabaseAccessor<AppDatabase> with _$RecurringDaoMixi
   Future<RecurringData?> getRecurringById(int id) =>
       (select(recurring)..where((r) => r.id.equals(id))).getSingleOrNull();
 
-  /// Watch all active recurring (reactive stream)
-  Stream<List<RecurringData>> watchAllRecurring() =>
-      (select(recurring)..where((r) => r.isActive)).watch();
+  /// Watch all active recurring for a profile (reactive stream)
+  Stream<List<RecurringData>> watchAllRecurring(int profileId) =>
+      (select(recurring)..where((r) => r.isActive & r.profileId.equals(profileId))).watch();
 
-  /// Watch all recurring including inactive (reactive stream)
-  Stream<List<RecurringData>> watchAllRecurringIncludingInactive() =>
-      (select(recurring)..orderBy([(r) => OrderingTerm.desc(r.createdAt)])).watch();
+  /// Watch all recurring including inactive for a profile (reactive stream)
+  Stream<List<RecurringData>> watchAllRecurringIncludingInactive(int profileId) =>
+      (select(recurring)..where((r) => r.profileId.equals(profileId))..orderBy([(r) => OrderingTerm.desc(r.createdAt)])).watch();
 
   /// Create a new recurring transaction
   Future<int> createRecurring(RecurringCompanion recurringData) =>

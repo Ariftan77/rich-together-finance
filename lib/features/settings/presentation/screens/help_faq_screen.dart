@@ -46,6 +46,7 @@ class HelpFaqScreen extends ConsumerWidget {
               _buildFaqItem(context, trans.helpFaq5Question, trans.helpFaq5Answer),
               _buildFaqItem(context, trans.helpFaq6Question, trans.helpFaq6Answer),
               _buildFaqItem(context, trans.helpFaq7Question, trans.helpFaq7Answer),
+              _buildFaqItem(context, trans.helpFaq8Question, trans.helpFaq8Answer),
 
               const SizedBox(height: 32),
 

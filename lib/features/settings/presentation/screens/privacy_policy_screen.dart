@@ -49,6 +49,7 @@ class PrivacyPolicyScreen extends ConsumerWidget {
 
               _buildSection(trans.privacyDataCollectionTitle, trans.privacyDataCollectionContent),
               _buildSection(trans.privacyLocalStorageTitle, trans.privacyLocalStorageContent),
+              _buildSection(trans.privacyEncryptionTitle, trans.privacyEncryptionContent),
               _buildSection(trans.privacyBackupTitle, trans.privacyBackupContent),
               _buildSection(trans.privacyAnalyticsTitle, trans.privacyAnalyticsContent),
               _buildSection(trans.privacyDeletionTitle, trans.privacyDeletionContent),

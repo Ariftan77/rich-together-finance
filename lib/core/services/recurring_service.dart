@@ -21,7 +21,7 @@ class RecurringService {
     final transactionDao = _ref.read(transactionDaoProvider);
 
     // Get all recurring transactions due today or earlier
-    final dueRecurring = await recurringDao.getDueRecurring();
+    final dueRecurring = await recurringDao.getAllDueRecurring();
 
     for (final recurring in dueRecurring) {
       await _processRecurringTransaction(recurring, recurringDao, transactionDao);

@@ -128,7 +128,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsShowDecimals => 'Show Decimals';
   @override String get settingsPremium => 'Premium';
 
-  @override String get settingsAboutApp => 'About Rich Together';
+  @override String get settingsAboutApp => 'About Richer - Money Management';
   
   // About Screen
   @override String get aboutTagline => 'Your personal finance companion';
@@ -138,9 +138,17 @@ class AppTranslationsEn implements AppTranslations {
   @override String get aboutFeatureAnalytics => 'Analytics & Reports';
   @override String get aboutFeatureMultiProfile => 'Multi-Profile Support';
   @override String get aboutFeatureOffline => 'Offline & Secure';
+  @override String get aboutFeatureGoals => 'Financial Goals';
+  @override String get aboutFeatureDebts => 'Debt Tracking';
+  @override String get aboutFeatureRecurring => 'Recurring Transactions';
+  @override String get aboutFeatureMultiCurrency => 'Multi-Currency';
+  @override String get aboutFeatureSync => 'Cloud Sync & Backup';
+  @override String get aboutFeatureInvestment => 'Manage Investment';
+  @override String get aboutFeatureEncrypted => 'Encrypted Database';
+  @override String get aboutComingSoon => 'Coming Soon';
   @override String get aboutDeveloper => 'Developer';
   @override String get aboutContact => 'Contact';
-  @override String get aboutCopyright => '© 2026 Rich Together. All rights reserved.';
+  @override String get aboutCopyright => '© 2026 Richer - Money Management. All rights reserved.';
 
   // Help & FAQ
   @override String get helpTitle => 'Help & FAQ';
@@ -153,23 +161,27 @@ class AppTranslationsEn implements AppTranslations {
   @override String get helpFaq4Question => 'How do I set up recurring transactions?';
   @override String get helpFaq4Answer => 'When adding a transaction, tap "Make Recurring" and choose the frequency (daily, weekly, monthly, yearly).';
   @override String get helpFaq5Question => 'Is my data secure?';
-  @override String get helpFaq5Answer => 'Yes! All data is stored locally on your device. We never send your financial data to external servers.';
+  @override String get helpFaq5Answer => 'Your data is stored entirely on your device and never sent to external servers. We recommend securing your device with a strong screen lock to protect your financial data.';
   @override String get helpFaq6Question => 'How do I backup my data?';
-  @override String get helpFaq6Answer => 'Go to Settings > Data Management > Backup. You can save to Google Drive or export to file.';
+  @override String get helpFaq6Answer => 'Go to Settings > Data Management > Backup & Restore. You can export your database to a file and share it via email, messaging, or cloud storage.';
   @override String get helpFaq7Question => 'Can I use the app offline?';
-  @override String get helpFaq7Answer => 'Absolutely! Rich Together works 100% offline. Internet is only needed for optional features like cloud backup.';
+  @override String get helpFaq7Answer => 'Absolutely! Richer - Money Management works 100% offline. Internet is only needed for optional features like exchange rate updates.';
+  @override String get helpFaq8Question => 'Is my database encrypted?';
+  @override String get helpFaq8Answer => 'Not yet — database encryption (SQLCipher/AES-256) is planned for a future update. Your data is stored in a local SQLite database on your device and never transmitted externally. We recommend securing your device with a strong screen lock in the meantime.';
   @override String get helpContactSupport => 'Contact our support team';
   @override String get helpContactEmail => 'axiomtech.dev@gmail.com';
 
   // Privacy Policy
   @override String get privacyTitle => 'Privacy Policy';
-  @override String get privacyLastUpdated => 'Last updated: February 2026';
+  @override String get privacyLastUpdated => 'Last updated: March 2026';
   @override String get privacyDataCollectionTitle => 'Data Collection';
-  @override String get privacyDataCollectionContent => 'Rich Together is designed with your privacy in mind. All your financial data is stored locally on your device. We do not collect, transmit, or store any of your personal financial information on external servers.';
+  @override String get privacyDataCollectionContent => 'Richer - Money Management is designed with your privacy in mind. All your financial data is stored locally on your device. We do not collect, transmit, or store any of your personal financial information on external servers.';
   @override String get privacyLocalStorageTitle => 'Local Storage';
-  @override String get privacyLocalStorageContent => 'Your data is stored securely on your device using encrypted SQLite database. The app operates fully offline, meaning your data never leaves your phone unless you explicitly choose to backup.';
+  @override String get privacyLocalStorageContent => 'Your data is stored securely on your device using an SQLite database. The app operates fully offline, meaning your data never leaves your phone unless you explicitly choose to export a backup.';
+  @override String get privacyEncryptionTitle => 'Data Security';
+  @override String get privacyEncryptionContent => 'Your financial data is stored locally on your device in an SQLite database. The database is currently not encrypted at rest. We recommend securing your device with a strong screen lock to protect your data. Database encryption is planned for a future update.';
   @override String get privacyBackupTitle => 'Optional Backup';
-  @override String get privacyBackupContent => 'If you choose to use Google Drive backup, your data will be encrypted and stored in your personal Google Drive account. We do not have access to your backup files.';
+  @override String get privacyBackupContent => 'When you export a backup, your data is saved to a portable file that you can use to restore on any device. You are responsible for keeping your backup files safe. We do not have access to your backup files.';
   @override String get privacyAnalyticsTitle => 'No Third-Party Analytics';
   @override String get privacyAnalyticsContent => 'We do not use third-party analytics services that track your behavior or collect personal information.';
   @override String get privacyDeletionTitle => 'Data Deletion';
@@ -179,20 +191,22 @@ class AppTranslationsEn implements AppTranslations {
 
   // Terms of Service
   @override String get termsTitle => 'Terms of Service';
-  @override String get termsLastUpdated => 'Last updated: February 2026';
+  @override String get termsLastUpdated => 'Last updated: March 2026';
   @override String get termsAcceptanceTitle => '1. Acceptance of Terms';
-  @override String get termsAcceptanceContent => 'By using Rich Together, you agree to these Terms of Service. If you do not agree, please do not use this application.';
+  @override String get termsAcceptanceContent => 'By using Richer - Money Management, you agree to these Terms of Service. If you do not agree, please do not use this application.';
   @override String get termsUsageTitle => '2. Use of the App';
-  @override String get termsUsageContent => 'Rich Together is a personal finance tracking tool designed for individual use. You are responsible for maintaining the confidentiality of your data and any PINs or passwords you set.';
+  @override String get termsUsageContent => 'Richer - Money Management is a personal finance tracking tool designed for individual use. You are responsible for maintaining the confidentiality of your data and any PINs or passwords you set.';
   @override String get termsAccuracyTitle => '3. Data Accuracy';
   @override String get termsAccuracyContent => 'The app provides tools for tracking your finances, but we do not guarantee the accuracy of calculations. You should verify all financial information independently.';
   @override String get termsAdviceTitle => '4. Not Financial Advice';
-  @override String get termsAdviceContent => 'Rich Together is not a substitute for professional financial advice. The app is for informational purposes only. Consult a qualified financial advisor for investment decisions.';
+  @override String get termsAdviceContent => 'Richer - Money Management is not a substitute for professional financial advice. The app is for informational purposes only. Consult a qualified financial advisor for investment decisions.';
   @override String get termsLiabilityTitle => '5. Limitation of Liability';
   @override String get termsLiabilityContent => 'We are not liable for any financial losses, data loss, or damages arising from the use of this application.';
   @override String get termsUpdatesTitle => '6. Updates';
   @override String get termsUpdatesContent => 'We may update these terms from time to time. Continued use of the app constitutes acceptance of the updated terms.';
-  @override String get termsContactTitle => '7. Contact';
+  @override String get termsSecurityTitle => '7. Data Security';
+  @override String get termsSecurityContent => 'Your data is stored locally on your device in an SQLite database. The database is currently not encrypted at rest. We recommend securing your device with a strong screen lock. You are responsible for the safekeeping of any exported backup files.';
+  @override String get termsContactTitle => '8. Contact';
   @override String get termsContactContent => 'For questions about these Terms of Service, contact us at legal@richtogether.app';
 
   // Sync Screen
@@ -293,6 +307,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get budgetRemaining => 'Left';
   @override String get budgetExceeded => 'Over by';
   @override String get budgetLimit => 'Limit';
+  @override String budgetPeriodLimit(String period) => '$period Limit';
   @override String get budgetNoBudgets => 'No budgets set';
   @override String get budgetNoBudgetsHint => 'Tap + to create a spending limit';
 
@@ -320,7 +335,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsLockAppSubtitleOff => 'App is unlocked';
   @override String get settingsBiometric => 'Biometric Login';
   @override String get settingsChangePin => 'Change PIN';
-  @override String get settingsAboutTitle => 'About Rich Together';
+  @override String get settingsAboutTitle => 'About Richer - Money Management';
   @override String get settingsHelp => 'Help & FAQ';
   @override String get settingsPrivacy => 'Privacy Policy';
   @override String get settingsTerms => 'Terms of Service';

@@ -128,7 +128,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsShowDecimals => 'Tampilkan Desimal';
   @override String get settingsPremium => 'Premium';
 
-  @override String get settingsAboutApp => 'Tentang Rich Together';
+  @override String get settingsAboutApp => 'Tentang Richer - Money Management';
   
   // About Screen
   @override String get aboutTagline => 'Teman finansial pribadi Anda';
@@ -138,9 +138,17 @@ class AppTranslationsId implements AppTranslations {
   @override String get aboutFeatureAnalytics => 'Analisis & Laporan';
   @override String get aboutFeatureMultiProfile => 'Dukungan Multi-Profil';
   @override String get aboutFeatureOffline => 'Offline & Aman';
+  @override String get aboutFeatureGoals => 'Target Keuangan';
+  @override String get aboutFeatureDebts => 'Pelacakan Hutang';
+  @override String get aboutFeatureRecurring => 'Transaksi Berulang';
+  @override String get aboutFeatureMultiCurrency => 'Multi Mata Uang';
+  @override String get aboutFeatureSync => 'Sinkronisasi & Cadangan';
+  @override String get aboutFeatureInvestment => 'Kelola Investasi';
+  @override String get aboutFeatureEncrypted => 'Database Terenkripsi';
+  @override String get aboutComingSoon => 'Segera Hadir';
   @override String get aboutDeveloper => 'Pengembang';
   @override String get aboutContact => 'Kontak';
-  @override String get aboutCopyright => '© 2026 Rich Together. Hak cipta dilindungi.';
+  @override String get aboutCopyright => '© 2026 Richer - Money Management. Hak cipta dilindungi.';
 
   // Help & FAQ
   @override String get helpTitle => 'Bantuan & FAQ';
@@ -153,23 +161,27 @@ class AppTranslationsId implements AppTranslations {
   @override String get helpFaq4Question => 'Bagaimana cara mengatur transaksi berulang?';
   @override String get helpFaq4Answer => 'Saat menambah transaksi, ketuk "Buat Berulang" dan pilih frekuensinya (harian, mingguan, bulanan, tahunan).';
   @override String get helpFaq5Question => 'Apakah data saya aman?';
-  @override String get helpFaq5Answer => 'Ya! Semua data disimpan secara lokal di perangkat Anda. Kami tidak pernah mengirim data keuangan Anda ke server eksternal.';
+  @override String get helpFaq5Answer => 'Data Anda disimpan sepenuhnya di perangkat Anda dan tidak pernah dikirim ke server eksternal. Kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat guna melindungi data keuangan Anda.';
   @override String get helpFaq6Question => 'Bagaimana cara mencadangkan data saya?';
-  @override String get helpFaq6Answer => 'Buka Pengaturan > Manajemen Data > Cadangan. Anda dapat menyimpan ke Google Drive atau mengekspor ke file.';
+  @override String get helpFaq6Answer => 'Buka Pengaturan > Manajemen Data > Cadangan & Pemulihan. Anda dapat mengekspor database ke file dan membagikannya melalui email, pesan, atau penyimpanan cloud.';
   @override String get helpFaq7Question => 'Bisakah saya menggunakan aplikasi secara offline?';
-  @override String get helpFaq7Answer => 'Tentu saja! Rich Together bekerja 100% offline. Internet hanya dibutuhkan untuk fitur opsional seperti cadangan cloud.';
+  @override String get helpFaq7Answer => 'Tentu saja! Richer - Money Management bekerja 100% offline. Internet hanya dibutuhkan untuk fitur opsional seperti pembaruan kurs mata uang.';
+  @override String get helpFaq8Question => 'Apakah database saya terenkripsi?';
+  @override String get helpFaq8Answer => 'Belum — enkripsi database (SQLCipher/AES-256) direncanakan untuk pembaruan mendatang. Data Anda disimpan dalam database SQLite lokal di perangkat Anda dan tidak pernah dikirim ke luar. Sementara itu, kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat.';
   @override String get helpContactSupport => 'Hubungi tim dukungan kami';
   @override String get helpContactEmail => 'axiomtech.dev@gmail.com';
 
   // Privacy Policy
   @override String get privacyTitle => 'Kebijakan Privasi';
-  @override String get privacyLastUpdated => 'Terakhir diperbarui: Februari 2026';
+  @override String get privacyLastUpdated => 'Terakhir diperbarui: Maret 2026';
   @override String get privacyDataCollectionTitle => 'Pengumpulan Data';
-  @override String get privacyDataCollectionContent => 'Rich Together dirancang dengan mengutamakan privasi Anda. Semua data keuangan Anda disimpan secara lokal di perangkat Anda. Kami tidak mengumpulkan, mengirim, atau menyimpan informasi keuangan pribadi Anda di server eksternal.';
+  @override String get privacyDataCollectionContent => 'Richer - Money Management dirancang dengan mengutamakan privasi Anda. Semua data keuangan Anda disimpan secara lokal di perangkat Anda. Kami tidak mengumpulkan, mengirim, atau menyimpan informasi keuangan pribadi Anda di server eksternal.';
   @override String get privacyLocalStorageTitle => 'Penyimpanan Lokal';
-  @override String get privacyLocalStorageContent => 'Data Anda disimpan dengan aman di perangkat menggunakan database SQLite terenkripsi. Aplikasi beroperasi sepenuhnya offline, artinya data Anda tidak pernah meninggalkan ponsel kecuali Anda secara eksplisit memilih untuk mencadangkan.';
+  @override String get privacyLocalStorageContent => 'Data Anda disimpan dengan aman di perangkat menggunakan database SQLite. Aplikasi beroperasi sepenuhnya offline, artinya data Anda tidak pernah meninggalkan ponsel kecuali Anda secara eksplisit memilih untuk mengekspor cadangan.';
+  @override String get privacyEncryptionTitle => 'Keamanan Data';
+  @override String get privacyEncryptionContent => 'Data keuangan Anda disimpan secara lokal di perangkat Anda dalam database SQLite. Database saat ini tidak dienkripsi saat tersimpan. Kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat guna melindungi data Anda. Enkripsi database direncanakan untuk pembaruan mendatang.';
   @override String get privacyBackupTitle => 'Cadangan Opsional';
-  @override String get privacyBackupContent => 'Jika Anda memilih untuk menggunakan cadangan Google Drive, data Anda akan dienkripsi dan disimpan di akun Google Drive pribadi Anda. Kami tidak memiliki akses ke file cadangan Anda.';
+  @override String get privacyBackupContent => 'Saat Anda mengekspor cadangan, data Anda disimpan ke dalam file portabel yang dapat digunakan untuk memulihkan data di perangkat mana pun. Anda bertanggung jawab untuk menjaga keamanan file cadangan Anda. Kami tidak memiliki akses ke file cadangan Anda.';
   @override String get privacyAnalyticsTitle => 'Tanpa Analitik Pihak Ketiga';
   @override String get privacyAnalyticsContent => 'Kami tidak menggunakan layanan analitik pihak ketiga yang melacak perilaku Anda atau mengumpulkan informasi pribadi.';
   @override String get privacyDeletionTitle => 'Penghapusan Data';
@@ -179,20 +191,22 @@ class AppTranslationsId implements AppTranslations {
 
   // Terms of Service
   @override String get termsTitle => 'Syarat Layanan';
-  @override String get termsLastUpdated => 'Terakhir diperbarui: Februari 2026';
+  @override String get termsLastUpdated => 'Terakhir diperbarui: Maret 2026';
   @override String get termsAcceptanceTitle => '1. Penerimaan Syarat';
-  @override String get termsAcceptanceContent => 'Dengan menggunakan Rich Together, Anda menyetujui Syarat Layanan ini. Jika Anda tidak setuju, mohon jangan gunakan aplikasi ini.';
+  @override String get termsAcceptanceContent => 'Dengan menggunakan Richer - Money Management, Anda menyetujui Syarat Layanan ini. Jika Anda tidak setuju, mohon jangan gunakan aplikasi ini.';
   @override String get termsUsageTitle => '2. Penggunaan Aplikasi';
-  @override String get termsUsageContent => 'Rich Together adalah alat pelacak keuangan pribadi yang dirancang untuk penggunaan individu. Anda bertanggung jawab untuk menjaga kerahasiaan data Anda dan PIN atau kata sandi yang Anda buat.';
+  @override String get termsUsageContent => 'Richer - Money Management adalah alat pelacak keuangan pribadi yang dirancang untuk penggunaan individu. Anda bertanggung jawab untuk menjaga kerahasiaan data Anda dan PIN atau kata sandi yang Anda buat.';
   @override String get termsAccuracyTitle => '3. Akurasi Data';
   @override String get termsAccuracyContent => 'Aplikasi ini menyediakan alat untuk melacak keuangan Anda, tetapi kami tidak menjamin keakuratan perhitungan. Anda harus memverifikasi semua informasi keuangan secara mandiri.';
   @override String get termsAdviceTitle => '4. Bukan Saran Finansial';
-  @override String get termsAdviceContent => 'Rich Together bukan pengganti saran finansial profesional. Aplikasi ini hanya untuk tujuan informasi. Konsultasikan dengan penasihat keuangan yang berkualifikasi untuk keputusan investasi.';
+  @override String get termsAdviceContent => 'Richer - Money Management bukan pengganti saran finansial profesional. Aplikasi ini hanya untuk tujuan informasi. Konsultasikan dengan penasihat keuangan yang berkualifikasi untuk keputusan investasi.';
   @override String get termsLiabilityTitle => '5. Batasan Tanggung Jawab';
   @override String get termsLiabilityContent => 'Kami tidak bertanggung jawab atas kerugian finansial, kehilangan data, atau kerusakan yang timbul dari penggunaan aplikasi ini.';
   @override String get termsUpdatesTitle => '6. Pembaruan';
   @override String get termsUpdatesContent => 'Kami dapat memperbarui syarat ini dari waktu ke waktu. Penggunaan berkelanjutan atas aplikasi merupakan penerimaan terhadap syarat yang diperbarui.';
-  @override String get termsContactTitle => '7. Kontak';
+  @override String get termsSecurityTitle => '7. Keamanan Data';
+  @override String get termsSecurityContent => 'Data Anda disimpan secara lokal di perangkat Anda dalam database SQLite. Database saat ini tidak dienkripsi saat tersimpan. Kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat. Anda bertanggung jawab untuk menjaga keamanan file cadangan yang diekspor.';
+  @override String get termsContactTitle => '8. Kontak';
   @override String get termsContactContent => 'Untuk pertanyaan tentang Syarat Layanan ini, hubungi kami di legal@richtogether.app';
 
   // Sync Screen
@@ -294,6 +308,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get budgetRemaining => 'Sisa';
   @override String get budgetExceeded => 'Melebihi';
   @override String get budgetLimit => 'Batas';
+  @override String budgetPeriodLimit(String period) => 'Batas $period';
   @override String get budgetNoBudgets => 'Belum ada anggaran';
   @override String get budgetNoBudgetsHint => 'Ketuk + untuk membatasi pengeluaran';
 
@@ -321,7 +336,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsLockAppSubtitleOff => 'Aplikasi tidak terkunci';
   @override String get settingsBiometric => 'Login Biometrik';
   @override String get settingsChangePin => 'Ubah PIN';
-  @override String get settingsAboutTitle => 'Tentang Rich Together';
+  @override String get settingsAboutTitle => 'Tentang Richer - Money Management';
   @override String get settingsHelp => 'Bantuan & FAQ';
   @override String get settingsPrivacy => 'Kebijakan Privasi';
   @override String get settingsTerms => 'Syarat Layanan';

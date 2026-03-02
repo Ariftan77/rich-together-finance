@@ -77,7 +77,7 @@ This is the banner image shown at the top of your Play Store listing — essenti
    [Left side]                    [Right side]
    App icon (small, ~150px)       Phone mockup or
    "Richer"  ← app name           screenshot of dashboard
-   "Your complete finance tracker" ← tagline
+   "Your complete Money Management" ← tagline
    ```
 5. Export as **PNG** or **JPG** (PNG preferred)
 6. Save as `store_feature_graphic.png`
@@ -219,7 +219,7 @@ Build time: ~3–5 minutes on first run, faster after.
 1. Go to [Google Play Console](https://play.google.com/console)
 2. Click **Create app**
 3. Fill in:
-   - **App name:** `Richer - Finance Tracker`
+   - **App name:** `Richer - Money Management`
    - **Default language:** English (United States)
    - **App or game:** App
    - **Free or paid:** Free
@@ -304,7 +304,7 @@ Go to **Release → Production → Create new release**.
 
 ### App Name
 ```
-Richer - Finance Tracker
+Richer - Money Management
 ```
 *(30 characters — within Google Play limit)*
 
