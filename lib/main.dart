@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
+import 'package:sqlite3/open.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -19,6 +22,16 @@ void main() async {
   final totalSw = Stopwatch()..start();
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    // Tell sqlite3 to load libsqlcipher.so instead of libsqlite3.so.
+    // Do NOT call applyWorkaroundToOpenSqlCipherOnOldAndroidVersions() here —
+    // that forces DynamicLibrary.open('libsqlcipher.so') at startup which
+    // blocks early and can interfere with Flutter's network initialization.
+    // The workaround is called only when the database is first opened.
+    open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+  }
+
   await initializeDateFormatting();
 
   // Lock orientation to portrait

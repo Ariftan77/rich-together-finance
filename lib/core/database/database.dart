@@ -4,6 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/services.dart';
+import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
+import 'package:sqlite3/open.dart';
+
+import '../services/encryption_service.dart';
 
 import '../models/enums.dart';
 import 'tables/profiles.dart';
@@ -41,13 +46,14 @@ part 'database.g.dart';
   DailyExchangeRates,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase(EncryptionService encryptionService)
+      : super(_openConnection(encryptionService));
 
   /// For testing with in-memory database
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -142,6 +148,22 @@ class AppDatabase extends _$AppDatabase {
           } catch (e) {
             // Ignore
           }
+        }
+        if (from < 15) {
+          // Fix duplicate active profiles caused by import restoring on top of existing data.
+          // Keep only the lowest-id active profile; deactivate any extras.
+          await customStatement('''
+            UPDATE profiles SET is_active = 0
+            WHERE is_active = 1
+              AND id != (SELECT MIN(id) FROM profiles WHERE is_active = 1)
+          ''');
+          // Fix duplicate user_settings rows for the same profile (keep lowest id).
+          await customStatement('''
+            DELETE FROM user_settings
+            WHERE id NOT IN (
+              SELECT MIN(id) FROM user_settings GROUP BY profile_id
+            )
+          ''');
         }
       },
     );
@@ -274,6 +296,10 @@ class AppDatabase extends _$AppDatabase {
 
   /// Creates default profile for new installations
   Future<void> _createDefaultProfile() async {
+    // Guard: skip if any profile already exists (e.g. after a DB file import/restore)
+    final existing = await select(profiles).get();
+    if (existing.isNotEmpty) return;
+
     final profileId = await into(profiles).insert(
       ProfilesCompanion.insert(
         name: 'Personal',
@@ -388,13 +414,54 @@ class AppDatabase extends _$AppDatabase {
       await _seedCategories();
     });
   }
+
+  /// Exports the encrypted database as a plain (unencrypted) SQLite file at
+  /// [outputPath]. The output is importable on any device without a key.
+  Future<void> exportDecrypted(String outputPath) async {
+    await customStatement(
+        "ATTACH DATABASE '$outputPath' AS plaintext KEY ''");
+    await customStatement("SELECT sqlcipher_export('plaintext')");
+    await customStatement("DETACH DATABASE plaintext");
+  }
 }
 
-/// Opens a connection to the database file
-LazyDatabase _openConnection() {
+/// Opens an encrypted connection to the database file.
+LazyDatabase _openConnection(EncryptionService enc) {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'rich_together.sqlite'));
-    return NativeDatabase.createInBackground(file);
+
+    if (Platform.isAndroid) {
+      // Set up libsqlcipher.so loading in the main isolate so that the direct
+      // sqlite3.open() calls below (migration) use SQLCipher.
+      open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+      // Pre-load via Java for Android < API 23 (only needed if dlopen fails).
+      await applyWorkaroundToOpenSqlCipherOnOldAndroidVersions();
+    }
+
+    final key = await enc.getOrCreateKey();
+    await enc.migrateToEncryptedIfNeeded(file.path, key);
+
+    // Capture the root isolate token so the background isolate can bootstrap
+    // its platform messenger (required for BackgroundIsolateBinaryMessenger).
+    final rootToken = ServicesBinding.rootIsolateToken;
+
+    // createInBackground keeps all DB operations in a background isolate,
+    // so the main thread / Flutter event loop stays unblocked (critical for
+    // network requests like Google Fonts, Firebase, etc.).
+    // isolateSetup runs before sqlite3 opens the file in the background isolate,
+    // so open.overrideFor() is in effect before the first sqlite3 call there.
+    return NativeDatabase.createInBackground(
+      file,
+      isolateSetup: () {
+        if (rootToken != null) {
+          BackgroundIsolateBinaryMessenger.ensureInitialized(rootToken);
+        }
+        if (Platform.isAndroid) {
+          open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+        }
+      },
+      setup: (db) => db.execute("PRAGMA key = \"x'$key'\""),
+    );
   });
 }

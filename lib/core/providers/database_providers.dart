@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
+import 'service_providers.dart';
 import '../database/daos/account_dao.dart';
 import '../database/daos/transaction_dao.dart';
 import '../database/daos/category_dao.dart';
@@ -12,7 +13,8 @@ import 'profile_provider.dart';
 
 /// Database provider - singleton instance
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
+  final enc = ref.read(encryptionServiceProvider);
+  final db = AppDatabase(enc);
   ref.onDispose(() => db.close());
   return db;
 });

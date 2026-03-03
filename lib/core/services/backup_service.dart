@@ -10,6 +10,7 @@ import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sig
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import '../providers/database_providers.dart';
+import '../providers/service_providers.dart';
 
 final backupServiceProvider = Provider<BackupService>((ref) {
   return BackupService(ref);
@@ -35,73 +36,60 @@ class BackupService {
   // ==========================================
 
   Future<void> exportDatabase() async {
+    final tempDir = await getTemporaryDirectory();
+    final now = DateTime.now();
+    final fileName =
+        'rich_together_backup_${now.year}${now.month}${now.day}_${now.hour}${now.minute}.sqlite';
+    final tempPath = p.join(tempDir.path, fileName);
     try {
-      final dbPath = await _dbPath;
-      final file = File(dbPath);
-      
-      if (!await file.exists()) {
-        throw Exception('Database file not found');
-      }
+      final db = _ref.read(databaseProvider);
+      await db.exportDecrypted(tempPath);
 
-      // Create a temporary copy with a timestamped name
-      final tempDir = await getTemporaryDirectory();
-      final now = DateTime.now();
-      final fileName = 'rich_together_backup_${now.year}${now.month}${now.day}_${now.hour}${now.minute}.sqlite';
-      final tempPath = p.join(tempDir.path, fileName);
-      
-      await file.copy(tempPath);
-
-      // Share the file
       await Share.shareXFiles(
         [XFile(tempPath)],
         text: 'Rich Together Database Backup',
       );
-    } catch (e) {
-
-      rethrow;
+    } finally {
+      try {
+        await File(tempPath).delete();
+      } catch (_) {}
     }
   }
 
   Future<void> importDatabase() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    if (result == null || result.files.isEmpty) return;
+
+    final path = result.files.single.path;
+    if (path == null) return;
+
+    final enc = _ref.read(encryptionServiceProvider);
+    if (!await enc.isPlainSqlite(path)) {
+      throw Exception('Selected file is not a valid plain SQLite backup');
+    }
+
+    final key = await enc.getOrCreateKey();
+    final tempDir = await getTemporaryDirectory();
+    final tempEncPath = p.join(tempDir.path, 'import_enc_temp.sqlite');
     try {
-      // Pick file
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.any, // .sqlite might not be recognized on all platforms as a specific type
-      );
+      await enc.encryptPlainDatabase(path, tempEncPath, key);
 
-      if (result == null || result.files.isEmpty) return;
-
-      final path = result.files.single.path;
-      if (path == null) return;
-
-      final file = File(path);
-      
-      // Basic validation: check extenson or header (optional)
-      // For now, trusting user selected correct file
-      
-      // Get current DB path
       final currentDbPath = await _dbPath;
-
-      // Close current DB connection
-      await _ref.read(databaseProvider).close();
-
-      // Replace file
-      await file.copy(currentDbPath);
-
-      // We need to restart the app or force a provider refresh
-      // Since Riverpod providers are lazy, invalidating might suffice if UI is rebuilt
-      // But for database, a full restart is safer. 
-      // For this implementation, we will invalidate the provider and hope for the best, 
-      // or instruct user to restart.
-      // Ideally, specific 'restart' logic in main.dart is better.
-      
-      // Invalidate the database provider to force re-creation on next read
-      // Note: This depends on how databaseProvider is implemented (Single or KeepAlive)
-      // Assuming it's a Singleton/Provider, we might need a way to reset it.
-      
-    } catch (e) {
-
-      rethrow;
+      final db = _ref.read(databaseProvider);
+      // Wipe existing data first so the migration on re-open won't try to
+      // seed a second default "Personal" profile on top of the restored data.
+      await db.clearAllData();
+      await db.close();
+      await File(tempEncPath).copy(currentDbPath);
+      // Remove stale WAL/SHM files so the restored DB opens cleanly.
+      for (final suffix in ['-wal', '-shm']) {
+        final f = File('$currentDbPath$suffix');
+        if (await f.exists()) await f.delete();
+      }
+    } finally {
+      try {
+        await File(tempEncPath).delete();
+      } catch (_) {}
     }
   }
 
@@ -151,31 +139,34 @@ class BackupService {
   }
 
   Future<void> uploadToDrive() async {
+    final tempDir = await getTemporaryDirectory();
+    final tempPath = p.join(tempDir.path, 'drive_export_temp.sqlite');
     try {
+      final db = _ref.read(databaseProvider);
+      await db.exportDecrypted(tempPath);
+
       final httpClient = await _getAuthenticatedClient();
       final driveApi = drive.DriveApi(httpClient);
-      
-      final dbPath = await _dbPath;
-      final file = File(dbPath);
-      final fileSize = await file.length();
-      
-      final now = DateTime.now();
-      final fileName = 'rich_together_backup_${now.year}-${now.month}-${now.day}.sqlite';
 
-      // Metadata
+      final file = File(tempPath);
+      final fileSize = await file.length();
+
+      final now = DateTime.now();
+      final fileName =
+          'rich_together_backup_${now.year}-${now.month}-${now.day}.sqlite';
+
       final driveFile = drive.File()
         ..name = fileName
-        ..parents = ['appDataFolder']; // Hidden app data folder
+        ..parents = ['appDataFolder'];
 
-      // Upload
       await driveApi.files.create(
         driveFile,
         uploadMedia: drive.Media(file.openRead(), fileSize),
       );
-      
-    } catch (e) {
-
-      rethrow;
+    } finally {
+      try {
+        await File(tempPath).delete();
+      } catch (_) {}
     }
   }
 
@@ -198,39 +189,45 @@ class BackupService {
   }
 
   Future<void> restoreFromDrive(String fileId) async {
+    final tempDir = await getTemporaryDirectory();
+    final tempPlainPath = p.join(tempDir.path, 'restore_plain_temp.sqlite');
+    final tempEncPath = p.join(tempDir.path, 'restore_enc_temp.sqlite');
     try {
       final httpClient = await _getAuthenticatedClient();
       final driveApi = drive.DriveApi(httpClient);
 
-      // Download file
       final drive.Media media = await driveApi.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       ) as drive.Media;
 
-      // Save to temp
-      final tempDir = await getTemporaryDirectory();
-      final tempPath = p.join(tempDir.path, 'restore_temp.sqlite');
-      final tempFile = File(tempPath);
-      
       final List<int> dataStore = [];
       await media.stream.listen((data) {
         dataStore.addAll(data);
       }).asFuture();
-      
-      await tempFile.writeAsBytes(dataStore);
+      await File(tempPlainPath).writeAsBytes(dataStore);
 
-      // Replace DB
+      final enc = _ref.read(encryptionServiceProvider);
+      final key = await enc.getOrCreateKey();
+      await enc.encryptPlainDatabase(tempPlainPath, tempEncPath, key);
+
       final currentDbPath = await _dbPath;
-      await _ref.read(databaseProvider).close();
-      await tempFile.copy(currentDbPath);
-
-      // Cleanup
-      await tempFile.delete();
-
-    } catch (e) {
-
-      rethrow;
+      final db = _ref.read(databaseProvider);
+      await db.clearAllData();
+      await db.close();
+      await File(tempEncPath).copy(currentDbPath);
+      // Remove stale WAL/SHM files so the restored DB opens cleanly.
+      for (final suffix in ['-wal', '-shm']) {
+        final f = File('$currentDbPath$suffix');
+        if (await f.exists()) await f.delete();
+      }
+    } finally {
+      try {
+        await File(tempPlainPath).delete();
+      } catch (_) {}
+      try {
+        await File(tempEncPath).delete();
+      } catch (_) {}
     }
   }
 }

@@ -2,7 +2,7 @@ name: rich_together
 description: "Offline-first personal finance app for expense tracking, budgeting, and portfolio management."
 publish_to: 'none'
 
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: ^3.10.8
@@ -15,7 +15,8 @@ dependencies:
 
   # Database - Drift (SQLite)
   drift: ^2.15.0
-  sqlite3_flutter_libs: ^0.5.0
+  sqlcipher_flutter_libs: ^0.6.8
+  sqlite3: ^2.4.0
   path_provider: ^2.1.0
   path: ^1.8.0
 
