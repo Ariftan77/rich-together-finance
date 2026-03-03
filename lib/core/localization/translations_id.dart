@@ -128,7 +128,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsShowDecimals => 'Tampilkan Desimal';
   @override String get settingsPremium => 'Premium';
 
-  @override String get settingsAboutApp => 'Tentang Richer - Money Management';
+  @override String get settingsAboutApp => 'Tentang Richer';
   
   // About Screen
   @override String get aboutTagline => 'Teman finansial pribadi Anda';
@@ -149,6 +149,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get aboutDeveloper => 'Pengembang';
   @override String get aboutContact => 'Kontak';
   @override String get aboutCopyright => '© 2026 Richer - Money Management. Hak cipta dilindungi.';
+  @override String get aboutEncryptionWarning => 'Saat Anda mengekspor cadangan, file hasil ekspor TIDAK DIENKRIPSI agar Anda dapat memulihkannya di perangkat lain. Simpan file cadangan Anda di tempat yang aman.';
 
   // Help & FAQ
   @override String get helpTitle => 'Bantuan & FAQ';
@@ -179,7 +180,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get privacyLocalStorageTitle => 'Penyimpanan Lokal';
   @override String get privacyLocalStorageContent => 'Data Anda disimpan dengan aman di perangkat menggunakan database SQLite. Aplikasi beroperasi sepenuhnya offline, artinya data Anda tidak pernah meninggalkan ponsel kecuali Anda secara eksplisit memilih untuk mengekspor cadangan.';
   @override String get privacyEncryptionTitle => 'Keamanan Data';
-  @override String get privacyEncryptionContent => 'Data keuangan Anda disimpan secara lokal di perangkat Anda dalam database SQLite. Database saat ini tidak dienkripsi saat tersimpan. Kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat guna melindungi data Anda. Enkripsi database direncanakan untuk pembaruan mendatang.';
+  @override String get privacyEncryptionContent => 'Data keuangan Anda disimpan secara lokal di perangkat Anda dalam database SQLite yang dienkripsi dengan enkripsi SQLCipher tingkat militer. Data Anda tetap sepenuhnya privat dan aman di perangkat ini.';
   @override String get privacyBackupTitle => 'Cadangan Opsional';
   @override String get privacyBackupContent => 'Saat Anda mengekspor cadangan, data Anda disimpan ke dalam file portabel yang dapat digunakan untuk memulihkan data di perangkat mana pun. Anda bertanggung jawab untuk menjaga keamanan file cadangan Anda. Kami tidak memiliki akses ke file cadangan Anda.';
   @override String get privacyAnalyticsTitle => 'Tanpa Analitik Pihak Ketiga';
@@ -205,7 +206,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get termsUpdatesTitle => '6. Pembaruan';
   @override String get termsUpdatesContent => 'Kami dapat memperbarui syarat ini dari waktu ke waktu. Penggunaan berkelanjutan atas aplikasi merupakan penerimaan terhadap syarat yang diperbarui.';
   @override String get termsSecurityTitle => '7. Keamanan Data';
-  @override String get termsSecurityContent => 'Data Anda disimpan secara lokal di perangkat Anda dalam database SQLite. Database saat ini tidak dienkripsi saat tersimpan. Kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat. Anda bertanggung jawab untuk menjaga keamanan file cadangan yang diekspor.';
+  @override String get termsSecurityContent => 'Data Anda disimpan secara lokal di perangkat ini dalam database SQLite yang dienkripsi. Anda bertanggung jawab dalam menjaga keamanan file backup yang diekspor.';
   @override String get termsContactTitle => '8. Kontak';
   @override String get termsContactContent => 'Untuk pertanyaan tentang Syarat Layanan ini, hubungi kami di legal@richtogether.app';
 
@@ -336,7 +337,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsLockAppSubtitleOff => 'Aplikasi tidak terkunci';
   @override String get settingsBiometric => 'Login Biometrik';
   @override String get settingsChangePin => 'Ubah PIN';
-  @override String get settingsAboutTitle => 'Tentang Richer - Money Management';
+  @override String get settingsAboutTitle => 'Tentang Richer';
   @override String get settingsHelp => 'Bantuan & FAQ';
   @override String get settingsPrivacy => 'Kebijakan Privasi';
   @override String get settingsTerms => 'Syarat Layanan';

@@ -145,6 +145,7 @@ abstract class AppTranslations {
   String get aboutDeveloper;
   String get aboutContact;
   String get aboutCopyright;
+  String get aboutEncryptionWarning;
 
   // Help & FAQ
   String get helpTitle;

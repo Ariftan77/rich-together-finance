@@ -128,7 +128,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsShowDecimals => 'Show Decimals';
   @override String get settingsPremium => 'Premium';
 
-  @override String get settingsAboutApp => 'About Richer - Money Management';
+  @override String get settingsAboutApp => 'About Richer';
   
   // About Screen
   @override String get aboutTagline => 'Your personal finance companion';
@@ -149,6 +149,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get aboutDeveloper => 'Developer';
   @override String get aboutContact => 'Contact';
   @override String get aboutCopyright => '© 2026 Richer - Money Management. All rights reserved.';
+  @override String get aboutEncryptionWarning => 'When you export a backup, the resulting file is DECRYPTED so you can restore it on another device. Keep your backup files in a safe place.';
 
   // Help & FAQ
   @override String get helpTitle => 'Help & FAQ';
@@ -179,7 +180,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get privacyLocalStorageTitle => 'Local Storage';
   @override String get privacyLocalStorageContent => 'Your data is stored securely on your device using an SQLite database. The app operates fully offline, meaning your data never leaves your phone unless you explicitly choose to export a backup.';
   @override String get privacyEncryptionTitle => 'Data Security';
-  @override String get privacyEncryptionContent => 'Your financial data is stored locally on your device in an SQLite database. The database is currently not encrypted at rest. We recommend securing your device with a strong screen lock to protect your data. Database encryption is planned for a future update.';
+  @override String get privacyEncryptionContent => 'Your financial data is stored locally on your device in an SQLite database encrypted with military-grade SQLCipher encryption. Your data stays entirely private and secure on this device.';
   @override String get privacyBackupTitle => 'Optional Backup';
   @override String get privacyBackupContent => 'When you export a backup, your data is saved to a portable file that you can use to restore on any device. You are responsible for keeping your backup files safe. We do not have access to your backup files.';
   @override String get privacyAnalyticsTitle => 'No Third-Party Analytics';
@@ -205,7 +206,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get termsUpdatesTitle => '6. Updates';
   @override String get termsUpdatesContent => 'We may update these terms from time to time. Continued use of the app constitutes acceptance of the updated terms.';
   @override String get termsSecurityTitle => '7. Data Security';
-  @override String get termsSecurityContent => 'Your data is stored locally on your device in an SQLite database. The database is currently not encrypted at rest. We recommend securing your device with a strong screen lock. You are responsible for the safekeeping of any exported backup files.';
+  @override String get termsSecurityContent => 'Your data is stored locally on your device in an encrypted SQLite database. You are responsible for the safekeeping of any exported backup files.';
   @override String get termsContactTitle => '8. Contact';
   @override String get termsContactContent => 'For questions about these Terms of Service, contact us at legal@richtogether.app';
 
@@ -335,7 +336,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsLockAppSubtitleOff => 'App is unlocked';
   @override String get settingsBiometric => 'Biometric Login';
   @override String get settingsChangePin => 'Change PIN';
-  @override String get settingsAboutTitle => 'About Richer - Money Management';
+  @override String get settingsAboutTitle => 'About Richer';
   @override String get settingsHelp => 'Help & FAQ';
   @override String get settingsPrivacy => 'Privacy Policy';
   @override String get settingsTerms => 'Terms of Service';

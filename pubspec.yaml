@@ -1,8 +1,8 @@
 name: rich_together
-description: "Offline-first personal finance app for expense tracking, budgeting, and portfolio management."
+description: "Offline-first personal finance app for expense tracking, budgeting, goals, debts, and portfolio management (coming soon)."
 publish_to: 'none'
 
-version: 1.0.0+14
+version: 1.0.0+15
 
 environment:
   sdk: ^3.10.8

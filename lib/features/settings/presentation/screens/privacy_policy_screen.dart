@@ -11,26 +11,27 @@ class PrivacyPolicyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trans = ref.watch(translationsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.bgDarkStart,
-      appBar: AppBar(
-        title: Text(trans.privacyTitle),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.bgDarkStart, AppColors.bgDarkEnd],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.mainGradient,
           ),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(trans.privacyTitle),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Text(
                 trans.privacyTitle,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
@@ -57,7 +58,8 @@ class PrivacyPolicyScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
+        ),
+      ],
     );
   }
 

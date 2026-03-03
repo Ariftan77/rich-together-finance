@@ -39,44 +39,46 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgDarkStart,
-      appBar: AppBar(
-        title: Text(ref.watch(translationsProvider).settingsAboutTitle),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.bgDarkStart, AppColors.bgDarkEnd],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.mainGradient,
           ),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(ref.watch(translationsProvider).settingsAboutTitle),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
               
               // App Logo
               Container(
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.2),
+                  color: AppColors.primaryGold.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text('💰', style: TextStyle(fontSize: 48)),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/app_icon.png'),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
               // App Name
               Text(
-                'Rich Together',
+                'About Richer',
                 style: AppTypography.textTheme.headlineMedium?.copyWith(
                   color: AppColors.primaryGold,
                 ),
@@ -112,6 +114,10 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
               // Features
               _buildFeatureSection(),
+              const SizedBox(height: 32),
+
+              // Encryption Note
+              _buildEncryptionNote(),
               const SizedBox(height: 48),
 
               // Developer Info
@@ -141,7 +147,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             ],
           ),
         ),
-      ),
+        ),
+      ],
     );
   }
 
@@ -243,19 +250,87 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                subtitle,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 14,
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEncryptionNote() {
+    final t = ref.watch(translationsProvider);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGold.withValues(alpha: 0.05),
+        border: Border.all(
+          color: AppColors.primaryGold.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.security, color: AppColors.primaryGold, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                t.privacyEncryptionTitle,
+                style: AppTypography.textTheme.titleSmall?.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            t.privacyEncryptionContent,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: AppColors.error, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    t.aboutEncryptionWarning,
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
