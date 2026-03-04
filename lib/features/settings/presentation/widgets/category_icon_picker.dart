@@ -201,7 +201,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: _hexToColor(_selectedColorHex).withValues(alpha: 0.2),
+                      color: _hexToColor(_selectedColorHex),
                       shape: BoxShape.circle,
                     ),
                     child: Text(

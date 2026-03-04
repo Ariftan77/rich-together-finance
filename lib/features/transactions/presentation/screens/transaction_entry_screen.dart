@@ -51,6 +51,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   // Raw amount value (without formatting)
   String _rawAmount = '';
 
+  // Original amount when editing (to skip balance validation if unchanged)
+  double? _originalAmount;
+
   // Focus node for title field (to detect when user finishes typing)
   final _titleFocusNode = FocusNode();
 
@@ -107,6 +110,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _selectedToAccountId = transaction.toAccountId;
         _selectedDate = transaction.date;
         _rawAmount = transaction.amount.toString();
+        _originalAmount = transaction.amount;
         
         // Format amount
         _amountController.text = Formatters.formatCurrency(
@@ -264,8 +268,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       final selectedAccount = await ref.read(accountDaoProvider).getAccountById(_selectedAccountId!);
       final isCreditCard = selectedAccount?.type.isCreditCard ?? false;
 
-      // Validate sufficient balance for expenses (skip for credit cards)
-      if (_selectedType == TransactionType.expense && !isCreditCard) {
+      // Validate sufficient balance for expenses (skip for credit cards and unchanged edits)
+      final isEditing = widget.transactionId != null;
+      final amountUnchanged = isEditing && _originalAmount != null && amount == _originalAmount;
+
+      if (_selectedType == TransactionType.expense && !isCreditCard && !amountUnchanged) {
         final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
         if (amount > accountBalance) {
           if (mounted) {
@@ -278,8 +285,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         }
       }
 
-      // Validate sufficient balance for transfers (skip for credit cards)
-      if (_selectedType == TransactionType.transfer && !isCreditCard) {
+      // Validate sufficient balance for transfers (skip for credit cards and unchanged edits)
+      if (_selectedType == TransactionType.transfer && !isCreditCard && !amountUnchanged) {
         final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
         if (amount > accountBalance) {
           if (mounted) {
@@ -627,7 +634,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   String _getCurrencyPrefix(List<Account> accounts) {
     if (_selectedAccountId == null) return 'IDR ';  // Default to IDR
     final account = accounts.firstWhere((a) => a.id == _selectedAccountId);
-    return account.currency == Currency.idr ? 'IDR ' : '\$ ';
+    return '${account.currency.code} ';
   }
 
   String _formatDateDisplay() {
@@ -1108,7 +1115,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                               }
         
                                               if (result != null && result['name'] != null) {
-                                                 await _createNewCategory(result['name'] as String, categoryType!);
+                                                 await _createNewCategory(
+                                                   result['name'] as String,
+                                                   categoryType!,
+                                                   icon: result['icon'] as String?,
+                                                   color: result['color'] as String?,
+                                                 );
                                               }
                                           }
                                         },
@@ -1430,7 +1442,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
-  Future<void> _createNewCategory(String name, CategoryType type) async {
+  Future<void> _createNewCategory(String name, CategoryType type, {String? icon, String? color}) async {
     try {
       final dao = ref.read(categoryDaoProvider);
       final profileId = ref.read(activeProfileIdProvider);
@@ -1460,7 +1472,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
           profileId: drift.Value(profileId),
           name: drift.Value(trimmedName),
           type: drift.Value(type),
-          icon: const drift.Value('category'),
+          icon: drift.Value(icon ?? '📦'),
+          color: drift.Value(color ?? '#BDC3C7'),
           isSystem: const drift.Value(false),
           sortOrder: const drift.Value(999),
         ),

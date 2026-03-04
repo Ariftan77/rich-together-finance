@@ -201,7 +201,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))).withValues(alpha: 0.2),
+                      color: Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,

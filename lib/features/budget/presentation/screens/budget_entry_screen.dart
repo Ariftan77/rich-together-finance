@@ -135,7 +135,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     }
   }
 
-  Future<void> _createNewCategory(String name) async {
+  Future<void> _createNewCategory(String name, {String? icon, String? color}) async {
     try {
       final dao = ref.read(categoryDaoProvider);
       final profileId = ref.read(activeProfileIdProvider);
@@ -146,7 +146,8 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
           profileId: drift.Value(profileId),
           name: drift.Value(name),
           type: const drift.Value(CategoryType.expense),
-          icon: const drift.Value('category'),
+          icon: drift.Value(icon ?? '📦'),
+          color: drift.Value(color ?? '#BDC3C7'),
           isSystem: const drift.Value(false),
           sortOrder: const drift.Value(999),
         ),
@@ -320,7 +321,11 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                                       }
 
                                       if (result != null && result['name'] != null) {
-                                        await _createNewCategory(result['name'] as String);
+                                        await _createNewCategory(
+                                          result['name'] as String,
+                                          icon: result['icon'] as String?,
+                                          color: result['color'] as String?,
+                                        );
                                       }
                                     }
                                   },

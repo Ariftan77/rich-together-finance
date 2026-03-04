@@ -90,7 +90,7 @@ class _AccountTransactionHistoryScreenState
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
-    final currencySymbol = widget.account.currency == Currency.idr ? 'IDR' : '\$';
+    final currencySymbol = widget.account.currency.code;
 
     final categoryMap = categoriesAsync.valueOrNull != null
         ? {for (var c in categoriesAsync.value!) c.id: c}
@@ -363,7 +363,7 @@ class _TxItem extends StatelessWidget {
                     : const Color(0xFF60A5FA);
 
     final prefix = isExpense ? '-' : (isIncome ? '+' : '');
-    final currencySymbol = account.currency == Currency.idr ? 'IDR' : '\$';
+    final currencySymbol = account.currency.code;
 
     final hour = transaction.date.hour > 12
         ? transaction.date.hour - 12

@@ -23,7 +23,7 @@ class AccountCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showDecimal = ref.watch(showDecimalProvider);
-    final currencySymbol = account.currency == Currency.idr ? 'Rp' : '\$';
+    final currencySymbol = account.currency.symbol;
     
     // Convert int type to Enum
     final accountType = account.type;

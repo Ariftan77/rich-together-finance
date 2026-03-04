@@ -46,6 +46,13 @@ class Formatters {
     return rate < 0 ? '-$result' : result;
   }
 
+  /// Returns the locale string for number formatting.
+  /// IDR uses Indonesian locale (dot as thousands sep, comma as decimal).
+  /// All others use US locale (comma as thousands sep, dot as decimal).
+  static String localeFor(Currency currency) {
+    return currency == Currency.idr ? 'id_ID' : 'en_US';
+  }
+
   static double parseCurrency(String text, {Currency currency = Currency.idr}) {
     String cleaned = text;
     if (currency == Currency.idr) {
@@ -53,7 +60,7 @@ class Formatters {
       cleaned = cleaned.replaceAll('.', '');
       cleaned = cleaned.replaceAll(',', '.');
     } else {
-      // USD: 1,000.50 -> Remove commas
+      // USD/SGD/MYR/THB: 1,000.50 -> Remove commas
       cleaned = cleaned.replaceAll(',', '');
     }
     return double.tryParse(cleaned) ?? 0.0;

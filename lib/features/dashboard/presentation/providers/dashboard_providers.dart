@@ -553,7 +553,7 @@ final dashboardCashFlowProvider =
       double expense = 0;
 
       for (final t in transactions) {
-        if (t.date.isAfter(startOfMonth) && t.date.isBefore(endOfMonth)) {
+        if (!t.date.isBefore(startOfMonth) && !t.date.isAfter(endOfMonth)) {
           final converted = _convertAmount(t, accountMap, rates, baseCurrency);
           if (t.type == TransactionType.income) {
             income += converted;
@@ -642,7 +642,7 @@ final monthlySummaryProvider =
     double debtReceivable = 0;
 
     for (final tx in allTransactions) {
-      if (tx.date.isAfter(startOfMonth) && tx.date.isBefore(endOfMonth)) {
+      if (!tx.date.isBefore(startOfMonth) && !tx.date.isAfter(endOfMonth)) {
         final converted = _convertAmount(tx, accountMap, rates, baseCurrency);
         if (tx.type == TransactionType.income) {
           income += converted;

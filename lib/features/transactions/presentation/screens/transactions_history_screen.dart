@@ -375,6 +375,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                           final date = sortedDates[index];
                           final cts = grouped[date]!;
                           final showDecimal = ref.watch(showDecimalProvider);
+                          final baseCurrency = ref.watch(defaultCurrencyProvider);
 
                           // Use convertedAmount so cross-currency totals are correct
                           final dayIncome = cts
@@ -412,13 +413,13 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                         if (dayIncome > 0)
                                           _DayStatChip(
                                             label: 'Income',
-                                            value: '+${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
+                                            value: '+${baseCurrency.symbol} ${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
                                             color: const Color(0xFF34D399).withValues(alpha: 0.7),
                                           ),
                                         if (dayExpense > 0)
                                           _DayStatChip(
                                             label: 'Expense',
-                                            value: '-${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
+                                            value: '-${baseCurrency.symbol} ${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
                                             color: const Color(0xFFFB7185).withValues(alpha: 0.7),
                                           ),
                                         _DayStatChip(
@@ -646,7 +647,7 @@ class _TransactionItem extends ConsumerWidget {
               children: [
                 Builder(
                   builder: (context) {
-                    final currencySymbol = account?.currency == Currency.idr ? 'IDR' : '\$';
+                    final currencySymbol = account?.currency.code ?? 'IDR';
                     return Text(
                       '$currencySymbol $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
                       style: AppTypography.textTheme.bodyMedium!.copyWith(

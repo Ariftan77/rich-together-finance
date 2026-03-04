@@ -318,7 +318,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             // Balance Display
                             Center(
                               child: Text(
-                                '${widget.account!.currency == Currency.idr ? 'IDR' : '\$'} ${Formatters.formatCurrency(currentBalance, currency: widget.account!.currency, showDecimal: showDecimal)}',
+                                '${widget.account!.currency.code} ${Formatters.formatCurrency(currentBalance, currency: widget.account!.currency, showDecimal: showDecimal)}',
                                 style: AppTypography.textTheme.displaySmall?.copyWith(
                                   color: AppColors.primaryGold,
                                   fontWeight: FontWeight.bold,

@@ -67,6 +67,8 @@ enum Currency {
   idr,        // 0 - Indonesian Rupiah
   usd,        // 1 - US Dollar
   sgd,        // 2 - Singapore Dollar
+  myr,        // 3 - Malaysian Ringgit
+  thb,        // 4 - Thai Baht
 }
 
 /// Extension methods for enum display values
@@ -173,6 +175,10 @@ extension CurrencyX on Currency {
         return 'USD';
       case Currency.sgd:
         return 'SGD';
+      case Currency.myr:
+        return 'MYR';
+      case Currency.thb:
+        return 'THB';
     }
   }
 
@@ -184,6 +190,10 @@ extension CurrencyX on Currency {
         return '\$';
       case Currency.sgd:
         return 'S\$';
+      case Currency.myr:
+        return 'RM';
+      case Currency.thb:
+        return '฿';
     }
   }
 
@@ -195,6 +205,10 @@ extension CurrencyX on Currency {
         return 'US Dollar';
       case Currency.sgd:
         return 'Singapore Dollar';
+      case Currency.myr:
+        return 'Malaysian Ringgit';
+      case Currency.thb:
+        return 'Thai Baht';
     }
   }
 }

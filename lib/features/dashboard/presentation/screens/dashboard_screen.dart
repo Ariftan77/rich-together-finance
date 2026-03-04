@@ -180,8 +180,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       loading: () => '...',
                       error: (_, __) => 'Error',
                     ),
-                    onTap: () => _showCurrencyBreakdown(context),
-                    onLongPress: () => _showCurrencyBreakdown(context),
+                    onTap: () => _showNetWorthBreakdown(context),
+                    onLongPress: () => _showNetWorthBreakdown(context),
                   ),
                   // Active debts below Net Worth (all-time outstanding, cleared when settled)
                   if (activeDebt?.hasPayable == true) ...[
@@ -585,6 +585,198 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   ),
                 );
               }),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    trans.close,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showNetWorthBreakdown(BuildContext context) async {
+    final breakdownAsync = ref.read(dashboardBalanceByCurrencyProvider);
+    final breakdown = breakdownAsync.valueOrNull;
+    if (breakdown == null || breakdown.isEmpty) return;
+
+    final showDecimal = ref.read(showDecimalProvider);
+    final baseCurrency = ref.read(defaultCurrencyProvider);
+    final trans = ref.read(translationsProvider);
+    final exchangeService = ref.read(currencyExchangeServiceProvider);
+    final activeDebtAsync = ref.read(dashboardActiveDebtProvider);
+    final activeDebt = activeDebtAsync.valueOrNull;
+
+    final rateResult = await exchangeService.getRates();
+    final rates = rateResult.rates;
+
+    if (!mounted) return;
+
+    // Calculate total balance (sum of all account balances converted to base)
+    double totalBalance = 0;
+    for (final entry in breakdown.entries) {
+      final currency = entry.key;
+      final amount = entry.value;
+      if (currency == baseCurrency) {
+        totalBalance += amount;
+      } else {
+        totalBalance += CurrencyExchangeService.convertCurrency(
+          amount, currency.code, baseCurrency.code, rates,
+        );
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF2D2416),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.trending_up, color: AppColors.success, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    trans.dashboardNetWorth,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Total Balance line
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    trans.dashboardTotalBalance,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${baseCurrency.symbol} ${Formatters.formatCurrency(totalBalance, showDecimal: showDecimal)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Receivable debts (owed to me — adds to net worth)
+              if (activeDebt != null && activeDebt.hasReceivable) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.people_outline, color: Color(0xFF60A5FA), size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      trans.debtReceivable,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '+${baseCurrency.symbol} ${Formatters.formatCurrency(activeDebt.receivable, showDecimal: showDecimal)}',
+                      style: const TextStyle(
+                        color: Color(0xFF60A5FA),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Payable debts (I owe — subtracts from net worth)
+              if (activeDebt != null && activeDebt.hasPayable) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.people_outline, color: Colors.orange, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      trans.debtPayable,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '-${baseCurrency.symbol} ${Formatters.formatCurrency(activeDebt.payable, showDecimal: showDecimal)}',
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Divider + Net Worth total
+              if (activeDebt != null && activeDebt.hasAny) ...[
+                const SizedBox(height: 12),
+                Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(
+                      trans.dashboardNetWorth,
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Builder(builder: (context) {
+                      final netWorth = totalBalance
+                          + (activeDebt.hasReceivable ? activeDebt.receivable : 0)
+                          - (activeDebt.hasPayable ? activeDebt.payable : 0);
+                      return Text(
+                        '${baseCurrency.symbol} ${Formatters.formatCurrency(netWorth, showDecimal: showDecimal)}',
+                        style: const TextStyle(
+                          color: AppColors.primaryGold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
