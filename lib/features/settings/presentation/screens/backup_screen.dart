@@ -83,7 +83,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await ref.read(backupServiceProvider).importDatabase();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database restored! Please restart the app.'), backgroundColor: AppColors.success),
+          const SnackBar(content: Text('Database restored successfully!'), backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
@@ -204,7 +204,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await ref.read(backupServiceProvider).restoreFromDrive(selectedFileId);
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Restored! Please restart the app.'), backgroundColor: AppColors.success),
+        const SnackBar(content: Text('Restored successfully!'), backgroundColor: AppColors.success),
       );
     } catch (e) {
       if (!mounted) return;

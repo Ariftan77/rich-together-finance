@@ -86,6 +86,10 @@ class BackupService {
         final f = File('$currentDbPath$suffix');
         if (await f.exists()) await f.delete();
       }
+      
+      // Force Riverpod to recreate the database instance and cascade to all DAO/Stream providers
+      _ref.invalidate(databaseProvider);
+      
     } finally {
       try {
         await File(tempEncPath).delete();
@@ -221,6 +225,10 @@ class BackupService {
         final f = File('$currentDbPath$suffix');
         if (await f.exists()) await f.delete();
       }
+      
+      // Force Riverpod to recreate the database instance and cascade to all DAO/Stream providers
+      _ref.invalidate(databaseProvider);
+      
     } finally {
       try {
         await File(tempPlainPath).delete();

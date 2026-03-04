@@ -319,10 +319,15 @@ class AppDatabase extends _$AppDatabase {
 
   /// Seeds the database with predefined categories
   Future<void> _seedCategories() async {
-    final now = DateTime.now();
+    final existingCategories = await select(categories).get();
+
+    bool exists(CategoriesCompanion comp) {
+      return existingCategories.any((c) => 
+          c.name == comp.name.value && c.type == comp.type.value);
+    }
 
     // Expense categories
-    final expenseCategories = [
+    final defaultExpenses = [
       CategoriesCompanion.insert(
         name: 'Food',
         type: CategoryType.expense,
@@ -350,7 +355,7 @@ class AppDatabase extends _$AppDatabase {
     ];
 
     // Income categories
-    final incomeCategories = [
+    final defaultIncomes = [
       CategoriesCompanion.insert(
         name: 'Salary',
         type: CategoryType.income,
@@ -377,9 +382,16 @@ class AppDatabase extends _$AppDatabase {
       ),
     ];
 
+    final expenseCategoriesToInsert = defaultExpenses.where((c) => !exists(c)).toList();
+    final incomeCategoriesToInsert = defaultIncomes.where((c) => !exists(c)).toList();
+
     await batch((batch) {
-      batch.insertAll(categories, expenseCategories);
-      batch.insertAll(categories, incomeCategories);
+      if (expenseCategoriesToInsert.isNotEmpty) {
+        batch.insertAll(categories, expenseCategoriesToInsert);
+      }
+      if (incomeCategoriesToInsert.isNotEmpty) {
+        batch.insertAll(categories, incomeCategoriesToInsert);
+      }
     });
   }
 
