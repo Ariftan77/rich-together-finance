@@ -379,10 +379,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
                           // Use convertedAmount so cross-currency totals are correct
                           final dayIncome = cts
-                              .where((ct) => ct.transaction.type == TransactionType.income || ct.transaction.type == TransactionType.adjustmentIn || ct.transaction.type == TransactionType.debtIn)
+                              .where((ct) => ct.transaction.type == TransactionType.income)
                               .fold(0.0, (sum, ct) => sum + ct.convertedAmount);
                           final dayExpense = cts
-                              .where((ct) => ct.transaction.type == TransactionType.expense || ct.transaction.type == TransactionType.adjustmentOut || ct.transaction.type == TransactionType.debtOut)
+                              .where((ct) => ct.transaction.type == TransactionType.expense)
                               .fold(0.0, (sum, ct) => sum + ct.convertedAmount);
 
                           return Column(

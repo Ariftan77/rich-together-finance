@@ -349,20 +349,25 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (_) => AccountSelector(
-                                  accounts: accounts,
-                                  selectedAccountId: _selectedAccountId,
-                                  balances: ref.read(accountBalanceProvider),
-                                  showDecimal: ref.read(showDecimalProvider),
-                                  onAccountSelected: (id) {
-                                    if (id != null) {
-                                      setState(() {
-                                        _selectedAccountId = id;
-                                        final account = accounts.firstWhere((a) => a.id == id);
-                                        _selectedCurrency = account.currency;
-                                      });
-                                    }
-                                  },
+                                builder: (modalContext) => Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                  ),
+                                  child: AccountSelector(
+                                    accounts: accounts,
+                                    selectedAccountId: _selectedAccountId,
+                                    balances: ref.read(accountBalanceProvider),
+                                    showDecimal: ref.read(showDecimalProvider),
+                                    onAccountSelected: (id) {
+                                      if (id != null) {
+                                        setState(() {
+                                          _selectedAccountId = id;
+                                          final account = accounts.firstWhere((a) => a.id == id);
+                                          _selectedCurrency = account.currency;
+                                        });
+                                      }
+                                    },
+                                  ),
                                 ),
                               );
                             },
