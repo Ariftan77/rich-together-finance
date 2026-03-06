@@ -386,4 +386,13 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
   @override String get premiumSignedInTryAgain => 'Berhasil masuk! Silakan coba lagi untuk menukar voucher Anda.';
   @override String get categoryTapToEditIcon => 'Ketuk untuk ganti ikon';
+
+  // Report Details
+  @override String get reportDetailChart => 'Grafik';
+  @override String get reportDetailCategory => 'Kategori';
+  @override String get reportDetailTitle => 'Judul';
+  @override String get reportDetailByCategory => 'per Kategori';
+  @override String get reportDetailByTitle => 'per Judul';
+  @override String get reportDetailDailyAvgExpense => 'Rata-rata Pengeluaran/Hari';
+  @override String get reportDetailDailyAvgIncome => 'Rata-rata Pemasukan/Hari';
 }

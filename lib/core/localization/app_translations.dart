@@ -382,4 +382,13 @@ abstract class AppTranslations {
   String get premiumSignInFailed;
   String get premiumSignedInTryAgain;
   String get categoryTapToEditIcon;
+
+  // Report Details
+  String get reportDetailChart;
+  String get reportDetailCategory;
+  String get reportDetailTitle;
+  String get reportDetailByCategory;
+  String get reportDetailByTitle;
+  String get reportDetailDailyAvgExpense;
+  String get reportDetailDailyAvgIncome;
 }

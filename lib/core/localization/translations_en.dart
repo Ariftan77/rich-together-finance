@@ -385,4 +385,13 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumSignInFailed => 'Sign-In Failed';
   @override String get premiumSignedInTryAgain => 'Signed in. Please tap the button again.';
   @override String get categoryTapToEditIcon => 'Tap to edit icon';
+
+  // Report Details
+  @override String get reportDetailChart => 'Chart';
+  @override String get reportDetailCategory => 'Category';
+  @override String get reportDetailTitle => 'Title';
+  @override String get reportDetailByCategory => 'by Category';
+  @override String get reportDetailByTitle => 'by Title';
+  @override String get reportDetailDailyAvgExpense => 'Daily Avg Expense';
+  @override String get reportDetailDailyAvgIncome => 'Daily Avg Income';
 }

@@ -13,6 +13,7 @@ import '../../../../core/providers/currency_exchange_providers.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/cash_flow_chart.dart';
 import '../widgets/category_pie_chart.dart';
+import '../../../reports/presentation/screens/report_details_screen.dart';
 
 /// Dashboard Overview Screen with Tabs
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -835,19 +836,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: GlassCard(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ReportDetailsScreen(month: s.month),
+                      ),
+                    );
+                  },
+                  child: GlassCard(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Month header
-                      Text(
-                        monthLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            monthLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 14),
                       // Income
@@ -945,6 +964,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                     ],
                   ),
+                ),
                 ),
               );
             },
