@@ -10,6 +10,7 @@
 .history
 .svn/
 .swiftpm/
+/Richer_Mockup_Assets/
 migrate_working_dir/
 
 # IntelliJ related

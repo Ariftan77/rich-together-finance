@@ -35,10 +35,10 @@ void main() async {
   await initializeDateFormatting();
 
   // Lock orientation to portrait
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // await SystemChrome.setPreferredOrientations([
+  //   DeviceOrientation.portraitUp,
+  //   DeviceOrientation.portraitDown,
+  // ]);
 
   // Initialize Firebase first — everything depends on it.
   try {
