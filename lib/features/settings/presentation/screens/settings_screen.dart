@@ -165,10 +165,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Notifications Section
-              _buildSectionHeader(ref.watch(translationsProvider).settingsNotifications),
-              const SizedBox(height: 12),
-              _buildNotificationsSection(),
-              const SizedBox(height: 24),
+              // _buildSectionHeader(ref.watch(translationsProvider).settingsNotifications),
+              // const SizedBox(height: 12),
+              // _buildNotificationsSection(),
+              // const SizedBox(height: 24),
 
               // Premium Section (gated by Remote Config)
               if (RemoteConfigService().premiumEnabled) ...[
