@@ -73,14 +73,21 @@ class CurrencyExchangeService {
     }
 
     // 3. Fetch from Frankfurter API (latest rates only)
-    final apiResult = await _fetchFromApi();
+    try {
+      final apiResult = await _fetchFromApi();
 
-    // Write back down the chain: API → Supabase → local
-    await _safeSupabaseWrite(apiResult);
-    await _safeLocalWrite(apiResult.copyWith(source: 'local'));
+      // Write back down the chain: API → Supabase → local
+      await _safeSupabaseWrite(apiResult);
+      await _safeLocalWrite(apiResult.copyWith(source: 'local'));
 
-    _log(requestedDate, apiResult);
-    return apiResult;
+      _log(requestedDate, apiResult);
+      return apiResult;
+    } catch (e) {
+      developer.log('API fetch failed, falling back to hardcoded rates: $e', name: 'CurrencyExchangeService');
+      final hardcodedResult = _getHardcodedRates(requestedDate);
+      _log(requestedDate, hardcodedResult);
+      return hardcodedResult;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -140,10 +147,14 @@ class CurrencyExchangeService {
       return result;
     }
 
-    throw ExchangeRateException(
+    developer.log(
       'No exchange rate data available for date $date or any fallback date. '
-      'Ensure the app has been online at least once to seed initial rates.',
+      'Falling back to hardcoded rates.',
+      name: 'CurrencyExchangeService'
     );
+    final hardcodedResult = _getHardcodedRates(date);
+    _log(date, hardcodedResult);
+    return hardcodedResult;
   }
 
   // ---------------------------------------------------------------------------
@@ -193,7 +204,7 @@ class CurrencyExchangeService {
 
   Future<RateResult> _fetchFromApi() async {
     try {
-      final response = await _dio.get('$_frankfurterBase/latest?base=USD');
+      final response = await _dio.get('$_frankfurterBase/latest?base=USD').timeout(const Duration(seconds: 3));
 
       if (response.statusCode != 200) {
         throw ExchangeRateException(
@@ -215,6 +226,10 @@ class CurrencyExchangeService {
     } on DioException catch (e) {
       throw ExchangeRateException(
         'Failed to fetch rates from Frankfurter API: ${e.message}',
+      );
+    } catch (e) {
+      throw ExchangeRateException(
+        'Unexpected error or timeout fetching from Frankfurter API: $e',
       );
     }
   }
@@ -322,6 +337,26 @@ class CurrencyExchangeService {
     } catch (e) {
       developer.log('Local DB write failed (non-fatal): $e', name: 'CurrencyExchangeService');
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hardcoded Fallback
+  // ---------------------------------------------------------------------------
+
+  RateResult _getHardcodedRates(String date) {
+    return RateResult(
+      rateDate: date,
+      baseCurrency: 'USD',
+      rates: {
+        'USD': 1.0,
+        'IDR': 16800.0,
+        'SGD': 1.35,
+        'MYR': 4.75,
+        'THB': 36.50,
+      },
+      isExactDate: false,
+      source: 'hardcoded',
+    );
   }
 
   // ---------------------------------------------------------------------------
