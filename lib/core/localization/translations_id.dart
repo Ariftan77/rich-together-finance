@@ -168,7 +168,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get helpFaq7Question => 'Bisakah saya menggunakan aplikasi secara offline?';
   @override String get helpFaq7Answer => 'Tentu saja! Richer - Money Management bekerja 100% offline. Internet hanya dibutuhkan untuk fitur opsional seperti pembaruan kurs mata uang.';
   @override String get helpFaq8Question => 'Apakah database saya terenkripsi?';
-  @override String get helpFaq8Answer => 'Belum — enkripsi database (SQLCipher/AES-256) direncanakan untuk pembaruan mendatang. Data Anda disimpan dalam database SQLite lokal di perangkat Anda dan tidak pernah dikirim ke luar. Sementara itu, kami menyarankan untuk mengamankan perangkat Anda dengan kunci layar yang kuat.';
+  @override String get helpFaq8Answer => 'Ya — data Anda disimpan dalam database SQLite lokal yang dienkripsi dengan SQLCipher (AES-256). Data Anda tidak pernah dikirim ke luar dan tetap sepenuhnya privat di perangkat Anda.';
   @override String get helpContactSupport => 'Hubungi tim dukungan kami';
   @override String get helpContactEmail => 'axiomtech.dev@gmail.com';
 

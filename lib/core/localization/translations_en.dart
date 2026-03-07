@@ -168,7 +168,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get helpFaq7Question => 'Can I use the app offline?';
   @override String get helpFaq7Answer => 'Absolutely! Richer - Money Management works 100% offline. Internet is only needed for optional features like exchange rate updates.';
   @override String get helpFaq8Question => 'Is my database encrypted?';
-  @override String get helpFaq8Answer => 'Not yet — database encryption (SQLCipher/AES-256) is planned for a future update. Your data is stored in a local SQLite database on your device and never transmitted externally. We recommend securing your device with a strong screen lock in the meantime.';
+  @override String get helpFaq8Answer => 'Yes — your data is stored in a local SQLite database encrypted with SQLCipher (AES-256). Your data is never transmitted externally and stays entirely private on your device.';
   @override String get helpContactSupport => 'Contact our support team';
   @override String get helpContactEmail => 'axiomtech.dev@gmail.com';
 
