@@ -1510,6 +1510,18 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _lastActivityDateMeta = const VerificationMeta(
+    'lastActivityDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastActivityDate =
+      GeneratedColumn<DateTime>(
+        'last_activity_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _remoteIdMeta = const VerificationMeta(
     'remoteId',
   );
@@ -1560,6 +1572,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     isActive,
     createdAt,
     updatedAt,
+    lastActivityDate,
     remoteId,
     deletedAt,
     isSynced,
@@ -1638,6 +1651,15 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('last_activity_date')) {
+      context.handle(
+        _lastActivityDateMeta,
+        lastActivityDate.isAcceptableOrUnknown(
+          data['last_activity_date']!,
+          _lastActivityDateMeta,
+        ),
+      );
+    }
     if (data.containsKey('remote_id')) {
       context.handle(
         _remoteIdMeta,
@@ -1713,6 +1735,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      lastActivityDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_activity_date'],
+      ),
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
@@ -1751,6 +1777,7 @@ class Account extends DataClass implements Insertable<Account> {
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? lastActivityDate;
   final String? remoteId;
   final DateTime? deletedAt;
   final bool isSynced;
@@ -1766,6 +1793,7 @@ class Account extends DataClass implements Insertable<Account> {
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
+    this.lastActivityDate,
     this.remoteId,
     this.deletedAt,
     required this.isSynced,
@@ -1794,6 +1822,9 @@ class Account extends DataClass implements Insertable<Account> {
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || lastActivityDate != null) {
+      map['last_activity_date'] = Variable<DateTime>(lastActivityDate);
+    }
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -1819,6 +1850,9 @@ class Account extends DataClass implements Insertable<Account> {
       isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      lastActivityDate: lastActivityDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastActivityDate),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -1850,6 +1884,9 @@ class Account extends DataClass implements Insertable<Account> {
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      lastActivityDate: serializer.fromJson<DateTime?>(
+        json['lastActivityDate'],
+      ),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
@@ -1874,6 +1911,7 @@ class Account extends DataClass implements Insertable<Account> {
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'lastActivityDate': serializer.toJson<DateTime?>(lastActivityDate),
       'remoteId': serializer.toJson<String?>(remoteId),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'isSynced': serializer.toJson<bool>(isSynced),
@@ -1892,6 +1930,7 @@ class Account extends DataClass implements Insertable<Account> {
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<DateTime?> lastActivityDate = const Value.absent(),
     Value<String?> remoteId = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     bool? isSynced,
@@ -1907,6 +1946,9 @@ class Account extends DataClass implements Insertable<Account> {
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    lastActivityDate: lastActivityDate.present
+        ? lastActivityDate.value
+        : this.lastActivityDate,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     isSynced: isSynced ?? this.isSynced,
@@ -1926,6 +1968,9 @@ class Account extends DataClass implements Insertable<Account> {
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastActivityDate: data.lastActivityDate.present
+          ? data.lastActivityDate.value
+          : this.lastActivityDate,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
@@ -1946,6 +1991,7 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('lastActivityDate: $lastActivityDate, ')
           ..write('remoteId: $remoteId, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced')
@@ -1966,6 +2012,7 @@ class Account extends DataClass implements Insertable<Account> {
     isActive,
     createdAt,
     updatedAt,
+    lastActivityDate,
     remoteId,
     deletedAt,
     isSynced,
@@ -1985,6 +2032,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.lastActivityDate == this.lastActivityDate &&
           other.remoteId == this.remoteId &&
           other.deletedAt == this.deletedAt &&
           other.isSynced == this.isSynced);
@@ -2002,6 +2050,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<DateTime?> lastActivityDate;
   final Value<String?> remoteId;
   final Value<DateTime?> deletedAt;
   final Value<bool> isSynced;
@@ -2017,6 +2066,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.lastActivityDate = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -2033,6 +2083,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.isActive = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.lastActivityDate = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -2054,6 +2105,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<DateTime>? lastActivityDate,
     Expression<String>? remoteId,
     Expression<DateTime>? deletedAt,
     Expression<bool>? isSynced,
@@ -2070,6 +2122,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (lastActivityDate != null) 'last_activity_date': lastActivityDate,
       if (remoteId != null) 'remote_id': remoteId,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (isSynced != null) 'is_synced': isSynced,
@@ -2088,6 +2141,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<DateTime?>? lastActivityDate,
     Value<String?>? remoteId,
     Value<DateTime?>? deletedAt,
     Value<bool>? isSynced,
@@ -2104,6 +2158,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastActivityDate: lastActivityDate ?? this.lastActivityDate,
       remoteId: remoteId ?? this.remoteId,
       deletedAt: deletedAt ?? this.deletedAt,
       isSynced: isSynced ?? this.isSynced,
@@ -2150,6 +2205,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (lastActivityDate.present) {
+      map['last_activity_date'] = Variable<DateTime>(lastActivityDate.value);
+    }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
     }
@@ -2176,6 +2234,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('lastActivityDate: $lastActivityDate, ')
           ..write('remoteId: $remoteId, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced')
@@ -12251,6 +12310,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       Value<bool> isActive,
       required DateTime createdAt,
       required DateTime updatedAt,
+      Value<DateTime?> lastActivityDate,
       Value<String?> remoteId,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
@@ -12268,6 +12328,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<DateTime?> lastActivityDate,
       Value<String?> remoteId,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
@@ -12418,6 +12479,11 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastActivityDate => $composableBuilder(
+    column: $table.lastActivityDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12595,6 +12661,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastActivityDate => $composableBuilder(
+    column: $table.lastActivityDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
     column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
@@ -12674,6 +12745,11 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastActivityDate => $composableBuilder(
+    column: $table.lastActivityDate,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -12828,6 +12904,7 @@ class $$AccountsTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> lastActivityDate = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
@@ -12843,6 +12920,7 @@ class $$AccountsTableTableManager
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                lastActivityDate: lastActivityDate,
                 remoteId: remoteId,
                 deletedAt: deletedAt,
                 isSynced: isSynced,
@@ -12860,6 +12938,7 @@ class $$AccountsTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
+                Value<DateTime?> lastActivityDate = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
@@ -12875,6 +12954,7 @@ class $$AccountsTableTableManager
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                lastActivityDate: lastActivityDate,
                 remoteId: remoteId,
                 deletedAt: deletedAt,
                 isSynced: isSynced,

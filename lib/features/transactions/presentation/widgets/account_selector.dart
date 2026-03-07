@@ -11,6 +11,7 @@ class AccountSelector extends StatefulWidget {
   final ValueChanged<int?> onAccountSelected;
   final Map<int, double>? balances;
   final bool showDecimal;
+  final VoidCallback? onAddNew;
 
   const AccountSelector({
     super.key,
@@ -19,6 +20,7 @@ class AccountSelector extends StatefulWidget {
     required this.onAccountSelected,
     this.balances,
     this.showDecimal = false,
+    this.onAddNew,
   });
 
   @override
@@ -85,6 +87,37 @@ class _AccountSelectorState extends State<AccountSelector> {
                     ),
                   ),
                 ),
+                if (widget.onAddNew != null)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onAddNew!();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add, color: AppColors.primaryGold, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'New',
+                            style: TextStyle(
+                              color: AppColors.primaryGold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.6)),
                   onPressed: () => Navigator.pop(context),

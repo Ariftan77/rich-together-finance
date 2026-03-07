@@ -18,6 +18,7 @@ import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/recurring_service.dart';
 import '../widgets/account_selector.dart';
+import '../widgets/add_account_dialog.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
@@ -653,7 +654,26 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
 
 
-// ... inside the class ...
+  Future<void> _openAddAccountDialog({required bool isToAccount}) async {
+    // Small delay so the bottom sheet fully closes before showing the dialog
+    await Future.delayed(const Duration(milliseconds: 150));
+    if (!mounted) return;
+
+    final newId = await showDialog<int>(
+      context: context,
+      builder: (ctx) => const AddAccountDialog(),
+    );
+
+    if (newId != null && mounted) {
+      setState(() {
+        if (isToAccount) {
+          _selectedToAccountId = newId;
+        } else {
+          _selectedAccountId = newId;
+        }
+      });
+    }
+  }
 
   Widget _buildAccountSelector({
     required BuildContext context,
@@ -703,6 +723,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                       }
                     });
                   },
+                  onAddNew: () => _openAddAccountDialog(isToAccount: isToAccount),
                 ),
               ),
             );

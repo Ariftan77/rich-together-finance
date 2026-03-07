@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -162,6 +162,21 @@ class AppDatabase extends _$AppDatabase {
             DELETE FROM user_settings
             WHERE id NOT IN (
               SELECT MIN(id) FROM user_settings GROUP BY profile_id
+            )
+          ''');
+        }
+        if (from < 16) {
+          try {
+            await m.addColumn(accounts, accounts.lastActivityDate);
+          } catch (e) {
+            // Ignore
+          }
+          await customStatement('''
+            UPDATE accounts 
+            SET last_activity_date = (
+              SELECT MAX(date) FROM transactions 
+              WHERE transactions.account_id = accounts.id 
+                 OR transactions.to_account_id = accounts.id
             )
           ''');
         }

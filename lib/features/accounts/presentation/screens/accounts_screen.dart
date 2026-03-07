@@ -266,6 +266,18 @@ class AccountsScreen extends ConsumerWidget {
         return nameMatch || typeMatch || currencyMatch;
       }).toList();
     }
+    
+    result.sort((a, b) {
+      if (a.lastActivityDate != null && b.lastActivityDate != null) {
+        return b.lastActivityDate!.compareTo(a.lastActivityDate!);
+      } else if (a.lastActivityDate != null) {
+        return -1;
+      } else if (b.lastActivityDate != null) {
+        return 1;
+      }
+      return a.name.compareTo(b.name);
+    });
+
     return result;
   }
 }

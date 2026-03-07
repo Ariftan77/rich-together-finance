@@ -75,20 +75,53 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
           .watch();
 
   /// Create a new transaction
-  Future<int> insertTransaction(TransactionsCompanion transaction) =>
-      into(transactions).insert(transaction);
+  Future<int> insertTransaction(TransactionsCompanion transaction) async {
+    final id = await into(transactions).insert(transaction);
+    if (transaction.date.present) {
+      final date = transaction.date.value;
+      if (transaction.accountId.present) {
+        await _updateAccountActivity(transaction.accountId.value, date);
+      }
+      if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
+        await _updateAccountActivity(transaction.toAccountId.value!, date);
+      }
+    }
+    return id;
+  }
 
   /// Get transaction by ID
   Future<Transaction?> getTransactionById(int id) =>
       (select(transactions)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   /// Update a transaction by ID with companion
-  Future<int> updateTransaction(int id, TransactionsCompanion transaction) =>
-      (update(transactions)..where((t) => t.id.equals(id))).write(transaction);
+  Future<int> updateTransaction(int id, TransactionsCompanion transaction) async {
+    final result = await (update(transactions)..where((t) => t.id.equals(id))).write(transaction);
+    if (transaction.date.present) {
+      final date = transaction.date.value;
+      if (transaction.accountId.present) {
+        await _updateAccountActivity(transaction.accountId.value, date);
+      }
+      if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
+        await _updateAccountActivity(transaction.toAccountId.value!, date);
+      }
+    }
+    return result;
+  }
 
   /// Delete a transaction
   Future<int> deleteTransaction(int id) =>
       (delete(transactions)..where((t) => t.id.equals(id))).go();
+
+  Future<void> _updateAccountActivity(int accountId, DateTime date) async {
+    final account = await (select(accounts)..where((a) => a.id.equals(accountId))).getSingleOrNull();
+    if (account != null) {
+      // Only update if new date is newer than current, or if current is null
+      if (account.lastActivityDate == null || date.isAfter(account.lastActivityDate!)) {
+        await (update(accounts)..where((a) => a.id.equals(accountId)))
+            .write(AccountsCompanion(lastActivityDate: Value(date)));
+      }
+    }
+  }
 
   /// Find a transaction that likely matches a debt creation
   /// Matches on accountId, amount, and approximate time

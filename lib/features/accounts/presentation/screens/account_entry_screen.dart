@@ -222,6 +222,84 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     );
   }
 
+  Future<void> _deleteAccount() async {
+    if (widget.account == null) return;
+
+    // Check for existing transactions
+    final txDao = ref.read(transactionDaoProvider);
+    final txs = await txDao.getTransactionsByAccount(widget.account!.id);
+
+    if (!mounted) return;
+
+    if (txs.isNotEmpty) {
+      // Cannot delete — has records
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF2D2416),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.block, color: Colors.red, size: 22),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Cannot Delete', style: TextStyle(color: Colors.white, fontSize: 16)),
+              ),
+            ],
+          ),
+          content: Text(
+            '"${widget.account!.name}" has ${txs.length} transaction${txs.length == 1 ? '' : 's'} linked to it and cannot be deleted.\n\nTo remove this account, first delete all its transactions.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('OK', style: TextStyle(color: AppColors.primaryGold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Confirm deletion
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2D2416),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline, color: Colors.red, size: 22),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('Delete Account', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete "${widget.account!.name}"?\n\nThis action cannot be undone.',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref.read(accountDaoProvider).deleteAccount(widget.account!.id);
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.account != null;
@@ -255,6 +333,11 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                 icon: const Icon(Icons.history, color: Colors.white),
                 tooltip: ref.watch(translationsProvider).accountViewHistory,
                 onPressed: _viewTransactionHistory,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                tooltip: 'Delete Account',
+                onPressed: _deleteAccount,
               ),
             ] : null,
           ),
