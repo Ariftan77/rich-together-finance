@@ -5,21 +5,38 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
+import '../../../../core/services/currency_exchange_service.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
+
+class GoalAccountBalance {
+  final GoalAccount goalAccount;
+  final Account account;
+  final double originalAmount;
+  final double convertedAmount;
+  final double exchangeRate;
+
+  GoalAccountBalance({
+    required this.goalAccount,
+    required this.account,
+    required this.originalAmount,
+    required this.convertedAmount,
+    required this.exchangeRate,
+  });
+}
 
 class GoalWithProgress {
   final Goal goal;
   final double currentAmount;
   final double progress;
   final double? monthlyNeeded;
-  final List<GoalAccount> linkedAccounts;
+  final List<GoalAccountBalance> accountBalances;
 
   GoalWithProgress({
     required this.goal,
     required this.currentAmount,
     required this.progress,
     this.monthlyNeeded,
-    required this.linkedAccounts,
+    required this.accountBalances,
   });
 }
 
@@ -57,6 +74,7 @@ final goalsWithProgressProvider =
     for (final goal in goals) {
       final goalAccounts = await goalDao.getGoalAccounts(goal.id);
       double currentAmount = 0;
+      final List<GoalAccountBalance> accountBalances = [];
 
       for (final ga in goalAccounts) {
         final account = accountsMap[ga.accountId];
@@ -69,17 +87,29 @@ final goalsWithProgressProvider =
           balance = balances[ga.accountId] ?? 0;
         }
 
+        double convertedAmount = balance;
+        double rate = 1.0;
+
         // Convert to goal's target currency if different
         if (account.currency != goal.targetCurrency) {
-          currentAmount += CurrencyExchangeService.convertCurrency(
-            balance,
+          rate = CurrencyExchangeService.convertCurrency(
+            1.0,
             account.currency.code,
             goal.targetCurrency.code,
             rateResult.rates,
           );
-        } else {
-          currentAmount += balance;
+          convertedAmount = balance * rate;
         }
+
+        currentAmount += convertedAmount;
+
+        accountBalances.add(GoalAccountBalance(
+          goalAccount: ga,
+          account: account,
+          originalAmount: balance,
+          convertedAmount: convertedAmount,
+          exchangeRate: rate,
+        ));
       }
 
       double? monthlyNeeded;
@@ -100,7 +130,7 @@ final goalsWithProgressProvider =
         progress:
             goal.targetAmount > 0 ? currentAmount / goal.targetAmount : 0,
         monthlyNeeded: monthlyNeeded,
-        linkedAccounts: goalAccounts,
+        accountBalances: accountBalances,
       ));
     }
 

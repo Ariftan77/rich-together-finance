@@ -18,9 +18,15 @@ import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
 
+import '../../../../shared/utils/indonesian_currency_formatter.dart';
+
 
 /// Exposes the active sub-tab index so DashboardShell can show the right FAB.
 final wealthTabIndexProvider = StateProvider<int>((ref) => 0);
+
+final _budgetCurrencyFilterProvider = StateProvider.autoDispose<Set<Currency>>((ref) => {});
+final _budgetPeriodFilterProvider = StateProvider.autoDispose<Set<BudgetPeriod>>((ref) => {});
+final _budgetFilterExpandedProvider = StateProvider.autoDispose<bool>((ref) => false);
 
 class WealthScreen extends ConsumerStatefulWidget {
   const WealthScreen({super.key});
@@ -130,12 +136,132 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
+    final selectedCurrencies = ref.watch(_budgetCurrencyFilterProvider);
+    final selectedPeriods = ref.watch(_budgetPeriodFilterProvider);
+    final isExpanded = ref.watch(_budgetFilterExpandedProvider);
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => ref.read(_budgetFilterExpandedProvider.notifier).state = !isExpanded,
+                child: Row(
+                  children: [
+                    Text(
+                      'Filter',
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                    ),
+                    if (selectedCurrencies.isNotEmpty || selectedPeriods.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGold,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const SizedBox(width: 4, height: 4),
+                      ),
+                  ],
+                ),
+              ),
+              if (isExpanded) ...[
+                const SizedBox(height: 12),
+                Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: selectedCurrencies.isEmpty,
+                        onTap: () => ref.read(_budgetCurrencyFilterProvider.notifier).state = {},
+                      ),
+                      const SizedBox(width: 8),
+                      ...Currency.values.map((c) {
+                        final isSelected = selectedCurrencies.contains(c);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _FilterChip(
+                            label: c.code,
+                            isSelected: isSelected,
+                            onTap: () {
+                              final current = Set<Currency>.from(ref.read(_budgetCurrencyFilterProvider));
+                              if (isSelected) {
+                                current.remove(c);
+                              } else {
+                                current.add(c);
+                              }
+                              ref.read(_budgetCurrencyFilterProvider.notifier).state = current;
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Period', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: selectedPeriods.isEmpty,
+                        onTap: () => ref.read(_budgetPeriodFilterProvider.notifier).state = {},
+                      ),
+                      const SizedBox(width: 8),
+                      ...BudgetPeriod.values.map((p) {
+                        final isSelected = selectedPeriods.contains(p);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _FilterChip(
+                            label: p.displayName,
+                            isSelected: isSelected,
+                            onTap: () {
+                              final current = Set<BudgetPeriod>.from(ref.read(_budgetPeriodFilterProvider));
+                              if (isSelected) {
+                                current.remove(p);
+                              } else {
+                                current.add(p);
+                              }
+                              ref.read(_budgetPeriodFilterProvider.notifier).state = current;
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
         Expanded(
           child: budgetsAsync.when(
-            data: (budgets) {
+            data: (allBudgets) {
+              var budgets = allBudgets;
+              if (selectedCurrencies.isNotEmpty) {
+                budgets = budgets.where((b) => selectedCurrencies.contains(b.budget.currency)).toList();
+              }
+              if (selectedPeriods.isNotEmpty) {
+                budgets = budgets.where((b) => selectedPeriods.contains(b.budget.period)).toList();
+              }
+
               if (budgets.isEmpty) {
                 return Center(
                   child: Column(
@@ -414,6 +540,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 builder: (context) => GoalEntryScreen(goal: item.goal)),
           );
         },
+        onLongPress: () => _showGoalAccountsBreakdown(context, item),
         child: GlassCard(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -967,6 +1094,158 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 style: AppTypography.textTheme.bodyMedium
                     ?.copyWith(color: Colors.white30)),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showGoalAccountsBreakdown(BuildContext context, GoalWithProgress item) {
+    if (item.accountBalances.isEmpty) return;
+
+    final showDecimal = ref.read(showDecimalProvider);
+    final trans = ref.read(translationsProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF2D2416),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.flag, color: AppColors.primaryGold, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.goal.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ...item.accountBalances.map((ab) {
+                final isForeign = ab.account.currency != item.goal.targetCurrency;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              ab.account.currency.code,
+                              style: const TextStyle(
+                                color: AppColors.primaryGold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              ab.account.name,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '${item.goal.targetCurrency.symbol} ${Formatters.formatCurrency(ab.convertedAmount, showDecimal: showDecimal)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isForeign) ...[
+                        const SizedBox(height: 3),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${Formatters.formatRate(ab.exchangeRate)} × ${ab.account.currency.symbol} ${Formatters.formatCurrency(ab.originalAmount, showDecimal: showDecimal)}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    trans.close,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGold : AppColors.glassBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.textTheme.labelMedium!.copyWith(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );

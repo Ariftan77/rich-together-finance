@@ -4,6 +4,7 @@ import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../widgets/account_card.dart';
 import '../providers/balance_provider.dart';
@@ -11,6 +12,9 @@ import 'account_entry_screen.dart';
 
 /// Search query state for the wallet screen.
 final _walletSearchProvider = StateProvider.autoDispose<String>((ref) => '');
+final _walletCurrencyFilterProvider = StateProvider.autoDispose<Set<Currency>>((ref) => {});
+final _walletTypeFilterProvider = StateProvider.autoDispose<Set<AccountType>>((ref) => {});
+final _walletFilterExpandedProvider = StateProvider.autoDispose<bool>((ref) => false);
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -21,6 +25,9 @@ class AccountsScreen extends ConsumerWidget {
     final balances = ref.watch(accountBalanceProvider);
     final trans = ref.watch(translationsProvider);
     final searchQuery = ref.watch(_walletSearchProvider);
+    final selectedCurrencies = ref.watch(_walletCurrencyFilterProvider);
+    final selectedTypes = ref.watch(_walletTypeFilterProvider);
+    final isExpanded = ref.watch(_walletFilterExpandedProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -63,6 +70,108 @@ class AccountsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
+              // Filter Toggle
+              GestureDetector(
+                onTap: () => ref.read(_walletFilterExpandedProvider.notifier).state = !isExpanded,
+                child: Row(
+                  children: [
+                    Text(
+                      'Filter',
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                    ),
+                    if (selectedCurrencies.isNotEmpty || selectedTypes.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGold,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const SizedBox(width: 4, height: 4),
+                      ),
+                  ],
+                ),
+              ),
+              if (isExpanded) ...[
+                const SizedBox(height: 12),
+                Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: selectedCurrencies.isEmpty,
+                        onTap: () => ref.read(_walletCurrencyFilterProvider.notifier).state = {},
+                      ),
+                      const SizedBox(width: 8),
+                      ...Currency.values.map((c) {
+                        final isSelected = selectedCurrencies.contains(c);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _FilterChip(
+                            label: c.code,
+                            isSelected: isSelected,
+                            onTap: () {
+                              final current = Set<Currency>.from(ref.read(_walletCurrencyFilterProvider));
+                              if (isSelected) {
+                                current.remove(c);
+                              } else {
+                                current.add(c);
+                              }
+                              ref.read(_walletCurrencyFilterProvider.notifier).state = current;
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Account Type', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: selectedTypes.isEmpty,
+                        onTap: () => ref.read(_walletTypeFilterProvider.notifier).state = {},
+                      ),
+                      const SizedBox(width: 8),
+                      ...AccountType.values.map((t) {
+                        final isSelected = selectedTypes.contains(t);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _FilterChip(
+                            label: t.displayName,
+                            isSelected: isSelected,
+                            onTap: () {
+                              final current = Set<AccountType>.from(ref.read(_walletTypeFilterProvider));
+                              if (isSelected) {
+                                current.remove(t);
+                              } else {
+                                current.add(t);
+                              }
+                              ref.read(_walletTypeFilterProvider.notifier).state = current;
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Expanded(
                 child: accountsAsync.when(
                   data: (accounts) {
@@ -76,7 +185,12 @@ class AccountsScreen extends ConsumerWidget {
                       );
                     }
 
-                    final filtered = _filterAccounts(accounts, searchQuery);
+                    final filtered = _filterAccounts(
+                      accounts,
+                      searchQuery,
+                      selectedCurrencies,
+                      selectedTypes,
+                    );
 
                     if (filtered.isEmpty) {
                       return Center(
@@ -128,16 +242,62 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  List<Account> _filterAccounts(List<Account> accounts, String query) {
-    if (query.isEmpty) return accounts;
-    final q = query.toLowerCase();
-    return accounts.where((account) {
-      final nameMatch = account.name.toLowerCase().contains(q);
-      final typeMatch = account.type.displayName.toLowerCase().contains(q);
-      final currencyMatch = account.currency.code.toLowerCase().contains(q) ||
-          account.currency.name.toLowerCase().contains(q) ||
-          account.currency.symbol.toLowerCase().contains(q);
-      return nameMatch || typeMatch || currencyMatch;
-    }).toList();
+  List<Account> _filterAccounts(
+    List<Account> accounts,
+    String query,
+    Set<Currency> currencies,
+    Set<AccountType> types,
+  ) {
+    var result = accounts;
+    if (currencies.isNotEmpty) {
+      result = result.where((a) => currencies.contains(a.currency)).toList();
+    }
+    if (types.isNotEmpty) {
+      result = result.where((a) => types.contains(a.type)).toList();
+    }
+    if (query.isNotEmpty) {
+      final q = query.toLowerCase();
+      result = result.where((account) {
+        final nameMatch = account.name.toLowerCase().contains(q);
+        final typeMatch = account.type.displayName.toLowerCase().contains(q);
+        final currencyMatch = account.currency.code.toLowerCase().contains(q) ||
+            account.currency.name.toLowerCase().contains(q) ||
+            account.currency.symbol.toLowerCase().contains(q);
+        return nameMatch || typeMatch || currencyMatch;
+      }).toList();
+    }
+    return result;
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGold : AppColors.glassBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.textTheme.labelMedium!.copyWith(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
   }
 }

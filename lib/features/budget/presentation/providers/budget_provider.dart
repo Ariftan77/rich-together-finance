@@ -145,6 +145,7 @@ final budgetsWithSpendingProvider =
       ));
     }
 
+    result.sort((a, b) => b.progress.compareTo(a.progress));
 
     return result;
   });
