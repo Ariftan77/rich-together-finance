@@ -354,6 +354,10 @@ abstract class AppTranslations {
   String get settingsClearEverything;
   String get settingsClearSuccess;
   String get settingsClearError;
+  String get deleteProfileTitle;
+  String get deleteProfileContent;
+  String get deleteProfileButton;
+  String get deleteProfileSuccess;
   String get genericCancel;
   String get genericVerify;
   String get genericSet;

@@ -357,6 +357,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsClearEverything => 'Clear Everything';
   @override String get settingsClearSuccess => 'All data cleared successfully';
   @override String get settingsClearError => 'Error clearing data';
+  @override String get deleteProfileTitle => 'Delete Profile';
+  @override String get deleteProfileContent => 'This will permanently delete this profile and ALL its data including transactions, accounts, categories, budgets, and goals.\n\nThis action cannot be undone.';
+  @override String get deleteProfileButton => 'Delete Profile';
+  @override String get deleteProfileSuccess => 'Profile deleted successfully';
   @override String get genericCancel => 'Cancel';
   @override String get genericVerify => 'Verify';
   @override String get genericSet => 'Set PIN';

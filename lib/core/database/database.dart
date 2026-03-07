@@ -410,6 +410,50 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Deletes all data for a specific profile, then deletes the profile itself.
+  /// Throws if trying to delete the last remaining profile.
+  Future<void> clearAndDeleteProfile(int profileId) async {
+    final profileCount = await profiles.count().getSingle();
+    if (profileCount <= 1) {
+      throw Exception('Cannot delete the last profile');
+    }
+
+    // If deleting the active profile, switch to another first
+    final profile = await (select(profiles)..where((p) => p.id.equals(profileId))).getSingleOrNull();
+    if (profile != null && profile.isActive) {
+      final other = await (select(profiles)..where((p) => p.id.equals(profileId).not())).getSingle();
+      await (update(profiles)..where((p) => p.isActive.equals(true)))
+          .write(const ProfilesCompanion(isActive: Value(false)));
+      await (update(profiles)..where((p) => p.id.equals(other.id)))
+          .write(const ProfilesCompanion(isActive: Value(true)));
+    }
+
+    await transaction(() async {
+      // Delete children of holdings before holdings itself
+      final profileHoldings = await (select(holdings)..where((h) => h.profileId.equals(profileId))).get();
+      for (final h in profileHoldings) {
+        await (delete(investmentTransactions)..where((it) => it.holdingId.equals(h.id))).go();
+      }
+
+      // Delete children of goals before goals itself
+      final profileGoals = await (select(goals)..where((g) => g.profileId.equals(profileId))).get();
+      for (final g in profileGoals) {
+        await (delete(goalAccounts)..where((ga) => ga.goalId.equals(g.id))).go();
+      }
+
+      await (delete(transactions)..where((t) => t.profileId.equals(profileId))).go();
+      await (delete(recurring)..where((r) => r.profileId.equals(profileId))).go();
+      await (delete(budgets)..where((b) => b.profileId.equals(profileId))).go();
+      await (delete(debts)..where((d) => d.profileId.equals(profileId))).go();
+      await (delete(goals)..where((g) => g.profileId.equals(profileId))).go();
+      await (delete(holdings)..where((h) => h.profileId.equals(profileId))).go();
+      await (delete(categories)..where((c) => c.profileId.equals(profileId))).go();
+      await (delete(accounts)..where((a) => a.profileId.equals(profileId))).go();
+      await (delete(userSettings)..where((s) => s.profileId.equals(profileId))).go();
+      await (delete(profiles)..where((p) => p.id.equals(profileId))).go();
+    });
+  }
+
   /// Wipes all data from the database and re-seeds default data
   Future<void> clearAllData() async {
     await transaction(() async {
