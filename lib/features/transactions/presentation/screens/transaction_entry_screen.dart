@@ -52,8 +52,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   // Raw amount value (without formatting)
   String _rawAmount = '';
 
-  // Original amount when editing (to skip balance validation if unchanged)
+  // Original values when editing (to correctly validate balance changes)
   double? _originalAmount;
+  int? _originalAccountId;
 
   // Focus node for title field (to detect when user finishes typing)
   final _titleFocusNode = FocusNode();
@@ -112,6 +113,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _selectedDate = transaction.date;
         _rawAmount = transaction.amount.toString();
         _originalAmount = transaction.amount;
+        _originalAccountId = transaction.accountId;
         
         // Format amount
         _amountController.text = Formatters.formatCurrency(
@@ -269,30 +271,24 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       final selectedAccount = await ref.read(accountDaoProvider).getAccountById(_selectedAccountId!);
       final isCreditCard = selectedAccount?.type.isCreditCard ?? false;
 
-      // Validate sufficient balance for expenses (skip for credit cards and unchanged edits)
+      // Validate sufficient balance for expenses and transfers
       final isEditing = widget.transactionId != null;
-      final amountUnchanged = isEditing && _originalAmount != null && amount == _originalAmount;
+      final sameAccount = _selectedAccountId == _originalAccountId;
+      // Skip only when editing the same account with the same amount (net effect on balance is zero)
+      final skipBalanceCheck = isEditing && _originalAmount != null && sameAccount && amount == _originalAmount;
 
-      if (_selectedType == TransactionType.expense && !isCreditCard && !amountUnchanged) {
+      if ((_selectedType == TransactionType.expense || _selectedType == TransactionType.transfer) &&
+          !isCreditCard && !skipBalanceCheck) {
         final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
-        if (amount > accountBalance) {
+        // When editing the same account, add back the original amount since it's already deducted
+        // in the stored balance. This gives the true available balance before this transaction.
+        final effectiveBalance = (isEditing && sameAccount && _originalAmount != null)
+            ? accountBalance + _originalAmount!
+            : accountBalance;
+        if (amount > effectiveBalance) {
           if (mounted) {
             messenger.showSnackBar(
-              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
-            );
-            setState(() => _isSaving = false);
-          }
-          return;
-        }
-      }
-
-      // Validate sufficient balance for transfers (skip for credit cards and unchanged edits)
-      if (_selectedType == TransactionType.transfer && !isCreditCard && !amountUnchanged) {
-        final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
-        if (amount > accountBalance) {
-          if (mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(accountBalance)}')),
+              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(effectiveBalance)}')),
             );
             setState(() => _isSaving = false);
           }
