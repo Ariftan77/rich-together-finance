@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/rate_result.dart';
@@ -20,6 +21,16 @@ class CurrencyExchangeService {
   static const _frankfurterBase = 'https://api.frankfurter.app';
   static const _supabaseTable = 'exchange_rates';
   static const _weekendToleranceDays = 3;
+
+  // In-memory cache — shared across all callers within the same app session.
+  // Keyed by date string; cleared automatically when the date changes.
+  RateResult? _memCache;
+  String? _memCacheDate;
+
+  // In-flight request coalescing — all concurrent callers for the same date
+  // share a single Future so only one Supabase/API call is ever made.
+  Future<RateResult>? _inFlightFuture;
+  String? _inFlightDate;
 
   CurrencyExchangeService({
     required LocalRateStore localStore,
@@ -42,92 +53,156 @@ class CurrencyExchangeService {
   ///   Local exact → Local tolerance → Supabase exact → Supabase tolerance → hardcoded
   Future<RateResult> getRates({String? date}) async {
     final requestedDate = date ?? _today();
+
+    // In-memory cache hit — return immediately, no DB or network I/O
+    if (_memCache != null && _memCacheDate == requestedDate) {
+      debugPrint('[CurrencyExchangeService] requested=$requestedDate source=mem_cache total_ms=0');
+      return _memCache!;
+    }
+
+    // Coalesce concurrent calls — if a fetch is already in-flight for today,
+    // return the same Future so only one Supabase/API call is made.
+    if (_inFlightFuture != null && _inFlightDate == requestedDate) {
+      debugPrint('[CurrencyExchangeService] requested=$requestedDate source=coalesced');
+      return _inFlightFuture!;
+    }
+
+    final future = _doGetRates(requestedDate);
+    _inFlightFuture = future;
+    _inFlightDate = requestedDate;
+    try {
+      return await future;
+    } finally {
+      if (_inFlightDate == requestedDate) {
+        _inFlightFuture = null;
+        _inFlightDate = null;
+      }
+    }
+  }
+
+  Future<RateResult> _doGetRates(String requestedDate) async {
     final isWeekend = _isWeekend(requestedDate);
+    final totalSw = Stopwatch()..start();
+    final steps = <String>[];
+
+    int _ms(Stopwatch sw) { sw.stop(); return sw.elapsedMilliseconds; }
 
     // 1. Exact match in local DB (always checked first)
+    var sw = Stopwatch()..start();
     final local = await _localStore.get(requestedDate);
+    steps.add('local_exact:${_ms(sw)}ms(${local != null ? 'hit' : 'miss'})');
     if (local != null) {
       final patched = _patchMissingRates(local, requestedDate);
-      _log(requestedDate, patched);
+      _cacheResult(requestedDate, patched);
+      _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
 
     // 1b. Weekend tolerance — only on Sat/Sun, skip on weekdays so we always try the API
     if (isWeekend) {
+      sw = Stopwatch()..start();
       final latestLocal = await _localStore.getLatest();
       if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
+        steps.add('local_tolerance:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
         final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
-        _log(requestedDate, patched);
+        _cacheResult(requestedDate, patched);
+        _log(requestedDate, patched, totalSw: totalSw, steps: steps);
         return patched;
       }
+      steps.add('local_tolerance:${_ms(sw)}ms(miss)');
     }
 
     // 2. Exact match in Supabase
+    sw = Stopwatch()..start();
     final supabaseResult = await _fetchFromSupabase(requestedDate);
+    steps.add('supabase_exact:${_ms(sw)}ms(${supabaseResult != null ? 'hit' : 'miss'})');
     if (supabaseResult != null) {
       final patched = _patchMissingRates(supabaseResult, requestedDate);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
-      _log(requestedDate, patched);
+      _cacheResult(requestedDate, patched);
+      _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
 
     // 2b. Weekend tolerance from Supabase — only on Sat/Sun
     if (isWeekend) {
+      sw = Stopwatch()..start();
       final latestSupabase = await _fetchLatestFromSupabase();
       if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
+        steps.add('supabase_latest:${_ms(sw)}ms(hit:${latestSupabase.rateDate})');
         final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
         await _safeLocalWrite(patched.copyWith(source: 'local'));
-        _log(requestedDate, patched);
+        _cacheResult(requestedDate, patched);
+        _log(requestedDate, patched, totalSw: totalSw, steps: steps);
         return patched;
       }
+      steps.add('supabase_latest:${_ms(sw)}ms(miss)');
       // Weekend and no stored data close enough — fall through to hardcoded
       final hardcodedResult = _getHardcodedRates(requestedDate);
-      _log(requestedDate, hardcodedResult);
+      _cacheResult(requestedDate, hardcodedResult);
+      _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
       return hardcodedResult;
     }
 
     // 3. Weekday: fetch from open.er-api (170+ currencies)
     try {
+      sw = Stopwatch()..start();
       final apiResult = await _fetchFromOpenER();
+      steps.add('open_er:${_ms(sw)}ms(hit)');
       await _safeSupabaseWrite(apiResult);
       await _safeLocalWrite(apiResult.copyWith(source: 'local'));
-      _log(requestedDate, apiResult);
+      _cacheResult(requestedDate, apiResult);
+      _log(requestedDate, apiResult, totalSw: totalSw, steps: steps);
       return apiResult;
     } catch (e) {
+      steps.add('open_er:${_ms(sw)}ms(fail)');
       developer.log('open.er-api failed: $e', name: 'CurrencyExchangeService');
     }
 
     // 4. Weekday: fallback to Frankfurter (32 currencies; patch missing from hardcoded)
     try {
+      sw = Stopwatch()..start();
       final frankfurterResult = await _fetchFromFrankfurter();
+      steps.add('frankfurter:${_ms(sw)}ms(hit)');
       final patched = _patchMissingRates(frankfurterResult, requestedDate);
       await _safeSupabaseWrite(patched);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
-      _log(requestedDate, patched);
+      _cacheResult(requestedDate, patched);
+      _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     } catch (e) {
+      steps.add('frankfurter:${_ms(sw)}ms(fail)');
       developer.log('Both APIs failed: $e', name: 'CurrencyExchangeService');
     }
 
     // 5. Weekday API failure: fall back to most recent stored data within tolerance
+    sw = Stopwatch()..start();
     final latestLocal = await _localStore.getLatest();
     if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
+      steps.add('local_tolerance_fallback:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
       final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
-      _log(requestedDate, patched);
+      _cacheResult(requestedDate, patched);
+      _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
+    steps.add('local_tolerance_fallback:${_ms(sw)}ms(miss)');
 
+    sw = Stopwatch()..start();
     final latestSupabase = await _fetchLatestFromSupabase();
     if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
+      steps.add('supabase_latest_fallback:${_ms(sw)}ms(hit:${latestSupabase.rateDate})');
       final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
-      _log(requestedDate, patched);
+      _cacheResult(requestedDate, patched);
+      _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
+    steps.add('supabase_latest_fallback:${_ms(sw)}ms(miss)');
 
     // 6. Last resort: hardcoded
     final hardcodedResult = _getHardcodedRates(requestedDate);
-    _log(requestedDate, hardcodedResult);
+    _cacheResult(requestedDate, hardcodedResult);
+    _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
     return hardcodedResult;
   }
 
@@ -480,14 +555,21 @@ class CurrencyExchangeService {
     return target.difference(stored).inDays.abs() <= days;
   }
 
-  void _log(String requestedDate, RateResult result) {
-    developer.log(
-      'requested_date=$requestedDate '
-      'returned_date=${result.rateDate} '
-      'is_exact_date=${result.isExactDate} '
-      'source=${result.source} '
-      'base_currency=${result.baseCurrency}',
-      name: 'CurrencyExchangeService',
+  void _cacheResult(String date, RateResult result) {
+    _memCache = result;
+    _memCacheDate = date;
+  }
+
+  void _log(String requestedDate, RateResult result, {Stopwatch? totalSw, List<String>? steps}) {
+    totalSw?.stop();
+    final stepStr = steps != null && steps.isNotEmpty ? ' | ${steps.join(' → ')}' : '';
+    debugPrint(
+      '[CurrencyExchangeService] '
+      'requested=$requestedDate '
+      'returned=${result.rateDate} '
+      'source=${result.source}'
+      '${totalSw != null ? ' total_ms=${totalSw.elapsedMilliseconds}' : ''}'
+      '$stepStr',
     );
   }
 }

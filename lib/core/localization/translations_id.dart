@@ -338,6 +338,9 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsBiometric => 'Login Biometrik';
   @override String get settingsChangePin => 'Ubah PIN';
   @override String get settingsAboutTitle => 'Tentang Richer';
+  @override String get settingsRateUs => 'Beri Penilaian';
+  @override String get settingsWhatsNew => 'Yang Baru';
+  @override String get settingsNoAnnouncements => 'Tidak ada pengumuman baru';
   @override String get settingsHelp => 'Bantuan & FAQ';
   @override String get settingsPrivacy => 'Kebijakan Privasi';
   @override String get settingsTerms => 'Syarat Layanan';

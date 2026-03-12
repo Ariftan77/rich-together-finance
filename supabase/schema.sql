@@ -114,3 +114,28 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
     FOR UPDATE USING (true);
 
   ALTER TABLE exchange_rates ENABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- App Announcements (developer → user notifications)
+-- =============================================================================
+-- Admin inserts rows via Supabase dashboard or service key.
+-- App reads active announcements without auth. Read-tracking is done locally
+-- in SharedPreferences (key: read_announcement_ids).
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS app_announcements (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  judul_en   TEXT NOT NULL,
+  isi_en     TEXT NOT NULL,
+  judul_id   TEXT NOT NULL,
+  isi_id     TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  is_active  BOOLEAN DEFAULT true
+);
+
+ALTER TABLE app_announcements ENABLE ROW LEVEL SECURITY;
+
+-- Anyone (anon) can read active announcements
+CREATE POLICY "announcements_read" ON app_announcements
+  FOR SELECT TO anon
+  USING (is_active = true);

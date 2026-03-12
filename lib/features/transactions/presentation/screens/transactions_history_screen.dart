@@ -39,6 +39,16 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     _searchController.addListener(() {
       ref.read(transactionSearchQueryProvider.notifier).state = _searchController.text;
     });
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels < _scrollController.position.maxScrollExtent - 200) return;
+    // Guard: don't fire again while already loading more
+    if (ref.read(convertedFilteredTransactionsProvider).isLoading) return;
+    final currentLimit = ref.read(transactionLimitProvider);
+    ref.read(transactionLimitProvider.notifier).state = currentLimit + 20;
   }
 
   void _changeMonth(DateTime newMonth) {
@@ -327,13 +337,23 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                 Expanded(
                   child: GestureDetector(
                     onHorizontalDragEnd: _onHorizontalSwipe,
-                    child: filteredHelper.when(
-                    data: (convertedTxs) {
+                    child: Builder(
+                      builder: (context) {
+                      // Full spinner only on initial load (no data yet)
+                      if (filteredHelper.isLoading && !filteredHelper.hasValue) {
+                        return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
+                      }
+                      if (filteredHelper.hasError && !filteredHelper.hasValue) {
+                        return Center(child: Text('Error: ${filteredHelper.error}', style: const TextStyle(color: Colors.red)));
+                      }
+
+                      final convertedTxs = filteredHelper.valueOrNull ?? [];
+
                       if (convertedTxs.isEmpty) {
                         return Center(
                           child: Text(
                             'No transactions found',
-                            style: AppTypography.textTheme.bodyLarge!.copyWith( // Fixed
+                            style: AppTypography.textTheme.bodyLarge!.copyWith(
                               color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
@@ -361,7 +381,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       return ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                        itemCount: sortedDates.length + (filteredHelper.isLoading && filteredHelper.hasValue ? 1 : 0),
+                        // +1 for the bottom loading spinner while fetching more
+                        itemCount: sortedDates.length + (filteredHelper.isLoading ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == sortedDates.length) {
                             return const Center(
@@ -441,10 +462,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                           );
                         },
                       );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-                    error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
-                  ),
+                    }),
                   ),
                 ),
               ],

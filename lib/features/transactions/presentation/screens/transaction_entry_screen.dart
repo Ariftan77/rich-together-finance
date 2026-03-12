@@ -211,7 +211,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   Future<void> _loadFrequentTitles() async {
     final profileId = ref.read(activeProfileIdProvider);
     final titles = await ref.read(transactionDaoProvider)
-        .getMostFrequentTitlesByType(_selectedType, 10, profileId: profileId);
+        .getMostFrequentTitlesByType(_selectedType, 100, profileId: profileId);
     if (mounted) {
       setState(() => _frequentTitles = titles);
     }

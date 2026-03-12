@@ -334,6 +334,9 @@ abstract class AppTranslations {
   String get settingsBiometric;
   String get settingsChangePin;
   String get settingsAboutTitle;
+  String get settingsRateUs;
+  String get settingsWhatsNew;
+  String get settingsNoAnnouncements;
   String get settingsHelp;
   String get settingsPrivacy;
   String get settingsTerms;

@@ -27,6 +27,9 @@ import '../../../../core/services/voucher_service.dart';
 import '../../../../core/services/iap_service.dart' show IapService, IapResult;
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/providers/announcement_providers.dart';
+import '../widgets/announcements_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -80,9 +83,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Text(
-                ref.watch(translationsProvider).navSettings,
-                style: AppTypography.textTheme.displaySmall,
+              Row(
+                children: [
+                  Text(
+                    ref.watch(translationsProvider).navSettings,
+                    style: AppTypography.textTheme.displaySmall,
+                  ),
+                  const Spacer(),
+                  _buildNotificationBell(),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -387,6 +396,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Widget _buildNotificationBell() {
+    final unread = ref.watch(unreadCountProvider);
+    return GestureDetector(
+      onTap: () => showAnnouncementsSheet(context, ref),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Icons.notifications_outlined, color: Colors.white70, size: 28),
+          if (unread > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAppInfoSection() {
     return GlassCard(
       padding: EdgeInsets.zero,
@@ -414,6 +449,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.feedback_outlined,
             title: ref.watch(translationsProvider).settingsSendFeedback,
             onTap: () => _showFeedbackDialog(),
+          ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.star_outline,
+            title: ref.watch(translationsProvider).settingsRateUs,
+            onTap: () async {
+              final url = Uri.parse(
+                'https://play.google.com/store/apps/details?id=com.axiomtechdev.richtogether',
+              );
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            },
           ),
           _buildDivider(),
           SettingsTile(
