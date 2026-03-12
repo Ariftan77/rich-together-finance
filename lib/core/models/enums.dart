@@ -69,6 +69,15 @@ enum Currency {
   sgd,        // 2 - Singapore Dollar
   myr,        // 3 - Malaysian Ringgit
   thb,        // 4 - Thai Baht
+  sar,        // 5 - Saudi Arabian Riyal
+  jpy,        // 6 - Japanese Yen
+  cny,        // 7 - Chinese Yuan
+  krw,        // 8 - South Korean Won
+  aud,        // 9 - Australian Dollar
+  khr,        // 10 - Cambodian Riel
+  vnd,        // 11 - Vietnamese Dong
+  php,        // 12 - Philippine Peso
+  eur,        // 13 - Euro
 }
 
 /// Extension methods for enum display values
@@ -179,6 +188,24 @@ extension CurrencyX on Currency {
         return 'MYR';
       case Currency.thb:
         return 'THB';
+      case Currency.sar:
+        return 'SAR';
+      case Currency.jpy:
+        return 'JPY';
+      case Currency.cny:
+        return 'CNY';
+      case Currency.krw:
+        return 'KRW';
+      case Currency.aud:
+        return 'AUD';
+      case Currency.khr:
+        return 'KHR';
+      case Currency.vnd:
+        return 'VND';
+      case Currency.php:
+        return 'PHP';
+      case Currency.eur:
+        return 'EUR';
     }
   }
 
@@ -194,6 +221,24 @@ extension CurrencyX on Currency {
         return 'RM';
       case Currency.thb:
         return '฿';
+      case Currency.sar:
+        return 'SR';
+      case Currency.jpy:
+        return '¥';
+      case Currency.cny:
+        return 'CN¥';
+      case Currency.krw:
+        return '₩';
+      case Currency.aud:
+        return 'A\$';
+      case Currency.khr:
+        return '៛';
+      case Currency.vnd:
+        return '₫';
+      case Currency.php:
+        return '₱';
+      case Currency.eur:
+        return '€';
     }
   }
 
@@ -209,6 +254,24 @@ extension CurrencyX on Currency {
         return 'Malaysian Ringgit';
       case Currency.thb:
         return 'Thai Baht';
+      case Currency.sar:
+        return 'Saudi Arabian Riyal';
+      case Currency.jpy:
+        return 'Japanese Yen';
+      case Currency.cny:
+        return 'Chinese Yuan';
+      case Currency.krw:
+        return 'South Korean Won';
+      case Currency.aud:
+        return 'Australian Dollar';
+      case Currency.khr:
+        return 'Cambodian Riel';
+      case Currency.vnd:
+        return 'Vietnamese Dong';
+      case Currency.php:
+        return 'Philippine Peso';
+      case Currency.eur:
+        return 'Euro';
     }
   }
 }

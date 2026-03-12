@@ -27,6 +27,8 @@ final wealthTabIndexProvider = StateProvider<int>((ref) => 0);
 final _budgetCurrencyFilterProvider = StateProvider.autoDispose<Set<Currency>>((ref) => {});
 final _budgetPeriodFilterProvider = StateProvider.autoDispose<Set<BudgetPeriod>>((ref) => {});
 final _budgetFilterExpandedProvider = StateProvider.autoDispose<bool>((ref) => false);
+// Tracks which period groups are collapsed (empty = all expanded by default)
+final _budgetCollapsedPeriodsProvider = StateProvider.autoDispose<Set<BudgetPeriod>>((ref) => {});
 
 class WealthScreen extends ConsumerStatefulWidget {
   const WealthScreen({super.key});
@@ -134,11 +136,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   // ===================== BUDGET TAB =====================
   Widget _buildBudgetTab() {
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
+    final summariesAsync = ref.watch(budgetPeriodSummariesProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
     final selectedCurrencies = ref.watch(_budgetCurrencyFilterProvider);
     final selectedPeriods = ref.watch(_budgetPeriodFilterProvider);
     final isExpanded = ref.watch(_budgetFilterExpandedProvider);
+    final collapsedPeriods = ref.watch(_budgetCollapsedPeriodsProvider);
 
     return Column(
       children: [
@@ -282,143 +286,31 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 );
               }
 
-              return ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: budgets.length,
-                itemBuilder: (context, index) {
-                  final item = budgets[index];
-                  final isOverBudget = item.progress > 1.0;
-                  final progressColor = item.progress > 0.9
-                      ? Colors.red
-                      : (item.progress > 0.5
-                          ? Colors.orange
-                          : AppColors.success);
+              // Group budgets by period in canonical order
+              const periodOrder = [BudgetPeriod.weekly, BudgetPeriod.monthly, BudgetPeriod.yearly];
+              final grouped = <BudgetPeriod, List<BudgetWithSpending>>{};
+              for (final p in periodOrder) {
+                final items = budgets.where((b) => b.budget.period == p).toList();
+                if (items.isNotEmpty) grouped[p] = items;
+              }
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                BudgetEntryScreen(budget: item.budget),
-                          ),
-                        );
-                      },
-                      child: GlassCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: item.categoryColor.isNotEmpty
-                                        ? Color(int.parse(item.categoryColor
-                                            .replaceFirst('#', '0xFF')))
-                                        : Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(item.categoryIcon,
-                                      style: const TextStyle(fontSize: 20)),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(item.categoryName,
-                                                style: AppTypography
-                                                    .textTheme.titleMedium),
-                                          ),
-                                        ],
-                                      ),
-                                      Text(
-                                        isOverBudget
-                                            ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}'
-                                            : '${Formatters.formatCurrency(item.remainingAmount, currency: item.budget.currency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
-                                        style: AppTypography
-                                            .textTheme.bodySmall
-                                            ?.copyWith(
-                                          color: isOverBudget
-                                              ? Colors.redAccent
-                                              : Colors.white70,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          Formatters.formatCurrency(item.budget.amount,
-                                              currency: item.budget.currency, showDecimal: showDecimal),
-                                          style: AppTypography.textTheme.bodyLarge
-                                              ?.copyWith(
-                                                  fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        _buildCurrencyBadge(item.budget.currency.code),
-                                      ],
-                                    ),
-                                    Text(trans.budgetPeriodLimit(switch (item.budget.period) {
-                                          BudgetPeriod.weekly => trans.recurringWeekly,
-                                          BudgetPeriod.monthly => trans.recurringMonthly,
-                                          BudgetPeriod.yearly => trans.recurringYearly,
-                                        }),
-                                        style: AppTypography
-                                            .textTheme.bodySmall
-                                            ?.copyWith(
-                                                color: Colors.white54)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: item.progress.clamp(0.0, 1.0),
-                                backgroundColor: Colors.white10,
-                                color: progressColor,
-                                minHeight: 8,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${(item.progress * 100).toStringAsFixed(1)}%',
-                                  style: AppTypography.textTheme.bodySmall
-                                      ?.copyWith(color: progressColor),
-                                ),
-                                Text(
-                                  '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: item.budget.currency, showDecimal: showDecimal)}',
-                                  style: AppTypography.textTheme.bodySmall
-                                      ?.copyWith(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+              final summaries = summariesAsync.valueOrNull ?? [];
+
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                children: [
+                  for (final period in periodOrder)
+                    if (grouped.containsKey(period))
+                      _buildBudgetPeriodSection(
+                        period: period,
+                        items: grouped[period]!,
+                        summary: summaries.where((s) => s.period == period).firstOrNull,
+                        isCollapsed: collapsedPeriods.contains(period),
+                        showDecimal: showDecimal,
+                        trans: trans,
                       ),
-                    ),
-                  );
-                },
+                  const SizedBox(height: 80),
+                ],
               );
             },
             loading: () => const Center(
@@ -429,6 +321,301 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBudgetPeriodSection({
+    required BudgetPeriod period,
+    required List<BudgetWithSpending> items,
+    required BudgetPeriodSummary? summary,
+    required bool isCollapsed,
+    required bool showDecimal,
+    required dynamic trans,
+  }) {
+    final periodLabel = switch (period) {
+      BudgetPeriod.weekly => trans.recurringWeekly as String,
+      BudgetPeriod.monthly => trans.recurringMonthly as String,
+      BudgetPeriod.yearly => trans.recurringYearly as String,
+    };
+
+    final summaryProgress = summary?.progress ?? 0.0;
+    final progressColor = summaryProgress > 0.9
+        ? Colors.red
+        : (summaryProgress > 0.5 ? Colors.orange : AppColors.success);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Collapsible header row ──
+        GestureDetector(
+          onTap: () {
+            final current = Set<BudgetPeriod>.from(ref.read(_budgetCollapsedPeriodsProvider));
+            if (isCollapsed) {
+              current.remove(period);
+            } else {
+              current.add(period);
+            }
+            ref.read(_budgetCollapsedPeriodsProvider.notifier).state = current;
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                AnimatedRotation(
+                  turns: isCollapsed ? -0.25 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 20),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  periodLabel,
+                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${items.length}',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                ),
+                const Spacer(),
+                if (summary != null) ...[
+                  Text(
+                    '${(summaryProgress * 100).clamp(0, 999).toStringAsFixed(1)}%',
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: progressColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        // Thin progress line (always visible, collapsed or expanded)
+        if (summary != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: summaryProgress.clamp(0.0, 1.0),
+              backgroundColor: Colors.white10,
+              color: progressColor,
+              minHeight: 3,
+            ),
+          ),
+
+        // ── Expanded content ──
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          child: isCollapsed
+              ? const SizedBox.shrink()
+              : Column(
+                  children: [
+                    const SizedBox(height: 10),
+
+                    // Summary card
+                    if (summary != null) _buildBudgetSummaryCard(summary, showDecimal, trans),
+
+                    const SizedBox(height: 10),
+
+                    // Individual budget cards
+                    ...items.map((item) => _buildBudgetItemCard(item, showDecimal, trans)),
+                  ],
+                ),
+        ),
+
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildBudgetSummaryCard(BudgetPeriodSummary summary, bool showDecimal, dynamic trans) {
+    final progressColor = summary.progress > 0.9
+        ? Colors.red
+        : (summary.progress > 0.5 ? Colors.orange : AppColors.success);
+    final isOverBudget = summary.progress > 1.0;
+    final remaining = summary.totalBudget - summary.totalSpent;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: progressColor.withValues(alpha: 0.25), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.summarize_outlined, color: progressColor, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                '${summary.count} ${trans.wealthBudget}',
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    Formatters.formatCurrency(summary.totalBudget,
+                        currency: summary.displayCurrency, showDecimal: showDecimal),
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 4),
+                  _buildCurrencyBadge(summary.displayCurrency.code),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: summary.progress.clamp(0.0, 1.0),
+              backgroundColor: Colors.white10,
+              color: progressColor,
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${(summary.progress * 100).clamp(0, 999).toStringAsFixed(1)}%',
+                style: AppTypography.textTheme.bodySmall?.copyWith(color: progressColor),
+              ),
+              Text(
+                isOverBudget
+                    ? '${trans.budgetExceeded} ${Formatters.formatCurrency(summary.totalSpent - summary.totalBudget, currency: summary.displayCurrency, showDecimal: showDecimal)}'
+                    : '${Formatters.formatCurrency(remaining, currency: summary.displayCurrency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isOverBudget ? Colors.redAccent : Colors.white54,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetItemCard(BudgetWithSpending item, bool showDecimal, dynamic trans) {
+    final isOverBudget = item.progress > 1.0;
+    final progressColor = item.progress > 0.9
+        ? Colors.red
+        : (item.progress > 0.5 ? Colors.orange : AppColors.success);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BudgetEntryScreen(budget: item.budget),
+            ),
+          );
+        },
+        child: GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: item.categoryColor.isNotEmpty
+                          ? Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF')))
+                          : Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(item.categoryIcon, style: const TextStyle(fontSize: 20)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.categoryName, style: AppTypography.textTheme.titleMedium),
+                        Text(
+                          isOverBudget
+                              ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}'
+                              : '${Formatters.formatCurrency(item.remainingAmount, currency: item.budget.currency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
+                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                            color: isOverBudget ? Colors.redAccent : Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            Formatters.formatCurrency(item.budget.amount,
+                                currency: item.budget.currency, showDecimal: showDecimal),
+                            style: AppTypography.textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          _buildCurrencyBadge(item.budget.currency.code),
+                        ],
+                      ),
+                      Text(
+                        trans.budgetPeriodLimit(switch (item.budget.period) {
+                          BudgetPeriod.weekly => trans.recurringWeekly,
+                          BudgetPeriod.monthly => trans.recurringMonthly,
+                          BudgetPeriod.yearly => trans.recurringYearly,
+                        }),
+                        style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: item.progress.clamp(0.0, 1.0),
+                  backgroundColor: Colors.white10,
+                  color: progressColor,
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${(item.progress * 100).toStringAsFixed(1)}%',
+                    style: AppTypography.textTheme.bodySmall?.copyWith(color: progressColor),
+                  ),
+                  Text(
+                    '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: item.budget.currency, showDecimal: showDecimal)}',
+                    style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -266,24 +266,22 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                     Text(trans.goalCurrency,
                         style: AppTypography.textTheme.labelLarge),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      spacing: 8,
                       children: Currency.values.map((currency) {
                         final isSelected = _selectedCurrency == currency;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: ChoiceChip(
-                            label: Text(currency.code),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() => _selectedCurrency = currency);
-                              }
-                            },
-                            selectedColor: AppColors.primaryGold,
-                            backgroundColor: AppColors.glassBackground,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.black : Colors.white,
-                            ),
+                        return ChoiceChip(
+                          label: Text(currency.code),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedCurrency = currency);
+                            }
+                          },
+                          selectedColor: AppColors.primaryGold,
+                          backgroundColor: AppColors.glassBackground,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.black : Colors.white,
                           ),
                         );
                       }).toList(),

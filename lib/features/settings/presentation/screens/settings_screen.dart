@@ -562,38 +562,95 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showCurrencyPicker(Currency current) {
+    final searchController = TextEditingController();
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgDarkEnd,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ref.watch(translationsProvider).settingsSelectCurrency,
-              style: AppTypography.textTheme.titleLarge,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final query = searchController.text.toLowerCase();
+          final filtered = Currency.values.where((c) {
+            if (query.isEmpty) return true;
+            return c.name.toLowerCase().contains(query) ||
+                c.code.toLowerCase().contains(query) ||
+                c.symbol.toLowerCase().contains(query);
+          }).toList();
+
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ref.read(translationsProvider).settingsSelectCurrency,
+                    style: AppTypography.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: searchController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search currency...',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                      prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.5)),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.5)),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.08),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No currency found',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final c = filtered[index];
+                              return ListTile(
+                                leading: Text(c.symbol, style: const TextStyle(fontSize: 20, color: Colors.white)),
+                                title: Text(c.name, style: const TextStyle(color: Colors.white)),
+                                subtitle: Text(c.code, style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+                                trailing: current == c
+                                    ? const Icon(Icons.check, color: AppColors.primaryGold)
+                                    : null,
+                                onTap: () {
+                                  _updateCurrency(c);
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            ...Currency.values.map((c) => ListTile(
-              leading: Text(c.symbol, style: const TextStyle(fontSize: 20)),
-              title: Text(c.name, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(c.code, style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
-              trailing: current == c
-                  ? const Icon(Icons.check, color: AppColors.primaryGold)
-                  : null,
-              onTap: () {
-                _updateCurrency(c);
-                Navigator.pop(context);
-              },
-            )),
-            const SizedBox(height: 16),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

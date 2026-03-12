@@ -8,7 +8,7 @@ import 'local_rate_store.dart';
 
 /// Offline-first currency exchange rate service.
 ///
-/// Fallback chain: Local DB → Supabase → Frankfurter API.
+/// Fallback chain: Local DB → Supabase → open.er-api (170+ currencies) → Frankfurter (patched) → hardcoded.
 /// All rates are USD-based: `1 USD = X foreign currency`.
 /// Stores full rates JSON blob per day — not per-currency-pair rows.
 class CurrencyExchangeService {
@@ -16,6 +16,7 @@ class CurrencyExchangeService {
   final Dio _dio;
   final SupabaseClient _supabase;
 
+  static const _exchangeRateBase = 'https://open.er-api.com/v6';
   static const _frankfurterBase = 'https://api.frankfurter.app';
   static const _supabaseTable = 'exchange_rates';
   static const _weekendToleranceDays = 3;
@@ -32,62 +33,102 @@ class CurrencyExchangeService {
   // getRates — today's rates via full fallback chain
   // ---------------------------------------------------------------------------
 
-  /// Get exchange rates for [date] (defaults to today).
+  /// Get exchange rates for [date] (defaults to today UTC).
   ///
-  /// Checks Local DB → Supabase → Frankfurter API.
-  /// Weekend/holiday handling: if the latest stored record is within 3 days,
-  /// return it without any network call.
+  /// Weekday chain (Mon–Fri):
+  ///   Local exact → Supabase exact → API → [API failed: Local tolerance → Supabase tolerance → hardcoded]
+  ///
+  /// Weekend chain (Sat–Sun):
+  ///   Local exact → Local tolerance → Supabase exact → Supabase tolerance → hardcoded
   Future<RateResult> getRates({String? date}) async {
     final requestedDate = date ?? _today();
+    final isWeekend = _isWeekend(requestedDate);
 
-    // 1. Check local DB
+    // 1. Exact match in local DB (always checked first)
     final local = await _localStore.get(requestedDate);
     if (local != null) {
-      _log(requestedDate, local);
-      return local;
+      final patched = _patchMissingRates(local, requestedDate);
+      _log(requestedDate, patched);
+      return patched;
     }
 
-    // 1b. Weekend/holiday tolerance — check if latest local record is recent enough
-    final latestLocal = await _localStore.getLatest();
-    if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
-      final result = latestLocal.copyWith(isExactDate: false);
-      _log(requestedDate, result);
-      return result;
+    // 1b. Weekend tolerance — only on Sat/Sun, skip on weekdays so we always try the API
+    if (isWeekend) {
+      final latestLocal = await _localStore.getLatest();
+      if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
+        final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
+        _log(requestedDate, patched);
+        return patched;
+      }
     }
 
-    // 2. Check Supabase
+    // 2. Exact match in Supabase
     final supabaseResult = await _fetchFromSupabase(requestedDate);
     if (supabaseResult != null) {
-      await _safeLocalWrite(supabaseResult.copyWith(source: 'local'));
-      _log(requestedDate, supabaseResult);
-      return supabaseResult;
+      final patched = _patchMissingRates(supabaseResult, requestedDate);
+      await _safeLocalWrite(patched.copyWith(source: 'local'));
+      _log(requestedDate, patched);
+      return patched;
     }
 
-    // 2b. Weekend/holiday tolerance — check latest Supabase record
-    final latestSupabase = await _fetchLatestFromSupabase();
-    if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
-      final result = latestSupabase.copyWith(isExactDate: false);
-      await _safeLocalWrite(result.copyWith(source: 'local'));
-      _log(requestedDate, result);
-      return result;
-    }
-
-    // 3. Fetch from Frankfurter API (latest rates only)
-    try {
-      final apiResult = await _fetchFromApi();
-
-      // Write back down the chain: API → Supabase → local
-      await _safeSupabaseWrite(apiResult);
-      await _safeLocalWrite(apiResult.copyWith(source: 'local'));
-
-      _log(requestedDate, apiResult);
-      return apiResult;
-    } catch (e) {
-      developer.log('API fetch failed, falling back to hardcoded rates: $e', name: 'CurrencyExchangeService');
+    // 2b. Weekend tolerance from Supabase — only on Sat/Sun
+    if (isWeekend) {
+      final latestSupabase = await _fetchLatestFromSupabase();
+      if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
+        final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
+        await _safeLocalWrite(patched.copyWith(source: 'local'));
+        _log(requestedDate, patched);
+        return patched;
+      }
+      // Weekend and no stored data close enough — fall through to hardcoded
       final hardcodedResult = _getHardcodedRates(requestedDate);
       _log(requestedDate, hardcodedResult);
       return hardcodedResult;
     }
+
+    // 3. Weekday: fetch from open.er-api (170+ currencies)
+    try {
+      final apiResult = await _fetchFromOpenER();
+      await _safeSupabaseWrite(apiResult);
+      await _safeLocalWrite(apiResult.copyWith(source: 'local'));
+      _log(requestedDate, apiResult);
+      return apiResult;
+    } catch (e) {
+      developer.log('open.er-api failed: $e', name: 'CurrencyExchangeService');
+    }
+
+    // 4. Weekday: fallback to Frankfurter (32 currencies; patch missing from hardcoded)
+    try {
+      final frankfurterResult = await _fetchFromFrankfurter();
+      final patched = _patchMissingRates(frankfurterResult, requestedDate);
+      await _safeSupabaseWrite(patched);
+      await _safeLocalWrite(patched.copyWith(source: 'local'));
+      _log(requestedDate, patched);
+      return patched;
+    } catch (e) {
+      developer.log('Both APIs failed: $e', name: 'CurrencyExchangeService');
+    }
+
+    // 5. Weekday API failure: fall back to most recent stored data within tolerance
+    final latestLocal = await _localStore.getLatest();
+    if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
+      final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
+      _log(requestedDate, patched);
+      return patched;
+    }
+
+    final latestSupabase = await _fetchLatestFromSupabase();
+    if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
+      final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
+      await _safeLocalWrite(patched.copyWith(source: 'local'));
+      _log(requestedDate, patched);
+      return patched;
+    }
+
+    // 6. Last resort: hardcoded
+    final hardcodedResult = _getHardcodedRates(requestedDate);
+    _log(requestedDate, hardcodedResult);
+    return hardcodedResult;
   }
 
   // ---------------------------------------------------------------------------
@@ -202,14 +243,45 @@ class CurrencyExchangeService {
   // Frankfurter API
   // ---------------------------------------------------------------------------
 
-  Future<RateResult> _fetchFromApi() async {
+  Future<RateResult> _fetchFromOpenER() async {
+    try {
+      final response = await _dio.get('$_exchangeRateBase/latest/USD').timeout(const Duration(seconds: 3));
+
+      if (response.statusCode != 200) {
+        throw ExchangeRateException('open.er-api returned status ${response.statusCode}');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      if (data['result'] != 'success') {
+        throw ExchangeRateException('open.er-api error: ${data['error-type']}');
+      }
+
+      final rawRates = (data['rates'] as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, (v as num).toDouble()));
+
+      final updateUnix = data['time_last_update_unix'] as int?;
+      final rateDate = updateUnix != null ? _utcDateFromUnix(updateUnix) : _today();
+
+      return RateResult(
+        rateDate: rateDate,
+        baseCurrency: 'USD',
+        rates: rawRates,
+        isExactDate: true,
+        source: 'api',
+      );
+    } on DioException catch (e) {
+      throw ExchangeRateException('open.er-api fetch failed: ${e.message}');
+    } catch (e) {
+      throw ExchangeRateException('open.er-api unexpected error: $e');
+    }
+  }
+
+  Future<RateResult> _fetchFromFrankfurter() async {
     try {
       final response = await _dio.get('$_frankfurterBase/latest?base=USD').timeout(const Duration(seconds: 3));
 
       if (response.statusCode != 200) {
-        throw ExchangeRateException(
-          'Frankfurter API returned status ${response.statusCode}',
-        );
+        throw ExchangeRateException('Frankfurter returned status ${response.statusCode}');
       }
 
       final data = response.data as Map<String, dynamic>;
@@ -224,14 +296,27 @@ class CurrencyExchangeService {
         source: 'api',
       );
     } on DioException catch (e) {
-      throw ExchangeRateException(
-        'Failed to fetch rates from Frankfurter API: ${e.message}',
-      );
+      throw ExchangeRateException('Frankfurter fetch failed: ${e.message}');
     } catch (e) {
-      throw ExchangeRateException(
-        'Unexpected error or timeout fetching from Frankfurter API: $e',
-      );
+      throw ExchangeRateException('Frankfurter unexpected error: $e');
     }
+  }
+
+  /// Patches currencies missing from [result] (e.g. SAR, KHR, VND not in Frankfurter)
+  /// with hardcoded fallback values.
+  RateResult _patchMissingRates(RateResult result, String date) {
+    final hardcoded = _getHardcodedRates(date).rates;
+    final patched = Map<String, double>.from(result.rates);
+    for (final entry in hardcoded.entries) {
+      patched.putIfAbsent(entry.key, () => entry.value);
+    }
+    return RateResult(
+      rateDate: result.rateDate,
+      baseCurrency: result.baseCurrency,
+      rates: patched,
+      isExactDate: result.isExactDate,
+      source: result.source,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -318,7 +403,7 @@ class CurrencyExchangeService {
           'base_currency': result.baseCurrency,
           'rates': result.rates,
           'fetched_at': DateTime.now().toUtc().toIso8601String(),
-          'source': 'frankfurter',
+          'source': result.source,
         },
         onConflict: 'rate_date,base_currency',
       );
@@ -353,6 +438,15 @@ class CurrencyExchangeService {
         'SGD': 1.35,
         'MYR': 4.75,
         'THB': 36.50,
+        'SAR': 3.75,
+        'JPY': 149.0,
+        'CNY': 7.24,
+        'KRW': 1320.0,
+        'AUD': 1.53,
+        'KHR': 4100.0,
+        'VND': 24800.0,
+        'PHP': 55.80,
+        'EUR': 0.92,
       },
       isExactDate: false,
       source: 'hardcoded',
@@ -364,8 +458,19 @@ class CurrencyExchangeService {
   // ---------------------------------------------------------------------------
 
   String _today() {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  String _utcDateFromUnix(int unixSeconds) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000, isUtc: true);
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Returns true if [date] falls on Saturday or Sunday (UTC).
+  bool _isWeekend(String date) {
+    final weekday = DateTime.parse(date).toUtc().weekday;
+    return weekday == DateTime.saturday || weekday == DateTime.sunday;
   }
 
   /// Returns true if [storedDate] is within [days] of [targetDate].
