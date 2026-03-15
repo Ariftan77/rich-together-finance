@@ -401,4 +401,16 @@ class AppTranslationsEn implements AppTranslations {
   @override String get reportDetailByTitle => 'by Title';
   @override String get reportDetailDailyAvgExpense => 'Daily Avg Expense';
   @override String get reportDetailDailyAvgIncome => 'Daily Avg Income';
+
+  // Export Report
+  @override String get exportReport => 'Export Report';
+  @override String get exportDateFrom => 'From Date';
+  @override String get exportDateTo => 'To Date';
+  @override String get exportSelectStartDate => 'Select start date';
+  @override String get exportSelectEndDate => 'Select end date';
+  @override String get exportButton => 'Export XLSX';
+  @override String get exportSuccess => 'Report exported successfully';
+  @override String get exportError => 'Failed to export report';
+  @override String get exportNoData => 'No transactions found in this date range';
+  @override String get exportGenerating => 'Generating report...';
 }

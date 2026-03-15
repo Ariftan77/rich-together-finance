@@ -398,4 +398,16 @@ abstract class AppTranslations {
   String get reportDetailByTitle;
   String get reportDetailDailyAvgExpense;
   String get reportDetailDailyAvgIncome;
+
+  // Export Report
+  String get exportReport;
+  String get exportDateFrom;
+  String get exportDateTo;
+  String get exportSelectStartDate;
+  String get exportSelectEndDate;
+  String get exportButton;
+  String get exportSuccess;
+  String get exportError;
+  String get exportNoData;
+  String get exportGenerating;
 }

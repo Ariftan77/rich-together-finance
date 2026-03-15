@@ -9,6 +9,7 @@ import '../database/daos/budget_dao.dart';
 import '../database/daos/goal_dao.dart';
 import '../database/daos/debt_dao.dart';
 import '../database/daos/recurring_dao.dart';
+import '../services/export_service.dart';
 import 'profile_provider.dart';
 
 /// Database provider - singleton instance
@@ -65,6 +66,15 @@ final debtDaoProvider = Provider<DebtDao>((ref) {
 final recurringDaoProvider = Provider<RecurringDao>((ref) {
   final db = ref.watch(databaseProvider);
   return RecurringDao(db);
+});
+
+/// Export service provider
+final exportServiceProvider = Provider<ExportService>((ref) {
+  return ExportService(
+    ref.watch(transactionDaoProvider),
+    ref.watch(accountDaoProvider),
+    ref.watch(categoryDaoProvider),
+  );
 });
 
 // ============================================

@@ -14,6 +14,7 @@ import '../providers/dashboard_providers.dart';
 import '../widgets/cash_flow_chart.dart';
 import '../widgets/category_pie_chart.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
+import '../../../reports/presentation/widgets/export_report_modal.dart';
 
 /// Dashboard Overview Screen with Tabs
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -64,9 +65,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ref.watch(translationsProvider).dashboardOverview,
-                    style: AppTypography.textTheme.displaySmall,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        ref.watch(translationsProvider).dashboardOverview,
+                        style: AppTypography.textTheme.displaySmall,
+                      ),
+                      AnimatedBuilder(
+                        animation: _tabController,
+                        builder: (_, __) {
+                          if (_tabController.index != 1) {
+                            return const SizedBox(width: 40, height: 40);
+                          }
+                          return IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
+                            icon: const Icon(
+                              Icons.file_download_outlined,
+                              color: AppColors.primaryGold,
+                            ),
+                            onPressed: () =>
+                                showExportReportModal(context),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Container(

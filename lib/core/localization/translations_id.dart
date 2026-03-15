@@ -402,4 +402,16 @@ class AppTranslationsId implements AppTranslations {
   @override String get reportDetailByTitle => 'per Judul';
   @override String get reportDetailDailyAvgExpense => 'Rata-rata Pengeluaran/Hari';
   @override String get reportDetailDailyAvgIncome => 'Rata-rata Pemasukan/Hari';
+
+  // Export Report
+  @override String get exportReport => 'Ekspor Laporan';
+  @override String get exportDateFrom => 'Dari Tanggal';
+  @override String get exportDateTo => 'Sampai Tanggal';
+  @override String get exportSelectStartDate => 'Pilih tanggal awal';
+  @override String get exportSelectEndDate => 'Pilih tanggal akhir';
+  @override String get exportButton => 'Ekspor XLSX';
+  @override String get exportSuccess => 'Laporan berhasil diekspor';
+  @override String get exportError => 'Gagal mengekspor laporan';
+  @override String get exportNoData => 'Tidak ada transaksi dalam rentang tanggal ini';
+  @override String get exportGenerating => 'Membuat laporan...';
 }
