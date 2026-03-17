@@ -10,6 +10,7 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -42,6 +43,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       _rawBalance = widget.account!.initialBalance;
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
+    } else {
+      _selectedCurrency = ref.read(defaultCurrencyProvider);
     }
   }
 
@@ -549,26 +552,12 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       const SizedBox(height: 24),
                       Text(ref.watch(translationsProvider).accountCurrency, style: AppTypography.textTheme.labelLarge),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: Currency.values.map((currency) {
-                          final isSelected = _selectedCurrency == currency;
-                          return ChoiceChip(
-                            label: Text(currency.code),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) setState(() {
-                                _selectedCurrency = currency;
-                                _rawBalance = 0;
-                              });
-                            },
-                            selectedColor: AppColors.primaryGold,
-                            backgroundColor: isDarkMode ? AppColors.glassBackground : AppColors.glassBackgroundLight,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.black : (isDarkMode ? Colors.white : AppColors.textPrimaryLight),
-                            ),
-                          );
-                        }).toList(),
+                      CurrencyPickerField(
+                        value: _selectedCurrency,
+                        onChanged: (currency) => setState(() {
+                          _selectedCurrency = currency;
+                          _rawBalance = 0;
+                        }),
                       ),
                       const SizedBox(height: 32),
                       GlassButton(

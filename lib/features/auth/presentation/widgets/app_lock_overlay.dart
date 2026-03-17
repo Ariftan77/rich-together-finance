@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/date_providers.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../shared/theme/colors.dart';
 import 'pin_pad.dart';
@@ -39,9 +40,15 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       _lockIfAuthEnabled();
-    } else if (state == AppLifecycleState.resumed && _isLocked) {
+    } else if (state == AppLifecycleState.resumed) {
+      // Refresh current date in case the calendar day changed while backgrounded
+      final now = DateTime.now();
+      final newDate = DateTime(now.year, now.month, now.day);
+      if (newDate != ref.read(currentDateProvider)) {
+        ref.read(currentDateProvider.notifier).state = newDate;
+      }
       // Try biometric auto-unlock on resume
-      _tryBiometricUnlock();
+      if (_isLocked) _tryBiometricUnlock();
     }
   }
 

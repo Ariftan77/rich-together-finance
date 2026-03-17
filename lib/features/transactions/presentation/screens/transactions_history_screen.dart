@@ -13,6 +13,7 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_input.dart';
 
+import '../../../../core/providers/date_providers.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../providers/search_provider.dart';
 import '../widgets/date_range_filter_modal.dart';
@@ -113,6 +114,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     final accountsAsync = ref.watch(accountsStreamProvider);
     final trans = ref.watch(translationsProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
+    final today = ref.watch(currentDateProvider);
     final hasCustomRange = ref.watch(dateFromFilterProvider) != null || ref.watch(dateToFilterProvider) != null;
     final latestTxDate = ref.watch(latestTransactionDateProvider).valueOrNull;
     final latestTxMonth = latestTxDate != null
@@ -418,7 +420,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      _formatDateSection(date).toUpperCase(),
+                                      _formatDateSection(date, today).toUpperCase(),
                                       textAlign: TextAlign.center,
                                       style: AppTypography.textTheme.labelSmall!.copyWith(
                                         color: Colors.white.withValues(alpha: 0.7),
@@ -472,9 +474,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
       ],
     );  }
 
-  String _formatDateSection(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+  String _formatDateSection(DateTime date, DateTime today) {
     final yesterday = today.subtract(const Duration(days: 1));
 
     if (date == today) return 'Today';

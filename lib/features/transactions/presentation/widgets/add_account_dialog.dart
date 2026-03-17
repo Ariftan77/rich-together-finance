@@ -9,6 +9,7 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
+import '../../../../shared/widgets/currency_picker_field.dart';
 
 /// Dialog for quickly creating a new account from the transaction entry screen.
 /// Returns the newly created account ID via Navigator.pop.
@@ -21,10 +22,16 @@ class AddAccountDialog extends ConsumerStatefulWidget {
 
 class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   final TextEditingController _nameController = TextEditingController();
-  Currency _selectedCurrency = Currency.idr;
+  late Currency _selectedCurrency;
   AccountType _selectedType = AccountType.cash;
   double _rawBalance = 0;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCurrency = ref.read(defaultCurrencyProvider);
+  }
 
   @override
   void dispose() {
@@ -172,40 +179,36 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               ),
               const SizedBox(height: 20),
 
-              // Row 1: Currency | Account Type
-              Row(
-                children: [
-                  Expanded(
-                    child: _CompactDropdown<Currency>(
-                      label: 'Currency',
-                      value: _selectedCurrency,
-                      items: Currency.values
-                          .map((c) => DropdownMenuItem(value: c, child: Text(c.code)))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _selectedCurrency = val;
-                            _rawBalance = 0;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _CompactDropdown<AccountType>(
-                      label: 'Type',
-                      value: _selectedType,
-                      items: AccountType.values
-                          .map((t) => DropdownMenuItem(value: t, child: Text(t.displayName)))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedType = val);
-                      },
-                    ),
-                  ),
-                ],
+              // Currency picker (full width)
+              Text(
+                'CURRENCY',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              CurrencyPickerField(
+                value: _selectedCurrency,
+                onChanged: (val) => setState(() {
+                  _selectedCurrency = val;
+                  _rawBalance = 0;
+                }),
+              ),
+              const SizedBox(height: 14),
+
+              // Account type dropdown
+              _CompactDropdown<AccountType>(
+                label: 'Type',
+                value: _selectedType,
+                items: AccountType.values
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t.displayName)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedType = val);
+                },
               ),
               const SizedBox(height: 14),
 

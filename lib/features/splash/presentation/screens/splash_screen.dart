@@ -1,11 +1,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
+import '../../../onboarding/presentation/screens/getting_started_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -25,21 +27,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Wait minimum 1 second for splash animation
     final splashDelay = Future.delayed(const Duration(seconds: 1));
 
-    // Wait for auth status to be determined
+    // Wait for auth status and onboarding flag in parallel
     final authService = ref.read(authServiceProvider);
-    final hasPin = await authService.hasPin();
-    final isEnabled = await authService.isAuthEnabled();
+    final results = await Future.wait([
+      authService.hasPin(),
+      authService.isAuthEnabled(),
+      SharedPreferences.getInstance(),
+    ]);
+
+    final hasPin = results[0] as bool;
+    final isEnabled = results[1] as bool;
+    final prefs = results[2] as SharedPreferences;
+    final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
 
     // Ensure splash shows for at least 1 second
     await splashDelay;
 
     if (!mounted) return;
 
-    // Navigate to appropriate screen based on auth status
+    // Show onboarding on first launch
     Widget destination;
-    if (!hasPin) {
-      destination = const DashboardShell();
-    } else if (!isEnabled) {
+    if (!onboardingDone) {
+      destination = const GettingStartedScreen();
+    } else if (!hasPin || !isEnabled) {
       destination = const DashboardShell();
     } else {
       destination = const AuthScreen(isSetup: false);
