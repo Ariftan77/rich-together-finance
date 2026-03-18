@@ -500,17 +500,31 @@ final dashboardCategoryBreakdownProvider =
 
     final grandTotal = totals.values.fold(0.0, (sum, v) => sum + v);
 
-    // Sort by amount descending, take top 5
+    // Sort by amount descending
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return sorted.take(5).map((entry) {
+    final result = sorted.take(9).map((entry) {
       return CategoryBreakdown(
         categoryName: categoryMap[entry.key] ?? 'Unknown',
         amount: entry.value,
         percentage: grandTotal > 0 ? (entry.value / grandTotal * 100) : 0,
       );
     }).toList();
+
+    // Aggregate remaining categories into "Others"
+    if (sorted.length > 9) {
+      final othersAmount = sorted.skip(9).fold(0.0, (sum, e) => sum + e.value);
+      if (othersAmount > 0) {
+        result.add(CategoryBreakdown(
+          categoryName: 'Others',
+          amount: othersAmount,
+          percentage: grandTotal > 0 ? (othersAmount / grandTotal * 100) : 0,
+        ));
+      }
+    }
+
+    return result;
   });
 });
 

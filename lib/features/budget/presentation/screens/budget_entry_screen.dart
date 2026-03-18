@@ -10,6 +10,7 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../transactions/presentation/widgets/category_selector.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
@@ -238,23 +239,9 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 // Currency Selector
                 Text(trans.goalCurrency, style: AppTypography.textTheme.labelLarge),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: Currency.values.map((currency) {
-                    final isSelected = _selectedCurrency == currency;
-                    return ChoiceChip(
-                      label: Text(currency.code),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedCurrency = currency);
-                      },
-                      selectedColor: AppColors.primaryGold,
-                      backgroundColor: AppColors.glassBackground,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
-                      ),
-                    );
-                  }).toList(),
+                CurrencyPickerField(
+                  value: _selectedCurrency,
+                  onChanged: (currency) => setState(() => _selectedCurrency = currency),
                 ),
                 const SizedBox(height: 24),
 

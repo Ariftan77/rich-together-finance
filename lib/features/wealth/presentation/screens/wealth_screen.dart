@@ -29,6 +29,8 @@ final _budgetPeriodFilterProvider = StateProvider.autoDispose<Set<BudgetPeriod>>
 final _budgetFilterExpandedProvider = StateProvider.autoDispose<bool>((ref) => false);
 // Tracks which period groups are collapsed (empty = all expanded by default)
 final _budgetCollapsedPeriodsProvider = StateProvider.autoDispose<Set<BudgetPeriod>>((ref) => {});
+// Tracks which debt person groups are collapsed — key: "${type.index}::${personName}"
+final _debtCollapsedGroupsProvider = StateProvider.autoDispose<Set<String>>((ref) => {});
 
 class WealthScreen extends ConsumerStatefulWidget {
   const WealthScreen({super.key});
@@ -668,42 +670,349 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   Widget _buildDebtsTab() {
     final trans = ref.watch(translationsProvider);
     final debtsAsync = ref.watch(debtsStreamProvider);
+    final collapsedGroups = ref.watch(_debtCollapsedGroupsProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Debts Section Header
-              Text(trans.debtTitle,
-                  style: AppTypography.textTheme.titleLarge),
-          const SizedBox(height: 12),
-
-          // Debts List
-          debtsAsync.when(
-            data: (debts) {
-              if (debts.isEmpty) {
-                return _buildEmptyState(
+    return debtsAsync.when(
+      data: (debts) {
+        if (debts.isEmpty) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                _buildEmptyState(
                   Icons.handshake_outlined,
                   trans.debtNoDebts,
                   trans.debtNoDebtsHint,
-                );
-              }
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
+          );
+        }
 
-              return Column(
-                children: debts.map((debt) => _buildDebtCard(debt)).toList(),
-              );
-            },
-            loading: () => const Center(
-                child: Padding(
-              padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(color: AppColors.primaryGold),
-            )),
-            error: (err, _) => Center(
-                child: Text('${trans.error}: $err',
-                    style: const TextStyle(color: Colors.red))),
+        // Group by type, then by personName (preserving insertion order)
+        final payableGroups = <String, List<Debt>>{};
+        final receivableGroups = <String, List<Debt>>{};
+        for (final d in debts) {
+          if (d.type == DebtType.payable) {
+            payableGroups.putIfAbsent(d.personName, () => []).add(d);
+          } else {
+            receivableGroups.putIfAbsent(d.personName, () => []).add(d);
+          }
+        }
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+          children: [
+            if (payableGroups.isNotEmpty) ...[
+              _buildDebtTypeSectionHeader(
+                icon: Icons.arrow_upward,
+                label: trans.debtPayable,
+                color: AppColors.error,
+                count: debts.where((d) => d.type == DebtType.payable).length,
+              ),
+              const SizedBox(height: 8),
+              for (final entry in payableGroups.entries)
+                _buildDebtPersonGroup(
+                  type: DebtType.payable,
+                  personName: entry.key,
+                  debts: entry.value,
+                  collapsedGroups: collapsedGroups,
+                  showDecimal: showDecimal,
+                  trans: trans,
+                ),
+              const SizedBox(height: 8),
+            ],
+            if (receivableGroups.isNotEmpty) ...[
+              _buildDebtTypeSectionHeader(
+                icon: Icons.arrow_downward,
+                label: trans.debtReceivable,
+                color: AppColors.success,
+                count: debts.where((d) => d.type == DebtType.receivable).length,
+              ),
+              const SizedBox(height: 8),
+              for (final entry in receivableGroups.entries)
+                _buildDebtPersonGroup(
+                  type: DebtType.receivable,
+                  personName: entry.key,
+                  debts: entry.value,
+                  collapsedGroups: collapsedGroups,
+                  showDecimal: showDecimal,
+                  trans: trans,
+                ),
+            ],
+          ],
+        );
+      },
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold)),
+      error: (err, _) => Center(
+          child: Text('${trans.error}: $err',
+              style: const TextStyle(color: Colors.red))),
+    );
+  }
+
+  Widget _buildDebtTypeSectionHeader({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required int count,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 100), // Bottom padding for nav bar
+          child: Icon(icon, color: color, size: 14),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTypography.textTheme.titleSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '($count)',
+          style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDebtPersonGroup({
+    required DebtType type,
+    required String personName,
+    required List<Debt> debts,
+    required Set<String> collapsedGroups,
+    required bool showDecimal,
+    required dynamic trans,
+  }) {
+    final groupKey = '${type.index}::$personName';
+    final isCollapsed = collapsedGroups.contains(groupKey);
+    final typeColor = type == DebtType.payable ? AppColors.error : AppColors.success;
+
+    // Aggregate totals by currency
+    final totalByCurrency = <Currency, double>{};
+    final remainingByCurrency = <Currency, double>{};
+    for (final d in debts) {
+      totalByCurrency.update(d.currency, (v) => v + d.amount, ifAbsent: () => d.amount);
+      remainingByCurrency.update(
+          d.currency, (v) => v + (d.amount - d.paidAmount),
+          ifAbsent: () => d.amount - d.paidAmount);
+    }
+    final isSingleCurrency = totalByCurrency.length == 1;
+    final singleCurrency = isSingleCurrency ? totalByCurrency.keys.first : null;
+    final totalRemaining = isSingleCurrency ? remainingByCurrency.values.first : null;
+    final totalAmount = isSingleCurrency ? totalByCurrency.values.first : null;
+    final totalProgress =
+        (totalAmount != null && totalAmount > 0) ? (totalAmount - totalRemaining!) / totalAmount : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Collapsible header
+        GestureDetector(
+          onTap: () {
+            final current = Set<String>.from(ref.read(_debtCollapsedGroupsProvider));
+            if (isCollapsed) {
+              current.remove(groupKey);
+            } else {
+              current.add(groupKey);
+            }
+            ref.read(_debtCollapsedGroupsProvider.notifier).state = current;
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                AnimatedRotation(
+                  turns: isCollapsed ? -0.25 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 20),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    personName,
+                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${debts.length}',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                ),
+                const SizedBox(width: 8),
+                if (isSingleCurrency && totalRemaining != null) ...[
+                  Text(
+                    Formatters.formatCurrency(totalRemaining, currency: singleCurrency!, showDecimal: showDecimal),
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: typeColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _buildCurrencyBadge(singleCurrency.code),
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        // Thin progress line (always visible)
+        if (isSingleCurrency)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: totalProgress.clamp(0.0, 1.0),
+              backgroundColor: Colors.white10,
+              color: typeColor,
+              minHeight: 3,
+            ),
+          ),
+
+        // Expanded content
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          child: isCollapsed
+              ? const SizedBox.shrink()
+              : Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    if (debts.length > 1)
+                      _buildDebtGroupSummaryCard(
+                        debts: debts,
+                        typeColor: typeColor,
+                        showDecimal: showDecimal,
+                        trans: trans,
+                      ),
+                    if (debts.length > 1) const SizedBox(height: 4),
+                    ...debts.map((d) => _buildDebtCard(d)),
+                  ],
+                ),
+        ),
+
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildDebtGroupSummaryCard({
+    required List<Debt> debts,
+    required Color typeColor,
+    required bool showDecimal,
+    required dynamic trans,
+  }) {
+    final totalByCurrency = <Currency, double>{};
+    final remainingByCurrency = <Currency, double>{};
+    for (final d in debts) {
+      totalByCurrency.update(d.currency, (v) => v + d.amount, ifAbsent: () => d.amount);
+      remainingByCurrency.update(
+          d.currency, (v) => v + (d.amount - d.paidAmount),
+          ifAbsent: () => d.amount - d.paidAmount);
+    }
+    final isSingle = totalByCurrency.length == 1;
+    final currency = isSingle ? totalByCurrency.keys.first : null;
+    final total = isSingle ? totalByCurrency.values.first : null;
+    final remaining = isSingle ? remainingByCurrency.values.first : null;
+    final progress = (total != null && total > 0) ? (total - remaining!) / total : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: typeColor.withValues(alpha: 0.25), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.summarize_outlined, color: typeColor, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                '${debts.length} ${trans.debtTitle}',
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (isSingle && remaining != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      Formatters.formatCurrency(remaining, currency: currency!, showDecimal: showDecimal),
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: typeColor,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _buildCurrencyBadge(currency.code),
+                  ],
+                ),
+            ],
+          ),
+          if (isSingle && total != null) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                backgroundColor: Colors.white10,
+                color: typeColor,
+                minHeight: 5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${(progress * 100).clamp(0, 100).toStringAsFixed(0)}% ${trans.commonPaid}',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54),
+                ),
+                Text(
+                  '${trans.commonOf} ${Formatters.formatCurrency(total, currency: currency!, showDecimal: false)}',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                ),
+              ],
+            ),
+          ],
+          if (!isSingle) ...[
+            const SizedBox(height: 6),
+            ...remainingByCurrency.entries.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(e.key.code,
+                      style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54)),
+                  Text(
+                    Formatters.formatCurrency(e.value, currency: e.key, showDecimal: showDecimal),
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: typeColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
         ],
       ),
     );
