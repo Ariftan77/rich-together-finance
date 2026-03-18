@@ -483,6 +483,32 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+                      const Divider(color: AppColors.glassBorder),
+                      const SizedBox(height: 16),
+                      Text(
+                        ref.watch(translationsProvider).accountEditDetails,
+                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                          color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GlassInput(
+                        controller: _nameController,
+                        hintText: ref.watch(translationsProvider).accountNameHint,
+                        prefixIcon: Icons.label,
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? ref.watch(translationsProvider).accountNameHint
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      GlassButton(
+                        text: ref.watch(translationsProvider).accountSave,
+                        isFullWidth: true,
+                        size: GlassButtonSize.large,
+                        onPressed: _saveAccount,
+                      ),
                     ],
                     if (!isEditing) ...[
                       const SizedBox(height: 24),
