@@ -2,7 +2,7 @@ name: rich_together
 description: "Offline-first personal finance app for expense tracking, budgeting, goals, debts, and portfolio management (coming soon)."
 publish_to: 'none'
 
-version: 1.0.1+30
+version: 1.0.1+31
 
 environment:
   sdk: ^3.10.8
@@ -26,6 +26,7 @@ dependencies:
 
   # Networking
   dio: ^5.4.0
+  connectivity_plus: ^6.0.0
 
   # Charts
   fl_chart: ^0.66.0

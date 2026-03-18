@@ -24,28 +24,14 @@ class AccountCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final showDecimal = ref.watch(showDecimalProvider);
     final currencySymbol = account.currency.symbol;
-    
-    // Convert int type to Enum
     final accountType = account.type;
 
     return GlassCard(
       onTap: onTap,
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getIconForType(accountType),
-              color: AppColors.primaryGold,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +63,7 @@ class AccountCard extends ConsumerWidget {
                   'Outstanding',
                   style: TextStyle(
                     color: AppColors.error.withValues(alpha: 0.7),
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
                 ),
             ],
@@ -87,18 +73,4 @@ class AccountCard extends ConsumerWidget {
     );
   }
 
-  IconData _getIconForType(AccountType type) {
-    switch (type) {
-      case AccountType.cash:
-        return Icons.wallet;
-      case AccountType.bank:
-        return Icons.account_balance;
-      case AccountType.eWallet:
-        return Icons.phone_android;
-      case AccountType.investment:
-        return Icons.trending_up;
-      case AccountType.creditCard:
-        return Icons.credit_card;
-    }
-  }
 }

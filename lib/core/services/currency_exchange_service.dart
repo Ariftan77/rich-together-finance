@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,6 +17,7 @@ class CurrencyExchangeService {
   final LocalRateStore _localStore;
   final Dio _dio;
   final SupabaseClient _supabase;
+  final Connectivity _connectivity;
 
   static const _exchangeRateBase = 'https://open.er-api.com/v6';
   static const _frankfurterBase = 'https://api.frankfurter.app';
@@ -36,9 +38,11 @@ class CurrencyExchangeService {
     required LocalRateStore localStore,
     required Dio dio,
     required SupabaseClient supabase,
+    Connectivity? connectivity,
   })  : _localStore = localStore,
         _dio = dio,
-        _supabase = supabase;
+        _supabase = supabase,
+        _connectivity = connectivity ?? Connectivity();
 
   // ---------------------------------------------------------------------------
   // getRates — today's rates via full fallback chain
@@ -110,6 +114,24 @@ class CurrencyExchangeService {
         return patched;
       }
       steps.add('local_tolerance:${_ms(sw)}ms(miss)');
+    }
+
+    // 1c. Connectivity gate — skip all network calls if offline
+    if (await _isOffline()) {
+      sw = Stopwatch()..start();
+      final latestLocal = await _localStore.getLatest();
+      if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
+        steps.add('offline_local_fallback:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
+        final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
+        _cacheResult(requestedDate, patched);
+        _log(requestedDate, patched, totalSw: totalSw, steps: steps);
+        return patched;
+      }
+      steps.add('offline_local_fallback:${_ms(sw)}ms(miss)');
+      final hardcodedResult = _getHardcodedRates(requestedDate);
+      _cacheResult(requestedDate, hardcodedResult);
+      _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
+      return hardcodedResult;
     }
 
     // 2. Exact match in Supabase
@@ -405,7 +427,8 @@ class CurrencyExchangeService {
           .select()
           .eq('rate_date', date)
           .eq('base_currency', 'USD')
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
 
       if (response == null) return null;
       return RateResult.fromRow(response, source: 'supabase', isExactDate: true);
@@ -423,7 +446,8 @@ class CurrencyExchangeService {
           .eq('base_currency', 'USD')
           .order('rate_date', ascending: false)
           .limit(1)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
 
       if (response == null) return null;
       return RateResult.fromRow(response, source: 'supabase', isExactDate: true);
@@ -442,7 +466,8 @@ class CurrencyExchangeService {
           .lte('rate_date', date)
           .order('rate_date', ascending: false)
           .limit(1)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
 
       if (response == null) return null;
       return RateResult.fromRow(response, source: 'supabase', isExactDate: response['rate_date'] == date);
@@ -460,7 +485,8 @@ class CurrencyExchangeService {
           .eq('base_currency', 'USD')
           .order('rate_date', ascending: true)
           .limit(1)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
 
       if (response == null) return null;
       return RateResult.fromRow(response, source: 'supabase', isExactDate: true);
@@ -580,6 +606,11 @@ class CurrencyExchangeService {
   // ---------------------------------------------------------------------------
   // Utilities
   // ---------------------------------------------------------------------------
+
+  Future<bool> _isOffline() async {
+    final results = await _connectivity.checkConnectivity();
+    return results.every((r) => r == ConnectivityResult.none);
+  }
 
   String _today() {
     final now = DateTime.now().toUtc();
