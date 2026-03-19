@@ -46,7 +46,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
       data: (accounts) => categoriesAsync.when(
         data: (categories) {
           final accountMap = {for (var a in accounts) a.id: a.name};
-          final categoryMap = {for (var c in categories) c.id: c.name};
+          final categoryMap = {for (var c in categories) c.id: c};
 
           return GlassCard(
             child: Padding(
@@ -83,9 +83,10 @@ class RecentTransactionsWidget extends ConsumerWidget {
                   const SizedBox(height: 16),
                   ...transactions.map((transaction) {
                     final accountName = accountMap[transaction.accountId] ?? 'Unknown';
-                    final categoryName = transaction.categoryId != null
-                        ? (categoryMap[transaction.categoryId] ?? 'Unknown')
-                        : 'No Category';
+                    final category = transaction.categoryId != null
+                        ? categoryMap[transaction.categoryId]
+                        : null;
+                    final categoryName = category?.name ?? 'No Category';
                     
                     final isIncome = transaction.type == TransactionType.income;
                     final isExpense = transaction.type == TransactionType.expense;
@@ -120,48 +121,61 @@ class RecentTransactionsWidget extends ConsumerWidget {
                         child: Row(
                           children: [
                             // Icon
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: (isIncome
-                                        ? AppColors.success
-                                        : isExpense
-                                            ? AppColors.error
-                                            : isAdjustment
-                                                ? Colors.amber
-                                                : isDebtIn
-                                                    ? Colors.orange
-                                                    : isDebtOut
-                                                        ? const Color(0xFF60A5FA)
-                                                        : AppColors.info)
-                                    .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                isIncome
-                                    ? Icons.arrow_downward
-                                    : isExpense
-                                        ? Icons.arrow_upward
-                                        : isAdjustment
-                                            ? Icons.tune
-                                            : isDebt
-                                                ? Icons.people_outline
-                                                : Icons.swap_horiz,
-                                color: isIncome
-                                    ? AppColors.success
-                                    : isExpense
-                                        ? AppColors.error
-                                        : isAdjustment
-                                            ? Colors.amber
-                                            : isDebtIn
-                                                ? Colors.orange
-                                                : isDebtOut
-                                                    ? const Color(0xFF60A5FA)
-                                                    : AppColors.info,
-                                size: 20,
-                              ),
-                            ),
+                            Builder(builder: (context) {
+                              final typeColor = isIncome
+                                  ? AppColors.success
+                                  : isExpense
+                                      ? AppColors.error
+                                      : isAdjustment
+                                          ? Colors.amber
+                                          : isDebtIn
+                                              ? Colors.orange
+                                              : isDebtOut
+                                                  ? const Color(0xFF60A5FA)
+                                                  : AppColors.info;
+                              final useCategoryIcon = (isIncome || isExpense) &&
+                                  category != null &&
+                                  category.icon.isNotEmpty;
+                              Color bgColor;
+                              if (useCategoryIcon) {
+                                final hex = category!.color;
+                                if (hex == null || hex == 'transparent' || hex.isEmpty) {
+                                  bgColor = Colors.transparent;
+                                } else {
+                                  final cleaned = hex.replaceFirst('#', '0xFF');
+                                  bgColor = Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.25);
+                                }
+                              } else {
+                                bgColor = typeColor.withValues(alpha: 0.2);
+                              }
+                              return Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: bgColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: typeColor.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: useCategoryIcon
+                                    ? Center(child: Text(category!.icon, style: const TextStyle(fontSize: 18)))
+                                    : Icon(
+                                        isIncome
+                                            ? Icons.arrow_downward
+                                            : isExpense
+                                                ? Icons.arrow_upward
+                                                : isAdjustment
+                                                    ? Icons.tune
+                                                    : isDebt
+                                                        ? Icons.people_outline
+                                                        : Icons.swap_horiz,
+                                        color: typeColor,
+                                        size: 20,
+                                      ),
+                              );
+                            }),
                             const SizedBox(width: 12),
                             // Details
                             Expanded(

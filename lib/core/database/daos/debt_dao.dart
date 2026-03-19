@@ -92,6 +92,70 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     );
   }
 
+  /// Find the debt that corresponds to a creation transaction.
+  /// Matches profile + name + type, then narrows by creationAccountId and
+  /// creation date (within 2 minutes) for precision when multiple debts share
+  /// the same person name.
+  Future<Debt?> findDebtByNameAndType(
+    int profileId,
+    String personName,
+    DebtType type, {
+    int? accountId,
+    DateTime? date,
+  }) async {
+    final results = await (select(debts)
+          ..where((d) =>
+              d.profileId.equals(profileId) &
+              d.personName.equals(personName) &
+              d.type.equals(type.index))
+          ..orderBy([(d) => OrderingTerm.desc(d.createdAt)]))
+        .get();
+
+    if (results.isEmpty) return null;
+
+    // Most precise: match both account and creation time window
+    if (accountId != null && date != null) {
+      const window = Duration(minutes: 2);
+      final precise = results.where((d) =>
+          d.creationAccountId == accountId &&
+          d.createdAt.difference(date).abs() <= window);
+      if (precise.isNotEmpty) return precise.first;
+    }
+
+    // Fallback: account match only
+    if (accountId != null) {
+      final byAccount = results.where((d) => d.creationAccountId == accountId);
+      if (byAccount.isNotEmpty) return byAccount.first;
+    }
+
+    // Last resort: most recently created with matching name + type
+    return results.first;
+  }
+
+  /// Reverse a debt payment (e.g. when a settlement transaction is deleted).
+  /// Finds the most-recently-updated debt matching [profileId] + [personName]
+  /// and subtracts [amount] from its paidAmount.
+  Future<void> reverseDebtPayment(int profileId, String personName, double amount) async {
+    final matches = await (select(debts)
+          ..where((d) => d.profileId.equals(profileId) & d.personName.equals(personName))
+          ..orderBy([(d) => OrderingTerm.desc(d.updatedAt)]))
+        .get();
+    if (matches.isEmpty) return;
+
+    final debt = matches.first;
+    final newPaidAmount = (debt.paidAmount - amount).clamp(0.0, debt.amount);
+    final isNowFullyPaid = newPaidAmount >= debt.amount;
+
+    await (update(debts)..where((d) => d.id.equals(debt.id))).write(
+      DebtsCompanion(
+        paidAmount: Value(newPaidAmount),
+        isSettled: Value(isNowFullyPaid),
+        settledDate: isNowFullyPaid ? Value(debt.settledDate) : const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Delete a debt
   Future<int> deleteDebt(int id) =>
       (delete(debts)..where((d) => d.id.equals(id))).go();

@@ -928,6 +928,7 @@ class _TitleList extends StatelessWidget {
 // ===========================================================================
 
 Color _hexToColor(String hex) {
+  if (hex == 'transparent') return Colors.transparent;
   final hexCode = hex.replaceFirst('#', '');
   return Color(int.parse('FF$hexCode', radix: 16));
 }

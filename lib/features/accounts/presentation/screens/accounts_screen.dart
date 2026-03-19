@@ -4,8 +4,14 @@ import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/multi_currency_picker_field.dart';
+import '../../../../core/providers/currency_exchange_providers.dart';
+import '../../../../core/services/currency_exchange_service.dart';
 import '../widgets/account_card.dart';
 import '../providers/balance_provider.dart';
 import 'account_entry_screen.dart';
@@ -15,6 +21,52 @@ final _walletSearchProvider = StateProvider.autoDispose<String>((ref) => '');
 final _walletCurrencyFilterProvider = StateProvider.autoDispose<Set<Currency>>((ref) => {});
 final _walletTypeFilterProvider = StateProvider.autoDispose<Set<AccountType>>((ref) => {});
 final _walletFilterExpandedProvider = StateProvider.autoDispose<bool>((ref) => false);
+
+/// Total balance across filtered accounts, converted to base currency.
+final _walletFilteredTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) async* {
+  final accounts = ref.watch(accountsStreamProvider).valueOrNull ?? [];
+  final balances = ref.watch(accountBalanceProvider);
+  final selectedCurrencies = ref.watch(_walletCurrencyFilterProvider);
+  final selectedTypes = ref.watch(_walletTypeFilterProvider);
+  final searchQuery = ref.watch(_walletSearchProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+
+  var filtered = accounts;
+  if (selectedCurrencies.isNotEmpty) {
+    filtered = filtered.where((a) => selectedCurrencies.contains(a.currency)).toList();
+  }
+  if (selectedTypes.isNotEmpty) {
+    filtered = filtered.where((a) => selectedTypes.contains(a.type)).toList();
+  }
+  if (searchQuery.isNotEmpty) {
+    final q = searchQuery.toLowerCase();
+    filtered = filtered.where((a) {
+      return a.name.toLowerCase().contains(q) ||
+          a.type.displayName.toLowerCase().contains(q) ||
+          a.currency.code.toLowerCase().contains(q) ||
+          a.currency.name.toLowerCase().contains(q) ||
+          a.currency.symbol.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  final rateResult = await exchangeService.getRates();
+  final rates = rateResult.rates;
+
+  double total = 0;
+  for (final account in filtered) {
+    final balance = balances[account.id] ?? account.initialBalance;
+    if (account.currency == baseCurrency) {
+      total += balance;
+    } else {
+      total += CurrencyExchangeService.convertCurrency(
+        balance, account.currency.code, baseCurrency.code, rates,
+      );
+    }
+  }
+
+  yield total;
+});
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -28,6 +80,9 @@ class AccountsScreen extends ConsumerWidget {
     final selectedCurrencies = ref.watch(_walletCurrencyFilterProvider);
     final selectedTypes = ref.watch(_walletTypeFilterProvider);
     final isExpanded = ref.watch(_walletFilterExpandedProvider);
+    final totalBalanceAsync = ref.watch(_walletFilteredTotalBalanceProvider);
+    final baseCurrency = ref.watch(defaultCurrencyProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -41,6 +96,62 @@ class AccountsScreen extends ConsumerWidget {
               Text(
                 trans.walletTitle,
                 style: AppTypography.textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 12),
+              // Total Balance Card
+              GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet,
+                        color: AppColors.primaryGold,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trans.dashboardTotalBalance,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          totalBalanceAsync.when(
+                            data: (v) => Text(
+                              '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            loading: () => const Text(
+                              '...',
+                              style: TextStyle(color: Colors.white, fontSize: 20),
+                            ),
+                            error: (_, __) => const Text(
+                              '--',
+                              style: TextStyle(color: Colors.white54, fontSize: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               // Search bar
@@ -103,37 +214,10 @@ class AccountsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
                 const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _FilterChip(
-                        label: 'All',
-                        isSelected: selectedCurrencies.isEmpty,
-                        onTap: () => ref.read(_walletCurrencyFilterProvider.notifier).state = {},
-                      ),
-                      const SizedBox(width: 8),
-                      ...Currency.values.map((c) {
-                        final isSelected = selectedCurrencies.contains(c);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: _FilterChip(
-                            label: c.code,
-                            isSelected: isSelected,
-                            onTap: () {
-                              final current = Set<Currency>.from(ref.read(_walletCurrencyFilterProvider));
-                              if (isSelected) {
-                                current.remove(c);
-                              } else {
-                                current.add(c);
-                              }
-                              ref.read(_walletCurrencyFilterProvider.notifier).state = current;
-                            },
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
+                MultiCurrencyPickerField(
+                  selected: selectedCurrencies,
+                  onChanged: (updated) =>
+                      ref.read(_walletCurrencyFilterProvider.notifier).state = updated,
                 ),
                 const SizedBox(height: 16),
                 Text('Account Type', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),

@@ -38,7 +38,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
       _nameController.text = widget.initialName!;
     }
     _icon = '📦';
-    _colorHex = '#BDC3C7';
+    _colorHex = 'transparent';
   }
 
   @override
@@ -201,7 +201,9 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))),
+                      color: _colorHex == 'transparent'
+                          ? Colors.transparent
+                          : Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,

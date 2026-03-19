@@ -251,7 +251,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Color(int.parse((isEditing ? (_editingColor ?? item.category.color) : item.category.color)?.replaceFirst('#', '0xFF') ?? '0xFF808080')).withValues(alpha: 0.2),
+                    color: _parseColor(isEditing ? (_editingColor ?? item.category.color) : item.category.color),
                     shape: BoxShape.circle,
                   ),
                   child: Text(
@@ -344,6 +344,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     );
   }
 
+  Color _parseColor(String? hex) {
+    if (hex == null || hex == 'transparent') return Colors.transparent;
+    final cleaned = hex.replaceFirst('#', '0xFF');
+    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
+  }
+
   void _startEdit(Category category) {
     setState(() {
       _editingCategoryId = category.id;
@@ -366,7 +372,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     final result = await CategoryIconPicker.show(
       context,
       initialIcon: _editingIcon ?? category.icon,
-      initialColorHex: _editingColor ?? category.color ?? '#BDC3C7',
+      initialColorHex: _editingColor ?? category.color ?? 'transparent',
     );
     if (result != null) {
       setState(() {

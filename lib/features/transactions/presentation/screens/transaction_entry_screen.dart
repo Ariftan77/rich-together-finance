@@ -37,6 +37,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   
   TransactionType _selectedType = TransactionType.expense;
   DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
   int? _selectedAccountId;
   int? _selectedToAccountId;
   int? _selectedCategoryId;
@@ -111,6 +112,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _selectedCategoryId = transaction.categoryId;
         _selectedToAccountId = transaction.toAccountId;
         _selectedDate = transaction.date;
+        _selectedTime = TimeOfDay.fromDateTime(transaction.date);
         _rawAmount = transaction.amount.toString();
         _originalAmount = transaction.amount;
         _originalAccountId = transaction.accountId;
@@ -368,7 +370,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         exchangeRate: finalExchangeRate != null ? drift.Value(finalExchangeRate) : const drift.Value.absent(),
         type: drift.Value(_selectedType),
         amount: drift.Value(amount),
-        date: drift.Value(_selectedDate),
+        date: drift.Value(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute)),
         title: drift.Value(_titleController.text),
         note: drift.Value(_noteController.text),
         createdAt: widget.transactionId == null ? drift.Value(DateTime.now()) : const drift.Value.absent(),
@@ -442,6 +444,27 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
+  Future<void> _selectTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryGold,
+              surface: Color(0xFF221D10),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
+    }
+  }
+
   Future<void> _deleteTransaction() async {
     if (widget.transactionId == null) return;
 
@@ -503,6 +526,40 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     try {
       final dao = ref.read(transactionDaoProvider);
       await dao.deleteTransaction(widget.transactionId!);
+
+      final title = _titleController.text;
+      final profileId = ref.read(activeProfileIdProvider);
+
+      // Debt settlement deleted → reverse paid amount on the debt
+      const paymentPrefix = 'Debt Payment: ';
+      if (title.startsWith(paymentPrefix) && _originalAmount != null && profileId != null) {
+        final personName = title.substring(paymentPrefix.length).trim();
+        if (personName.isNotEmpty) {
+          await ref.read(debtDaoProvider).reverseDebtPayment(profileId, personName, _originalAmount!);
+        }
+      }
+
+      // Debt creation transaction deleted → delete the linked debt record
+      const creationPrefix = 'Debt: ';
+      if ((_selectedType == TransactionType.debtIn || _selectedType == TransactionType.debtOut) &&
+          title.startsWith(creationPrefix) && profileId != null) {
+        final personName = title.substring(creationPrefix.length).trim();
+        if (personName.isNotEmpty) {
+          final debtType = _selectedType == TransactionType.debtIn ? DebtType.payable : DebtType.receivable;
+          final txDate = DateTime(
+            _selectedDate.year, _selectedDate.month, _selectedDate.day,
+            _selectedTime.hour, _selectedTime.minute,
+          );
+          final debt = await ref.read(debtDaoProvider).findDebtByNameAndType(
+            profileId, personName, debtType,
+            accountId: _selectedAccountId,
+            date: txDate,
+          );
+          if (debt != null) {
+            await ref.read(debtDaoProvider).deleteDebt(debt.id);
+          }
+        }
+      }
     } catch (e) {
 
       if (mounted) {
@@ -938,6 +995,74 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
                     const SizedBox(height: 32),
 
+                    // Debt info banner (edit mode only)
+                    if (widget.transactionId != null && (
+                        _selectedType == TransactionType.debtIn ||
+                        _selectedType == TransactionType.debtOut ||
+                        _titleController.text.startsWith('Debt Payment: '))) ...[
+                      Builder(builder: (context) {
+                        final isCreation = _selectedType == TransactionType.debtIn || _selectedType == TransactionType.debtOut;
+                        final title = _titleController.text;
+                        final prefix = isCreation ? 'Debt: ' : 'Debt Payment: ';
+                        final personName = title.startsWith(prefix)
+                            ? title.substring(prefix.length).trim()
+                            : title;
+                        final typeLabel = _selectedType == TransactionType.debtIn
+                            ? trans.debtPayable
+                            : _selectedType == TransactionType.debtOut
+                                ? trans.debtReceivable
+                                : (isCreation ? '' : trans.debtSettle);
+
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.account_balance_wallet_outlined,
+                                  color: AppColors.primaryGold, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isCreation ? 'Debt Record' : 'Debt Payment',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryGold,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      '$personName${typeLabel.isNotEmpty ? ' · $typeLabel' : ''}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.7),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Edit debt details in the Debt module',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.4),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 24),
+                    ],
+
                     // Title Field
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,10 +1348,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
 
 
-                    // Date and Note Row
+                    // Date and Time Row
                     Row(
                       children: [
                         Expanded(
+                          flex: 3,
                           child: GestureDetector(
                             onTap: _selectDate,
                             child: Container(
@@ -1259,11 +1385,50 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 8),
                         Expanded(
+                          flex: 2,
                           child: GestureDetector(
-                            onTap: _addNote,
+                            onTap: _selectTime,
                             child: Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _selectedTime.format(context),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Note Row
+                    GestureDetector(
+                      onTap: _addNote,
+                      child: Container(
                               height: 56,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
@@ -1297,9 +1462,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
 
                     const SizedBox(height: 32),
 

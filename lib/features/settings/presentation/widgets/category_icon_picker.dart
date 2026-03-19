@@ -89,8 +89,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     ],
   };
 
-  // Curated list of colors (Hex Strings)
+  // Curated list of colors (Hex Strings). 'transparent' is a special sentinel.
   static const List<String> _colors = [
+    'transparent', // No background
     '#FF6B6B', // Red
     '#4ECDC4', // Teal
     '#FFE66D', // Yellow
@@ -117,7 +118,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
   void initState() {
     super.initState();
     _selectedIcon = widget.initialIcon.isEmpty ? '📦' : widget.initialIcon;
-    _selectedColorHex = widget.initialColorHex.isEmpty ? '#BDC3C7' : widget.initialColorHex;
+    _selectedColorHex = widget.initialColorHex.isEmpty ? 'transparent' : widget.initialColorHex;
     _tabController = TabController(length: _emojiGroups.length, vsync: this);
   }
 
@@ -128,6 +129,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
   }
 
   Color _hexToColor(String hex) {
+    if (hex == 'transparent') return Colors.transparent;
     hex = hex.replaceFirst('#', '');
     if (hex.length == 6) {
       hex = 'FF$hex';
@@ -203,6 +205,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                     decoration: BoxDecoration(
                       color: _hexToColor(_selectedColorHex),
                       shape: BoxShape.circle,
+                      border: _selectedColorHex == 'transparent'
+                          ? Border.all(color: Colors.white24, width: 1.5)
+                          : null,
                     ),
                     child: Text(
                       _selectedIcon,
@@ -236,20 +241,26 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                         separatorBuilder: (_, __) => const SizedBox(width: 10),
                         itemBuilder: (context, index) {
                           final hex = _colors[index];
-                          final color = _hexToColor(hex);
                           final isSelected = hex == _selectedColorHex;
+                          final isTransparent = hex == 'transparent';
+                          final color = _hexToColor(hex);
                           return GestureDetector(
                             onTap: () => setState(() => _selectedColorHex = hex),
                             child: Container(
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: color,
+                                color: isTransparent ? Colors.transparent : color,
                                 shape: BoxShape.circle,
-                                border: isSelected
-                                    ? Border.all(color: Colors.white, width: 3)
-                                    : null,
-                                boxShadow: isSelected
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : isTransparent
+                                          ? Colors.white38
+                                          : Colors.transparent,
+                                  width: isSelected ? 3 : 1.5,
+                                ),
+                                boxShadow: isSelected && !isTransparent
                                     ? [
                                         BoxShadow(
                                           color: color.withValues(alpha: 0.5),
@@ -259,6 +270,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                                       ]
                                     : null,
                               ),
+                              child: isTransparent
+                                  ? CustomPaint(painter: _CrossPainter())
+                                  : null,
                             ),
                           );
                         },
@@ -341,4 +355,29 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
       },
     );
   }
+}
+
+/// Draws a diagonal "no color" cross inside the transparent swatch.
+class _CrossPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white38
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    final inset = size.width * 0.25;
+    canvas.drawLine(
+      Offset(inset, inset),
+      Offset(size.width - inset, size.height - inset),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - inset, inset),
+      Offset(inset, size.height - inset),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

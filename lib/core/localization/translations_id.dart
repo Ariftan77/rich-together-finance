@@ -269,6 +269,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get debtReceivable => 'Piutang Saya';
   @override String get debtPersonName => 'Nama Orang';
   @override String get debtPersonNameHint => 'Siapa?';
+  @override String get debtCreatedDate => 'Tanggal Dibuat';
   @override String get debtDueDate => 'Jatuh Tempo';
   @override String get debtSettle => 'Lunaskan';
   @override String get debtSettleAccount => 'Akun Pelunasan';

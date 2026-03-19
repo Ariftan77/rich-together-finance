@@ -17,8 +17,8 @@ import '../../../goals/presentation/providers/goal_provider.dart';
 import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
-
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
+import '../../../../shared/widgets/multi_currency_picker_field.dart';
+import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 
 
 /// Exposes the active sub-tab index so DashboardShell can show the right FAB.
@@ -185,37 +185,10 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 const SizedBox(height: 12),
                 Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
                 const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _FilterChip(
-                        label: 'All',
-                        isSelected: selectedCurrencies.isEmpty,
-                        onTap: () => ref.read(_budgetCurrencyFilterProvider.notifier).state = {},
-                      ),
-                      const SizedBox(width: 8),
-                      ...Currency.values.map((c) {
-                        final isSelected = selectedCurrencies.contains(c);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: _FilterChip(
-                            label: c.code,
-                            isSelected: isSelected,
-                            onTap: () {
-                              final current = Set<Currency>.from(ref.read(_budgetCurrencyFilterProvider));
-                              if (isSelected) {
-                                current.remove(c);
-                              } else {
-                                current.add(c);
-                              }
-                              ref.read(_budgetCurrencyFilterProvider.notifier).state = current;
-                            },
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
+                MultiCurrencyPickerField(
+                  selected: selectedCurrencies,
+                  onChanged: (updated) =>
+                      ref.read(_budgetCurrencyFilterProvider.notifier).state = updated,
                 ),
                 const SizedBox(height: 16),
                 Text('Period', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
@@ -538,9 +511,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.categoryColor.isNotEmpty
-                          ? Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF')))
-                          : Colors.grey,
+                      color: item.categoryColor == 'transparent'
+                          ? Colors.transparent
+                          : item.categoryColor.isNotEmpty
+                              ? Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF')))
+                              : Colors.grey,
                       shape: BoxShape.circle,
                     ),
                     child: Text(item.categoryIcon, style: const TextStyle(fontSize: 20)),
@@ -1184,19 +1159,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             children: [
               Row(
                 children: [
-                   Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: typeColor.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isPayable ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: typeColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1208,9 +1170,15 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           style: AppTypography.textTheme.bodySmall
                               ?.copyWith(color: typeColor),
                         ),
+                        Text(
+                          '${trans.debtCreatedDate}: ${DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(debt.createdAt)}',
+                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                            color: Colors.white38,
+                          ),
+                        ),
                         if (debt.dueDate != null)
                           Text(
-                            '${trans.debtDueDate}: ${DateFormat.yMMMd().format(debt.dueDate!)}',
+                            '${trans.debtDueDate}: ${DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(debt.dueDate!)}',
                             style: AppTypography.textTheme.bodySmall?.copyWith(
                               color: isOverdue ? Colors.red : Colors.white54,
                             ),
@@ -1295,7 +1263,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     return GestureDetector(
       onTap: () => _showSettleDialog(debt),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.primaryGold.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
@@ -1306,7 +1274,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           trans.debtSettle,
           style: const TextStyle(
             color: AppColors.primaryGold,
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1318,7 +1286,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     final trans = ref.read(translationsProvider);
     final accountsAsync = ref.read(accountsStreamProvider);
     final allAccounts = accountsAsync.valueOrNull ?? [];
-    // Filter accounts by currency
     final accounts = allAccounts.where((a) => a.currency == debt.currency).toList();
 
     if (accounts.isEmpty) {
@@ -1330,131 +1297,187 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
       return;
     }
 
-    int? selectedAccountId;
     final remaining = debt.amount - debt.paidAmount;
-    final amountController = TextEditingController(
-      text: IndonesianCurrencyInputFormatter.format(remaining.toStringAsFixed(0)),
-    );
+    final showDecimal = ref.read(showDecimalProvider);
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF2D2416),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(trans.debtSettle,
-              style: const TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                debt.personName,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.bold),
-              ),
-             Text(
-                '${trans.goalRemaining}: ${Formatters.formatCurrency(remaining, currency: debt.currency)}',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              
-              // Amount Input
-              Text(trans.commonAmount, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              const SizedBox(height: 4),
-              TextFormField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [IndonesianCurrencyInputFormatter()],
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                   filled: true,
-                  fillColor: AppColors.glassBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  suffixIcon: TextButton(
-                    onPressed: () {
-                      amountController.text = IndonesianCurrencyInputFormatter.format(remaining.toStringAsFixed(0));
-                    },
-                    child: Text(trans.commonMax, style: const TextStyle(color: AppColors.primaryGold)),
-                  )
-                ),
-              ),
-              const SizedBox(height: 12),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        double payAmount = remaining;
+        int? selectedAccountId;
 
-              Text(trans.debtSettleAccount,
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 12)),
-              const SizedBox(height: 4),
-              DropdownButtonFormField<int>(
-                value: selectedAccountId,
-                dropdownColor: AppColors.cardSurface,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.glassBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF2D2416),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24, right: 24, top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Text(trans.debtSettle,
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(debt.personName,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                  const SizedBox(height: 16),
+
+                  // Total debt and remaining
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Total', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                              const SizedBox(height: 2),
+                              Text(
+                                Formatters.formatCurrency(debt.amount, currency: debt.currency, showDecimal: showDecimal),
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(trans.goalRemaining, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                              const SizedBox(height: 2),
+                              Text(
+                                Formatters.formatCurrency(remaining, currency: debt.currency, showDecimal: showDecimal),
+                                style: TextStyle(
+                                  color: debt.type == DebtType.payable ? AppColors.error : AppColors.success,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                items: accounts.map((account) {
-                  return DropdownMenuItem<int>(
-                    value: account.id,
-                    child: Text(account.name),
-                  );
-                }).toList(),
-                onChanged: (val) =>
-                    setDialogState(() => selectedAccountId = val),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(trans.cancel,
-                  style: const TextStyle(color: Colors.white54)),
-            ),
-            ElevatedButton(
-              onPressed: selectedAccountId != null
-                  ? () {
-                      final amountStr = amountController.text.replaceAll('.', '').replaceAll(',', '');
-                      final amount = double.tryParse(amountStr) ?? 0;
-                      if (amount <= 0 || amount > remaining) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                             SnackBar(content: Text(trans.errorInvalidAmount)),
-                          );
-                          return;
+                  const SizedBox(height: 20),
+
+                  // Amount (tappable — opens calculator)
+                  Text(trans.commonAmount,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await CalculatorBottomSheet.show(
+                        ctx,
+                        initialValue: payAmount,
+                        currency: debt.currency,
+                        showDecimal: showDecimal,
+                      );
+                      if (picked != null && picked > 0) {
+                        setSheetState(() => payAmount = picked.clamp(0.0, remaining));
                       }
-                      Navigator.pop(context, {
-                        'accountId': selectedAccountId,
-                        'amount': amount
-                      });
-                  }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calculate_outlined, color: AppColors.primaryGold, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              Formatters.formatCurrency(payAmount, currency: debt.currency, showDecimal: showDecimal),
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Icon(Icons.edit_outlined, color: Colors.white.withValues(alpha: 0.4), size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Account selector
+                  Text(trans.debtSettleAccount,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<int>(
+                    value: selectedAccountId,
+                    dropdownColor: AppColors.cardSurface,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.glassBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    items: accounts
+                        .map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.name)))
+                        .toList(),
+                    onChanged: (val) => setSheetState(() => selectedAccountId = val),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Confirm button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedAccountId != null
+                          ? () => Navigator.pop(sheetContext, {'accountId': selectedAccountId, 'amount': payAmount})
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(trans.debtSettle,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(trans.debtSettle),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       final accountId = result['accountId'] as int;
       final amount = result['amount'] as double;
-      
+
       try {
         await ref.read(debtDaoProvider).recordPayment(debt.id, amount);
 
-        // Create transaction for the settlement
         final transactionDao = ref.read(transactionDaoProvider);
         final profileId = ref.read(activeProfileIdProvider);
         if (profileId != null) {
@@ -1466,8 +1489,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   ? TransactionType.expense
                   : TransactionType.income),
               amount: drift.Value(amount),
-              title: drift.Value(
-                  'Debt Payment: ${debt.personName}'),
+              title: drift.Value('Debt Payment: ${debt.personName}'),
               note: drift.Value(debt.note ?? ''),
               date: drift.Value(DateTime.now()),
               createdAt: drift.Value(DateTime.now()),
@@ -1477,10 +1499,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(trans.debtSettled),
-              backgroundColor: AppColors.success,
-            ),
+            SnackBar(content: Text(trans.debtSettled), backgroundColor: AppColors.success),
           );
         }
       } catch (e) {

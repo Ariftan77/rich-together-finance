@@ -192,8 +192,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                 type: drift.Value(_selectedType == DebtType.payable
                     ? TransactionType.debtIn
                     : TransactionType.debtOut),
-                amount: drift.Value(amount), // Sync amount change too
-                title: drift.Value('Debt: ${_personController.text.trim()}'), // Sync name change
+                amount: drift.Value(amount),
+                title: drift.Value('Debt: ${_personController.text.trim()}'),
+                note: drift.Value(_noteController.text.trim()),
               ),
             );
           }
@@ -456,6 +457,28 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                     ),
                     const SizedBox(height: 24),
 
+                    // Created Date (edit mode only)
+                    if (widget.debt != null) ...[
+                      Text(trans.debtCreatedDate, style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      GlassCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        borderRadius: 12,
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today, color: Colors.white54, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              DateFormat.yMMMd(ref.watch(localeProvider).languageCode)
+                                  .format(widget.debt!.createdAt),
+                              style: const TextStyle(color: Colors.white70, fontSize: 15),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
                     // Due Date
                     Text(trans.debtDueDate,
                         style: AppTypography.textTheme.labelLarge),
@@ -551,10 +574,24 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                             );
 
                             if (confirm == true) {
-                              await ref
-                                  .read(debtDaoProvider)
-                                  .deleteDebt(widget.debt!.id);
-                              if (mounted) Navigator.pop(context);
+                              final navigator = Navigator.of(context);
+                              final debt = widget.debt!;
+
+                              // Delete linked transaction first (reverses balance impact)
+                              if (debt.creationAccountId != null) {
+                                final transactionDao = ref.read(transactionDaoProvider);
+                                final linkedTx = await transactionDao.findDebtTransaction(
+                                  accountId: debt.creationAccountId!,
+                                  amount: debt.amount,
+                                  date: debt.createdAt,
+                                );
+                                if (linkedTx != null) {
+                                  await transactionDao.deleteTransaction(linkedTx.id);
+                                }
+                              }
+
+                              await ref.read(debtDaoProvider).deleteDebt(debt.id);
+                              if (mounted) navigator.pop();
                             }
                           },
                           child: Text('Delete Debt',

@@ -611,18 +611,18 @@ class _TransactionItem extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
+                color: (isIncome || isExpense) && category != null
+                    ? _categoryBgColor(category!.color)
+                    : color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: color.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
-              child: Icon(
-                _getIcon(transaction.type),
-                color: color,
-                size: 24,
-              ),
+              child: (isIncome || isExpense) && category != null && category!.icon.isNotEmpty
+                  ? Center(child: Text(category!.icon, style: const TextStyle(fontSize: 20)))
+                  : Icon(_getIcon(transaction.type), color: color, size: 24),
             ),
             const SizedBox(width: 16),
             // Transaction details
@@ -703,6 +703,12 @@ class _TransactionItem extends ConsumerWidget {
     final minute = date.minute.toString().padLeft(2, '0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  Color _categoryBgColor(String? hex) {
+    if (hex == null || hex == 'transparent' || hex.isEmpty) return Colors.transparent;
+    final cleaned = hex.replaceFirst('#', '0xFF');
+    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.25);
   }
 
   IconData _getIcon(TransactionType type) {

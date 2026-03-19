@@ -527,6 +527,16 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                         prefixIcon: Icons.label,
                         validator: (v) => v!.isEmpty ? ref.watch(translationsProvider).accountNameExists : null, // Reusing localized error or add specific one. Wait "Name required"
                       ),
+                      const SizedBox(height: 24),
+                      Text(ref.watch(translationsProvider).accountCurrency, style: AppTypography.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      CurrencyPickerField(
+                        value: _selectedCurrency,
+                        onChanged: (currency) => setState(() {
+                          _selectedCurrency = currency;
+                          _rawBalance = 0;
+                        }),
+                      ),
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: _openBalanceCalculator,
@@ -574,16 +584,6 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             ),
                           );
                         }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(ref.watch(translationsProvider).accountCurrency, style: AppTypography.textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      CurrencyPickerField(
-                        value: _selectedCurrency,
-                        onChanged: (currency) => setState(() {
-                          _selectedCurrency = currency;
-                          _rawBalance = 0;
-                        }),
                       ),
                       const SizedBox(height: 32),
                       GlassButton(

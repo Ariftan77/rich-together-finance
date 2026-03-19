@@ -268,6 +268,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get debtReceivable => 'Owed to Me';
   @override String get debtPersonName => 'Person Name';
   @override String get debtPersonNameHint => 'Who?';
+  @override String get debtCreatedDate => 'Created Date';
   @override String get debtDueDate => 'Due Date';
   @override String get debtSettle => 'Settle';
   @override String get debtSettleAccount => 'Settlement Account';

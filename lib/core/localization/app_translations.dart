@@ -264,6 +264,7 @@ abstract class AppTranslations {
   String get debtReceivable;
   String get debtPersonName;
   String get debtPersonNameHint;
+  String get debtCreatedDate;
   String get debtDueDate;
   String get debtSettle;
   String get debtSettleAccount;
