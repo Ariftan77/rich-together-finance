@@ -128,7 +128,7 @@ class CurrencyExchangeService {
         return patched;
       }
       steps.add('offline_local_fallback:${_ms(sw)}ms(miss)');
-      final hardcodedResult = _getHardcodedRates(requestedDate);
+      final hardcodedResult = getHardcodedRates(requestedDate);
       _cacheResult(requestedDate, hardcodedResult);
       _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
       return hardcodedResult;
@@ -160,7 +160,7 @@ class CurrencyExchangeService {
       }
       steps.add('supabase_latest:${_ms(sw)}ms(miss)');
       // Weekend and no stored data close enough — fall through to hardcoded
-      final hardcodedResult = _getHardcodedRates(requestedDate);
+      final hardcodedResult = getHardcodedRates(requestedDate);
       _cacheResult(requestedDate, hardcodedResult);
       _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
       return hardcodedResult;
@@ -222,7 +222,7 @@ class CurrencyExchangeService {
     steps.add('supabase_latest_fallback:${_ms(sw)}ms(miss)');
 
     // 6. Last resort: hardcoded
-    final hardcodedResult = _getHardcodedRates(requestedDate);
+    final hardcodedResult = getHardcodedRates(requestedDate);
     _cacheResult(requestedDate, hardcodedResult);
     _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
     return hardcodedResult;
@@ -290,7 +290,7 @@ class CurrencyExchangeService {
       'Falling back to hardcoded rates.',
       name: 'CurrencyExchangeService'
     );
-    final hardcodedResult = _getHardcodedRates(date);
+    final hardcodedResult = getHardcodedRates(date);
     _log(date, hardcodedResult);
     return hardcodedResult;
   }
@@ -402,7 +402,7 @@ class CurrencyExchangeService {
   /// Patches currencies missing from [result] (e.g. SAR, KHR, VND not in Frankfurter)
   /// with hardcoded fallback values.
   RateResult _patchMissingRates(RateResult result, String date) {
-    final hardcoded = _getHardcodedRates(date).rates;
+    final hardcoded = getHardcodedRates(date).rates;
     final patched = Map<String, double>.from(result.rates);
     for (final entry in hardcoded.entries) {
       patched.putIfAbsent(entry.key, () => entry.value);
@@ -529,7 +529,7 @@ class CurrencyExchangeService {
   // Hardcoded Fallback
   // ---------------------------------------------------------------------------
 
-  RateResult _getHardcodedRates(String date) {
+  static RateResult getHardcodedRates(String date) {
     return RateResult(
       rateDate: date,
       baseCurrency: 'USD',

@@ -2,7 +2,7 @@ name: rich_together
 description: "Offline-first personal finance app for expense tracking, budgeting, goals, debts, and portfolio management (coming soon)."
 publish_to: 'none'
 
-version: 1.0.1+33
+version: 1.0.1+35
 
 environment:
   sdk: ^3.10.8
@@ -45,6 +45,7 @@ dependencies:
   flutter_svg: ^2.0.9
   shimmer: ^3.0.0
   package_info_plus: ^9.0.0
+  phosphor_flutter: ^2.1.0
 
   # Backup & Restore
   share_plus: ^7.2.1

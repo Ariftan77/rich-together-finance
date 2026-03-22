@@ -8,6 +8,7 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/report_details_providers.dart';
 import 'category_history_screen.dart';
@@ -640,13 +641,18 @@ class _CategoryList extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: catColor.withValues(alpha: 0.2),
+                          color: bd.color != null && bd.color != 'transparent'
+                              ? catColor.withValues(alpha: 0.2)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         alignment: Alignment.center,
-                        child: Text(
-                          bd.icon,
-                          style: const TextStyle(fontSize: 18),
+                        child: CategoryIconWidget(
+                          iconString: bd.icon,
+                          size: 18,
+                          color: bd.color != null && bd.color != 'transparent'
+                              ? catColor
+                              : Colors.white,
                         ),
                       ),
                       const SizedBox(width: 12),

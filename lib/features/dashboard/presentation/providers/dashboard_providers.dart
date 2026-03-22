@@ -90,15 +90,6 @@ class ActiveDebtSummary {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Pre-fetch exchange rates via CurrencyExchangeService.
-/// Returns the USD-based rates map from RateResult.
-Future<Map<String, double>> _preloadRates(
-  CurrencyExchangeService service,
-) async {
-  final rateResult = await service.getRates();
-  return rateResult.rates;
-}
-
 /// Convert a transaction amount to base currency using pre-loaded rates.
 double _convertAmount(
   Transaction tx,
@@ -132,11 +123,9 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   // Re-create when transactions change (not just accounts)
   ref.watch(transactionsStreamProvider);
-
-  final rates = await _preloadRates(exchangeService);
 
   final accounts = await accountDao.getAllAccounts(profileId);
   double total = 0;
@@ -188,11 +177,9 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
   final holdingDao = ref.watch(holdingDaoProvider);
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   // Re-create when transactions change (not just accounts)
   ref.watch(transactionsStreamProvider);
-
-  final rates = await _preloadRates(exchangeService);
 
   final accounts = await accountDao.getAllAccounts(profileId);
 
@@ -255,8 +242,7 @@ final dashboardActiveDebtProvider =
 
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
-  final rates = await _preloadRates(exchangeService);
+  final rates = ref.watch(todayRatesProvider);
 
   await for (final profileDebts in debtDao.watchUnsettledDebts(profileId)) {
 
@@ -325,17 +311,15 @@ final convertedMonthlyTransactionsProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
 
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
   // Pre-load accounts (including inactive, since transactions may reference them)
-  // and rates once, then stream transactions
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService);
 
   await for (final transactions
       in transactionDao.watchTransactionsInRange(profileId, startOfMonth, endOfMonth)) {
@@ -543,16 +527,15 @@ final dashboardCashFlowProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   final now = DateTime.now();
 
   final startOfPeriod = DateTime(now.year, now.month - 5, 1);
   final endOfPeriod = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
-  // Pre-load accounts (including inactive) and rates once
+  // Pre-load accounts (including inactive) once
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService);
 
   await for (final transactions
       in transactionDao.watchTransactionsInRange(profileId, startOfPeriod, endOfPeriod)) {
@@ -627,13 +610,12 @@ final monthlySummaryProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   final now = DateTime.now();
 
-  // Pre-load accounts (including inactive) and rates once for all months
+  // Pre-load accounts (including inactive) once for all months
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rates = await _preloadRates(exchangeService);
 
   // Fetch all transactions in the full date range at once
   final earliest = DateTime(now.year, now.month - monthCount + 1, 1);

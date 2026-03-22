@@ -9,6 +9,7 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../budget/presentation/providers/budget_provider.dart';
@@ -511,14 +512,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.categoryColor == 'transparent'
+                      color: item.categoryColor == 'transparent' || item.categoryColor.isEmpty
                           ? Colors.transparent
-                          : item.categoryColor.isNotEmpty
-                              ? Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF')))
-                              : Colors.grey,
+                          : Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF'))),
                       shape: BoxShape.circle,
                     ),
-                    child: Text(item.categoryIcon, style: const TextStyle(fontSize: 20)),
+                    child: CategoryIconWidget(
+                      iconString: item.categoryIcon,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

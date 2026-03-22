@@ -8,6 +8,7 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
 
@@ -160,7 +161,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                   ),
                                 ),
                                 child: useCategoryIcon
-                                    ? Center(child: Text(category!.icon, style: const TextStyle(fontSize: 18)))
+                                    ? Center(child: CategoryIconWidget(iconString: category!.icon, size: 18, color: typeColor))
                                     : Icon(
                                         isIncome
                                             ? Icons.arrow_downward

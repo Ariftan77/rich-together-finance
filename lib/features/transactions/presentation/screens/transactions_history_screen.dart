@@ -8,6 +8,7 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 // import '../../../../shared/widgets/glass_item.dart'; // Removed
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
@@ -621,7 +622,7 @@ class _TransactionItem extends ConsumerWidget {
                 ),
               ),
               child: (isIncome || isExpense) && category != null && category!.icon.isNotEmpty
-                  ? Center(child: Text(category!.icon, style: const TextStyle(fontSize: 20)))
+                  ? Center(child: CategoryIconWidget(iconString: category!.icon, size: 20, color: color))
                   : Icon(_getIcon(transaction.type), color: color, size: 24),
             ),
             const SizedBox(width: 16),

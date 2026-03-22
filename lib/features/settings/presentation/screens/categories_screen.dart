@@ -8,6 +8,7 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../core/models/enums.dart';
@@ -254,9 +255,10 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     color: _parseColor(isEditing ? (_editingColor ?? item.category.color) : item.category.color),
                     shape: BoxShape.circle,
                   ),
-                  child: Text(
-                    isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
-                    style: const TextStyle(fontSize: 20),
+                  child: CategoryIconWidget(
+                    iconString: isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
+                    size: 20,
+                    color: Colors.white,
                   ),
                 ),
                 if (isEditing) ...[

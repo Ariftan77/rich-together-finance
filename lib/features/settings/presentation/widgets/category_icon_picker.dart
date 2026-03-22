@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/utils/phosphor_icon_registry.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 
 class CategoryIconPicker extends StatefulWidget {
   final String initialIcon;
@@ -32,12 +35,16 @@ class CategoryIconPicker extends StatefulWidget {
 }
 
 class _CategoryIconPickerState extends State<CategoryIconPicker>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late String _selectedIcon;
   late String _selectedColorHex;
   late TabController _tabController;
 
-  // Curated emojis grouped by category
+  // 0 = Emoji, 1 = Curated Icons, 2 = All Icons
+  int _sourceMode = 0;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
   static const Map<String, List<String>> _emojiGroups = {
     'Food & Drink': [
       '🍔', '🍕', '🍜', '🍣', '🍱', '🥗', '🌮', '🥪', '🍗', '🥐',
@@ -89,56 +96,85 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     ],
   };
 
-  // Curated list of colors (Hex Strings). 'transparent' is a special sentinel.
   static const List<String> _colors = [
-    'transparent', // No background
-    '#FF6B6B', // Red
-    '#4ECDC4', // Teal
-    '#FFE66D', // Yellow
-    '#1A535C', // Dark Teal
-    '#FF9F1C', // Orange
-    '#2ECC71', // Green
-    '#3498DB', // Blue
-    '#9B59B6', // Purple
-    '#E74C3C', // Dark Red
-    '#34495E', // Navy
-    '#F1C40F', // Sun Yellow
-    '#E67E22', // Carrot
-    '#BDC3C7', // Silver
-    '#95A5A6', // Gray
-    '#D35400', // Rust
-    '#8E44AD', // Deep Purple
-    '#16A085', // Sea Green
-    '#27AE60', // Emerald
-    '#2980B9', // Strong Blue
-    '#F39C12', // Orange Yellow
+    'transparent',
+    // Reds & Pinks
+    '#FF6B6B', '#E74C3C', '#D35400', '#FF4757', '#FF6348',
+    '#C0392B', '#E84393', '#FD79A8',
+    // Oranges & Yellows
+    '#FF9F1C', '#E67E22', '#F39C12', '#F1C40F', '#FFE66D',
+    '#FDCB6E', '#F0932B',
+    // Greens
+    '#2ECC71', '#27AE60', '#16A085', '#00B894', '#00CEC9',
+    '#55E6C1', '#6AB04C',
+    // Blues
+    '#3498DB', '#2980B9', '#0984E3', '#74B9FF', '#48DBFB',
+    '#00D2D3', '#54A0FF',
+    // Purples
+    '#9B59B6', '#8E44AD', '#6C5CE7', '#A29BFE', '#E056A0',
+    '#BE2EDD', '#4834D4',
+    // Neutrals & Dark
+    '#1A535C', '#34495E', '#2C3E50', '#636E72', '#95A5A6',
+    '#BDC3C7', '#DFE6E9',
   ];
+
+  Map<String, List<String>> get _activeGroups {
+    if (_sourceMode == 0) return _emojiGroups;
+    if (_sourceMode == 1) return phosphorCuratedGroups;
+    return phosphorAlphaGroups;
+  }
 
   @override
   void initState() {
     super.initState();
     _selectedIcon = widget.initialIcon.isEmpty ? '📦' : widget.initialIcon;
     _selectedColorHex = widget.initialColorHex.isEmpty ? 'transparent' : widget.initialColorHex;
-    _tabController = TabController(length: _emojiGroups.length, vsync: this);
+    if (CategoryIconWidget.isPhosphorIcon(_selectedIcon)) _sourceMode = 1;
+    _tabController = TabController(length: _activeGroups.length, vsync: this);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _switchSource(int mode) {
+    if (_sourceMode == mode) return;
+    _tabController.dispose();
+    setState(() {
+      _sourceMode = mode;
+      _searchQuery = '';
+      _searchController.clear();
+      _tabController = TabController(length: _activeGroups.length, vsync: this);
+    });
   }
 
   Color _hexToColor(String hex) {
     if (hex == 'transparent') return Colors.transparent;
     hex = hex.replaceFirst('#', '');
-    if (hex.length == 6) {
-      hex = 'FF$hex';
-    }
+    if (hex.length == 6) hex = 'FF$hex';
     return Color(int.parse('0x$hex'));
+  }
+
+  Color _previewIconColor() {
+    if (!CategoryIconWidget.isPhosphorIcon(_selectedIcon)) return Colors.white;
+    return _selectedColorHex == 'transparent' ? AppColors.primaryGold : Colors.white;
+  }
+
+  /// Convert camelCase to readable: "creditCard" -> "credit card"
+  String _humanize(String name) {
+    return name.replaceAllMapped(
+      RegExp(r'[A-Z]'),
+      (m) => ' ${m.group(0)!.toLowerCase()}',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isPhosphor = _sourceMode > 0;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.65,
@@ -162,7 +198,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                 ),
               ),
 
-              // Title and Save Button
+              // Title and Save
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Row(
@@ -170,26 +206,15 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                   children: [
                     const Text(
                       'Select Icon & Color',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, {
-                          'icon': _selectedIcon,
-                          'color': _selectedColorHex,
-                        });
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryGold,
-                      ),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
+                      onPressed: () => Navigator.pop(context, {
+                        'icon': _selectedIcon,
+                        'color': _selectedColorHex,
+                      }),
+                      style: TextButton.styleFrom(foregroundColor: AppColors.primaryGold),
+                      child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ],
                 ),
@@ -209,16 +234,24 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                           ? Border.all(color: Colors.white24, width: 1.5)
                           : null,
                     ),
-                    child: Text(
-                      _selectedIcon,
-                      style: const TextStyle(fontSize: 40),
+                    child: CategoryIconWidget(
+                      iconString: _selectedIcon,
+                      size: 40,
+                      color: _previewIconColor(),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Colors — horizontal scrollable row
+              // Source toggle: Emoji / Curated / All
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildSourceToggle(),
+              ),
+              const SizedBox(height: 12),
+
+              // Colors
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -255,24 +288,14 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                                 border: Border.all(
                                   color: isSelected
                                       ? Colors.white
-                                      : isTransparent
-                                          ? Colors.white38
-                                          : Colors.transparent,
+                                      : isTransparent ? Colors.white38 : Colors.transparent,
                                   width: isSelected ? 3 : 1.5,
                                 ),
                                 boxShadow: isSelected && !isTransparent
-                                    ? [
-                                        BoxShadow(
-                                          color: color.withValues(alpha: 0.5),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                        )
-                                      ]
+                                    ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)]
                                     : null,
                               ),
-                              child: isTransparent
-                                  ? CustomPaint(painter: _CrossPainter())
-                                  : null,
+                              child: isTransparent ? CustomPaint(painter: _CrossPainter()) : null,
                             ),
                           );
                         },
@@ -283,81 +306,235 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
               ),
               const SizedBox(height: 12),
 
-              // Tab bar — one tab per emoji group
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelColor: AppColors.primaryGold,
-                unselectedLabelColor: Colors.white54,
-                indicatorColor: AppColors.primaryGold,
-                indicatorSize: TabBarIndicatorSize.label,
-                dividerColor: Colors.white24,
-                labelStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.normal,
-                ),
-                tabs: _emojiGroups.keys
-                    .map((name) => Tab(text: name))
-                    .toList(),
-              ),
-
-              // Tab content — emoji grid per group
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: _emojiGroups.values.map((emojis) {
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 7,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
+              // Search bar (Phosphor modes only)
+              if (isPhosphor) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                    height: 40,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Search icons...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                        prefixIcon: Icon(Icons.search, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () => setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                }),
+                                child: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.06),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                        ),
                       ),
-                      itemCount: emojis.length,
-                      itemBuilder: (context, index) {
-                        final emoji = emojis[index];
-                        final isSelected = emoji == _selectedIcon;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedIcon = emoji),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primaryGold.withValues(alpha: 0.2)
-                                  : Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryGold
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              emoji,
-                              style: const TextStyle(fontSize: 22),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }).toList(),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 12),
+              ],
+
+              // Search results or tabbed content
+              if (isPhosphor && _searchQuery.isNotEmpty)
+                Expanded(child: _buildSearchResults())
+              else ...[
+                // Tab bar
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: AppColors.primaryGold,
+                  unselectedLabelColor: Colors.white54,
+                  indicatorColor: AppColors.primaryGold,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  dividerColor: Colors.white24,
+                  labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+                  tabs: _activeGroups.keys.map((name) => Tab(text: name)).toList(),
+                ),
+                // Tab content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: isPhosphor ? _buildPhosphorTabs() : _buildEmojiTabs(),
+                  ),
+                ),
+              ],
             ],
           ),
         );
       },
     );
   }
+
+  Widget _buildSourceToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          _buildToggleItem('Emoji', _sourceMode == 0, () => _switchSource(0)),
+          _buildToggleItem('Curated', _sourceMode == 1, () => _switchSource(1)),
+          _buildToggleItem('All Icons', _sourceMode == 2, () => _switchSource(2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleItem(String label, bool isSelected, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.2) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? AppColors.primaryGold : Colors.white54,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    final results = phosphorIconMap.keys
+        .where((name) => _humanize(name).contains(_searchQuery) || name.toLowerCase().contains(_searchQuery))
+        .toList();
+
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'No icons found for "$_searchQuery"',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+      ),
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final name = results[index];
+        return _buildPhosphorIconCell(name);
+      },
+    );
+  }
+
+  List<Widget> _buildEmojiTabs() {
+    return _emojiGroups.values.map((emojis) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 7,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+        ),
+        itemCount: emojis.length,
+        itemBuilder: (context, index) {
+          final emoji = emojis[index];
+          final isSelected = emoji == _selectedIcon;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedIcon = emoji),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGold.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryGold : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(emoji, style: const TextStyle(fontSize: 22)),
+            ),
+          );
+        },
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildPhosphorTabs() {
+    return _activeGroups.values.map((iconNames) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 7,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+        ),
+        itemCount: iconNames.length,
+        itemBuilder: (context, index) => _buildPhosphorIconCell(iconNames[index]),
+      );
+    }).toList();
+  }
+
+  Widget _buildPhosphorIconCell(String name) {
+    final dbKey = 'ph:$name';
+    final isSelected = dbKey == _selectedIcon;
+    final iconData = phosphorIconMap[name] ?? PhosphorIconsFill.question;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIcon = dbKey),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGold.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: PhosphorIcon(
+          iconData,
+          size: 22,
+          color: isSelected ? AppColors.primaryGold : Colors.white70,
+        ),
+      ),
+    );
+  }
 }
 
-/// Draws a diagonal "no color" cross inside the transparent swatch.
 class _CrossPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -366,16 +543,8 @@ class _CrossPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
     final inset = size.width * 0.25;
-    canvas.drawLine(
-      Offset(inset, inset),
-      Offset(size.width - inset, size.height - inset),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width - inset, inset),
-      Offset(inset, size.height - inset),
-      paint,
-    );
+    canvas.drawLine(Offset(inset, inset), Offset(size.width - inset, size.height - inset), paint);
+    canvas.drawLine(Offset(size.width - inset, inset), Offset(inset, size.height - inset), paint);
   }
 
   @override

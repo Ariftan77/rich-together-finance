@@ -329,18 +329,6 @@ class _TxItem extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
-                ),
-                child:
-                    Icon(_iconFor(transaction.type), color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,22 +367,4 @@ class _TxItem extends StatelessWidget {
     );
   }
 
-  IconData _iconFor(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return Icons.arrow_downward;
-      case TransactionType.expense:
-        return Icons.arrow_upward;
-      case TransactionType.transfer:
-        return Icons.swap_horiz;
-      case TransactionType.adjustmentIn:
-        return Icons.add_circle_outline;
-      case TransactionType.adjustmentOut:
-        return Icons.remove_circle_outline;
-      case TransactionType.debtIn:
-        return Icons.call_received;
-      case TransactionType.debtOut:
-        return Icons.call_made;
-    }
-  }
 }

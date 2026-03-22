@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../settings/presentation/widgets/category_icon_picker.dart';
 
 /// Dialog for creating a new category
@@ -207,7 +208,11 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: Text(_icon, style: const TextStyle(fontSize: 24)),
+                    child: CategoryIconWidget(
+                      iconString: _icon,
+                      size: 24,
+                      color: _colorHex == 'transparent' ? Colors.white : Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
