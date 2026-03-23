@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
@@ -32,6 +33,8 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final trans = ref.watch(translationsProvider);
+
     return Dialog(
       backgroundColor: AppColors.bgDarkEnd,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -42,14 +45,14 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'New Profile',
+              trans.profileNew,
               style: AppTypography.textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
 
             // Avatar selector
             Text(
-              'Choose Avatar',
+              trans.profileChooseAvatar,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 14,
@@ -83,7 +86,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
 
             // Name input
             Text(
-              'Profile Name',
+              trans.profileName,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 14,
@@ -94,7 +97,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
               controller: _nameController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'e.g., Personal, Business, Family',
+                hintText: trans.profileNameHint,
                 hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.1),
@@ -133,14 +136,14 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Cancel'),
+                    child: Text(trans.cancel),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: GlassButton(
                     onPressed: _isLoading ? () {} : _createProfile,
-                    text: 'Create',
+                    text: trans.save,
                     isFullWidth: true,
                     isLoading: _isLoading,
                   ),
@@ -154,10 +157,10 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
   }
 
   Future<void> _createProfile() async {
-
+    final trans = ref.read(translationsProvider);
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _errorMessage = 'Please enter a profile name');
+      setState(() => _errorMessage = trans.profileNameEmpty);
       return;
     }
 
@@ -171,7 +174,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
 
       final isUnique = await profileDao.isProfileNameUnique(name);
       if (!isUnique) {
-        setState(() => _errorMessage = 'A profile with this name already exists');
+        setState(() => _errorMessage = trans.profileNameExists);
         return;
       }
 
@@ -185,7 +188,7 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile "$name" created!')),
+          SnackBar(content: Text(trans.profileCreated(name))),
         );
       }
     } catch (e) {

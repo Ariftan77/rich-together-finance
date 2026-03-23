@@ -43,7 +43,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final profileId = ref.watch(activeProfileIdProvider);
-    
+    final trans = ref.watch(translationsProvider);
+
     if (profileId == null) {
       return const Scaffold(
         backgroundColor: Colors.transparent,
@@ -64,7 +65,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: const Text('Manage Categories'),
+            title: Text(trans.categoriesTitle),
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
@@ -93,7 +94,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     onChanged: (v) => setState(() => _searchQuery = v.trim()),
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     decoration: InputDecoration(
-                      hintText: 'Search categories...',
+                      hintText: trans.categoriesSearchHint,
                       hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 15),
                       prefixIcon: Icon(Icons.search, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
                       suffixIcon: _searchQuery.isNotEmpty
@@ -117,11 +118,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    _buildFilterBubble('All', null),
+                    _buildFilterBubble(trans.filterAll, null),
                     const SizedBox(width: 8),
-                    _buildFilterBubble('Expense', CategoryType.expense),
+                    _buildFilterBubble(trans.categoriesFilterExpense, CategoryType.expense),
                     const SizedBox(width: 8),
-                    _buildFilterBubble('Income', CategoryType.income),
+                    _buildFilterBubble(trans.categoriesFilterIncome, CategoryType.income),
                   ],
                 ),
               ),
@@ -147,9 +148,9 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                           c.category.name.toLowerCase().contains(_searchQuery.toLowerCase());
                       return matchesType && matchesSearch;
                     }).toList();
-          
+
                     if (categories.isEmpty) {
-                      return Center(child: Text('No categories found', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
+                      return Center(child: Text(trans.categoryNoneFound, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
                     }
           
                     return ListView.separated(
@@ -221,14 +222,14 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           );
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Category added'), backgroundColor: AppColors.success),
+              SnackBar(content: Text(ref.read(translationsProvider).categoryAdded), backgroundColor: AppColors.success),
             );
           }
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding category: $e'), backgroundColor: AppColors.error),
+            SnackBar(content: Text('${ref.read(translationsProvider).categoryAddError}: $e'), backgroundColor: AppColors.error),
           );
         }
       }
@@ -287,12 +288,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
-                      hintText: 'Category Name',
-                      hintStyle: TextStyle(color: Colors.white30),
+                      hintText: ref.watch(translationsProvider).entryCategory,
+                      hintStyle: const TextStyle(color: Colors.white30),
                     ),
                     onSubmitted: (_) => _saveCategory(item.category),
                   )
@@ -309,9 +310,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        item.usageCount == 1 
-                            ? 'Used in 1 transaction' 
-                            : 'Used in ${item.usageCount} transactions',
+                        ref.watch(translationsProvider).categoryUsedInTransactions(item.usageCount),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 12,
@@ -398,19 +397,21 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       _cancelEdit();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Category updated'), backgroundColor: AppColors.success),
+          SnackBar(content: Text(ref.read(translationsProvider).categoryUpdated), backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating category: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('${ref.read(translationsProvider).categoryUpdateError}: $e'), backgroundColor: AppColors.error),
         );
       }
     }
   }
 
   Future<void> _deleteCategory(CategoryWithUsage item) async {
+    final trans = ref.read(translationsProvider);
+
     // 1. Check usage
     if (item.usageCount > 0) {
       showDialog(
@@ -418,15 +419,15 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.bgDarkEnd,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Cannot Delete Category', style: TextStyle(color: Colors.white)),
+          title: Text(trans.categoryCannotDeleteTitle, style: const TextStyle(color: Colors.white)),
           content: Text(
-            'This category is used in ${item.usageCount} transactions. You cannot delete it while it counts towards your records.',
+            trans.categoryCannotDeleteContent(item.usageCount),
             style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: AppColors.primaryGold)),
+              child: Text(trans.ok, style: const TextStyle(color: AppColors.primaryGold)),
             ),
           ],
         ),
@@ -440,19 +441,19 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.bgDarkEnd,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Category?', style: TextStyle(color: Colors.white)),
+        title: Text('${trans.delete} ${trans.entryCategory}?', style: const TextStyle(color: Colors.white)),
         content: Text(
-          'Are you sure you want to delete "${item.category.name}"? This action cannot be undone.',
+          '"${item.category.name}"',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text(trans.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -463,13 +464,13 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
         await ref.read(categoryDaoProvider).deleteCategory(item.category.id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Category deleted'), backgroundColor: AppColors.success),
+            SnackBar(content: Text(trans.categoryDeleted), backgroundColor: AppColors.success),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting category: $e'), backgroundColor: AppColors.error),
+            SnackBar(content: Text('${trans.categoryDeleteError}: $e'), backgroundColor: AppColors.error),
           );
         }
       }

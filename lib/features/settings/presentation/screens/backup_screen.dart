@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/backup_service.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -37,14 +38,16 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     try {
       await ref.read(backupServiceProvider).exportDatabase();
       if (mounted) {
+        final trans = ref.read(translationsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database exported successfully')),
+          SnackBar(content: Text(trans.backupExportSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
+        final trans = ref.read(translationsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('${trans.backupExportFailed}: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -53,24 +56,25 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _handleImport() async {
+    final trans = ref.read(translationsProvider);
     // Security check or confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.bgDarkEnd,
-        title: const Text('Restore Database?', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'This will overwrite your current data with the backup file. This action cannot be undone. Are you sure?',
-          style: TextStyle(color: Colors.white70),
+        title: Text(trans.backupRestoreConfirmTitle, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          trans.backupRestoreConfirmContent,
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Restore', style: TextStyle(color: AppColors.error)),
+            child: Text(trans.backupRestoreConfirmButton, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -83,13 +87,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await ref.read(backupServiceProvider).importDatabase();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database restored successfully!'), backgroundColor: AppColors.success),
+          SnackBar(content: Text(ref.read(translationsProvider).backupImportSuccess), backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('${ref.read(translationsProvider).backupImportFailed}: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -104,8 +108,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       setState(() => _currentUser = account);
     } catch (e) {
       if (mounted) {
+        final trans = ref.read(translationsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Sign-In failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('${trans.backupGoogleSignInFailed}: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -120,17 +125,18 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Future<void> _handleUploadToDrive() async {
     final messenger = ScaffoldMessenger.of(context);
+    final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);
     try {
       await ref.read(backupServiceProvider).uploadToDrive();
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Uploaded to Drive successfully!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text(trans.backupUploadSuccess), backgroundColor: AppColors.success),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Upload failed: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('${trans.backupUploadFailed}: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -139,6 +145,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Future<void> _handleRestoreFromDrive() async {
     final messenger = ScaffoldMessenger.of(context);
+    final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);
 
     List<drive.File> backups;
@@ -148,7 +155,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         messenger.showSnackBar(
-          SnackBar(content: Text('Failed to load backups: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text('${trans.backupLoadFailed}: $e'), backgroundColor: AppColors.error),
         );
       }
       return;
@@ -159,7 +166,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
     if (backups.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No backups found on Drive')),
+        SnackBar(content: Text(trans.backupNoneOnDrive)),
       );
       return;
     }
@@ -179,19 +186,19 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.bgDarkEnd,
-        title: const Text('Restore from Drive?', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'This will overwrite your current data with the selected backup. This cannot be undone.',
-          style: TextStyle(color: Colors.white70),
+        title: Text(trans.backupDriveConfirmTitle, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          trans.backupDriveConfirmContent,
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Restore', style: TextStyle(color: AppColors.error)),
+            child: Text(trans.backupRestoreConfirmButton, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -204,12 +211,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       await ref.read(backupServiceProvider).restoreFromDrive(selectedFileId);
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('Restored successfully!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text(trans.backupRestoreSuccess), backgroundColor: AppColors.success),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Restore failed: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('${trans.backupRestoreFailed}: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -217,14 +224,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Widget _buildBackupListSheet(List<drive.File> backups) {
+    final trans = ref.read(translationsProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
+        Padding(
+          padding: const EdgeInsets.all(16),
           child: Text(
-            'Select Backup to Restore',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            trans.backupSelectBackup,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
         Divider(color: Colors.white.withValues(alpha: 0.1)),
@@ -264,21 +272,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            title: const Text('Backup & Restore'),
+            title: Text(ref.watch(translationsProvider).backupTitle),
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white), 
+            iconTheme: const IconThemeData(color: Colors.white),
              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          body: _isLoading 
+          body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
+                child: Builder(
+                  builder: (context) {
+                    final trans = ref.watch(translationsProvider);
+                    return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader('Manual Backup'),
+                    _buildSectionHeader(trans.backupManual),
                     const SizedBox(height: 16),
                     GlassCard(
                       child: Column(
@@ -292,8 +303,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                               ),
                               child: const Icon(Icons.upload_file, color: AppColors.primaryGold),
                             ),
-                            title: const Text('Export Database', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Save your data to a file', style: TextStyle(color: Colors.white54)),
+                            title: Text(trans.backupExport, style: const TextStyle(color: Colors.white)),
+                            subtitle: Text(trans.backupExportSubtitle, style: const TextStyle(color: Colors.white54)),
                             onTap: _handleExport,
                           ),
                           Divider(color: Colors.white.withValues(alpha: 0.1)),
@@ -306,8 +317,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                               ),
                               child: const Icon(Icons.download_rounded, color: AppColors.primaryGold),
                             ),
-                            title: const Text('Import Database', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Restore data from a file', style: TextStyle(color: Colors.white54)),
+                            title: Text(trans.backupImport, style: const TextStyle(color: Colors.white)),
+                            subtitle: Text(trans.backupImportSubtitle, style: const TextStyle(color: Colors.white54)),
                             onTap: _handleImport,
                           ),
                         ],
@@ -364,6 +375,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                     //   ),
                     // ),
                   ],
+                );
+                  },
                 ),
               ),
         ),

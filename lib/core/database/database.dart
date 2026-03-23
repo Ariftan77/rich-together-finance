@@ -60,9 +60,8 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
-        // Create default profile and seed categories
+        // Create default profile (categories & accounts are seeded during onboarding)
         await _createDefaultProfile();
-        await _seedCategories();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
@@ -480,9 +479,8 @@ class AppDatabase extends _$AppDatabase {
       // finally delete profiles
       await delete(profiles).go();
 
-      // 2. Re-seed default data
+      // 2. Re-seed default profile (categories & accounts are seeded during onboarding)
       await _createDefaultProfile();
-      await _seedCategories();
     });
   }
 

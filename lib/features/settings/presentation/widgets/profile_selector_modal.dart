@@ -117,6 +117,7 @@ class ProfileSelectorModal extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profilesAsync = ref.watch(allProfilesProvider);
     final activeProfileId = ref.watch(activeProfileIdProvider);
+    final trans = ref.watch(translationsProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -132,7 +133,7 @@ class ProfileSelectorModal extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Switch Profile',
+                trans.profileSwitchTitle,
                 style: AppTypography.textTheme.titleLarge,
               ),
               IconButton(
@@ -157,7 +158,7 @@ class ProfileSelectorModal extends ConsumerWidget {
                   width: double.infinity,
                   child: GlassButton(
                     onPressed: () => _showAddProfileDialog(context, ref, profiles),
-                    text: 'Add New Profile',
+                    text: trans.profileAddNew,
                     icon: Icons.add,
                     isFullWidth: true,
                   ),
@@ -314,7 +315,7 @@ class ProfileSelectorModal extends ConsumerWidget {
       Navigator.pop(context); // Close loading
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error deleting profile: $e'),
+          content: Text('${ref.read(translationsProvider).profileErrorDeleting}: $e'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -322,7 +323,7 @@ class ProfileSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
-
+    final trans = ref.read(translationsProvider);
 
     if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
       // Show confirmation BEFORE popping — context must still be attached
@@ -331,19 +332,19 @@ class ProfileSelectorModal extends ConsumerWidget {
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgDarkEnd,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Add New Profile', style: AppTypography.textTheme.titleLarge),
-          content: const Text(
-            'Watch a short ad to create a new profile.',
-            style: TextStyle(color: Colors.white70),
+          title: Text(trans.profileAddNewAdTitle, style: AppTypography.textTheme.titleLarge),
+          content: Text(
+            trans.profileAddNewAdContent,
+            style: const TextStyle(color: Colors.white70),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+              child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Watch Ad', style: TextStyle(color: AppColors.primaryGold)),
+              child: Text(trans.profileAddNewAdWatch, style: const TextStyle(color: AppColors.primaryGold)),
             ),
           ],
         ),
@@ -357,7 +358,7 @@ class ProfileSelectorModal extends ConsumerWidget {
       if (!rewarded) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ad not completed. Please try again.')),
+            SnackBar(content: Text(trans.profileAdNotCompleted)),
           );
         }
         return;

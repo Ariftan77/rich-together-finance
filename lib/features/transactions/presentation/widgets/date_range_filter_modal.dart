@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/theme/colors.dart';
 import '../providers/search_provider.dart';
 
@@ -50,7 +51,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
         _errorMessage = null;
         // Validate: dateTo must be > dateFrom
         if (_dateTo != null && _dateTo!.isBefore(picked)) {
-          _errorMessage = 'Date To must be after Date From';
+          _errorMessage = ref.read(translationsProvider).filterDateToAfterFrom;
         }
       });
     }
@@ -81,7 +82,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
         _errorMessage = null;
         // Validate: dateTo must be > dateFrom
         if (_dateFrom != null && picked.isBefore(_dateFrom!)) {
-          _errorMessage = 'Date To must be after Date From';
+          _errorMessage = ref.read(translationsProvider).filterDateToAfterFrom;
         }
       });
     }
@@ -99,7 +100,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
     // Validate before applying
     if (_dateFrom != null && _dateTo != null && _dateTo!.isBefore(_dateFrom!)) {
       setState(() {
-        _errorMessage = 'Date To must be after Date From';
+        _errorMessage = ref.read(translationsProvider).filterDateToAfterFrom;
       });
       return;
     }
@@ -113,6 +114,8 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
 
   @override
   Widget build(BuildContext context) {
+    final trans = ref.watch(translationsProvider);
+
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF221D10),
@@ -142,8 +145,8 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filter by Date Range',
-                  style: TextStyle(
+                  trans.filterByDateRange,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -152,8 +155,8 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                 TextButton(
                   onPressed: _clearFilters,
                   child: Text(
-                    'Clear',
-                    style: TextStyle(
+                    trans.filterClear,
+                    style: const TextStyle(
                       color: AppColors.primaryGold,
                       fontSize: 14,
                     ),
@@ -180,14 +183,14 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: AppColors.primaryGold, size: 20),
+                    const Icon(Icons.calendar_today, color: AppColors.primaryGold, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Date From',
+                            trans.filterDateFrom,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 12,
@@ -197,7 +200,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                           Text(
                             _dateFrom != null
                                 ? DateFormat('MMM dd, yyyy').format(_dateFrom!)
-                                : 'Select start date',
+                                : trans.filterDateFromPlaceholder,
                             style: TextStyle(
                               color: _dateFrom != null ? Colors.white : Colors.white.withValues(alpha: 0.4),
                               fontSize: 16,
@@ -234,14 +237,14 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: AppColors.primaryGold, size: 20),
+                    const Icon(Icons.calendar_today, color: AppColors.primaryGold, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Date To',
+                            trans.filterDateTo,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 12,
@@ -251,7 +254,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                           Text(
                             _dateTo != null
                                 ? DateFormat('MMM dd, yyyy').format(_dateTo!)
-                                : 'Select end date',
+                                : trans.filterDateToPlaceholder,
                             style: TextStyle(
                               color: _dateTo != null ? Colors.white : Colors.white.withValues(alpha: 0.4),
                               fontSize: 16,
@@ -277,12 +280,12 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 16),
+                  const Icon(Icons.error_outline, color: Colors.red, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.red,
                         fontSize: 14,
                       ),
@@ -296,7 +299,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Text(
-              'Empty Date From = first transaction\nEmpty Date To = today',
+              trans.filterEmptyHint,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 12,
@@ -321,8 +324,8 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                   ),
                 ),
                 child: Text(
-                  'Apply Filter',
-                  style: TextStyle(
+                  trans.filterApply,
+                  style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

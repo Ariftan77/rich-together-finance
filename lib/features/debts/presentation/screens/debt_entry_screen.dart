@@ -33,7 +33,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   double _rawAmount = 0;
   late TextEditingController _noteController;
   DebtType _selectedType = DebtType.payable;
-  Currency _selectedCurrency = Currency.idr;
+  Currency _selectedCurrency = Currency.idr; // overwritten in initState
   DateTime? _dueDate;
   int? _selectedAccountId; // For transaction creation
   bool _isLoading = false;
@@ -50,6 +50,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
       _selectedCurrency = widget.debt!.currency;
       _dueDate = widget.debt!.dueDate;
       _selectedAccountId = widget.debt!.creationAccountId;
+    } else {
+      _selectedCurrency = ref.read(defaultCurrencyProvider);
     }
   }
 

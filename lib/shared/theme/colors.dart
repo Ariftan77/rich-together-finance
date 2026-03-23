@@ -43,6 +43,20 @@ class AppColors {
   static const Color glassBackgroundLight = Color(0x1A000000); // 10% opacity black
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color cardSurfaceLight = Color(0xFFF1F5F9);
+
+  /// Shared splash/onboarding background gradient (dark navy -> amber).
+  static const LinearGradient splashGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFF0F172A),
+      Color(0xFF171E2E),
+      Color(0xFF854D0E),
+      Color(0xFFC25400),
+    ],
+    stops: [0.0, 0.3, 0.8, 1.0],
+  );
+
   static const LinearGradient mainGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

@@ -415,4 +415,85 @@ class AppTranslationsId implements AppTranslations {
   @override String get exportError => 'Gagal mengekspor laporan';
   @override String get exportNoData => 'Tidak ada transaksi dalam rentang tanggal ini';
   @override String get exportGenerating => 'Membuat laporan...';
+
+  // Categories Screen
+  @override String get categoriesTitle => 'Kelola Kategori';
+  @override String get categoriesSearchHint => 'Cari kategori...';
+  @override String get categoriesFilterExpense => 'Pengeluaran';
+  @override String get categoriesFilterIncome => 'Pemasukan';
+  @override String categoryUsedInTransactions(int count) =>
+      count == 1 ? 'Digunakan dalam 1 transaksi' : 'Digunakan dalam $count transaksi';
+  @override String get categoryNoneFound => 'Tidak ada kategori ditemukan';
+  @override String get categoryAdded => 'Kategori ditambahkan';
+  @override String get categoryAddError => 'Gagal menambahkan kategori';
+  @override String get categoryUpdated => 'Kategori diperbarui';
+  @override String get categoryUpdateError => 'Gagal memperbarui kategori';
+  @override String get categoryDeleted => 'Kategori dihapus';
+  @override String get categoryDeleteError => 'Gagal menghapus kategori';
+  @override String get categoryCannotDeleteTitle => 'Kategori Tidak Dapat Dihapus';
+  @override String categoryCannotDeleteContent(int count) =>
+      'Kategori ini digunakan dalam $count transaksi. Anda tidak dapat menghapusnya selama masih tercatat dalam riwayat transaksi.';
+
+  // Profile Selector Modal
+  @override String get profileSwitchTitle => 'Ganti Profil';
+  @override String get profileAddNew => 'Tambah Profil Baru';
+  @override String get profileAddNewAdTitle => 'Tambah Profil Baru';
+  @override String get profileAddNewAdContent => 'Tonton iklan singkat untuk membuat profil baru.';
+  @override String get profileAddNewAdWatch => 'Tonton Iklan';
+  @override String get profileAdNotCompleted => 'Iklan tidak selesai. Silakan coba lagi.';
+  @override String get profileErrorDeleting => 'Gagal menghapus profil';
+
+  // Add Profile Dialog
+  @override String get profileNew => 'Profil Baru';
+  @override String get profileChooseAvatar => 'Pilih Avatar';
+  @override String get profileName => 'Nama Profil';
+  @override String get profileNameHint => 'cth. Pribadi, Bisnis, Keluarga';
+  @override String get profileNameEmpty => 'Mohon masukkan nama profil';
+  @override String get profileNameExists => 'Profil dengan nama ini sudah ada';
+  @override String profileCreated(String name) => 'Profil "$name" berhasil dibuat!';
+
+  // Backup Screen
+  @override String get backupTitle => 'Cadangan & Pemulihan';
+  @override String get backupManual => 'Cadangan Manual';
+  @override String get backupExport => 'Ekspor Database';
+  @override String get backupExportSubtitle => 'Simpan data Anda ke dalam file';
+  @override String get backupImport => 'Impor Database';
+  @override String get backupImportSubtitle => 'Pulihkan data dari file cadangan';
+  @override String get backupRestoreConfirmTitle => 'Pulihkan Database?';
+  @override String get backupRestoreConfirmContent =>
+      'Ini akan menimpa data Anda saat ini dengan file cadangan. Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin?';
+  @override String get backupRestoreConfirmButton => 'Pulihkan';
+  @override String get backupExportSuccess => 'Database berhasil diekspor';
+  @override String get backupExportFailed => 'Ekspor gagal';
+  @override String get backupImportSuccess => 'Database berhasil dipulihkan!';
+  @override String get backupImportFailed => 'Impor gagal';
+  @override String get backupSelectBackup => 'Pilih Cadangan untuk Dipulihkan';
+  @override String get backupDriveConfirmTitle => 'Pulihkan dari Drive?';
+  @override String get backupDriveConfirmContent =>
+      'Ini akan menimpa data Anda saat ini dengan cadangan yang dipilih. Tindakan ini tidak dapat dibatalkan.';
+  @override String get backupUploadSuccess => 'Berhasil diunggah ke Drive!';
+  @override String get backupUploadFailed => 'Pengunggahan gagal';
+  @override String get backupRestoreSuccess => 'Berhasil dipulihkan!';
+  @override String get backupRestoreFailed => 'Pemulihan gagal';
+  @override String get backupLoadFailed => 'Gagal memuat cadangan';
+  @override String get backupNoneOnDrive => 'Tidak ada cadangan di Drive';
+  @override String get backupGoogleSignInFailed => 'Masuk Google gagal';
+
+  // Date Range Filter Modal
+  @override String get filterByDateRange => 'Filter berdasarkan tanggal';
+  @override String get filterClear => 'Hapus';
+  @override String get filterDateFrom => 'Dari Tanggal';
+  @override String get filterDateFromPlaceholder => 'Pilih tanggal awal';
+  @override String get filterDateTo => 'Sampai Tanggal';
+  @override String get filterDateToPlaceholder => 'Pilih tanggal akhir';
+  @override String get filterDateToAfterFrom => 'Tanggal Akhir harus setelah Tanggal Awal';
+  @override String get filterEmptyHint => 'Tanggal Awal kosong = transaksi pertama\nTanggal Akhir kosong = hari ini';
+  @override String get filterApply => 'Terapkan Filter';
+
+  // Transaction History Screen
+  @override String get txnCustomRange => 'Rentang Khusus';
+  @override String get txnNoTransactions => 'Tidak ada transaksi';
+  @override String get txnFilterDebt => 'Hutang';
+  @override String get txnFilterAdjustment => 'Penyesuaian';
+  @override String get txnDaySummaryTxn => 'Transaksi';
 }

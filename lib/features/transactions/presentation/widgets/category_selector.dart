@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/database/database.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 
 /// A searchable category selector with "Add New" option
 class CategorySelector extends StatefulWidget {
@@ -35,6 +36,12 @@ class _CategorySelectorState extends State<CategorySelector> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Color _parseColor(String? hex) {
+    if (hex == null || hex == 'transparent') return Colors.white.withValues(alpha: 0.1);
+    final cleaned = hex.replaceFirst('#', '0xFF');
+    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
   }
 
   void _filterCategories(String query) {
@@ -176,12 +183,21 @@ class _CategorySelectorState extends State<CategorySelector> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.category_outlined,
-                                color: isSelected
-                                    ? AppColors.primaryGold
-                                    : Colors.white.withValues(alpha: 0.6),
-                                size: 20,
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: _parseColor(category.color),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: CategoryIconWidget(
+                                  iconString: category.icon,
+                                  size: 18,
+                                  color: isSelected
+                                      ? AppColors.primaryGold
+                                      : Colors.white,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(

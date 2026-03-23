@@ -20,6 +20,7 @@ import '../../../../core/services/recurring_service.dart';
 import '../widgets/account_selector.dart';
 import '../widgets/add_account_dialog.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
+import '../../../../shared/widgets/category_icon_widget.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
@@ -94,6 +95,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
+  Color _parseCategoryColor(String? hex) {
+    if (hex == null || hex == 'transparent') return Colors.white.withValues(alpha: 0.1);
+    final cleaned = hex.replaceFirst('#', '0xFF');
+    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
+  }
+
   Future<void> _loadTransaction() async {
     final dao = ref.read(transactionDaoProvider);
     final transaction = await dao.getTransactionById(widget.transactionId!);
@@ -103,7 +110,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       final accountDao = ref.read(accountDaoProvider);
       final account = await accountDao.getAccountById(transaction.accountId);
       if (!mounted) return;
-      final currency = account?.currency ?? Currency.idr;
+      final Currency currency = account?.currency ?? ref.read(defaultCurrencyProvider);
       final showDecimal = ref.read(showDecimalProvider);
 
       setState(() {
@@ -147,7 +154,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     if (!mounted) return;
     final accountsAsync = ref.read(accountsStreamProvider);
     final accounts = accountsAsync.valueOrNull;
-    final currency = accounts != null ? _getCurrency(accounts) : Currency.idr;
+    final currency = accounts != null ? _getCurrency(accounts) : ref.read(defaultCurrencyProvider);
     final showDecimal = ref.read(showDecimalProvider);
 
     final result = await CalculatorBottomSheet.show(
@@ -411,12 +418,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
 
   Currency _getCurrency(List<Account> accounts) {
-    if (_selectedAccountId == null) return Currency.idr;
+    if (_selectedAccountId == null) return ref.read(defaultCurrencyProvider);
     // Find account or default
     try {
       return accounts.firstWhere((a) => a.id == _selectedAccountId).currency;
     } catch (_) {
-      return Currency.idr; 
+      return ref.read(defaultCurrencyProvider);
     }
   }
 
@@ -886,7 +893,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 12),
 
                     // Amount Input Section
                     Column(
@@ -1282,11 +1289,27 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.category_outlined,
-                                        color: AppColors.primaryGold.withValues(alpha: 0.8),
-                                        size: 20,
-                                      ),
+                                      if (selectedCategory != null)
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: _parseCategoryColor(selectedCategory.color),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: CategoryIconWidget(
+                                            iconString: selectedCategory.icon,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      else
+                                        Icon(
+                                          Icons.category_outlined,
+                                          color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                          size: 20,
+                                        ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(

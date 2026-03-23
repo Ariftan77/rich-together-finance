@@ -29,7 +29,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   double _rawAmount = 0;
   int? _selectedCategoryId;
-  Currency _selectedCurrency = Currency.idr;
+  Currency _selectedCurrency = Currency.idr; // overwritten in initState
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
   bool _isLoading = false;
 
@@ -41,6 +41,8 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
       _selectedCategoryId = widget.budget!.categoryId;
       _selectedCurrency = widget.budget!.currency;
       _selectedPeriod = widget.budget!.period;
+    } else {
+      _selectedCurrency = ref.read(defaultCurrencyProvider);
     }
   }
 

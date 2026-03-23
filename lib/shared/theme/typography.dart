@@ -25,6 +25,11 @@ class AppTypography {
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
+      headlineSmall: GoogleFonts.inter(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      ),
       titleLarge: GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w600,
@@ -44,6 +49,11 @@ class AppTypography {
         fontSize: 14,
         fontWeight: FontWeight.normal,
         color: AppColors.textSecondary,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textTertiary,
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 14,
@@ -81,6 +91,11 @@ class AppTypography {
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimaryLight,
       ),
+      headlineSmall: GoogleFonts.inter(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryLight,
+      ),
       titleLarge: GoogleFonts.inter(
         fontSize: 18,
         fontWeight: FontWeight.w600,
@@ -100,6 +115,11 @@ class AppTypography {
         fontSize: 14,
         fontWeight: FontWeight.normal,
         color: AppColors.textSecondaryLight,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textTertiaryLight,
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 14,

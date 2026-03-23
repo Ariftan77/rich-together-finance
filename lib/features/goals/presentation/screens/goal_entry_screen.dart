@@ -30,7 +30,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   double _rawAmount = 0;
-  Currency _selectedCurrency = Currency.idr;
+  Currency _selectedCurrency = Currency.idr; // overwritten in initState
   DateTime? _deadline;
   bool _isLoading = false;
   List<int> _linkedAccountIds = [];
@@ -43,6 +43,8 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
       _rawAmount = widget.goal!.targetAmount;
       _selectedCurrency = widget.goal!.targetCurrency;
       _deadline = widget.goal!.deadline;
+    } else {
+      _selectedCurrency = ref.read(defaultCurrencyProvider);
     }
     if (widget.goal != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

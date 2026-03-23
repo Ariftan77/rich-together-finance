@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
@@ -38,7 +39,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final hasPin = results[0] as bool;
     final isEnabled = results[1] as bool;
     final prefs = results[2] as SharedPreferences;
-    final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
+    final onboardingDone = prefs.getBool(AppConstants.onboardingCompletedKey) ?? false;
 
     // Ensure splash shows for at least 1 second
     await splashDelay;
@@ -66,17 +67,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F172A), // #0F172A 0%
-              Color(0xFF171E2E), // #171E2E 30%
-              Color(0xFF854D0E), // #854D0E 80%
-              Color(0xFFC25400), // #C25400 100%
-            ],
-            stops: [0.0, 0.3, 0.8, 1.0],
-          ),
+          gradient: AppColors.splashGradient,
         ),
         child: Stack(
           children: [

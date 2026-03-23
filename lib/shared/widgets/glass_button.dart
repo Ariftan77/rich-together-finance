@@ -83,18 +83,27 @@ class GlassButton extends StatelessWidget {
       content = Center(child: content);
     }
 
-    return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: GlassCard(
-        borderRadius: 32, // More rounded for buttons
-        backgroundColor: bgColor,
-        borderColor: borderColor,
-        padding: EdgeInsets.symmetric(
-          vertical: paddingVertical,
-          horizontal: paddingHorizontal,
+    // Determine the accessibility label: prefer the explicit text, fall back to
+    // nothing (callers using [child] should wrap their own Semantics if needed).
+    final String? semanticLabel = text;
+
+    return Semantics(
+      button: true,
+      enabled: !isLoading,
+      label: isLoading ? '${semanticLabel ?? 'Button'}, loading' : semanticLabel,
+      child: GestureDetector(
+        onTap: isLoading ? null : onPressed,
+        child: GlassCard(
+          borderRadius: 32, // More rounded for buttons
+          backgroundColor: bgColor,
+          borderColor: borderColor,
+          padding: EdgeInsets.symmetric(
+            vertical: paddingVertical,
+            horizontal: paddingHorizontal,
+          ),
+          width: isFullWidth ? double.infinity : null,
+          child: content,
         ),
-        width: isFullWidth ? double.infinity : null,
-        child: content,
       ),
     );
   }

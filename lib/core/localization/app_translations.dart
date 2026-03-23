@@ -411,4 +411,81 @@ abstract class AppTranslations {
   String get exportError;
   String get exportNoData;
   String get exportGenerating;
+
+  // Categories Screen
+  String get categoriesTitle;
+  String get categoriesSearchHint;
+  String get categoriesFilterExpense;
+  String get categoriesFilterIncome;
+  String categoryUsedInTransactions(int count);
+  String get categoryNoneFound;
+  String get categoryAdded;
+  String get categoryAddError;
+  String get categoryUpdated;
+  String get categoryUpdateError;
+  String get categoryDeleted;
+  String get categoryDeleteError;
+  String get categoryCannotDeleteTitle;
+  String categoryCannotDeleteContent(int count);
+
+  // Profile Selector Modal
+  String get profileSwitchTitle;
+  String get profileAddNew;
+  String get profileAddNewAdTitle;
+  String get profileAddNewAdContent;
+  String get profileAddNewAdWatch;
+  String get profileAdNotCompleted;
+  String get profileErrorDeleting;
+
+  // Add Profile Dialog
+  String get profileNew;
+  String get profileChooseAvatar;
+  String get profileName;
+  String get profileNameHint;
+  String get profileNameEmpty;
+  String get profileNameExists;
+  String profileCreated(String name);
+
+  // Backup Screen
+  String get backupTitle;
+  String get backupManual;
+  String get backupExport;
+  String get backupExportSubtitle;
+  String get backupImport;
+  String get backupImportSubtitle;
+  String get backupRestoreConfirmTitle;
+  String get backupRestoreConfirmContent;
+  String get backupRestoreConfirmButton;
+  String get backupExportSuccess;
+  String get backupExportFailed;
+  String get backupImportSuccess;
+  String get backupImportFailed;
+  String get backupSelectBackup;
+  String get backupDriveConfirmTitle;
+  String get backupDriveConfirmContent;
+  String get backupUploadSuccess;
+  String get backupUploadFailed;
+  String get backupRestoreSuccess;
+  String get backupRestoreFailed;
+  String get backupLoadFailed;
+  String get backupNoneOnDrive;
+  String get backupGoogleSignInFailed;
+
+  // Date Range Filter Modal
+  String get filterByDateRange;
+  String get filterClear;
+  String get filterDateFrom;
+  String get filterDateFromPlaceholder;
+  String get filterDateTo;
+  String get filterDateToPlaceholder;
+  String get filterDateToAfterFrom;
+  String get filterEmptyHint;
+  String get filterApply;
+
+  // Transaction History Screen
+  String get txnCustomRange;
+  String get txnNoTransactions;
+  String get txnFilterDebt;
+  String get txnFilterAdjustment;
+  String get txnDaySummaryTxn;
 }

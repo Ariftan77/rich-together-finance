@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/localization/app_translations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/colors.dart';
@@ -242,7 +243,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                             children: [
                               Text(
                                 hasCustomRange
-                                    ? 'Custom Range'
+                                    ? trans.txnCustomRange
                                     : DateFormat('MMMM yyyy').format(selectedMonth),
                                 style: AppTypography.textTheme.titleMedium?.copyWith(
                                   color: hasCustomRange
@@ -322,13 +323,13 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Debt',
+                          label: trans.txnFilterDebt,
                           isSelected: currentTypeFilter?.contains(TransactionType.debtIn) == true,
                           onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.debtIn, TransactionType.debtOut],
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Adjustment',
+                          label: trans.txnFilterAdjustment,
                           isSelected: currentTypeFilter?.contains(TransactionType.adjustmentIn) == true,
                           onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.adjustmentIn, TransactionType.adjustmentOut],
                         ),
@@ -355,7 +356,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       if (convertedTxs.isEmpty) {
                         return Center(
                           child: Text(
-                            'No transactions found',
+                            trans.txnNoTransactions,
                             style: AppTypography.textTheme.bodyLarge!.copyWith(
                               color: Colors.white.withValues(alpha: 0.5),
                             ),
@@ -421,7 +422,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      _formatDateSection(date, today).toUpperCase(),
+                                      _formatDateSection(date, today, trans).toUpperCase(),
                                       textAlign: TextAlign.center,
                                       style: AppTypography.textTheme.labelSmall!.copyWith(
                                         color: Colors.white.withValues(alpha: 0.7),
@@ -436,18 +437,18 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                       children: [
                                         if (dayIncome > 0)
                                           _DayStatChip(
-                                            label: 'Income',
+                                            label: trans.dashboardIncome,
                                             value: '+${baseCurrency.symbol} ${Formatters.formatCurrency(dayIncome, showDecimal: showDecimal)}',
                                             color: const Color(0xFF34D399).withValues(alpha: 0.7),
                                           ),
                                         if (dayExpense > 0)
                                           _DayStatChip(
-                                            label: 'Expense',
+                                            label: trans.dashboardExpense,
                                             value: '-${baseCurrency.symbol} ${Formatters.formatCurrency(dayExpense, showDecimal: showDecimal)}',
                                             color: const Color(0xFFFB7185).withValues(alpha: 0.7),
                                           ),
                                         _DayStatChip(
-                                          label: 'Txn',
+                                          label: trans.txnDaySummaryTxn,
                                           value: '${cts.length}',
                                           color: Colors.white.withValues(alpha: 0.5),
                                         ),
@@ -475,11 +476,11 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
       ],
     );  }
 
-  String _formatDateSection(DateTime date, DateTime today) {
+  String _formatDateSection(DateTime date, DateTime today, AppTranslations trans) {
     final yesterday = today.subtract(const Duration(days: 1));
 
-    if (date == today) return 'Today';
-    if (date == yesterday) return 'Yesterday';
+    if (date == today) return trans.commonToday;
+    if (date == yesterday) return trans.commonYesterday;
     return DateFormat('EEE, d MMM').format(date);
   }
 }
@@ -570,12 +571,27 @@ class _TransactionItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showDecimal = ref.watch(showDecimalProvider);
+    final trans = ref.watch(translationsProvider);
     final isExpense = transaction.type == TransactionType.expense;
     final isIncome = transaction.type == TransactionType.income;
     final isAdjustmentIn = transaction.type == TransactionType.adjustmentIn;
     final isAdjustmentOut = transaction.type == TransactionType.adjustmentOut;
     final isDebtIn = transaction.type == TransactionType.debtIn;
     final isDebtOut = transaction.type == TransactionType.debtOut;
+
+    // Localized transaction type name
+    String localizedTypeName(TransactionType type) {
+      switch (type) {
+        case TransactionType.income: return trans.entryTypeIncome;
+        case TransactionType.expense: return trans.entryTypeExpense;
+        case TransactionType.transfer: return trans.entryTypeTransfer;
+        case TransactionType.adjustmentIn: return trans.entryTypeAdjustmentIn;
+        case TransactionType.adjustmentOut: return trans.entryTypeAdjustmentOut;
+        case TransactionType.debtIn: return trans.entryTypeDebtIn;
+        case TransactionType.debtOut: return trans.entryTypeDebtOut;
+      }
+    }
+
     final color = isExpense
         ? const Color(0xFFFB7185)
         : isIncome
@@ -635,7 +651,7 @@ class _TransactionItem extends ConsumerWidget {
                   Text(
                     transaction.title != null && transaction.title!.isNotEmpty 
                       ? transaction.title! 
-                      : transaction.type.displayName,
+                      : localizedTypeName(transaction.type),
                     style: AppTypography.textTheme.bodyMedium!.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -646,7 +662,7 @@ class _TransactionItem extends ConsumerWidget {
                   // Time and category
                   Builder(
                     builder: (context) {
-                      final categoryName = category?.name ?? transaction.type.displayName;
+                      final categoryName = category?.name ?? localizedTypeName(transaction.type);
                       final timeStr = _formatTime(transaction.date);
                       return Text(
                         '$timeStr • $categoryName',
@@ -680,7 +696,7 @@ class _TransactionItem extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Builder(
                   builder: (context) {
-                    final accountName = account?.name ?? 'Loading...';
+                    final accountName = account?.name ?? trans.loading;
                     return Text(
                       accountName,
                       style: AppTypography.textTheme.bodySmall!.copyWith(

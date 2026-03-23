@@ -414,4 +414,85 @@ class AppTranslationsEn implements AppTranslations {
   @override String get exportError => 'Failed to export report';
   @override String get exportNoData => 'No transactions found in this date range';
   @override String get exportGenerating => 'Generating report...';
+
+  // Categories Screen
+  @override String get categoriesTitle => 'Manage Categories';
+  @override String get categoriesSearchHint => 'Search categories...';
+  @override String get categoriesFilterExpense => 'Expense';
+  @override String get categoriesFilterIncome => 'Income';
+  @override String categoryUsedInTransactions(int count) =>
+      count == 1 ? 'Used in 1 transaction' : 'Used in $count transactions';
+  @override String get categoryNoneFound => 'No categories found';
+  @override String get categoryAdded => 'Category added';
+  @override String get categoryAddError => 'Error adding category';
+  @override String get categoryUpdated => 'Category updated';
+  @override String get categoryUpdateError => 'Error updating category';
+  @override String get categoryDeleted => 'Category deleted';
+  @override String get categoryDeleteError => 'Error deleting category';
+  @override String get categoryCannotDeleteTitle => 'Cannot Delete Category';
+  @override String categoryCannotDeleteContent(int count) =>
+      'This category is used in $count transactions. You cannot delete it while it counts towards your records.';
+
+  // Profile Selector Modal
+  @override String get profileSwitchTitle => 'Switch Profile';
+  @override String get profileAddNew => 'Add New Profile';
+  @override String get profileAddNewAdTitle => 'Add New Profile';
+  @override String get profileAddNewAdContent => 'Watch a short ad to create a new profile.';
+  @override String get profileAddNewAdWatch => 'Watch Ad';
+  @override String get profileAdNotCompleted => 'Ad not completed. Please try again.';
+  @override String get profileErrorDeleting => 'Error deleting profile';
+
+  // Add Profile Dialog
+  @override String get profileNew => 'New Profile';
+  @override String get profileChooseAvatar => 'Choose Avatar';
+  @override String get profileName => 'Profile Name';
+  @override String get profileNameHint => 'e.g., Personal, Business, Family';
+  @override String get profileNameEmpty => 'Please enter a profile name';
+  @override String get profileNameExists => 'A profile with this name already exists';
+  @override String profileCreated(String name) => 'Profile "$name" created!';
+
+  // Backup Screen
+  @override String get backupTitle => 'Backup & Restore';
+  @override String get backupManual => 'Manual Backup';
+  @override String get backupExport => 'Export Database';
+  @override String get backupExportSubtitle => 'Save your data to a file';
+  @override String get backupImport => 'Import Database';
+  @override String get backupImportSubtitle => 'Restore data from a file';
+  @override String get backupRestoreConfirmTitle => 'Restore Database?';
+  @override String get backupRestoreConfirmContent =>
+      'This will overwrite your current data with the backup file. This action cannot be undone. Are you sure?';
+  @override String get backupRestoreConfirmButton => 'Restore';
+  @override String get backupExportSuccess => 'Database exported successfully';
+  @override String get backupExportFailed => 'Export failed';
+  @override String get backupImportSuccess => 'Database restored successfully!';
+  @override String get backupImportFailed => 'Import failed';
+  @override String get backupSelectBackup => 'Select Backup to Restore';
+  @override String get backupDriveConfirmTitle => 'Restore from Drive?';
+  @override String get backupDriveConfirmContent =>
+      'This will overwrite your current data with the selected backup. This cannot be undone.';
+  @override String get backupUploadSuccess => 'Uploaded to Drive successfully!';
+  @override String get backupUploadFailed => 'Upload failed';
+  @override String get backupRestoreSuccess => 'Restored successfully!';
+  @override String get backupRestoreFailed => 'Restore failed';
+  @override String get backupLoadFailed => 'Failed to load backups';
+  @override String get backupNoneOnDrive => 'No backups found on Drive';
+  @override String get backupGoogleSignInFailed => 'Google Sign-In failed';
+
+  // Date Range Filter Modal
+  @override String get filterByDateRange => 'Filter by Date Range';
+  @override String get filterClear => 'Clear';
+  @override String get filterDateFrom => 'Date From';
+  @override String get filterDateFromPlaceholder => 'Select start date';
+  @override String get filterDateTo => 'Date To';
+  @override String get filterDateToPlaceholder => 'Select end date';
+  @override String get filterDateToAfterFrom => 'Date To must be after Date From';
+  @override String get filterEmptyHint => 'Empty Date From = first transaction\nEmpty Date To = today';
+  @override String get filterApply => 'Apply Filter';
+
+  // Transaction History Screen
+  @override String get txnCustomRange => 'Custom Range';
+  @override String get txnNoTransactions => 'No transactions found';
+  @override String get txnFilterDebt => 'Debt';
+  @override String get txnFilterAdjustment => 'Adjustment';
+  @override String get txnDaySummaryTxn => 'Txn';
 }
