@@ -56,6 +56,7 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final monthLabel =
@@ -63,83 +64,93 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
 
     return Stack(
       children: [
-        Container(decoration: const BoxDecoration(gradient: AppColors.mainGradient)),
+        Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+          ),
+        ),
         Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        monthLabel,
+                        style: AppTypography.textTheme.headlineSmall?.copyWith(
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    monthLabel,
-                    style: AppTypography.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+                ),
+                const SizedBox(height: 12),
+                // Tab Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: AppColors.primaryGold,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      unselectedLabelColor: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : const Color(0xFF64748B),
+                      labelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      tabs: [
+                        Tab(text: trans.reportDetailChart),
+                        Tab(text: trans.reportDetailCategory),
+                        Tab(text: trans.reportDetailTitle),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Tab Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: AppColors.primaryGold,
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 8),
+                // Tab views
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _ChartTab(month: widget.month),
+                      _CategoryTab(month: widget.month),
+                      _TitleTab(month: widget.month),
+                    ],
                   ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.white,
-                  unselectedLabelColor:
-                      Colors.white.withValues(alpha: 0.6),
-                  labelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: [
-                    Tab(text: trans.reportDetailChart),
-                    Tab(text: trans.reportDetailCategory),
-                    Tab(text: trans.reportDetailTitle),
-                  ],
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 8),
-            // Tab views
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _ChartTab(month: widget.month),
-                  _CategoryTab(month: widget.month),
-                  _TitleTab(month: widget.month),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    ),
       ],
     );
   }
@@ -155,6 +166,7 @@ class _ChartTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
@@ -179,7 +191,9 @@ class _ChartTab extends ConsumerWidget {
             child: Text(
               dateRange,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : const Color(0xFF64748B),
                 fontSize: 13,
               ),
             ),
@@ -189,8 +203,8 @@ class _ChartTab extends ConsumerWidget {
           // --- EXPENSE PIE CHART ---
           Text(
             trans.entryTypeExpense,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -212,8 +226,8 @@ class _ChartTab extends ConsumerWidget {
           // --- INCOME PIE CHART ---
           Text(
             trans.entryTypeIncome,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -250,6 +264,8 @@ class _PieChartSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (data.isEmpty) {
       return GlassCard(
         child: Container(
@@ -258,7 +274,9 @@ class _PieChartSection extends StatelessWidget {
           child: Text(
             emptyLabel,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
               fontSize: 14,
             ),
           ),
@@ -327,8 +345,8 @@ class _PieChartSection extends StatelessWidget {
                   Expanded(
                     child: Text(
                       bd.categoryName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -338,7 +356,9 @@ class _PieChartSection extends StatelessWidget {
                   Text(
                     '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : const Color(0xFF64748B),
                       fontSize: 12,
                     ),
                   ),
@@ -376,6 +396,7 @@ class _CategoryTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -404,8 +425,8 @@ class _CategoryTab extends ConsumerWidget {
           // Expense by category
           Text(
             '${trans.entryTypeExpense} ${trans.reportDetailByCategory}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -428,8 +449,8 @@ class _CategoryTab extends ConsumerWidget {
           // Income by category
           Text(
             '${trans.entryTypeIncome} ${trans.reportDetailByCategory}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -467,6 +488,8 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -486,7 +509,9 @@ class _SummaryCard extends StatelessWidget {
               Container(
                 width: 1,
                 height: 48,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
               ),
               Expanded(
                 child: _SummaryItem(
@@ -499,7 +524,12 @@ class _SummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          Divider(height: 24, color: Colors.white.withValues(alpha: 0.1)),
+          Divider(
+            height: 24,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
+          ),
           // Daily averages row
           Row(
             children: [
@@ -515,7 +545,9 @@ class _SummaryCard extends StatelessWidget {
               Container(
                 width: 1,
                 height: 48,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
               ),
               Expanded(
                 child: _SummaryItem(
@@ -551,12 +583,16 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.6)
+                : const Color(0xFF64748B),
             fontSize: 11,
           ),
         ),
@@ -591,6 +627,8 @@ class _CategoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (data.isEmpty) {
       return Center(
         child: Padding(
@@ -598,7 +636,9 @@ class _CategoryList extends StatelessWidget {
           child: Text(
             emptyLabel,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
               fontSize: 14,
             ),
           ),
@@ -652,7 +692,7 @@ class _CategoryList extends StatelessWidget {
                           size: 18,
                           color: bd.color != null && bd.color != 'transparent'
                               ? catColor
-                              : Colors.white,
+                              : (isDark ? Colors.white : AppColors.textPrimaryLight),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -660,8 +700,8 @@ class _CategoryList extends StatelessWidget {
                       Expanded(
                         child: Text(
                           bd.categoryName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -671,8 +711,8 @@ class _CategoryList extends StatelessWidget {
                       // Amount
                       Text(
                         '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -681,7 +721,9 @@ class _CategoryList extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 18,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : const Color(0xFF94A3B8),
                       ),
                     ],
                   ),
@@ -691,7 +733,9 @@ class _CategoryList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: barFraction,
-                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
                       valueColor: AlwaysStoppedAnimation<Color>(catColor),
                       minHeight: 6,
                     ),
@@ -716,6 +760,7 @@ class _TitleTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -744,8 +789,8 @@ class _TitleTab extends ConsumerWidget {
           // Expense by title
           Text(
             '${trans.entryTypeExpense} ${trans.reportDetailByTitle}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -768,8 +813,8 @@ class _TitleTab extends ConsumerWidget {
           // Income by title
           Text(
             '${trans.entryTypeIncome} ${trans.reportDetailByTitle}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -809,6 +854,8 @@ class _TitleList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (data.isEmpty) {
       return Center(
         child: Padding(
@@ -816,7 +863,9 @@ class _TitleList extends StatelessWidget {
           child: Text(
             emptyLabel,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
               fontSize: 14,
             ),
           ),
@@ -873,8 +922,8 @@ class _TitleList extends StatelessWidget {
                           children: [
                             Text(
                               bd.title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -883,7 +932,9 @@ class _TitleList extends StatelessWidget {
                             Text(
                               '${bd.count}x',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.5)
+                                    : const Color(0xFF94A3B8),
                                 fontSize: 11,
                               ),
                             ),
@@ -893,8 +944,8 @@ class _TitleList extends StatelessWidget {
                       // Amount
                       Text(
                         '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -903,7 +954,9 @@ class _TitleList extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 18,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : const Color(0xFF94A3B8),
                       ),
                     ],
                   ),
@@ -913,7 +966,9 @@ class _TitleList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: barFraction,
-                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
                       valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primaryGold),
                       minHeight: 6,

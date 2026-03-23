@@ -41,7 +41,11 @@ class MultiCurrencyPickerField extends StatelessWidget {
           children: [
             Icon(
               Icons.currency_exchange,
-              color: hasSelection ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.5),
+              color: hasSelection
+                  ? AppColors.primaryGold
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : const Color(0xFF94A3B8)),
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -49,7 +53,9 @@ class MultiCurrencyPickerField extends StatelessWidget {
               child: Text(
                 displayText,
                 style: TextStyle(
-                  color: hasSelection ? Colors.white : Colors.white54,
+                  color: hasSelection
+                      ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                      : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                   fontSize: 14,
                   fontWeight: hasSelection ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -60,7 +66,11 @@ class MultiCurrencyPickerField extends StatelessWidget {
               GestureDetector(
                 onTap: () => onChanged({}),
                 behavior: HitTestBehavior.opaque,
-                child: Icon(Icons.close, color: Colors.white54, size: 18),
+                child: Icon(
+                  Icons.close,
+                  color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 4),
             ],
@@ -325,7 +335,9 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                                   border: Border.all(
                                     color: isSelected
                                         ? AppColors.primaryGold
-                                        : Colors.white.withValues(alpha: 0.3),
+                                        : (isDark
+                                            ? Colors.white.withValues(alpha: 0.3)
+                                            : const Color(0xFFCBD5E1)),
                                     width: 1.5,
                                   ),
                                 ),

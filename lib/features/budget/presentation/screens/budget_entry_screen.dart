@@ -182,6 +182,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -189,8 +190,8 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
           ),
         ),
         Scaffold(
@@ -199,8 +200,15 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: Text(widget.budget == null ? trans.budgetTitleAdd : trans.budgetTitleEdit, style: const TextStyle(color: Colors.white)),
+            iconTheme: IconThemeData(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+            ),
+            title: Text(
+              widget.budget == null ? trans.budgetTitleAdd : trans.budgetTitleEdit,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              ),
+            ),
           ),
           body: SafeArea(
         child: SingleChildScrollView(
@@ -226,12 +234,18 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                                 ? Formatters.formatCurrency(_rawAmount, currency: _selectedCurrency, showDecimal: showDecimal)
                                 : trans.budgetAmount,
                             style: TextStyle(
-                              color: _rawAmount > 0 ? Colors.white : Colors.white54,
+                              color: _rawAmount > 0
+                                  ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                  : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                               fontSize: 15,
                             ),
                           ),
                         ),
-                        Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                        Icon(
+                          Icons.calculate_outlined,
+                          color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
+                          size: 20,
+                        ),
                       ],
                     ),
                   ),
@@ -263,7 +277,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                           child: Text(
                             trans.entryCategory.toUpperCase(),
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.2,
@@ -324,10 +338,14 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                             height: 56,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.15)
+                                    : Colors.black.withValues(alpha: 0.12),
                               ),
                             ),
                             child: Row(
@@ -343,15 +361,17 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                                     selectedCategory?.name ?? trans.entrySelectCategory,
                                     style: TextStyle(
                                       color: selectedCategory != null
-                                          ? Colors.white
-                                          : Colors.white.withValues(alpha: 0.4),
+                                          ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                          : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
                                       fontSize: 15,
                                     ),
                                   ),
                                 ),
                                 Icon(
                                   Icons.expand_more,
-                                  color: Colors.white.withValues(alpha: 0.3),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.3)
+                                      : const Color(0xFFCBD5E1),
                                 ),
                               ],
                             ),
@@ -363,7 +383,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                   loading: () => const CircularProgressIndicator(),
                   error: (err, stack) => Text('${trans.error}: $err'),
                 ),
-                
+
                 const SizedBox(height: 24),
 
                 // Period Selector
@@ -395,14 +415,16 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                       selectedColor: AppColors.primaryGold,
                       backgroundColor: AppColors.glassBackground,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
+                        color: isSelected
+                            ? Colors.black
+                            : (isDark ? Colors.white : AppColors.textPrimaryLight),
                       ),
                     );
                   }).toList(),
                 ),
 
                 const SizedBox(height: 32),
-                
+
                 GlassButton(
                   text: trans.save,
                   isFullWidth: true,
@@ -410,7 +432,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                   onPressed: () => _saveBudget(),
                   isLoading: _isLoading,
                 ),
-                
+
                 if (widget.budget != null) ...[
                    const SizedBox(height: 16),
                    Center(

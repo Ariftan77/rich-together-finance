@@ -57,16 +57,17 @@ class _AccountSelectorState extends State<AccountSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.6,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF2D2416),
-            const Color(0xFF1A1410),
-          ],
+          colors: isDark
+              ? [const Color(0xFF2D2416), const Color(0xFF1A1410)]
+              : [Colors.white, const Color(0xFFF8FAFC)],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -81,7 +82,7 @@ class _AccountSelectorState extends State<AccountSelector> {
                   child: Text(
                     'Select Account',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -119,7 +120,12 @@ class _AccountSelectorState extends State<AccountSelector> {
                   ),
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.6)),
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : const Color(0xFF64748B),
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -132,20 +138,29 @@ class _AccountSelectorState extends State<AccountSelector> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.12),
                 ),
               ),
               child: TextField(
                 controller: _searchController,
                 onChanged: _filterAccounts,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  fontSize: 15,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search accounts...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : const Color(0xFF94A3B8),
                     fontSize: 15,
                   ),
                   prefixIcon: Icon(
@@ -171,13 +186,17 @@ class _AccountSelectorState extends State<AccountSelector> {
                         Icon(
                           Icons.search_off,
                           size: 48,
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : const Color(0xFFCBD5E1),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No accounts found',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.6)
+                                : const Color(0xFF64748B),
                             fontSize: 16,
                           ),
                         ),
@@ -202,12 +221,16 @@ class _AccountSelectorState extends State<AccountSelector> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold.withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.05),
+                                : isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : Colors.white.withValues(alpha: 0.15),
+                                  : isDark
+                                      ? Colors.white.withValues(alpha: 0.15)
+                                      : Colors.black.withValues(alpha: 0.12),
                               width: isSelected ? 2 : 1,
                             ),
                           ),
@@ -217,7 +240,9 @@ class _AccountSelectorState extends State<AccountSelector> {
                                 Icons.account_balance_wallet_outlined,
                                 color: isSelected
                                     ? AppColors.primaryGold
-                                    : Colors.white.withValues(alpha: 0.6),
+                                    : isDark
+                                        ? Colors.white.withValues(alpha: 0.6)
+                                        : const Color(0xFF64748B),
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
@@ -230,7 +255,7 @@ class _AccountSelectorState extends State<AccountSelector> {
                                       style: TextStyle(
                                         color: isSelected
                                             ? AppColors.primaryGold
-                                            : Colors.white,
+                                            : isDark ? Colors.white : AppColors.textPrimaryLight,
                                         fontSize: 15,
                                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                       ),
@@ -245,7 +270,9 @@ class _AccountSelectorState extends State<AccountSelector> {
                                         style: TextStyle(
                                           color: isSelected
                                               ? AppColors.primaryGold.withValues(alpha: 0.75)
-                                              : Colors.white.withValues(alpha: 0.5),
+                                              : isDark
+                                                  ? Colors.white.withValues(alpha: 0.5)
+                                                  : const Color(0xFF94A3B8),
                                           fontSize: 12,
                                         ),
                                       ),

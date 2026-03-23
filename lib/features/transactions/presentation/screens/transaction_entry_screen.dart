@@ -482,10 +482,11 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final navigator = Navigator.of(context);
 
     // Show confirmation dialog
+    final isDarkDelete = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2416),
+        backgroundColor: isDarkDelete ? const Color(0xFF2D2416) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -495,20 +496,20 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
             const SizedBox(width: 12),
             Text(
               'Delete Transaction?',
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: isDarkDelete ? Colors.white : AppColors.textPrimaryLight, fontSize: 18),
             ),
           ],
         ),
         content: Text(
           'This action cannot be undone. The account balance will be updated accordingly.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: TextStyle(color: isDarkDelete ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              style: TextStyle(color: isDarkDelete ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B)),
             ),
           ),
           ElevatedButton(
@@ -519,7 +520,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text(
+            child: const Text(
               'Delete',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
@@ -584,19 +585,20 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   }
 
   Future<void> _addNote() async {
+    final isDarkNote = Theme.of(context).brightness == Brightness.dark;
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF221D10),
-        title: const Text('Add Note', style: TextStyle(color: Colors.white)),
+        backgroundColor: isDarkNote ? const Color(0xFF221D10) : const Color(0xFFF8FAFC),
+        title: Text('Add Note', style: TextStyle(color: isDarkNote ? Colors.white : AppColors.textPrimaryLight)),
         content: TextField(
           controller: _noteController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: isDarkNote ? Colors.white : AppColors.textPrimaryLight),
           decoration: InputDecoration(
             hintText: 'Enter note...',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+            hintStyle: TextStyle(color: isDarkNote ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide: BorderSide(color: isDarkNote ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.12)),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: AppColors.primaryGold),
@@ -607,7 +609,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+            child: Text('Cancel', style: TextStyle(color: isDarkNote ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, _noteController.text),
@@ -630,35 +632,36 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   ) async {
     final controller = TextEditingController();
     
+    final isDarkConv = Theme.of(context).brightness == Brightness.dark;
     return showDialog<double>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF221D10),
+        backgroundColor: isDarkConv ? const Color(0xFF221D10) : const Color(0xFFF8FAFC),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Currency Conversion', style: TextStyle(color: Colors.white)),
+        title: Text('Currency Conversion', style: TextStyle(color: isDarkConv ? Colors.white : AppColors.textPrimaryLight)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Sending: ${Formatters.formatCurrency(sourceAmount, currency: fromCurrency)}',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              style: TextStyle(color: isDarkConv ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B)),
             ),
             const SizedBox(height: 16),
             Text(
               'Amount Received in ${toCurrency.code}:', // e.g. USD
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(color: isDarkConv ? Colors.white : AppColors.textPrimaryLight, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: isDarkConv ? Colors.white : AppColors.textPrimaryLight),
               decoration: InputDecoration(
                 prefixText: '${toCurrency.symbol} ',
                 prefixStyle: const TextStyle(color: AppColors.primaryGold),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                  borderSide: BorderSide(color: isDarkConv ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.12)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: AppColors.primaryGold),
@@ -671,7 +674,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+            child: Text('Cancel', style: TextStyle(color: isDarkConv ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -741,6 +744,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     required bool isToAccount,
     required String label,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedId = isToAccount ? _selectedToAccountId : _selectedAccountId;
     final selectedAccount = accounts.where((a) => a.id == selectedId).firstOrNull;
 
@@ -752,7 +756,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
           child: Text(
             label.toUpperCase(),
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
@@ -792,10 +796,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
               ),
             ),
             child: Row(
@@ -811,15 +815,15 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                     selectedAccount?.name ?? ref.read(translationsProvider).entrySelectAccount,
                     style: TextStyle(
                       color: selectedAccount != null
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.4),
+                          ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                          : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
                       fontSize: 15,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.expand_more,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1),
                 ),
               ],
             ),
@@ -835,15 +839,16 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   Widget build(BuildContext context) {
     // Watch translations
     final trans = ref.watch(translationsProvider);
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent, // const Color(0xFF221D10),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
+        decoration: BoxDecoration(
+          gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
         ),
         child: SafeArea(
         child: Column(
@@ -855,13 +860,13 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: isDark ? Colors.white : AppColors.textPrimaryLight),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
                     widget.transactionId != null ? trans.entryTitleEdit : trans.entryTitleAdd,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -877,7 +882,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                         ),
                       if (_selectedType != TransactionType.transfer)
                         IconButton(
-                          icon: const Icon(Icons.repeat, color: Colors.white),
+                          icon: Icon(Icons.repeat, color: isDark ? Colors.white : AppColors.textPrimaryLight),
                           onPressed: _showRecurringDialog,
                           tooltip: 'Set as Recurring',
                         ),
@@ -956,8 +961,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                           : _amountController.text,
                                       style: TextStyle(
                                         color: _amountController.text.isEmpty || _amountController.text == '0'
-                                            ? Colors.white24
-                                            : Colors.white,
+                                            ? (isDark ? Colors.white24 : const Color(0xFFCBD5E1))
+                                            : (isDark ? Colors.white : AppColors.textPrimaryLight),
                                         fontSize: 34,
                                         fontWeight: FontWeight.w800,
                                         height: 1.0,
@@ -1048,7 +1053,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                     Text(
                                       '$personName${typeLabel.isNotEmpty ? ' · $typeLabel' : ''}',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.7),
+                                        color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -1056,7 +1061,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                     Text(
                                       'Edit debt details in the Debt module',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.4),
+                                        color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                                         fontSize: 11,
                                       ),
                                     ),
@@ -1079,7 +1084,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                           child: Text(
                             trans.entryTitle.toUpperCase(),
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.2,
@@ -1090,10 +1095,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                           height: 56,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                             ),
                           ),
                           child: Row(
@@ -1108,15 +1113,15 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                 child: TextField(
                                   controller: _titleController,
                                   focusNode: _titleFocusNode,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                     fontSize: 15,
                                   ),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     hintText: trans.entryTitleHint,
                                     hintStyle: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.4),
+                                      color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                                       fontSize: 15,
                                     ),
                                   ),
@@ -1156,15 +1161,15 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.1),
+                                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                      border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       title,
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.9),
+                                        color: isDark ? Colors.white.withValues(alpha: 0.9) : AppColors.textPrimaryLight,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -1210,7 +1215,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                 child: Text(
                                   trans.entryCategory.toUpperCase(),
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 1.2,
@@ -1281,10 +1286,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   height: 56,
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
+                                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.15),
+                                      color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                                     ),
                                   ),
                                   child: Row(
@@ -1316,15 +1321,15 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                           selectedCategory?.name ?? trans.entrySelectCategory,
                                           style: TextStyle(
                                             color: selectedCategory != null
-                                                ? Colors.white
-                                                : Colors.white.withValues(alpha: 0.4),
+                                                ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                                : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
                                             fontSize: 15,
                                           ),
                                         ),
                                       ),
                                       Icon(
                                         Icons.expand_more,
-                                        color: Colors.white.withValues(alpha: 0.3),
+                                        color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1),
                                       ),
                                     ],
                                   ),
@@ -1382,24 +1387,24 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               height: 56,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.15),
+                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.calendar_today,
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                                     size: 16,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(_selectedDate),
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -1417,24 +1422,24 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               height: 56,
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.15),
+                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.access_time,
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                                     size: 16,
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     _selectedTime.format(context),
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -1455,17 +1460,17 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               height: 56,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.15),
+                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.edit_note,
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                                     size: 16,
                                   ),
                                   const SizedBox(width: 8),
@@ -1474,8 +1479,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                       _noteController.text.isEmpty ? trans.entryAddNote : _noteController.text,
                                       style: TextStyle(
                                         color: _noteController.text.isEmpty
-                                            ? Colors.white.withValues(alpha: 0.6)
-                                            : Colors.white,
+                                            ? (isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B))
+                                            : (isDark ? Colors.white : AppColors.textPrimaryLight),
                                         fontSize: 14,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -1725,8 +1730,9 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Dialog(
-      backgroundColor: const Color(0xFF2D2416),
+      backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -1740,11 +1746,11 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
               children: [
                 const Icon(Icons.repeat, color: AppColors.primaryGold, size: 24),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Set as Recurring',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1757,7 +1763,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
               Text(
                 '"${widget.transactionTitle}"',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
                 ),
@@ -1766,7 +1772,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
             Text(
               'FREQUENCY',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.2,
@@ -1788,12 +1794,12 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primaryGold
-                          : Colors.white.withValues(alpha: 0.05),
+                          : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryGold
-                            : Colors.white.withValues(alpha: 0.15),
+                            : (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12)),
                       ),
                     ),
                     child: Text(
@@ -1801,7 +1807,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
                       style: TextStyle(
                         color: isSelected
                             ? const Color(0xFF1A1410)
-                            : Colors.white.withValues(alpha: 0.8),
+                            : (isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight),
                         fontSize: 14,
                         fontWeight: isSelected
                             ? FontWeight.bold
@@ -1817,7 +1823,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                   size: 16,
                 ),
                 const SizedBox(width: 8),
@@ -1825,7 +1831,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
                   child: Text(
                     'Starts from ${DateFormat.yMMMd().format(widget.initialDate)}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
                       fontSize: 13,
                     ),
                   ),
@@ -1840,7 +1846,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
                     onPressed: () => Navigator.pop(context),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1848,7 +1854,7 @@ class _RecurringFrequencyDialogState extends State<_RecurringFrequencyDialog> {
                     child: Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),

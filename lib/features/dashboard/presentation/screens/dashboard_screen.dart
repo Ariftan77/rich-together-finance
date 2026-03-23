@@ -96,9 +96,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Container(
+                  Builder(builder: (context) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : const Color(0xFFE2E8F0),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TabBar(
@@ -109,8 +113,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+                      labelColor: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      unselectedLabelColor: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : const Color(0xFF64748B),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -124,7 +130,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         Tab(text: ref.watch(translationsProvider).navReports),
                       ],
                     ),
-                  ),
+                  );
+                  }),
                 ],
               ),
             ),

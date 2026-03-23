@@ -238,29 +238,32 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       // Cannot delete — has records
       showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF2D2416),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              const Icon(Icons.block, color: Colors.red, size: 22),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text('Cannot Delete', style: TextStyle(color: Colors.white, fontSize: 16)),
+        builder: (ctx) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.block, color: Colors.red, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Cannot Delete', style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 16)),
+                ),
+              ],
+            ),
+            content: Text(
+              '"${widget.account!.name}" has ${txs.length} transaction${txs.length == 1 ? '' : 's'} linked to it and cannot be deleted.\n\nTo remove this account, first delete all its transactions.',
+              style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight, fontSize: 14, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('OK', style: TextStyle(color: AppColors.primaryGold)),
               ),
             ],
-          ),
-          content: Text(
-            '"${widget.account!.name}" has ${txs.length} transaction${txs.length == 1 ? '' : 's'} linked to it and cannot be deleted.\n\nTo remove this account, first delete all its transactions.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('OK', style: TextStyle(color: AppColors.primaryGold)),
-            ),
-          ],
-        ),
+          );
+        },
       );
       return;
     }
@@ -268,33 +271,36 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     // Confirm deletion
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2416),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.delete_outline, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('Delete Account', style: TextStyle(color: Colors.white, fontSize: 16)),
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Delete Account', style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 16)),
+              ),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to delete "${widget.account!.name}"?\n\nThis action cannot be undone.',
+            style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight, fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B))),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             ),
           ],
-        ),
-        content: Text(
-          'Are you sure you want to delete "${widget.account!.name}"?\n\nThis action cannot be undone.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true && mounted) {
@@ -316,8 +322,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: isDarkMode ? AppColors.mainGradient : AppColors.mainGradientLight,
           ),
         ),
         Scaffold(
@@ -326,14 +332,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            title: Text(isEditing 
-                ? ref.watch(translationsProvider).accountTitleEdit 
-                : ref.watch(translationsProvider).accountTitleAdd, 
-                style: const TextStyle(color: Colors.white)),
-            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(isEditing
+                ? ref.watch(translationsProvider).accountTitleEdit
+                : ref.watch(translationsProvider).accountTitleAdd,
+                style: TextStyle(color: isDarkMode ? Colors.white : AppColors.textPrimaryLight)),
+            iconTheme: IconThemeData(color: isDarkMode ? Colors.white : AppColors.textPrimaryLight),
             actions: isEditing ? [
               IconButton(
-                icon: const Icon(Icons.history, color: Colors.white),
+                icon: Icon(Icons.history, color: isDarkMode ? Colors.white : AppColors.textPrimaryLight),
                 tooltip: ref.watch(translationsProvider).accountViewHistory,
                 onPressed: _viewTransactionHistory,
               ),
@@ -450,12 +456,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                                   ? Formatters.formatCurrency(_rawAdjustment, currency: widget.account!.currency, showDecimal: showDecimal)
                                                   : 'Enter target balance',
                                               style: TextStyle(
-                                                color: _rawAdjustment > 0 ? Colors.white : Colors.white54,
+                                                color: _rawAdjustment > 0
+                                                    ? (isDarkMode ? Colors.white : AppColors.textPrimaryLight)
+                                                    : (isDarkMode ? Colors.white54 : const Color(0xFF94A3B8)),
                                                 fontSize: 15,
                                               ),
                                             ),
                                           ),
-                                          Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                                          Icon(Icons.calculate_outlined, color: isDarkMode ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8), size: 20),
                                         ],
                                       ),
                                     ),
@@ -553,12 +561,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                       ? Formatters.formatCurrency(_rawBalance, currency: _selectedCurrency, showDecimal: showDecimal)
                                       : (isEditing ? ref.watch(translationsProvider).accountStartingBalanceHint : ref.watch(translationsProvider).accountBalanceHint),
                                   style: TextStyle(
-                                    color: _rawBalance > 0 ? Colors.white : Colors.white54,
+                                    color: _rawBalance > 0
+                                        ? (isDarkMode ? Colors.white : AppColors.textPrimaryLight)
+                                        : (isDarkMode ? Colors.white54 : const Color(0xFF94A3B8)),
                                     fontSize: 15,
                                   ),
                                 ),
                               ),
-                              Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                              Icon(Icons.calculate_outlined, color: isDarkMode ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8), size: 20),
                             ],
                           ),
                         ),

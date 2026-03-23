@@ -46,6 +46,7 @@ class _CategoryHistoryScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -68,16 +69,26 @@ class _CategoryHistoryScreenState
 
     return Stack(
       children: [
-        Container(decoration: const BoxDecoration(gradient: AppColors.mainGradient)),
+        Container(
+          decoration: BoxDecoration(
+            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+          ),
+        ),
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+            ),
             title: Row(
               children: [
-                CategoryIconWidget(iconString: widget.categoryIcon, size: 22, color: Colors.white),
+                CategoryIconWidget(
+                  iconString: widget.categoryIcon,
+                  size: 22,
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -86,14 +97,16 @@ class _CategoryHistoryScreenState
                       Text(
                         widget.categoryName,
                         style: AppTypography.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         monthLabel,
                         style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : const Color(0xFF94A3B8),
                           fontSize: 11,
                         ),
                       ),
@@ -159,6 +172,7 @@ class _TransactionList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final transactionDao = ref.watch(transactionDaoProvider);
 
     return FutureBuilder<List<Transaction>>(
@@ -201,7 +215,9 @@ class _TransactionList extends ConsumerWidget {
             child: Text(
               'No transactions found',
               style: AppTypography.textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.5)
+                    : const Color(0xFF94A3B8),
               ),
             ),
           );
@@ -231,7 +247,9 @@ class _TransactionList extends ConsumerWidget {
                   child: Text(
                     _formatDate(date),
                     style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : const Color(0xFF94A3B8),
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                       fontSize: 11,
@@ -274,6 +292,8 @@ class _TxItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final isExpense = transaction.type == TransactionType.expense ||
         transaction.type == TransactionType.adjustmentOut ||
         transaction.type == TransactionType.debtOut;
@@ -328,7 +348,7 @@ class _TxItem extends StatelessWidget {
                           ? transaction.title!
                           : transaction.type.displayName,
                       style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -337,7 +357,9 @@ class _TxItem extends StatelessWidget {
                     Text(
                       '$timeStr · ${account?.name ?? ''}',
                       style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : const Color(0xFF94A3B8),
                         fontSize: 11,
                       ),
                     ),

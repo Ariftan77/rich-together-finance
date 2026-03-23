@@ -13,8 +13,10 @@ class FabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Opacity(
-      opacity: 0.5,
+      opacity: isDark ? 0.5 : 0.75,
       child: Container(
         width: 64,
         height: 64,
@@ -27,7 +29,7 @@ class FabButton extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryGold.withValues(alpha: 0.4),
+              color: AppColors.primaryGold.withValues(alpha: isDark ? 0.4 : 0.25),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),

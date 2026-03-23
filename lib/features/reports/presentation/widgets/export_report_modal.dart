@@ -38,6 +38,7 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
   }
 
   Future<void> _pickDate({required bool isFrom}) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial = isFrom ? _dateFrom : _dateTo;
     final picked = await showDatePicker(
       context: context,
@@ -45,12 +46,19 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.primaryGold,
-            surface: Color(0xFF221D10),
-          ),
-        ),
+        data: isDark
+            ? ThemeData.dark().copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: Color(0xFF221D10),
+                ),
+              )
+            : ThemeData.light().copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.primaryGold,
+                  surface: Colors.white,
+                ),
+              ),
         child: child!,
       ),
     );
@@ -115,14 +123,15 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider).toString();
     final dateFormat = DateFormat('MMM dd, yyyy', locale);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF221D10),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF221D10) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -136,7 +145,9 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.3)
+                  : const Color(0xFFCBD5E1),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -151,8 +162,8 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
                 const SizedBox(width: 12),
                 Text(
                   trans.exportReport,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -251,6 +262,8 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: InkWell(
@@ -259,9 +272,15 @@ class _DateField extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.12),
+            ),
           ),
           child: Row(
             children: [
@@ -275,15 +294,17 @@ class _DateField extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.6)
+                            : const Color(0xFF64748B),
                         fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       value,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -291,8 +312,13 @@ class _DateField extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.4), size: 20),
+              Icon(
+                Icons.chevron_right,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.4)
+                    : const Color(0xFF94A3B8),
+                size: 20,
+              ),
             ],
           ),
         ),

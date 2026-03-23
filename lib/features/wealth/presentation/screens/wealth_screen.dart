@@ -63,6 +63,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
 
     return Scaffold(
@@ -84,7 +85,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   // Tab Bar
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TabBar(
@@ -95,9 +98,10 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
-                      labelColor: Colors.white,
-                      unselectedLabelColor:
-                          Colors.white.withValues(alpha: 0.6),
+                      labelColor: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      unselectedLabelColor: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : const Color(0xFF64748B),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -138,6 +142,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
   // ===================== BUDGET TAB =====================
   Widget _buildBudgetTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final summariesAsync = ref.watch(budgetPeriodSummariesProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -161,13 +166,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     Text(
                       'Filter',
                       style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                     ),
                     if (selectedCurrencies.isNotEmpty || selectedPeriods.isNotEmpty)
                       Container(
@@ -184,7 +189,12 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               ),
               if (isExpanded) ...[
                 const SizedBox(height: 12),
-                Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                Text(
+                  'Currency',
+                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                    color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 MultiCurrencyPickerField(
                   selected: selectedCurrencies,
@@ -192,7 +202,12 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       ref.read(_budgetCurrencyFilterProvider.notifier).state = updated,
                 ),
                 const SizedBox(height: 16),
-                Text('Period', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                Text(
+                  'Period',
+                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                    color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -247,16 +262,31 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.pie_chart_outline,
-                          size: 64, color: Colors.white54),
+                      Icon(
+                        Icons.pie_chart_outline,
+                        size: 64,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : const Color(0xFF94A3B8),
+                      ),
                       const SizedBox(height: 16),
-                      Text(trans.budgetNoBudgets,
-                          style: AppTypography.textTheme.bodyLarge
-                              ?.copyWith(color: Colors.white54)),
+                      Text(
+                        trans.budgetNoBudgets,
+                        style: AppTypography.textTheme.bodyLarge?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text(trans.budgetNoBudgetsHint,
-                          style: AppTypography.textTheme.bodyMedium
-                              ?.copyWith(color: Colors.white30)),
+                      Text(
+                        trans.budgetNoBudgetsHint,
+                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : const Color(0xFFCBD5E1),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -308,6 +338,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     required bool showDecimal,
     required dynamic trans,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final periodLabel = switch (period) {
       BudgetPeriod.weekly => trans.recurringWeekly as String,
       BudgetPeriod.monthly => trans.recurringMonthly as String,
@@ -340,20 +372,28 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 AnimatedRotation(
                   turns: isCollapsed ? -0.25 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 20),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   periodLabel,
                   style: AppTypography.textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${items.length}',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : const Color(0xFF94A3B8),
+                  ),
                 ),
                 const Spacer(),
                 if (summary != null) ...[
@@ -377,7 +417,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: summaryProgress.clamp(0.0, 1.0),
-              backgroundColor: Colors.white10,
+              backgroundColor: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.08),
               color: progressColor,
               minHeight: 3,
             ),
@@ -410,6 +452,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildBudgetSummaryCard(BudgetPeriodSummary summary, bool showDecimal, dynamic trans) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final progressColor = summary.progress > 0.9
         ? Colors.red
         : (summary.progress > 0.5 ? Colors.orange : AppColors.success);
@@ -419,7 +462,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: progressColor.withValues(alpha: 0.25), width: 1),
       ),
@@ -433,7 +478,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               Text(
                 '${summary.count} ${trans.wealthBudget}',
                 style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+                  color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -457,7 +502,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: summary.progress.clamp(0.0, 1.0),
-              backgroundColor: Colors.white10,
+              backgroundColor: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.08),
               color: progressColor,
               minHeight: 6,
             ),
@@ -475,7 +522,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     ? '${trans.budgetExceeded} ${Formatters.formatCurrency(summary.totalSpent - summary.totalBudget, currency: summary.displayCurrency, showDecimal: showDecimal)}'
                     : '${Formatters.formatCurrency(remaining, currency: summary.displayCurrency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
                 style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: isOverBudget ? Colors.redAccent : Colors.white54,
+                  color: isOverBudget
+                      ? Colors.redAccent
+                      : (isDark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : const Color(0xFF94A3B8)),
                 ),
               ),
             ],
@@ -486,6 +537,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildBudgetItemCard(BudgetWithSpending item, bool showDecimal, dynamic trans) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOverBudget = item.progress > 1.0;
     final progressColor = item.progress > 0.9
         ? Colors.red
@@ -520,7 +572,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     child: CategoryIconWidget(
                       iconString: item.categoryIcon,
                       size: 20,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -534,7 +586,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                               ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}'
                               : '${Formatters.formatCurrency(item.remainingAmount, currency: item.budget.currency, showDecimal: showDecimal)} ${trans.budgetRemaining}',
                           style: AppTypography.textTheme.bodySmall?.copyWith(
-                            color: isOverBudget ? Colors.redAccent : Colors.white70,
+                            color: isOverBudget
+                                ? Colors.redAccent
+                                : (isDark
+                                    ? const Color(0xB3FFFFFF)
+                                    : const Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -562,7 +618,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           BudgetPeriod.monthly => trans.recurringMonthly,
                           BudgetPeriod.yearly => trans.recurringYearly,
                         }),
-                        style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54),
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : const Color(0xFF94A3B8),
+                        ),
                       ),
                     ],
                   ),
@@ -573,7 +633,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: item.progress.clamp(0.0, 1.0),
-                  backgroundColor: Colors.white10,
+                  backgroundColor: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08),
                   color: progressColor,
                   minHeight: 8,
                 ),
@@ -588,7 +650,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   ),
                   Text(
                     '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: item.budget.currency, showDecimal: showDecimal)}',
-                    style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white70),
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -738,6 +802,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     required Color color,
     required int count,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         Container(
@@ -759,7 +825,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         const SizedBox(width: 6),
         Text(
           '($count)',
-          style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+          style: AppTypography.textTheme.bodySmall?.copyWith(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.4)
+                : const Color(0xFF94A3B8),
+          ),
         ),
       ],
     );
@@ -773,6 +843,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     required bool showDecimal,
     required dynamic trans,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final groupKey = '${type.index}::$personName';
     final isCollapsed = collapsedGroups.contains(groupKey);
     final typeColor = type == DebtType.payable ? AppColors.error : AppColors.success;
@@ -814,21 +885,29 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 AnimatedRotation(
                   turns: isCollapsed ? -0.25 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 20),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     personName,
                     style: AppTypography.textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 Text(
                   '${debts.length}',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : const Color(0xFF94A3B8),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 if (isSingleCurrency && totalRemaining != null) ...[
@@ -853,7 +932,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: totalProgress.clamp(0.0, 1.0),
-              backgroundColor: Colors.white10,
+              backgroundColor: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.08),
               color: typeColor,
               minHeight: 3,
             ),
@@ -892,6 +973,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     required bool showDecimal,
     required dynamic trans,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalByCurrency = <Currency, double>{};
     final remainingByCurrency = <Currency, double>{};
     for (final d in debts) {
@@ -909,7 +991,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: typeColor.withValues(alpha: 0.25), width: 1),
       ),
@@ -923,7 +1007,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               Text(
                 '${debts.length} ${trans.debtTitle}',
                 style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+                  color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -951,7 +1035,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: progress.clamp(0.0, 1.0),
-                backgroundColor: Colors.white10,
+                backgroundColor: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
                 color: typeColor,
                 minHeight: 5,
               ),
@@ -962,11 +1048,19 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               children: [
                 Text(
                   '${(progress * 100).clamp(0, 100).toStringAsFixed(0)}% ${trans.commonPaid}',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54),
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.5)
+                        : const Color(0xFF94A3B8),
+                  ),
                 ),
                 Text(
                   '${trans.commonOf} ${Formatters.formatCurrency(total, currency: currency!, showDecimal: false)}',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : const Color(0xFF94A3B8),
+                  ),
                 ),
               ],
             ),
@@ -978,8 +1072,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(e.key.code,
-                      style: AppTypography.textTheme.bodySmall?.copyWith(color: Colors.white54)),
+                  Text(
+                    e.key.code,
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : const Color(0xFF94A3B8),
+                    ),
+                  ),
                   Text(
                     Formatters.formatCurrency(e.value, currency: e.key, showDecimal: showDecimal),
                     style: AppTypography.textTheme.bodySmall?.copyWith(
@@ -997,6 +1097,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildGoalCard(GoalWithProgress item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final progress = item.progress.clamp(0.0, 1.0);
@@ -1040,8 +1141,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         if (item.goal.deadline != null) ...[
                           Text(
                             DateFormat.yMMMd().format(item.goal.deadline!),
-                            style: AppTypography.textTheme.bodySmall
-                                ?.copyWith(color: Colors.white54),
+                            style: AppTypography.textTheme.bodySmall?.copyWith(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.5)
+                                  : const Color(0xFF94A3B8),
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Builder(
@@ -1087,9 +1191,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           _buildCurrencyBadge(item.goal.targetCurrency.code),
                         ],
                       ),
-                      Text(trans.commonTarget,
-                          style: AppTypography.textTheme.bodySmall
-                              ?.copyWith(color: Colors.white54)),
+                      Text(
+                        trans.commonTarget,
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -1099,7 +1208,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.white10,
+                  backgroundColor: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08),
                   color: progressColor,
                   minHeight: 8,
                 ),
@@ -1115,8 +1226,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   ),
                   Text(
                     '${trans.goalSaved}: ${Formatters.formatCurrency(item.currentAmount, currency: item.goal.targetCurrency, showDecimal: showDecimal)}',
-                    style: AppTypography.textTheme.bodySmall
-                        ?.copyWith(color: Colors.white70),
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -1136,13 +1248,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildDebtCard(Debt debt) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final isPayable = debt.type == DebtType.payable;
     final typeColor = isPayable ? AppColors.error : AppColors.success;
     final isOverdue =
         debt.dueDate != null && debt.dueDate!.isBefore(DateTime.now());
-    
+
     final remaining = debt.amount - debt.paidAmount;
     final progress = debt.amount > 0 ? debt.paidAmount / debt.amount : 0.0;
 
@@ -1176,14 +1289,20 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         Text(
                           '${trans.debtCreatedDate}: ${DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(debt.createdAt)}',
                           style: AppTypography.textTheme.bodySmall?.copyWith(
-                            color: Colors.white38,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : const Color(0xFF94A3B8),
                           ),
                         ),
                         if (debt.dueDate != null)
                           Text(
                             '${trans.debtDueDate}: ${DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(debt.dueDate!)}',
                             style: AppTypography.textTheme.bodySmall?.copyWith(
-                              color: isOverdue ? Colors.red : Colors.white54,
+                              color: isOverdue
+                                  ? Colors.red
+                                  : (isDark
+                                      ? Colors.white.withValues(alpha: 0.5)
+                                      : const Color(0xFF94A3B8)),
                             ),
                           ),
                       ],
@@ -1210,8 +1329,10 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       Text(
                         '${trans.commonOf} ${Formatters.formatCurrency(debt.amount, currency: debt.currency, showDecimal: false)}',
                         style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: Colors.white38,
-                          fontSize: 10
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.4)
+                              : const Color(0xFF94A3B8),
+                          fontSize: 10,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1227,7 +1348,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: progress.clamp(0.0, 1.0),
-                    backgroundColor: Colors.white10,
+                    backgroundColor: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.08),
                     color: typeColor,
                     minHeight: 6,
                   ),
@@ -1239,20 +1362,24 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     Text(
                       '${(progress * 100).toStringAsFixed(0)}% ${trans.commonPaid}',
                       style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: Colors.white54,
-                        fontSize: 10
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : const Color(0xFF94A3B8),
+                        fontSize: 10,
                       ),
                     ),
                     Text(
                       '${trans.commonPaid}: ${Formatters.formatCurrency(debt.paidAmount, currency: debt.currency, showDecimal: showDecimal)}',
-                       style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: Colors.white54,
-                         fontSize: 10
+                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : const Color(0xFF94A3B8),
+                        fontSize: 10,
                       ),
-                    )
+                    ),
                   ],
-                )
-              ]
+                ),
+              ],
             ],
           ),
         ),
@@ -1286,6 +1413,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Future<void> _showSettleDialog(Debt debt) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.read(translationsProvider);
     final accountsAsync = ref.read(accountsStreamProvider);
     final allAccounts = accountsAsync.valueOrNull ?? [];
@@ -1314,9 +1442,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             return Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF2D2416),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2D2416) : const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               padding: EdgeInsets.only(
                 left: 24, right: 24, top: 20,
@@ -1327,10 +1455,23 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
-                  Text(trans.debtSettle,
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(debt.personName,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                  Text(
+                    trans.debtSettle,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    debt.personName,
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : const Color(0xFF64748B),
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 16),
 
                   // Total debt and remaining
@@ -1340,17 +1481,31 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Total', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                              Text(
+                                'Total',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.4)
+                                      : const Color(0xFF94A3B8),
+                                  fontSize: 11,
+                                ),
+                              ),
                               const SizedBox(height: 2),
                               Text(
                                 Formatters.formatCurrency(debt.amount, currency: debt.currency, showDecimal: showDecimal),
-                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -1361,13 +1516,23 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(trans.goalRemaining, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                              Text(
+                                trans.goalRemaining,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.4)
+                                      : const Color(0xFF94A3B8),
+                                  fontSize: 11,
+                                ),
+                              ),
                               const SizedBox(height: 2),
                               Text(
                                 Formatters.formatCurrency(remaining, currency: debt.currency, showDecimal: showDecimal),
@@ -1386,8 +1551,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   const SizedBox(height: 20),
 
                   // Amount (tappable — opens calculator)
-                  Text(trans.commonAmount,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    trans.commonAmount,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: () async {
@@ -1416,10 +1586,20 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           Expanded(
                             child: Text(
                               Formatters.formatCurrency(payAmount, currency: debt.currency, showDecimal: showDecimal),
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          Icon(Icons.edit_outlined, color: Colors.white.withValues(alpha: 0.4), size: 16),
+                          Icon(
+                            Icons.edit_outlined,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : const Color(0xFF94A3B8),
+                            size: 16,
+                          ),
                         ],
                       ),
                     ),
@@ -1427,13 +1607,20 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   const SizedBox(height: 16),
 
                   // Account selector
-                  Text(trans.debtSettleAccount,
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    trans.debtSettleAccount,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     value: selectedAccountId,
                     dropdownColor: AppColors.cardSurface,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    ),
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: AppColors.glassBackground,
@@ -1517,24 +1704,37 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
   // ===================== INVESTMENT TAB =====================
   Widget _buildInvestmentTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.show_chart, size: 80, color: Colors.white.withValues(alpha: 0.3)),
+          Icon(
+            Icons.show_chart,
+            size: 80,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.3)
+                : const Color(0xFFCBD5E1),
+          ),
           const SizedBox(height: 16),
           Text(
             trans.investmentPlaceholder,
-            style: AppTypography.textTheme.titleLarge
-                ?.copyWith(color: Colors.white54),
+            style: AppTypography.textTheme.titleLarge?.copyWith(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             trans.investmentPlaceholderHint,
-            style: AppTypography.textTheme.bodyMedium
-                ?.copyWith(color: Colors.white30),
+            style: AppTypography.textTheme.bodyMedium?.copyWith(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.3)
+                  : const Color(0xFFCBD5E1),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1544,6 +1744,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
   // ===================== HELPERS =====================
   Widget _buildPeriodBadge(BudgetPeriod period) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final label = switch (period) {
       BudgetPeriod.weekly => trans.recurringWeekly,
@@ -1553,17 +1754,21 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.black.withValues(alpha: 0.12),
           width: 0.8,
         ),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white70,
+        style: TextStyle(
+          color: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF64748B),
           fontSize: 10,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -1596,21 +1801,39 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildEmptyState(IconData icon, String title, String subtitle) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: Colors.white54),
+            Icon(
+              icon,
+              size: 64,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
+            ),
             const SizedBox(height: 16),
-            Text(title,
-                style: AppTypography.textTheme.bodyLarge
-                    ?.copyWith(color: Colors.white54)),
+            Text(
+              title,
+              style: AppTypography.textTheme.bodyLarge?.copyWith(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.5)
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(subtitle,
-                style: AppTypography.textTheme.bodyMedium
-                    ?.copyWith(color: Colors.white30)),
+            Text(
+              subtitle,
+              style: AppTypography.textTheme.bodyMedium?.copyWith(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.3)
+                    : const Color(0xFFCBD5E1),
+              ),
+            ),
           ],
         ),
       ),
@@ -1620,13 +1843,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   void _showGoalAccountsBreakdown(BuildContext context, GoalWithProgress item) {
     if (item.accountBalances.isEmpty) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final showDecimal = ref.read(showDecimalProvider);
     final trans = ref.read(translationsProvider);
 
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF2D2416),
+        backgroundColor: isDark ? const Color(0xFF2D2416) : const Color(0xFFF8FAFC),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -1643,8 +1867,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Expanded(
                     child: Text(
                       item.goal.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1683,7 +1907,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                             child: Text(
                               ab.account.name,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : AppColors.textPrimaryLight,
                                 fontSize: 13,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1691,8 +1917,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           ),
                           Text(
                             '${item.goal.targetCurrency.symbol} ${Formatters.formatCurrency(ab.convertedAmount, showDecimal: showDecimal)}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : AppColors.textPrimaryLight,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1706,7 +1932,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           child: Text(
                             '${Formatters.formatRate(ab.exchangeRate)} × ${ab.account.currency.symbol} ${Formatters.formatCurrency(ab.originalAmount, showDecimal: showDecimal)}',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.4)
+                                  : const Color(0xFF94A3B8),
                               fontSize: 11,
                             ),
                           ),
@@ -1724,7 +1952,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   child: Text(
                     trans.close,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : const Color(0xFF64748B),
                       fontSize: 14,
                     ),
                   ),
@@ -1747,6 +1977,8 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1755,13 +1987,19 @@ class _FilterChip extends StatelessWidget {
           color: isSelected ? AppColors.primaryGold : AppColors.glassBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? AppColors.primaryGold
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08)),
           ),
         ),
         child: Text(
           label,
           style: AppTypography.textTheme.labelMedium!.copyWith(
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected
+                ? Colors.black
+                : (isDark ? Colors.white : AppColors.textPrimaryLight),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

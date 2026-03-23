@@ -23,6 +23,8 @@ class RecentTransactionsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (transactions.isEmpty) {
         return GlassCard(
           child: Container(
@@ -31,7 +33,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
             child: Text(
               ref.watch(translationsProvider).noTransactions,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.5)
+                    : const Color(0xFF94A3B8),
                 fontSize: 14,
               ),
             ),
@@ -60,8 +64,8 @@ class RecentTransactionsWidget extends ConsumerWidget {
                     children: [
                       Text(
                         ref.watch(translationsProvider).recentTransactions,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -114,7 +118,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                         decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.1),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.black.withValues(alpha: 0.08),
                               width: 1,
                             ),
                           ),
@@ -185,8 +191,8 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                 children: [
                                   Text(
                                     transaction.title ?? categoryName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -199,21 +205,27 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                       Text(
                                         accountName,
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.6),
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.6)
+                                              : const Color(0xFF64748B),
                                           fontSize: 12,
                                         ),
                                       ),
                                       Text(
                                         ' • ',
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.6),
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.6)
+                                              : const Color(0xFF64748B),
                                           fontSize: 12,
                                         ),
                                       ),
                                       Text(
                                         DateFormat('MMM dd', ref.watch(localeProvider).languageCode).format(transaction.date),
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.6),
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.6)
+                                              : const Color(0xFF64748B),
                                           fontSize: 12,
                                         ),
                                       ),

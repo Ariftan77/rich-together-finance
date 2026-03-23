@@ -71,8 +71,16 @@ final showDecimalProvider = Provider<bool>((ref) {
 
 /// Provider for theme mode - returns Flutter's ThemeMode enum
 final themeModeProvider = Provider<ThemeMode>((ref) {
-  // Always return dark mode as requested
-  return ThemeMode.dark;
+  final settingsAsync = ref.watch(activeProfileSettingsProvider);
+  final mode = settingsAsync.whenOrNull(data: (settings) => settings?.themeMode) ?? 0;
+  switch (mode) {
+    case 1:
+      return ThemeMode.light;
+    case 2:
+      return ThemeMode.system;
+    default:
+      return ThemeMode.dark;
+  }
 });
 
 /// Provider for biometric enabled status

@@ -193,6 +193,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);
@@ -201,7 +202,9 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(gradient: AppColors.mainGradient),
+          decoration: BoxDecoration(
+            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+          ),
         ),
         Scaffold(
           backgroundColor: Colors.transparent,
@@ -209,10 +212,14 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+            ),
             title: Text(
               widget.goal == null ? trans.goalTitleAdd : trans.goalTitleEdit,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              ),
             ),
           ),
           body: SafeArea(
@@ -253,12 +260,20 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                                     ? Formatters.formatCurrency(_rawAmount, currency: _selectedCurrency, showDecimal: showDecimal)
                                     : trans.goalTargetAmount,
                                 style: TextStyle(
-                                  color: _rawAmount > 0 ? Colors.white : Colors.white54,
+                                  color: _rawAmount > 0
+                                      ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                      : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                                   fontSize: 15,
                                 ),
                               ),
                             ),
-                            Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                            Icon(
+                              Icons.calculate_outlined,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.5)
+                                  : const Color(0xFF94A3B8),
+                              size: 20,
+                            ),
                           ],
                         ),
                       ),
@@ -296,8 +311,8 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                                   : trans.goalNoDeadline,
                               style: TextStyle(
                                 color: _deadline != null
-                                    ? Colors.white
-                                    : Colors.white54,
+                                    ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                    : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                                 fontSize: 15,
                               ),
                             ),
@@ -306,8 +321,13 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                               GestureDetector(
                                 onTap: () =>
                                     setState(() => _deadline = null),
-                                child: const Icon(Icons.clear,
-                                    color: Colors.white54, size: 20),
+                                child: Icon(
+                                  Icons.clear,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : const Color(0xFF94A3B8),
+                                  size: 20,
+                                ),
                               ),
                           ],
                         ),
@@ -324,7 +344,11 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                         if (accounts.isEmpty) {
                           return Text(
                             'No accounts available',
-                            style: TextStyle(color: Colors.white54),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white54
+                                  : const Color(0xFF94A3B8),
+                            ),
                           );
                         }
                         return Column(
@@ -355,7 +379,9 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                                           : Icons.circle_outlined,
                                       color: isLinked
                                           ? AppColors.primaryGold
-                                          : Colors.white30,
+                                          : (isDark
+                                              ? Colors.white30
+                                              : const Color(0xFFCBD5E1)),
                                       size: 22,
                                     ),
                                     const SizedBox(width: 12),
@@ -366,16 +392,22 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                                         children: [
                                           Text(
                                             account.name,
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500),
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : AppColors.textPrimaryLight,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
                                           Text(
                                             '${account.currency.code} ${NumberFormat.decimalPattern().format(balance)}',
                                             style: TextStyle(
-                                                color: Colors.white54,
-                                                fontSize: 12),
+                                              color: isDark
+                                                  ? Colors.white54
+                                                  : const Color(0xFF64748B),
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -411,32 +443,52 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                           onPressed: () async {
                             final confirm = await showDialog<bool>(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: const Color(0xFF2D2416),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20)),
-                                title: Text('Delete Goal?',
-                                    style: TextStyle(color: Colors.white)),
-                                content: Text(
+                              builder: (context) {
+                                final isDarkDialog =
+                                    Theme.of(context).brightness == Brightness.dark;
+                                return AlertDialog(
+                                  backgroundColor: isDarkDialog
+                                      ? const Color(0xFF2D2416)
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                  title: Text(
+                                    'Delete Goal?',
+                                    style: TextStyle(
+                                      color: isDarkDialog
+                                          ? Colors.white
+                                          : AppColors.textPrimaryLight,
+                                    ),
+                                  ),
+                                  content: Text(
                                     'This action cannot be undone.',
                                     style: TextStyle(
-                                        color: Colors.white.withValues(
-                                            alpha: 0.8))),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: Text(trans.cancel,
+                                      color: isDarkDialog
+                                          ? Colors.white.withValues(alpha: 0.9)
+                                          : AppColors.textPrimaryLight,
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: Text(
+                                          trans.cancel,
                                           style: TextStyle(
-                                              color: Colors.white54))),
-                                  TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: Text(trans.delete,
-                                          style: const TextStyle(
-                                              color: Colors.red))),
-                                ],
-                              ),
+                                            color: isDarkDialog
+                                                ? Colors.white54
+                                                : const Color(0xFF64748B),
+                                          ),
+                                        )),
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: Text(trans.delete,
+                                            style: const TextStyle(
+                                                color: Colors.red))),
+                                  ],
+                                );
+                              },
                             );
 
                             if (confirm == true) {

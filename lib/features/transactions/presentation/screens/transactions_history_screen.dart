@@ -229,7 +229,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.chevron_left, color: Colors.white),
+                        icon: Icon(Icons.chevron_left, color: isDark ? Colors.white : AppColors.textPrimaryLight),
                         onPressed: () {
                           final prev = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
                           _changeMonth(prev);
@@ -248,7 +248,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 style: AppTypography.textTheme.titleMedium?.copyWith(
                                   color: hasCustomRange
                                       ? AppColors.primaryGold
-                                      : Colors.white,
+                                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -257,7 +257,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 Icons.arrow_drop_down,
                                 color: hasCustomRange
                                     ? AppColors.primaryGold
-                                    : Colors.white.withValues(alpha: 0.7),
+                                    : (isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B)),
                                 size: 20,
                               ),
                             ],
@@ -268,8 +268,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         icon: Icon(
                           Icons.chevron_right,
                           color: canGoNext || hasCustomRange
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.25),
+                              ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                              : (isDark ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFCBD5E1)),
                         ),
                         onPressed: canGoNext || hasCustomRange
                             ? () {
@@ -358,7 +358,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                           child: Text(
                             trans.txnNoTransactions,
                             style: AppTypography.textTheme.bodyLarge!.copyWith(
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
                             ),
                           ),
                         );
@@ -425,7 +425,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                       _formatDateSection(date, today, trans).toUpperCase(),
                                       textAlign: TextAlign.center,
                                       style: AppTypography.textTheme.labelSmall!.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.7),
+                                        color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.5,
                                         fontSize: 12,
@@ -450,7 +450,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                         _DayStatChip(
                                           label: trans.txnDaySummaryTxn,
                                           value: '${cts.length}',
-                                          color: Colors.white.withValues(alpha: 0.5),
+                                          color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
                                         ),
                                       ],
                                     ),
@@ -500,13 +500,14 @@ class _DayStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
           style: AppTypography.textTheme.labelSmall!.copyWith(
-            color: Colors.white.withValues(alpha: 0.35),
+            color: isDark ? Colors.white.withValues(alpha: 0.35) : const Color(0xFF94A3B8),
             fontSize: 10,
             letterSpacing: 0.8,
           ),
@@ -534,6 +535,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -542,13 +544,15 @@ class _FilterChip extends StatelessWidget {
           color: isSelected ? AppColors.primaryGold : AppColors.glassBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? AppColors.primaryGold
+                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
           ),
         ),
         child: Text(
           label,
           style: AppTypography.textTheme.labelMedium!.copyWith( // Fixed
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected ? Colors.black : (isDark ? Colors.white : AppColors.textPrimaryLight),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -570,6 +574,7 @@ class _TransactionItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
     final isExpense = transaction.type == TransactionType.expense;
@@ -653,7 +658,7 @@ class _TransactionItem extends ConsumerWidget {
                       ? transaction.title! 
                       : localizedTypeName(transaction.type),
                     style: AppTypography.textTheme.bodyMedium!.copyWith(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -667,7 +672,7 @@ class _TransactionItem extends ConsumerWidget {
                       return Text(
                         '$timeStr • $categoryName',
                         style: AppTypography.textTheme.bodySmall!.copyWith(
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                           fontSize: 11,
                         ),
                       );
@@ -700,7 +705,7 @@ class _TransactionItem extends ConsumerWidget {
                     return Text(
                       accountName,
                       style: AppTypography.textTheme.bodySmall!.copyWith(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                         fontSize: 11,
                       ),
                     );

@@ -20,13 +20,19 @@ class GlassSegmentedControl<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.glassBackground,
+        color: isDark
+            ? AppColors.glassBackground
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -46,8 +52,10 @@ class GlassSegmentedControl<T> extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (shouldHighlight
-                          ? AppColors.primaryGold.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.1))
+                          ? AppColors.primaryGold.withValues(alpha: isDark ? 0.2 : 0.15)
+                          : isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.08))
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -56,8 +64,12 @@ class GlassSegmentedControl<T> extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isSelected
-                        ? (shouldHighlight ? AppColors.primaryGold : Colors.white)
-                        : Colors.white.withValues(alpha: 0.4),
+                        ? (shouldHighlight
+                            ? AppColors.primaryGold
+                            : isDark ? Colors.white : AppColors.textPrimaryLight)
+                        : isDark
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : const Color(0xFF94A3B8),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),

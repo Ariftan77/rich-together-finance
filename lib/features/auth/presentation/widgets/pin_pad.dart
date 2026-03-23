@@ -18,33 +18,34 @@ class PinPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('1'),
-            _buildDigitButton('2'),
-            _buildDigitButton('3'),
+            _buildDigitButton('1', isDark),
+            _buildDigitButton('2', isDark),
+            _buildDigitButton('3', isDark),
           ],
         ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('4'),
-            _buildDigitButton('5'),
-            _buildDigitButton('6'),
+            _buildDigitButton('4', isDark),
+            _buildDigitButton('5', isDark),
+            _buildDigitButton('6', isDark),
           ],
         ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('7'),
-            _buildDigitButton('8'),
-            _buildDigitButton('9'),
+            _buildDigitButton('7', isDark),
+            _buildDigitButton('8', isDark),
+            _buildDigitButton('9', isDark),
           ],
         ),
         const SizedBox(height: 20),
@@ -60,12 +61,13 @@ class PinPad extends StatelessWidget {
                     ),
                   )
                 : const SizedBox(width: 64, height: 64),
-            _buildDigitButton('0'),
+            _buildDigitButton('0', isDark),
             IconButton(
               onPressed: onDeletePressed,
               icon: const Icon(Icons.backspace_outlined, size: 28),
               style: IconButton.styleFrom(
-                foregroundColor: Colors.white,
+                foregroundColor:
+                    isDark ? Colors.white : AppColors.textPrimaryLight,
               ),
             ),
           ],
@@ -74,14 +76,20 @@ class PinPad extends StatelessWidget {
     );
   }
 
-  Widget _buildDigitButton(String digit) {
+  Widget _buildDigitButton(String digit, bool isDark) {
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.1),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.08),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.black.withValues(alpha: 0.12),
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -91,10 +99,10 @@ class PinPad extends StatelessWidget {
           child: Center(
             child: Text(
               digit,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
               ),
             ),
           ),

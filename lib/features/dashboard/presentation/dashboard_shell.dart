@@ -54,11 +54,13 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     // Determine if using light theme
     // final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
+        decoration: BoxDecoration(
+          gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
         ),
         child: IndexedStack(
           index: _currentIndex < _screens.length ? _currentIndex : 0,

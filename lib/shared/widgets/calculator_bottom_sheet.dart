@@ -321,12 +321,13 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A1410),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1410) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -337,7 +338,9 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -353,7 +356,9 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                   _displayExpression,
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : const Color(0xFF64748B),
                     fontSize: _hasOperator ? 18 : 14,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
@@ -378,8 +383,8 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                   Text(
                     _displayResult,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontSize: 36,
                       fontWeight: FontWeight.w800,
                     ),
@@ -395,7 +400,9 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: Colors.white.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.08),
           ),
 
           const SizedBox(height: 8),
@@ -412,21 +419,21 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                   _CalcButton(label: '÷', onTap: () => _onOperator('÷'), type: _ButtonType.operator),
                   _CalcButton(label: '×', onTap: () => _onOperator('×'), type: _ButtonType.operator),
                   _CalcButton(icon: Icons.backspace_outlined, onTap: _onBackspace, type: _ButtonType.function),
-                ]),
+                ], isDark: isDark),
                 // Row 2: 7, 8, 9, -
                 _buildRow([
                   _CalcButton(label: '7', onTap: () => _onDigit('7')),
                   _CalcButton(label: '8', onTap: () => _onDigit('8')),
                   _CalcButton(label: '9', onTap: () => _onDigit('9')),
                   _CalcButton(label: '−', onTap: () => _onOperator('-'), type: _ButtonType.operator),
-                ]),
+                ], isDark: isDark),
                 // Row 3: 4, 5, 6, +
                 _buildRow([
                   _CalcButton(label: '4', onTap: () => _onDigit('4')),
                   _CalcButton(label: '5', onTap: () => _onDigit('5')),
                   _CalcButton(label: '6', onTap: () => _onDigit('6')),
                   _CalcButton(label: '+', onTap: () => _onOperator('+'), type: _ButtonType.operator),
-                ]),
+                ], isDark: isDark),
                 // Row 4: 1, 2, 3, OK (tall)
                 Row(
                   children: [
@@ -438,7 +445,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                             _CalcButton(label: '1', onTap: () => _onDigit('1')),
                             _CalcButton(label: '2', onTap: () => _onDigit('2')),
                             _CalcButton(label: '3', onTap: () => _onDigit('3')),
-                          ], useFlex: false),
+                          ], useFlex: false, isDark: isDark),
                           // Row 5: 00, 0, .
                           _buildRow([
                             _CalcButton(label: '00', onTap: () { _onDigit('0'); _onDigit('0'); }),
@@ -449,7 +456,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                                   ? _onDecimal
                                   : () { _onDigit('0'); _onDigit('0'); _onDigit('0'); },
                             ),
-                          ], useFlex: false),
+                          ], useFlex: false, isDark: isDark),
                         ],
                       ),
                     ),
@@ -488,14 +495,18 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                               height: 34,
                               margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
                                   'Cancel',
                                   style: TextStyle(
-                                    color: Colors.white60,
+                                    color: isDark
+                                        ? Colors.white60
+                                        : const Color(0xFF64748B),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -544,12 +555,12 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     );
   }
 
-  Widget _buildRow(List<_CalcButton> buttons, {bool useFlex = true}) {
+  Widget _buildRow(List<_CalcButton> buttons, {bool useFlex = true, required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: buttons.map((btn) {
-          final child = _buildButton(btn);
+          final child = _buildButton(btn, isDark: isDark);
           return useFlex
               ? Expanded(child: child)
               : Expanded(child: child);
@@ -558,15 +569,17 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     );
   }
 
-  Widget _buildButton(_CalcButton btn) {
+  Widget _buildButton(_CalcButton btn, {required bool isDark}) {
     Color bgColor;
     Color textColor;
     double fontSize;
 
     switch (btn.type) {
       case _ButtonType.digit:
-        bgColor = Colors.white.withValues(alpha: 0.08);
-        textColor = Colors.white;
+        bgColor = isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.08);
+        textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
         fontSize = 22;
         break;
       case _ButtonType.operator:
@@ -575,8 +588,12 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
         fontSize = 24;
         break;
       case _ButtonType.function:
-        bgColor = Colors.white.withValues(alpha: 0.05);
-        textColor = Colors.white.withValues(alpha: 0.7);
+        bgColor = isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04);
+        textColor = isDark
+            ? Colors.white.withValues(alpha: 0.7)
+            : const Color(0xFF64748B);
         fontSize = 18;
         break;
     }

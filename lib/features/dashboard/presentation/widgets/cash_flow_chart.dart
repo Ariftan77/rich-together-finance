@@ -23,6 +23,7 @@ class CashFlowChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trans = ref.watch(translationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (data.isEmpty) {
       return GlassCard(
@@ -32,7 +33,9 @@ class CashFlowChart extends ConsumerWidget {
           child: Text(
             trans.reportNoData,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
               fontSize: 14,
             ),
           ),
@@ -46,7 +49,7 @@ class CashFlowChart extends ConsumerWidget {
       if (flow.income > maxValue) maxValue = flow.income;
       if (flow.expense > maxValue) maxValue = flow.expense;
     }
-    
+
     // Add 20% padding to max value
     maxValue = maxValue * 1.2;
     if (maxValue == 0) maxValue = 100; // Minimum scale
@@ -59,8 +62,8 @@ class CashFlowChart extends ConsumerWidget {
           children: [
             Text(
               trans.chartCashflow,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -68,9 +71,9 @@ class CashFlowChart extends ConsumerWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildLegend(trans.entryTypeIncome, AppColors.success),
+                _buildLegend(trans.entryTypeIncome, AppColors.success, isDark),
                 const SizedBox(width: 16),
-                _buildLegend(trans.entryTypeExpense, AppColors.error),
+                _buildLegend(trans.entryTypeExpense, AppColors.error, isDark),
               ],
             ),
             const SizedBox(height: 16),
@@ -113,7 +116,9 @@ class CashFlowChart extends ConsumerWidget {
                               child: Text(
                                 data[value.toInt()].month,
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.6)
+                                      : const Color(0xFF64748B),
                                   fontSize: 10,
                                 ),
                               ),
@@ -131,7 +136,9 @@ class CashFlowChart extends ConsumerWidget {
                           return Text(
                             _formatCompact(value),
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.6)
+                                  : const Color(0xFF64748B),
                               fontSize: 10,
                             ),
                           );
@@ -147,7 +154,9 @@ class CashFlowChart extends ConsumerWidget {
                     horizontalInterval: maxValue / 5,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.08),
                         strokeWidth: 1,
                       );
                     },
@@ -156,7 +165,7 @@ class CashFlowChart extends ConsumerWidget {
                   barGroups: data.asMap().entries.map((entry) {
                     final index = entry.key;
                     final flow = entry.value;
-                    
+
                     return BarChartGroupData(
                       x: index,
                       barRods: [
@@ -184,7 +193,7 @@ class CashFlowChart extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegend(String label, Color color) {
+  Widget _buildLegend(String label, Color color, bool isDark) {
     return Row(
       children: [
         Container(
@@ -199,7 +208,9 @@ class CashFlowChart extends ConsumerWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.7)
+                : const Color(0xFF374151),
             fontSize: 12,
           ),
         ),

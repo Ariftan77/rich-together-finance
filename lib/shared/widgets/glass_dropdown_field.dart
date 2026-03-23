@@ -22,6 +22,8 @@ class GlassDropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -30,7 +32,9 @@ class GlassDropdownField<T> extends StatelessWidget {
           child: Text(
             label.toUpperCase(),
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : const Color(0xFF64748B),
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
@@ -41,10 +45,14 @@ class GlassDropdownField<T> extends StatelessWidget {
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.12),
             ),
           ),
           child: Row(
@@ -65,20 +73,26 @@ class GlassDropdownField<T> extends StatelessWidget {
                         ? Text(
                             hint!,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.4)
+                                  : const Color(0xFF94A3B8),
                               fontSize: 15,
                             ),
                           )
                         : null,
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF221D10),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    dropdownColor: isDark
+                        ? const Color(0xFF221D10)
+                        : Colors.white,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontSize: 15,
                     ),
                     icon: Icon(
                       Icons.expand_more,
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.3)
+                          : const Color(0xFFCBD5E1),
                     ),
                   ),
                 ),

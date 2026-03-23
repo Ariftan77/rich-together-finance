@@ -84,6 +84,8 @@ class AccountsScreen extends ConsumerWidget {
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -123,7 +125,7 @@ class AccountsScreen extends ConsumerWidget {
                           Text(
                             trans.dashboardTotalBalance,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -132,15 +134,15 @@ class AccountsScreen extends ConsumerWidget {
                           totalBalanceAsync.when(
                             data: (v) => Text(
                               '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : AppColors.textPrimaryLight,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            loading: () => const Text(
+                            loading: () => Text(
                               '...',
-                              style: TextStyle(color: Colors.white, fontSize: 20),
+                              style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 20),
                             ),
                             error: (_, __) => const Text(
                               '--',
@@ -158,18 +160,18 @@ class AccountsScreen extends ConsumerWidget {
               TextField(
                 onChanged: (value) =>
                     ref.read(_walletSearchProvider.notifier).state = value,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
                 decoration: InputDecoration(
                   hintText: trans.walletSearch,
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
                   ),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.08),
+                  fillColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -189,13 +191,13 @@ class AccountsScreen extends ConsumerWidget {
                     Text(
                       'Filter',
                       style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                     ),
                     if (selectedCurrencies.isNotEmpty || selectedTypes.isNotEmpty)
                       Container(
@@ -283,7 +285,7 @@ class AccountsScreen extends ConsumerWidget {
                           children: [
                             Icon(Icons.search_off,
                                 size: 48,
-                                color: Colors.white.withValues(alpha: 0.3)),
+                                color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1)),
                             const SizedBox(height: 12),
                             Text(
                               trans.walletNoResults,
@@ -375,6 +377,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -383,13 +386,17 @@ class _FilterChip extends StatelessWidget {
           color: isSelected ? AppColors.primaryGold : AppColors.glassBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? AppColors.primaryGold
+                : isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
           ),
         ),
         child: Text(
           label,
           style: AppTypography.textTheme.labelMedium!.copyWith(
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected ? Colors.black : (isDark ? Colors.white : AppColors.textPrimaryLight),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

@@ -98,7 +98,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   
                   // Title
                   Text(
-                    'RICH TOGETHER',
+                    'RICHER',
                     style: AppTypography.textTheme.displayMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,

@@ -22,6 +22,8 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -49,7 +51,7 @@ class SettingsTile extends StatelessWidget {
                    Text(
                     title,
                     style: TextStyle(
-                      color: titleColor ?? Colors.white,
+                      color: titleColor ?? (isDark ? Colors.white : AppColors.textPrimaryLight),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -60,7 +62,9 @@ class SettingsTile extends StatelessWidget {
                       child: Text(
                         subtitle!,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : const Color(0xFF64748B),
                           fontSize: 13,
                         ),
                       ),
@@ -73,7 +77,9 @@ class SettingsTile extends StatelessWidget {
             else if (onTap != null)
               Icon(
                 Icons.chevron_right,
-                color: Colors.white.withValues(alpha: 0.5),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.5)
+                    : const Color(0xFF94A3B8),
               ),
           ],
         ),

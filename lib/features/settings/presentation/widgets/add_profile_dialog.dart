@@ -33,10 +33,11 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
 
     return Dialog(
-      backgroundColor: AppColors.bgDarkEnd,
+      backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -54,7 +55,9 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
             Text(
               trans.profileChooseAvatar,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : const Color(0xFF64748B),
                 fontSize: 14,
               ),
             ),
@@ -70,7 +73,9 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
                   decoration: BoxDecoration(
                     color: _selectedAvatar == avatar
                         ? AppColors.primaryGold.withValues(alpha: 0.3)
-                        : Colors.white.withValues(alpha: 0.1),
+                        : (isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.08)),
                     borderRadius: BorderRadius.circular(12),
                     border: _selectedAvatar == avatar
                         ? Border.all(color: AppColors.primaryGold, width: 2)
@@ -88,19 +93,29 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
             Text(
               trans.profileName,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : const Color(0xFF64748B),
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              ),
               decoration: InputDecoration(
                 hintText: trans.profileNameHint,
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.4)
+                      : const Color(0xFF94A3B8),
+                ),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.1),
+                fillColor: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -129,8 +144,13 @@ class _AddProfileDialogState extends ConsumerState<AddProfileDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white24),
+                      foregroundColor:
+                          isDark ? Colors.white : AppColors.textPrimaryLight,
+                      side: BorderSide(
+                        color: isDark
+                            ? Colors.white24
+                            : const Color(0xFFCBD5E1),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

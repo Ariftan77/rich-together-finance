@@ -52,8 +52,9 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      backgroundColor: AppColors.bgDarkEnd,
+      backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         '${widget.title} "${widget.profile.name}"?',
@@ -65,12 +66,20 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
         children: [
           Text(
             widget.content,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             widget.confirmPrompt,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 8),
           GlassInput(
@@ -85,7 +94,12 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(widget.cancelText, style: const TextStyle(color: Colors.white70)),
+          child: Text(
+            widget.cancelText,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+            ),
+          ),
         ),
         TextButton(
           onPressed: _canProceed
@@ -97,7 +111,9 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
           child: Text(
             widget.deleteButtonText,
             style: TextStyle(
-              color: _canProceed ? Colors.red : Colors.white24,
+              color: _canProceed
+                  ? Colors.red
+                  : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -115,13 +131,14 @@ class ProfileSelectorModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final profilesAsync = ref.watch(allProfilesProvider);
     final activeProfileId = ref.watch(activeProfileIdProvider);
     final trans = ref.watch(translationsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgDarkEnd,
+        color: isDark ? AppColors.bgDarkEnd : const Color(0xFFF8FAFC),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.all(24),
@@ -137,7 +154,10 @@ class ProfileSelectorModal extends ConsumerWidget {
                 style: AppTypography.textTheme.titleLarge,
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: Icon(
+                  Icons.close,
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -181,6 +201,7 @@ class ProfileSelectorModal extends ConsumerWidget {
     bool isActive = false,
     bool canDelete = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () async {
         if (!isActive) {
@@ -194,7 +215,9 @@ class ProfileSelectorModal extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primaryGold.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.05),
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.04)),
           borderRadius: BorderRadius.circular(12),
           border: isActive
               ? Border.all(color: AppColors.primaryGold, width: 1)
@@ -221,7 +244,7 @@ class ProfileSelectorModal extends ConsumerWidget {
               child: Text(
                 profile.name,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
                   fontSize: 16,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -324,23 +347,31 @@ class ProfileSelectorModal extends ConsumerWidget {
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
     final trans = ref.read(translationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
       // Show confirmation BEFORE popping — context must still be attached
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.bgDarkEnd,
+          backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(trans.profileAddNewAdTitle, style: AppTypography.textTheme.titleLarge),
           content: Text(
             trans.profileAddNewAdContent,
-            style: const TextStyle(color: Colors.white70),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
+              child: Text(
+                trans.cancel,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),

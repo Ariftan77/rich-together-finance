@@ -16,15 +16,17 @@ class GlassBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
-      height: 80, // Increased height to accommodate labels
+      height: 80,
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -33,13 +35,20 @@ class GlassBottomNav extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(
+            sigmaX: isDark ? 16 : 20,
+            sigmaY: isDark ? 16 : 20,
+          ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.glassBackground,
+              color: isDark
+                  ? AppColors.glassBackground
+                  : Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: AppColors.glassBorder,
+                color: isDark
+                    ? AppColors.glassBorder
+                    : Colors.black.withValues(alpha: 0.1),
                 width: 1.0,
               ),
             ),
@@ -48,7 +57,7 @@ class GlassBottomNav extends StatelessWidget {
               children: items.map((item) {
                 final int index = items.indexOf(item);
                 final bool isSelected = currentIndex == index;
-                
+
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => onTap(index),
@@ -61,16 +70,16 @@ class GlassBottomNav extends StatelessWidget {
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? AppColors.primaryGold.withValues(alpha: 0.2) 
+                              color: isSelected
+                                  ? AppColors.primaryGold.withValues(alpha: isDark ? 0.2 : 0.15)
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               isSelected ? item.activeIcon : item.icon,
-                              color: isSelected 
-                                  ? AppColors.primaryGold 
-                                  : AppColors.textSecondary,
+                              color: isSelected
+                                  ? AppColors.primaryGold
+                                  : isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                               size: 24,
                             ),
                           ),
@@ -78,9 +87,9 @@ class GlassBottomNav extends StatelessWidget {
                           Text(
                             item.label,
                             style: TextStyle(
-                              color: isSelected 
-                                  ? AppColors.primaryGold 
-                                  : AppColors.textSecondary,
+                              color: isSelected
+                                  ? AppColors.primaryGold
+                                  : isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                               fontSize: 10,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                             ),

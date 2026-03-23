@@ -146,6 +146,8 @@ class _GenericSearchableDropdownState<T>
         final currentTotalHeight =
             searchFieldHeight + verticalPadding * 2 + currentListHeight + 8 + addNewHeight;
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return Stack(
           children: [
             // Dismiss layer
@@ -168,7 +170,9 @@ class _GenericSearchableDropdownState<T>
                   child: Container(
                     constraints: BoxConstraints(maxHeight: currentTotalHeight),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2D2416),
+                      color: isDark
+                          ? const Color(0xFF2D2416)
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: AppColors.primaryGold.withValues(alpha: 0.3),
@@ -190,22 +194,32 @@ class _GenericSearchableDropdownState<T>
                           child: Container(
                             height: searchFieldHeight,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.12),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.12)
+                                    : Colors.black.withValues(alpha: 0.12),
                               ),
                             ),
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               onChanged: _filterItems,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimaryLight,
+                                fontSize: 14,
+                              ),
                               decoration: InputDecoration(
                                 hintText: widget.searchHint,
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.35)
+                                      : const Color(0xFF94A3B8),
                                   fontSize: 14,
                                 ),
                                 prefixIcon: Icon(
@@ -229,8 +243,9 @@ class _GenericSearchableDropdownState<T>
                                   child: Text(
                                     widget.noItemsFoundText,
                                     style: TextStyle(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.5),
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.5)
+                                          : const Color(0xFF94A3B8),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -264,7 +279,9 @@ class _GenericSearchableDropdownState<T>
                                                 style: TextStyle(
                                                   color: isSelected
                                                       ? AppColors.primaryGold
-                                                      : Colors.white,
+                                                      : (isDark
+                                                          ? Colors.white
+                                                          : AppColors.textPrimaryLight),
                                                   fontSize: 15,
                                                   fontWeight: isSelected
                                                       ? FontWeight.w600
@@ -289,7 +306,9 @@ class _GenericSearchableDropdownState<T>
                         if (widget.onAddNew != null) ...[
                           Divider(
                             height: 1,
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.08),
                           ),
                           InkWell(
                             onTap: () {
@@ -340,6 +359,7 @@ class _GenericSearchableDropdownState<T>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedLabel = widget.selectedItem != null
         ? widget.itemLabelBuilder(widget.selectedItem as T)
         : null;
@@ -354,7 +374,9 @@ class _GenericSearchableDropdownState<T>
             child: Text(
               widget.label.toUpperCase(),
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : const Color(0xFF64748B),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.2,
@@ -367,12 +389,16 @@ class _GenericSearchableDropdownState<T>
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isOpen
                       ? AppColors.primaryGold.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.15),
+                      : (isDark
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.12)),
                 ),
               ),
               child: Row(
@@ -388,8 +414,10 @@ class _GenericSearchableDropdownState<T>
                       selectedLabel ?? widget.hint,
                       style: TextStyle(
                         color: selectedLabel != null
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
+                            ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : const Color(0xFF94A3B8)),
                         fontSize: 15,
                       ),
                     ),
@@ -399,7 +427,9 @@ class _GenericSearchableDropdownState<T>
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.3)
+                          : const Color(0xFFCBD5E1),
                     ),
                   ),
                 ],

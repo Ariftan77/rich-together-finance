@@ -9,7 +9,7 @@ class SummaryCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String? subtitle;
-  
+
   const SummaryCard({
     super.key,
     required this.title,
@@ -21,6 +21,8 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GlassCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -46,7 +48,9 @@ class SummaryCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : const Color(0xFF374151),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -57,8 +61,8 @@ class SummaryCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.textPrimaryLight,
                 fontSize: 21.6,
                 fontWeight: FontWeight.bold,
               ),
@@ -68,7 +72,9 @@ class SummaryCard extends StatelessWidget {
               Text(
                 subtitle!,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : const Color(0xFF64748B),
                   fontSize: 11,
                 ),
               ),

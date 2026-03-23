@@ -31,15 +31,20 @@ class _AnnouncementsSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final announcementsAsync = ref.watch(announcementsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgDarkEnd,
+        color: isDark ? AppColors.bgDarkEnd : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.08),
+        ),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -56,7 +61,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -71,7 +76,10 @@ class _AnnouncementsSheet extends ConsumerWidget {
               ],
             ),
           ),
-          const Divider(color: Colors.white12, height: 1),
+          Divider(
+            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+            height: 1,
+          ),
           // Content
           Flexible(
             child: announcementsAsync.when(
@@ -86,7 +94,9 @@ class _AnnouncementsSheet extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     trans.settingsNoAnnouncements,
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                    ),
                   ),
                 ),
               ),
@@ -106,7 +116,11 @@ class _AnnouncementsSheet extends ConsumerWidget {
                           const SizedBox(height: 12),
                           Text(
                             trans.settingsNoAnnouncements,
-                            style: const TextStyle(color: Colors.white54),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white54
+                                  : const Color(0xFF94A3B8),
+                            ),
                           ),
                         ],
                       ),
@@ -117,8 +131,8 @@ class _AnnouncementsSheet extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   shrinkWrap: true,
                   itemCount: list.length,
-                  separatorBuilder: (context, index) => const Divider(
-                    color: Colors.white12,
+                  separatorBuilder: (context, index) => Divider(
+                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
                     height: 1,
                     indent: 20,
                     endIndent: 20,
@@ -139,8 +153,10 @@ class _AnnouncementsSheet extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             a.body(locale.languageCode),
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF374151),
                               fontSize: 14,
                               height: 1.5,
                             ),
