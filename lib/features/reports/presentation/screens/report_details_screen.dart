@@ -10,6 +10,7 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/glass_segmented_control.dart';
 import '../providers/report_details_providers.dart';
 import 'category_history_screen.dart';
 import 'title_history_screen.dart';
@@ -160,26 +161,37 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
 // Tab 1: Chart
 // ===========================================================================
 
-class _ChartTab extends ConsumerWidget {
+class _ChartTab extends ConsumerStatefulWidget {
   final DateTime month;
   const _ChartTab({required this.month});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ChartTab> createState() => _ChartTabState();
+}
+
+class _ChartTabState extends ConsumerState<_ChartTab> {
+  int _selectedIndex = 0; // 0 = Expense, 1 = Income
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
 
-    final expenseAsync = ref.watch(reportExpenseByCategoryProvider(month));
-    final incomeAsync = ref.watch(reportIncomeByCategoryProvider(month));
+    final expenseAsync =
+        ref.watch(reportExpenseByCategoryProvider(widget.month));
+    final incomeAsync =
+        ref.watch(reportIncomeByCategoryProvider(widget.month));
 
-    final startOfMonth = DateTime(month.year, month.month, 1);
-    final endOfMonth = DateTime(month.year, month.month + 1, 0);
+    final startOfMonth = DateTime(widget.month.year, widget.month.month, 1);
+    final endOfMonth = DateTime(widget.month.year, widget.month.month + 1, 0);
     final dateFormat = DateFormat('dd MMM yyyy', locale.toString());
     final dateRange =
         '${dateFormat.format(startOfMonth)} - ${dateFormat.format(endOfMonth)}';
+
+    final activeAsync = _selectedIndex == 0 ? expenseAsync : incomeAsync;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -198,50 +210,29 @@ class _ChartTab extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Expense / Income sub-tabs
+          GlassSegmentedControl<int>(
+            value: _selectedIndex,
+            options: const [0, 1],
+            labels: [trans.entryTypeExpense, trans.entryTypeIncome],
+            onChanged: (v) => setState(() => _selectedIndex = v),
+          ),
           const SizedBox(height: 20),
 
-          // --- EXPENSE PIE CHART ---
-          Text(
-            trans.entryTypeExpense,
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          expenseAsync.when(
+          // Pie chart for selected type
+          activeAsync.when(
             data: (data) => _PieChartSection(
               data: data,
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
               emptyLabel: trans.reportNoData,
+              othersLabel: trans.commonOthers,
             ),
             loading: () => const _ChartLoading(),
-            error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
-          ),
-
-          const SizedBox(height: 28),
-
-          // --- INCOME PIE CHART ---
-          Text(
-            trans.entryTypeIncome,
-            style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          incomeAsync.when(
-            data: (data) => _PieChartSection(
-              data: data,
-              currencySymbol: baseCurrency.symbol,
-              showDecimal: showDecimal,
-              emptyLabel: trans.reportNoData,
-            ),
-            loading: () => const _ChartLoading(),
-            error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
+            error: (e, _) =>
+                Text('$e', style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -249,30 +240,296 @@ class _ChartTab extends ConsumerWidget {
   }
 }
 
-class _PieChartSection extends StatelessWidget {
+/// Holds a displayed pie slice — either a real category or the "Others" bucket.
+class _PieSlice {
+  final String label;
+  final double amount;
+  final double percentage;
+  final Color color;
+  final bool isOthers;
+  final List<ReportCategoryBreakdown> othersItems;
+
+  _PieSlice({
+    required this.label,
+    required this.amount,
+    required this.percentage,
+    required this.color,
+    this.isOthers = false,
+    this.othersItems = const [],
+  });
+}
+
+class _PieChartSection extends StatefulWidget {
   final List<ReportCategoryBreakdown> data;
   final String currencySymbol;
   final bool showDecimal;
   final String emptyLabel;
+  final String othersLabel;
 
   const _PieChartSection({
     required this.data,
     required this.currencySymbol,
     required this.showDecimal,
     required this.emptyLabel,
+    required this.othersLabel,
   });
+
+  @override
+  State<_PieChartSection> createState() => _PieChartSectionState();
+}
+
+class _PieChartSectionState extends State<_PieChartSection> {
+  int? _touchedIndex;
+  OverlayEntry? _overlayEntry;
+
+  List<_PieSlice> _buildSlices() {
+    final mainSlices = <_PieSlice>[];
+    final othersItems = <ReportCategoryBreakdown>[];
+    double othersAmount = 0;
+    double othersPercentage = 0;
+
+    for (var i = 0; i < widget.data.length; i++) {
+      final bd = widget.data[i];
+      if (bd.percentage < 1.0) {
+        othersItems.add(bd);
+        othersAmount += bd.amount;
+        othersPercentage += bd.percentage;
+      } else {
+        final color = _chartColors[mainSlices.length % _chartColors.length];
+        mainSlices.add(_PieSlice(
+          label: bd.categoryName,
+          amount: bd.amount,
+          percentage: bd.percentage,
+          color: color,
+        ));
+      }
+    }
+
+    if (othersItems.isNotEmpty) {
+      mainSlices.add(_PieSlice(
+        label: widget.othersLabel,
+        amount: othersAmount,
+        percentage: othersPercentage,
+        color: Colors.grey,
+        isOthers: true,
+        othersItems: othersItems,
+      ));
+    }
+
+    return mainSlices;
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showTooltipOverlay(BuildContext context, _PieSlice slice) {
+    _removeOverlay();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlay = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox;
+    final chartCenter = renderBox.localToGlobal(
+      Offset(renderBox.size.width / 2, renderBox.size.height * 0.3),
+    );
+
+    _overlayEntry = OverlayEntry(
+      builder: (ctx) => Stack(
+        children: [
+          // Dismiss area
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                _removeOverlay();
+                setState(() => _touchedIndex = null);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          // Tooltip
+          Positioned(
+            left: chartCenter.dx - 130,
+            top: chartCenter.dy - 20,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 260,
+                constraints: const BoxConstraints(maxHeight: 220),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xF0222222)
+                      : const Color(0xF0FFFFFF),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.1),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: slice.isOthers
+                    ? _buildOthersTooltip(isDark, slice)
+                    : _buildSingleTooltip(isDark, slice),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    overlay.insert(_overlayEntry!);
+  }
+
+  Widget _buildSingleTooltip(bool isDark, _PieSlice slice) {
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: slice.color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  slice.label,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${slice.percentage.toStringAsFixed(1)}%',
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : const Color(0xFF64748B),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOthersTooltip(bool isDark, _PieSlice slice) {
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${slice.label} (${slice.percentage.toStringAsFixed(1)}%)',
+            style: TextStyle(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : const Color(0xFF64748B),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: slice.othersItems.map((bd) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            bd.categoryName,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.8)
+                                  : AppColors.textPrimaryLight,
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${widget.currencySymbol} ${Formatters.formatCurrency(bd.amount, showDecimal: widget.showDecimal)}',
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.6)
+                                : const Color(0xFF64748B),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (data.isEmpty) {
+    if (widget.data.isEmpty) {
       return GlassCard(
         child: Container(
           height: 120,
           alignment: Alignment.center,
           child: Text(
-            emptyLabel,
+            widget.emptyLabel,
             style: TextStyle(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.5)
@@ -284,31 +541,42 @@ class _PieChartSection extends StatelessWidget {
       );
     }
 
+    final slices = _buildSlices();
+
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           // Pie chart
           SizedBox(
-            height: 200,
+            height: 280,
             child: PieChart(
               PieChartData(
                 sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: data.asMap().entries.map((entry) {
+                centerSpaceRadius: 50,
+                pieTouchData: PieTouchData(
+                  enabled: true,
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    if (event is FlLongPressStart) {
+                      final index =
+                          pieTouchResponse?.touchedSection?.touchedSectionIndex;
+                      if (index != null && index >= 0 && index < slices.length) {
+                        setState(() => _touchedIndex = index);
+                        _showTooltipOverlay(context, slices[index]);
+                      }
+                    }
+                  },
+                ),
+                sections: slices.asMap().entries.map((entry) {
                   final index = entry.key;
-                  final bd = entry.value;
-                  final color = _chartColors[index % _chartColors.length];
+                  final slice = entry.value;
+                  final isTouched = _touchedIndex == index;
                   return PieChartSectionData(
-                    value: bd.amount,
-                    title: '${bd.percentage.toStringAsFixed(1)}%',
-                    color: color,
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    value: slice.amount,
+                    title: '',
+                    showTitle: false,
+                    color: slice.color,
+                    radius: isTouched ? 90 : 80,
                   );
                 }).toList(),
               ),
@@ -316,53 +584,60 @@ class _PieChartSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Legend
-          ...data.asMap().entries.map((entry) {
+          ...slices.asMap().entries.map((entry) {
             final index = entry.key;
-            final bd = entry.value;
-            final color = _chartColors[index % _chartColors.length];
+            final slice = entry.value;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${bd.percentage.toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      bd.categoryName,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+              child: GestureDetector(
+                onLongPress: () {
+                  setState(() => _touchedIndex = index);
+                  _showTooltipOverlay(context, slice);
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: slice.color,
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
-                    style: TextStyle(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : const Color(0xFF64748B),
-                      fontSize: 12,
+                    const SizedBox(width: 10),
+                    Text(
+                      '${slice.percentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: slice.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        slice.label,
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.textPrimaryLight,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : const Color(0xFF64748B),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }),

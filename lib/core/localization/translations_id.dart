@@ -41,6 +41,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get commonPaid => 'Terbayar';
   @override String get commonAmount => 'Jumlah';
   @override String get commonMax => 'MAKS';
+  @override String get commonOthers => 'Lainnya';
   @override String get filterAll => 'Semua';
 
   // Transaction Entry
@@ -317,6 +318,19 @@ class AppTranslationsId implements AppTranslations {
   // Dashboard & Reports
   @override String get chartCashflow => 'Arus Kas';
   @override String get chartSpending => 'Pengeluaran per Kategori';
+  @override String get chartSavingsRate => 'Tren Rasio Tabungan';
+  @override String get savingsRateLabel => 'Rasio Tabungan';
+  @override String get savingsRateVsPrev => 'vs bulan lalu';
+  @override String get deepAnalyticsTab => 'Analisis Mendalam';
+  @override String get monthlyDetailsTab => 'Detail Bulanan';
+  @override String get monthOverMonthTitle => 'Perbandingan Bulan';
+  @override String get monthOverMonthThisMonth => 'Bulan Ini';
+  @override String get monthOverMonthLastMonth => 'Bulan Lalu';
+  @override String get monthOverMonthLastYear => 'Tahun Lalu';
+  @override String get ytdTopCategoriesTitle => 'Pengeluaran Teratas (YTD)';
+  @override String get categoryTrendTitle => 'Tren Kategori';
+  @override String get sectionTrends => 'Tren';
+  @override String get sectionSpendingAnalysis => 'Analisis Pengeluaran';
   @override String get reportTabIncomeExpr => 'Pemasukan';
   @override String get reportTabCashflow => 'Arus Kas';
   @override String get reportTabSpending => 'Pengeluaran';

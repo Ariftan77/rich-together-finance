@@ -64,6 +64,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   // Track if auto-select has been applied (only once per title)
   bool _autoSelectApplied = false;
 
+  // Swipe animation direction for tab switching
+  double _slideDirection = 1.0;
+  static const _typeOptions = [
+    TransactionType.income,
+    TransactionType.expense,
+    TransactionType.transfer,
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -696,9 +704,20 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   }
 
   String _getCurrencyPrefix(List<Account> accounts) {
-    if (_selectedAccountId == null) return 'IDR ';  // Default to IDR
+    if (_selectedAccountId == null) return '${ref.read(defaultCurrencyProvider).code} ';
     final account = accounts.firstWhere((a) => a.id == _selectedAccountId);
     return '${account.currency.code} ';
+  }
+
+  void _switchType(TransactionType newType) {
+    final oldIndex = _typeOptions.indexOf(_selectedType);
+    final newIndex = _typeOptions.indexOf(newType);
+    if (oldIndex == newIndex) return;
+    setState(() {
+      _slideDirection = newIndex > oldIndex ? 1.0 : -1.0;
+      _selectedType = newType;
+    });
+    _loadFrequentTitles();
   }
 
   String _formatDateDisplay() {
@@ -986,234 +1005,122 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                       ],
                     ),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 24),
 
                     // Transaction Type Segmented Control
-                      GlassSegmentedControl<TransactionType>(
+                    GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        final currentIndex = _typeOptions.indexOf(_selectedType);
+                        if (details.primaryVelocity != null && details.primaryVelocity! < -200) {
+                          if (currentIndex < 2) _switchType(_typeOptions[currentIndex + 1]);
+                        } else if (details.primaryVelocity != null && details.primaryVelocity! > 200) {
+                          if (currentIndex > 0) _switchType(_typeOptions[currentIndex - 1]);
+                        }
+                      },
+                      child: GlassSegmentedControl<TransactionType>(
                         value: _selectedType,
                         options: const [
                           TransactionType.income,
                           TransactionType.expense,
                           TransactionType.transfer,
                         ],
-
                         labels: [trans.entryTypeIncome, trans.entryTypeExpense, trans.entryTypeTransfer],
-                        onChanged: (type) {
-                          setState(() => _selectedType = type);
-                          _loadFrequentTitles();
-                        },
+                        onChanged: _switchType,
                         highlightValue: TransactionType.expense,
                       ),
+                    ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
 
-                    // Debt info banner (edit mode only)
-                    if (widget.transactionId != null && (
-                        _selectedType == TransactionType.debtIn ||
-                        _selectedType == TransactionType.debtOut ||
-                        _titleController.text.startsWith('Debt Payment: '))) ...[
-                      Builder(builder: (context) {
-                        final isCreation = _selectedType == TransactionType.debtIn || _selectedType == TransactionType.debtOut;
-                        final title = _titleController.text;
-                        final prefix = isCreation ? 'Debt: ' : 'Debt Payment: ';
-                        final personName = title.startsWith(prefix)
-                            ? title.substring(prefix.length).trim()
-                            : title;
-                        final typeLabel = _selectedType == TransactionType.debtIn
-                            ? trans.debtPayable
-                            : _selectedType == TransactionType.debtOut
-                                ? trans.debtReceivable
-                                : (isCreation ? '' : trans.debtSettle);
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: Column(
+                        key: ValueKey(_selectedType),
+                        children: [
+                          // Debt info banner (edit mode only)
+                          if (widget.transactionId != null && (
+                              _selectedType == TransactionType.debtIn ||
+                              _selectedType == TransactionType.debtOut ||
+                              _titleController.text.startsWith('Debt Payment: '))) ...[
+                            Builder(builder: (context) {
+                              final isCreation = _selectedType == TransactionType.debtIn || _selectedType == TransactionType.debtOut;
+                              final title = _titleController.text;
+                              final prefix = isCreation ? 'Debt: ' : 'Debt Payment: ';
+                              final personName = title.startsWith(prefix)
+                                  ? title.substring(prefix.length).trim()
+                                  : title;
+                              final typeLabel = _selectedType == TransactionType.debtIn
+                                  ? trans.debtPayable
+                                  : _selectedType == TransactionType.debtOut
+                                      ? trans.debtReceivable
+                                      : (isCreation ? '' : trans.debtSettle);
 
-                        return Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.account_balance_wallet_outlined,
-                                  color: AppColors.primaryGold, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      isCreation ? 'Debt Record' : 'Debt Payment',
-                                      style: const TextStyle(
-                                        color: AppColors.primaryGold,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Text(
-                                      '$personName${typeLabel.isNotEmpty ? ' · $typeLabel' : ''}',
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Edit debt details in the Debt module',
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
-                                        fontSize: 11,
+                                    Icon(Icons.account_balance_wallet_outlined,
+                                        color: AppColors.primaryGold, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isCreation ? 'Debt Record' : 'Debt Payment',
+                                            style: const TextStyle(
+                                              color: AppColors.primaryGold,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          Text(
+                                            '$personName${typeLabel.isNotEmpty ? ' · $typeLabel' : ''}',
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Edit debt details in the Debt module',
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 24),
-                    ],
+                              );
+                            }),
+                            const SizedBox(height: 24),
+                          ],
 
-                    // Title Field
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text(
-                            trans.entryTitle.toUpperCase(),
-                            style: TextStyle(
-                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          height: 56,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.title,
-                                color: AppColors.primaryGold.withValues(alpha: 0.8),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _titleController,
-                                  focusNode: _titleFocusNode,
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                                    fontSize: 15,
-                                  ),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: trans.entryTitleHint,
-                                    hintStyle: TextStyle(
-                                      color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) {
-                                    if (widget.transactionId == null) {
-                                      _autoSelectFromTitle(_titleController.text.trim());
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Frequent Titles Suggestions (filtered by type + text input)
-                        if (_filteredTitles.isNotEmpty)
-                          Container(
-                            height: 36,
-                            margin: const EdgeInsets.only(top: 12),
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _filteredTitles.length,
-                              separatorBuilder: (_, __) => const SizedBox(width: 8),
-                              itemBuilder: (context, index) {
-                                final title = _filteredTitles[index];
-                                return GestureDetector(
-                                  onTap: () {
-                                    _titleController.text = title;
-                                    _titleController.selection = TextSelection.fromPosition(
-                                      TextPosition(offset: title.length),
-                                    );
-                                    // Auto-select account/category for new transactions
-                                    if (widget.transactionId == null) {
-                                      _autoSelectFromTitle(title);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      title,
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white.withValues(alpha: 0.9) : AppColors.textPrimaryLight,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Category Dropdown
-                    if (_selectedType != TransactionType.transfer)
-                      categoriesAsync.when(
-                        data: (categories) {
-                          // Categories loaded
-                          
-                          // Convert TransactionType to CategoryType
-                          CategoryType? categoryType;
-                          if (_selectedType == TransactionType.income) {
-                            categoryType = CategoryType.income;
-                          } else if (_selectedType == TransactionType.expense) {
-                            categoryType = CategoryType.expense;
-                          }
-                          
-                          final filteredCategories = categoryType != null
-                              ? categories.where((c) => c.type == categoryType).toList()
-                              : <Category>[];
-                          
-                          // Get selected category
-                          final selectedCategory = filteredCategories
-                              .where((c) => c.id == _selectedCategoryId)
-                              .firstOrNull;
-                          
-                          return Column(
+                          // Title Field
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
                                 padding: const EdgeInsets.only(left: 4, bottom: 8),
                                 child: Text(
-                                  trans.entryCategory.toUpperCase(),
+                                  trans.entryTitle.toUpperCase(),
                                   style: TextStyle(
                                     color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
                                     fontSize: 11,
@@ -1222,241 +1129,370 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   ),
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (modalContext) => Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: MediaQuery.of(modalContext).viewInsets.bottom,
-                                      ),
-                                      child: CategorySelector(
-                                        categories: filteredCategories,
-                                        selectedCategoryId: _selectedCategoryId,
-                                        onCategorySelected: (id) {
-                                          setState(() => _selectedCategoryId = id);
-                                        },
-                                        onAddNew: (searchText) async {
-                                           // Safety check for category type
-                                          if (categoryType == null) return;
-        
-                                          // Direct create if search text is provided
-                                          final name = searchText.trim();
-                                          
-                                          if (name.isNotEmpty) {
-                                              // Direct creation path
-                                              await _createNewCategory(name, categoryType!);
-                                          } else {
-                                              // Fallback to dialog if no text entered
-                                              // Use parent 'context', not the disposed 'modalContext'
-                                              FocusScope.of(context).unfocus();
-                                              await Future.delayed(const Duration(milliseconds: 100));
-                                              
-                                              if (!mounted) return;
-        
-                                              final result = await showDialog<Map<String, dynamic>>(
-                                                context: context,
-                                                builder: (context) => AddCategoryDialog(
-                                                  type: categoryType!,
-                                                  initialName: '',
-                                                ),
-                                              );
-                                              
-                                              if (mounted) {
-                                                FocusScope.of(context).unfocus();
-                                              }
-        
-                                              if (result != null && result['name'] != null) {
-                                                 await _createNewCategory(
-                                                   result['name'] as String,
-                                                   categoryType!,
-                                                   icon: result['icon'] as String?,
-                                                   color: result['color'] as String?,
-                                                 );
-                                              }
+                              Container(
+                                height: 56,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.title,
+                                      color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _titleController,
+                                        focusNode: _titleFocusNode,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                          fontSize: 15,
+                                        ),
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: trans.entryTitleHint,
+                                          hintStyle: TextStyle(
+                                            color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        onSubmitted: (_) {
+                                          if (widget.transactionId == null) {
+                                            _autoSelectFromTitle(_titleController.text.trim());
                                           }
                                         },
                                       ),
                                     ),
-                                  );
-                                },
-                                child: Container(
-                                  height: 56,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      if (selectedCategory != null)
-                                        Container(
-                                          width: 32,
-                                          height: 32,
+                                  ],
+                                ),
+                              ),
+
+                              // Frequent Titles Suggestions (filtered by type + text input)
+                              if (_filteredTitles.isNotEmpty)
+                                Container(
+                                  height: 36,
+                                  margin: const EdgeInsets.only(top: 12),
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _filteredTitles.length,
+                                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                    itemBuilder: (context, index) {
+                                      final title = _filteredTitles[index];
+                                      return GestureDetector(
+                                        onTap: () {
+                                          _titleController.text = title;
+                                          _titleController.selection = TextSelection.fromPosition(
+                                            TextPosition(offset: title.length),
+                                          );
+                                          // Auto-select account/category for new transactions
+                                          if (widget.transactionId == null) {
+                                            _autoSelectFromTitle(title);
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12),
                                           decoration: BoxDecoration(
-                                            color: _parseCategoryColor(selectedCategory.color),
-                                            shape: BoxShape.circle,
+                                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                                            borderRadius: BorderRadius.circular(18),
+                                            border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
                                           ),
                                           alignment: Alignment.center,
-                                          child: CategoryIconWidget(
-                                            iconString: selectedCategory.icon,
-                                            size: 16,
-                                            color: Colors.white,
+                                          child: Text(
+                                            title,
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white.withValues(alpha: 0.9) : AppColors.textPrimaryLight,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
-                                        )
-                                      else
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Category Dropdown
+                          if (_selectedType != TransactionType.transfer)
+                            categoriesAsync.when(
+                              data: (categories) {
+                                // Categories loaded
+
+                                // Convert TransactionType to CategoryType
+                                CategoryType? categoryType;
+                                if (_selectedType == TransactionType.income) {
+                                  categoryType = CategoryType.income;
+                                } else if (_selectedType == TransactionType.expense) {
+                                  categoryType = CategoryType.expense;
+                                }
+
+                                final filteredCategories = categoryType != null
+                                    ? categories.where((c) => c.type == categoryType).toList()
+                                    : <Category>[];
+
+                                // Get selected category
+                                final selectedCategory = filteredCategories
+                                    .where((c) => c.id == _selectedCategoryId)
+                                    .firstOrNull;
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                      child: Text(
+                                        trans.entryCategory.toUpperCase(),
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (modalContext) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                            ),
+                                            child: CategorySelector(
+                                              categories: filteredCategories,
+                                              selectedCategoryId: _selectedCategoryId,
+                                              onCategorySelected: (id) {
+                                                setState(() => _selectedCategoryId = id);
+                                              },
+                                              onAddNew: (searchText) async {
+                                                // Safety check for category type
+                                                if (categoryType == null) return;
+
+                                                // Direct create if search text is provided
+                                                final name = searchText.trim();
+
+                                                if (name.isNotEmpty) {
+                                                  // Direct creation path
+                                                  await _createNewCategory(name, categoryType!);
+                                                } else {
+                                                  // Fallback to dialog if no text entered
+                                                  // Use parent 'context', not the disposed 'modalContext'
+                                                  FocusScope.of(context).unfocus();
+                                                  await Future.delayed(const Duration(milliseconds: 100));
+
+                                                  if (!mounted) return;
+
+                                                  final result = await showDialog<Map<String, dynamic>>(
+                                                    context: context,
+                                                    builder: (context) => AddCategoryDialog(
+                                                      type: categoryType!,
+                                                      initialName: '',
+                                                    ),
+                                                  );
+
+                                                  if (mounted) {
+                                                    FocusScope.of(context).unfocus();
+                                                  }
+
+                                                  if (result != null && result['name'] != null) {
+                                                    await _createNewCategory(
+                                                      result['name'] as String,
+                                                      categoryType!,
+                                                      icon: result['icon'] as String?,
+                                                      color: result['color'] as String?,
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        height: 56,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            if (selectedCategory != null)
+                                              Container(
+                                                width: 32,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: _parseCategoryColor(selectedCategory.color),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: CategoryIconWidget(
+                                                  iconString: selectedCategory.icon,
+                                                  size: 16,
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            else
+                                              Icon(
+                                                Icons.category_outlined,
+                                                color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                                size: 20,
+                                              ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                selectedCategory?.name ?? trans.entrySelectCategory,
+                                                style: TextStyle(
+                                                  color: selectedCategory != null
+                                                      ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                                                      : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.expand_more,
+                                              color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                              loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
+                              error: (_, __) => const Text('Error loading categories'),
+                            ),
+
+                          if (_selectedType != TransactionType.transfer)
+                            const SizedBox(height: 16),
+
+                          // Account Selection
+                          accountsAsync.when(
+                            data: (accounts) {
+                              return Column(
+                                children: [
+                                  _buildAccountSelector(
+                                    context: context,
+                                    accounts: accounts,
+                                    isToAccount: false,
+                                    label: _selectedType == TransactionType.transfer ? trans.entryFromAccount : trans.entryAccount,
+                                  ),
+                                  if (_selectedType == TransactionType.transfer) ...[
+                                    const SizedBox(height: 16),
+                                    _buildAccountSelector(
+                                      context: context,
+                                      accounts: accounts,
+                                      isToAccount: true,
+                                      label: trans.entryToAccount,
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                            loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
+                            error: (_, __) => const Text('Error loading accounts'),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Date and Time Row
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: GestureDetector(
+                                  onTap: _selectDate,
+                                  child: Container(
+                                    height: 56,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
                                         Icon(
-                                          Icons.category_outlined,
-                                          color: AppColors.primaryGold.withValues(alpha: 0.8),
-                                          size: 20,
+                                          Icons.calendar_today,
+                                          color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                                          size: 16,
                                         ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          selectedCategory?.name ?? trans.entrySelectCategory,
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(_selectedDate),
                                           style: TextStyle(
-                                            color: selectedCategory != null
-                                                ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                                : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
-                                            fontSize: 15,
+                                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                            fontSize: 14,
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: GestureDetector(
+                                  onTap: _selectTime,
+                                  child: Container(
+                                    height: 56,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
                                       ),
-                                      Icon(
-                                        Icons.expand_more,
-                                        color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1),
-                                      ),
-                                    ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _selectedTime.format(context),
+                                          style: TextStyle(
+                                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
-                          );
-                        },
-                        loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                        error: (_, __) => const Text('Error loading categories'),
-                      ),
-
-                    if (_selectedType != TransactionType.transfer)
-                      const SizedBox(height: 16),
-
-                    // Account Selection
-                    accountsAsync.when(
-                      data: (accounts) {
-                        return Column(
-                          children: [
-                            _buildAccountSelector(
-                              context: context,
-                              accounts: accounts,
-                              isToAccount: false,
-                              label: _selectedType == TransactionType.transfer ? trans.entryFromAccount : trans.entryAccount,
-                            ),
-                            if (_selectedType == TransactionType.transfer) ...[
-                              const SizedBox(height: 16),
-                              _buildAccountSelector(
-                                context: context,
-                                accounts: accounts,
-                                isToAccount: true,
-                                label: trans.entryToAccount,
-                              ),
-                            ],
-                          ],
-                        );
-                      },
-                      loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                      error: (_, __) => const Text('Error loading accounts'),
-                    ),
-
-                    const SizedBox(height: 16),
-
-
-
-                    // Date and Time Row
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: GestureDetector(
-                            onTap: _selectDate,
-                            child: Container(
-                              height: 56,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    DateFormat.yMMMd(ref.watch(localeProvider).languageCode).format(_selectedDate),
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: GestureDetector(
-                            onTap: _selectTime,
+
+                          const SizedBox(height: 12),
+
+                          // Note Row
+                          GestureDetector(
+                            onTap: _addNote,
                             child: Container(
-                              height: 56,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.12),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _selectedTime.format(context),
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Note Row
-                    GestureDetector(
-                      onTap: _addNote,
-                      child: Container(
                               height: 56,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
@@ -1491,50 +1527,53 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             ),
                           ),
 
-                    const SizedBox(height: 32),
+                          const SizedBox(height: 32),
 
-                    // Save Button
-                    Container(
-                      width: double.infinity,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryGold.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _saveTransaction,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          foregroundColor: const Color(0xFF221D10),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_circle, size: 24),
-                            const SizedBox(width: 12),
-                            Text(
-                              trans.entrySaveButton,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                          // Save Button
+                          Container(
+                            width: double.infinity,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.3),
+                                  blurRadius: 30,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _saveTransaction,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGold,
+                                foregroundColor: const Color(0xFF221D10),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.check_circle, size: 24),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    trans.entrySaveButton,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),

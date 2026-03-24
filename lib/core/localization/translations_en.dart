@@ -41,6 +41,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get commonPaid => 'Paid';
   @override String get commonAmount => 'Amount';
   @override String get commonMax => 'MAX';
+  @override String get commonOthers => 'Others';
   @override String get filterAll => 'All';
 
   // Transaction Entry
@@ -316,6 +317,19 @@ class AppTranslationsEn implements AppTranslations {
   // Dashboard & Reports
   @override String get chartCashflow => 'Cash Flow';
   @override String get chartSpending => 'Spending by Category';
+  @override String get chartSavingsRate => 'Savings Rate Trend';
+  @override String get savingsRateLabel => 'Savings Rate';
+  @override String get savingsRateVsPrev => 'vs prev. month';
+  @override String get deepAnalyticsTab => 'Deep Analytics';
+  @override String get monthlyDetailsTab => 'Monthly Details';
+  @override String get monthOverMonthTitle => 'Month Comparison';
+  @override String get monthOverMonthThisMonth => 'This Month';
+  @override String get monthOverMonthLastMonth => 'Last Month';
+  @override String get monthOverMonthLastYear => 'Last Year';
+  @override String get ytdTopCategoriesTitle => 'Top Spending (YTD)';
+  @override String get categoryTrendTitle => 'Category Trend';
+  @override String get sectionTrends => 'Trends';
+  @override String get sectionSpendingAnalysis => 'Spending Analysis';
   @override String get reportTabIncomeExpr => 'Income'; // Wait, this might be duplicate or needed
   @override String get reportTabCashflow => 'Cash Flow';
   @override String get reportTabSpending => 'Spending';

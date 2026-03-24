@@ -13,6 +13,10 @@ import '../../../../core/providers/currency_exchange_providers.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/cash_flow_chart.dart';
 import '../widgets/category_pie_chart.dart';
+import '../widgets/savings_rate_chart.dart';
+import '../widgets/compact_savings_rate_card.dart';
+import '../widgets/month_over_month_card.dart';
+import '../widgets/ytd_top_categories.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
 import '../../../reports/presentation/widgets/export_report_modal.dart';
 
@@ -25,20 +29,23 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late TabController _reportSubTabController;
   final ScrollController _reportScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _reportSubTabController = TabController(length: 2, vsync: this);
     _reportScrollController.addListener(_onReportScroll);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _reportSubTabController.dispose();
     _reportScrollController.removeListener(_onReportScroll);
     _reportScrollController.dispose();
     super.dispose();
@@ -159,7 +166,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final monthlyExpenseAsync = ref.watch(dashboardMonthlyExpenseProvider);
     final monthlyAdjustmentAsync = ref.watch(dashboardMonthlyAdjustmentProvider);
     final categoryBreakdownAsync = ref.watch(dashboardCategoryBreakdownProvider);
-    final cashFlowAsync = ref.watch(dashboardCashFlowProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final trans = ref.watch(translationsProvider);
@@ -322,22 +328,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
             const SizedBox(height: 24),
 
-            // Cash Flow Chart
-            cashFlowAsync.when(
-              data: (cashFlow) => CashFlowChart(data: cashFlow, currencySymbol: baseCurrency.symbol, showDecimal: showDecimal),
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(color: AppColors.primaryGold),
-                ),
-              ),
-              error: (error, _) => Center(
-                child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
             // Category Pie Chart
             categoryBreakdownAsync.when(
               data: (breakdown) => CategoryPieChart(data: breakdown, currencySymbol: baseCurrency.symbol, showDecimal: showDecimal),
@@ -351,6 +341,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Month-over-Month Comparison (compact)
+            MonthOverMonthCard(
+              currencySymbol: baseCurrency.symbol,
+              showDecimal: showDecimal,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Savings Rate (compact)
+            const CompactSavingsRateCard(),
 
             const SizedBox(height: 24),
           ],
@@ -834,6 +837,146 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   Widget _buildReportsTab() {
+    final trans = ref.watch(translationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        // Sub-tab bar: Deep Analytics | Monthly Details
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TabBar(
+              controller: _reportSubTabController,
+              indicator: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: isDark ? 0.25 : 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.primaryGold,
+              unselectedLabelColor: isDark
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF94A3B8),
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: [
+                Tab(text: trans.deepAnalyticsTab),
+                Tab(text: trans.monthlyDetailsTab),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: TabBarView(
+            controller: _reportSubTabController,
+            children: [
+              _buildDeepAnalyticsSubTab(),
+              _buildMonthlyDetailsSubTab(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeepAnalyticsSubTab() {
+    final cashFlowAsync = ref.watch(dashboardCashFlowProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
+    final baseCurrency = ref.watch(defaultCurrencyProvider);
+    final trans = ref.watch(translationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(dashboardCashFlowProvider);
+        ref.invalidate(savingsRateTrendProvider);
+        ref.invalidate(ytdTopCategoriesProvider);
+        ref.invalidate(categoryMultiMonthTrendProvider);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Trends section ──
+            _buildSectionHeader(trans.sectionTrends, isDark),
+            const SizedBox(height: 12),
+
+            // Cash Flow Chart
+            cashFlowAsync.when(
+              data: (cashFlow) => CashFlowChart(
+                data: cashFlow,
+                currencySymbol: baseCurrency.symbol,
+                showDecimal: showDecimal,
+              ),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(color: AppColors.primaryGold),
+                ),
+              ),
+              error: (error, _) => Center(
+                child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Savings Rate Trend (full chart)
+            SavingsRateChart(
+              currencySymbol: baseCurrency.symbol,
+              showDecimal: showDecimal,
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Spending Analysis section ──
+            _buildSectionHeader(trans.sectionSpendingAnalysis, isDark),
+            const SizedBox(height: 12),
+
+            // YTD Top Categories (with inline category trend)
+            YtdTopCategories(
+              currencySymbol: baseCurrency.symbol,
+              showDecimal: showDecimal,
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, bool isDark) {
+    return Text(
+      title,
+      style: TextStyle(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.4)
+            : const Color(0xFF94A3B8),
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.0,
+      ),
+    );
+  }
+
+  Widget _buildMonthlyDetailsSubTab() {
     final summaryAsync = ref.watch(monthlySummaryProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
@@ -949,7 +1092,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(height: 8),
                         if (s.debtPayable > 0)
                           _ReportRow(
-                            label: '${trans.debtTitle} (${trans.debtPayable})', // "Debts (I Owe)"
+                            label: '${trans.debtTitle} (${trans.debtPayable})',
                             amount: s.debtPayable,
                             color: Colors.orange,
                             prefix: '-',
@@ -959,7 +1102,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         if (s.debtReceivable > 0) ...[
                           const SizedBox(height: 8),
                           _ReportRow(
-                            label: '${trans.debtTitle} (${trans.debtReceivable})', // "Debts (Owed to Me)"
+                            label: '${trans.debtTitle} (${trans.debtReceivable})',
                             amount: s.debtReceivable,
                             color: const Color(0xFF60A5FA),
                             prefix: '+',

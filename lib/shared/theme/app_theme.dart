@@ -2,7 +2,46 @@ import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'typography.dart';
 
+class _SlidePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SlidePageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curvedAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(1.0, 0.0),
+        end: Offset.zero,
+      ).animate(curvedAnimation),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.7, end: 1.0).animate(curvedAnimation),
+        child: child,
+      ),
+    );
+  }
+}
+
 class AppTheme {
+  static const _pageTransitionsTheme = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _SlidePageTransitionsBuilder(),
+      TargetPlatform.iOS: _SlidePageTransitionsBuilder(),
+      TargetPlatform.linux: _SlidePageTransitionsBuilder(),
+      TargetPlatform.windows: _SlidePageTransitionsBuilder(),
+      TargetPlatform.macOS: _SlidePageTransitionsBuilder(),
+    },
+  );
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -26,6 +65,7 @@ class AppTheme {
         color: AppColors.glassBorder,
         thickness: 1,
       ),
+      pageTransitionsTheme: _pageTransitionsTheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -62,6 +102,7 @@ class AppTheme {
         color: AppColors.glassBorderLight,
         thickness: 1,
       ),
+      pageTransitionsTheme: _pageTransitionsTheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,

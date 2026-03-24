@@ -46,6 +46,21 @@ class MonthlyFlow {
   });
 }
 
+/// Savings rate trend data point
+class SavingsRatePoint {
+  final String month;
+  final double rate; // percentage: (income - expense) / income * 100
+  final double income;
+  final double expense;
+
+  SavingsRatePoint({
+    required this.month,
+    required this.rate,
+    required this.income,
+    required this.expense,
+  });
+}
+
 class MonthlySummary {
   final DateTime month;
   final double income;
@@ -577,6 +592,23 @@ final dashboardCashFlowProvider =
   }
 });
 
+/// Savings rate trend for last 6 months, derived from cash flow data
+final savingsRateTrendProvider =
+    Provider.autoDispose<AsyncValue<List<SavingsRatePoint>>>((ref) {
+  return ref.watch(dashboardCashFlowProvider).whenData((flows) {
+    return flows.map((f) {
+      final rate =
+          f.income > 0 ? ((f.income - f.expense) / f.income * 100) : 0.0;
+      return SavingsRatePoint(
+        month: f.month,
+        rate: rate,
+        income: f.income,
+        expense: f.expense,
+      );
+    }).toList();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Recent transactions (unchanged — displays per-transaction original currency)
 // ---------------------------------------------------------------------------
@@ -668,4 +700,241 @@ final monthlySummaryProvider =
   }
 
   return summaries;
+});
+
+// ---------------------------------------------------------------------------
+// Month-over-Month comparison (this month vs last month vs same month last year)
+// ---------------------------------------------------------------------------
+
+class MonthComparison {
+  final double thisMonthIncome;
+  final double thisMonthExpense;
+  final double lastMonthIncome;
+  final double lastMonthExpense;
+  final double lastYearIncome;
+  final double lastYearExpense;
+
+  MonthComparison({
+    required this.thisMonthIncome,
+    required this.thisMonthExpense,
+    required this.lastMonthIncome,
+    required this.lastMonthExpense,
+    required this.lastYearIncome,
+    required this.lastYearExpense,
+  });
+
+  double get thisMonthNet => thisMonthIncome - thisMonthExpense;
+  double get lastMonthNet => lastMonthIncome - lastMonthExpense;
+  double get lastYearNet => lastYearIncome - lastYearExpense;
+
+  /// Delta % vs last month (expense). Null if last month is 0.
+  double? get expenseDeltaVsLastMonth =>
+      lastMonthExpense > 0 ? ((thisMonthExpense - lastMonthExpense) / lastMonthExpense * 100) : null;
+
+  /// Delta % vs last year same month (expense). Null if last year is 0.
+  double? get expenseDeltaVsLastYear =>
+      lastYearExpense > 0 ? ((thisMonthExpense - lastYearExpense) / lastYearExpense * 100) : null;
+
+  /// Delta % vs last month (income). Null if last month is 0.
+  double? get incomeDeltaVsLastMonth =>
+      lastMonthIncome > 0 ? ((thisMonthIncome - lastMonthIncome) / lastMonthIncome * 100) : null;
+
+  /// Delta % vs last year same month (income). Null if last year is 0.
+  double? get incomeDeltaVsLastYear =>
+      lastYearIncome > 0 ? ((thisMonthIncome - lastYearIncome) / lastYearIncome * 100) : null;
+}
+
+final monthOverMonthProvider =
+    FutureProvider.autoDispose<MonthComparison>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    return MonthComparison(
+      thisMonthIncome: 0, thisMonthExpense: 0,
+      lastMonthIncome: 0, lastMonthExpense: 0,
+      lastYearIncome: 0, lastYearExpense: 0,
+    );
+  }
+
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  // Re-create when transactions change
+  ref.watch(transactionsStreamProvider);
+  final now = DateTime.now();
+
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap = {for (final a in accounts) a.id: a};
+
+  Future<(double, double)> sumMonth(DateTime start, DateTime end) async {
+    final txs = await transactionDao.getTransactionsInRange(profileId, start, end);
+    double income = 0, expense = 0;
+    for (final tx in txs) {
+      final converted = _convertAmount(tx, accountMap, rates, baseCurrency);
+      if (tx.type == TransactionType.income) {
+        income += converted;
+      } else if (tx.type == TransactionType.expense) {
+        expense += converted;
+      }
+    }
+    return (income, expense);
+  }
+
+  final thisStart = DateTime(now.year, now.month, 1);
+  final thisEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  final lastStart = DateTime(now.year, now.month - 1, 1);
+  final lastEnd = DateTime(now.year, now.month, 0, 23, 59, 59);
+  final yearStart = DateTime(now.year - 1, now.month, 1);
+  final yearEnd = DateTime(now.year - 1, now.month + 1, 0, 23, 59, 59);
+
+  final results = await Future.wait([
+    sumMonth(thisStart, thisEnd),
+    sumMonth(lastStart, lastEnd),
+    sumMonth(yearStart, yearEnd),
+  ]);
+
+  return MonthComparison(
+    thisMonthIncome: results[0].$1, thisMonthExpense: results[0].$2,
+    lastMonthIncome: results[1].$1, lastMonthExpense: results[1].$2,
+    lastYearIncome: results[2].$1, lastYearExpense: results[2].$2,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// YTD Top Categories (year-to-date expense by category, ranked)
+// ---------------------------------------------------------------------------
+
+class YtdCategoryItem {
+  final int categoryId;
+  final String categoryName;
+  final String categoryIcon;
+  final String? categoryColor;
+  final double amount;
+  final double percentage; // of total YTD expense
+
+  YtdCategoryItem({
+    required this.categoryId,
+    required this.categoryName,
+    required this.categoryIcon,
+    this.categoryColor,
+    required this.amount,
+    required this.percentage,
+  });
+}
+
+final ytdTopCategoriesProvider =
+    FutureProvider.autoDispose<List<YtdCategoryItem>>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return [];
+
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  final categoriesAsync = ref.watch(categoriesStreamProvider);
+  // Re-create when transactions change
+  ref.watch(transactionsStreamProvider);
+  final now = DateTime.now();
+
+  final categoryMap = <int, Category>{};
+  categoriesAsync.whenData((cats) {
+    for (final c in cats) {
+      categoryMap[c.id] = c;
+    }
+  });
+
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap = {for (final a in accounts) a.id: a};
+
+  final ytdStart = DateTime(now.year, 1, 1);
+  final ytdEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  final txs = await transactionDao.getTransactionsInRange(profileId, ytdStart, ytdEnd);
+
+  final totals = <int, double>{};
+  for (final tx in txs) {
+    if (tx.type != TransactionType.expense) continue;
+    final catId = tx.categoryId;
+    if (catId == null) continue;
+    final converted = _convertAmount(tx, accountMap, rates, baseCurrency);
+    totals[catId] = (totals[catId] ?? 0) + converted;
+  }
+
+  final grandTotal = totals.values.fold(0.0, (sum, v) => sum + v);
+  final sorted = totals.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+
+  return sorted.map((entry) {
+    final cat = categoryMap[entry.key];
+    return YtdCategoryItem(
+      categoryId: entry.key,
+      categoryName: cat?.name ?? 'Unknown',
+      categoryIcon: cat?.icon ?? '❓',
+      categoryColor: cat?.color,
+      amount: entry.value,
+      percentage: grandTotal > 0 ? (entry.value / grandTotal * 100) : 0,
+    );
+  }).toList();
+});
+
+// ---------------------------------------------------------------------------
+// Category multi-month trend (6 months for a specific category)
+// ---------------------------------------------------------------------------
+
+class CategoryMonthPoint {
+  final String month;
+  final double amount;
+
+  CategoryMonthPoint({required this.month, required this.amount});
+}
+
+final selectedCategoryIdProvider = StateProvider.autoDispose<int?>((ref) => null);
+
+final categoryMultiMonthTrendProvider =
+    FutureProvider.autoDispose<List<CategoryMonthPoint>>((ref) async {
+  final categoryId = ref.watch(selectedCategoryIdProvider);
+  if (categoryId == null) return [];
+
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return [];
+
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  final now = DateTime.now();
+
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap = {for (final a in accounts) a.id: a};
+
+  final startOfPeriod = DateTime(now.year, now.month - 5, 1);
+  final endOfPeriod = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  final txs = await transactionDao.getTransactionsByCategoryAndDate(
+    categoryId, startOfPeriod, endOfPeriod, profileId: profileId,
+  );
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  final List<CategoryMonthPoint> points = [];
+  for (int i = 5; i >= 0; i--) {
+    final month = DateTime(now.year, now.month - i, 1);
+    final startOfMonth = DateTime(month.year, month.month, 1);
+    final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+    double total = 0;
+    for (final tx in txs) {
+      if (!tx.date.isBefore(startOfMonth) && !tx.date.isAfter(endOfMonth)) {
+        total += _convertAmount(tx, accountMap, rates, baseCurrency);
+      }
+    }
+
+    points.add(CategoryMonthPoint(
+      month: monthNames[month.month - 1],
+      amount: total,
+    ));
+  }
+
+  return points;
 });

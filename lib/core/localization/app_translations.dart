@@ -37,6 +37,7 @@ abstract class AppTranslations {
   String get commonPaid;
   String get commonAmount;
   String get commonMax;
+  String get commonOthers;
   String get filterAll;
 
   // Transaction Entry
@@ -312,6 +313,19 @@ abstract class AppTranslations {
   // Dashboard & Reports
   String get chartCashflow;
   String get chartSpending;
+  String get chartSavingsRate;
+  String get savingsRateLabel;
+  String get savingsRateVsPrev;
+  String get deepAnalyticsTab;
+  String get monthlyDetailsTab;
+  String get monthOverMonthTitle;
+  String get monthOverMonthThisMonth;
+  String get monthOverMonthLastMonth;
+  String get monthOverMonthLastYear;
+  String get ytdTopCategoriesTitle;
+  String get categoryTrendTitle;
+  String get sectionTrends;
+  String get sectionSpendingAnalysis;
   String get reportTabIncomeExpr; // This one I added but didn't use yet.
   String get reportTabCashflow;
   String get reportTabSpending;

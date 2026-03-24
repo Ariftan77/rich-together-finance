@@ -26,16 +26,53 @@ class DashboardShell extends ConsumerStatefulWidget {
   ConsumerState<DashboardShell> createState() => _DashboardShellState();
 }
 
-class _DashboardShellState extends ConsumerState<DashboardShell> {
+class _DashboardShellState extends ConsumerState<DashboardShell>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  int _previousIndex = 0;
+  late final AnimationController _tabAnimController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _tabAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut),
+    );
+    _tabAnimController.value = 1.0; // Start fully visible
+
     // Show App Open ad once per day
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AdService().loadAndShowAppOpen(context);
     });
+  }
+
+  @override
+  void dispose() {
+    _tabAnimController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTap(int index) {
+    if (index == _currentIndex) return;
+    final direction = index > _currentIndex ? 1.0 : -1.0;
+    setState(() {
+      _previousIndex = _currentIndex;
+      _currentIndex = index;
+      _slideAnimation = Tween<Offset>(
+        begin: Offset(direction * 0.05, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut));
+    });
+    _tabAnimController.forward(from: 0.0);
   }
 
   final List<Widget> _screens = const [
@@ -62,9 +99,15 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         decoration: BoxDecoration(
           gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
         ),
-        child: IndexedStack(
-          index: _currentIndex < _screens.length ? _currentIndex : 0,
-          children: _screens,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: IndexedStack(
+              index: _currentIndex < _screens.length ? _currentIndex : 0,
+              children: _screens,
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: Column(
@@ -73,7 +116,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
           const AdBannerWidget(),
           GlassBottomNav(
             currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
+            onTap: _onTabTap,
             items: [
               BottomNavItem(
                 icon: Icons.receipt_long_outlined, 
