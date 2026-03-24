@@ -503,27 +503,15 @@ final dashboardCategoryBreakdownProvider =
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final result = sorted.take(9).map((entry) {
+    // Return all categories — the pie chart widget handles grouping of small
+    // slices (<1%) into a localised "Others" bucket with a drill-down tooltip.
+    return sorted.map((entry) {
       return CategoryBreakdown(
         categoryName: categoryMap[entry.key] ?? 'Unknown',
         amount: entry.value,
         percentage: grandTotal > 0 ? (entry.value / grandTotal * 100) : 0,
       );
     }).toList();
-
-    // Aggregate remaining categories into "Others"
-    if (sorted.length > 9) {
-      final othersAmount = sorted.skip(9).fold(0.0, (sum, e) => sum + e.value);
-      if (othersAmount > 0) {
-        result.add(CategoryBreakdown(
-          categoryName: 'Others',
-          amount: othersAmount,
-          percentage: grandTotal > 0 ? (othersAmount / grandTotal * 100) : 0,
-        ));
-      }
-    }
-
-    return result;
   });
 });
 
@@ -880,6 +868,7 @@ final ytdTopCategoriesProvider =
 // Category multi-month trend (6 months for a specific category)
 // ---------------------------------------------------------------------------
 
+
 class CategoryMonthPoint {
   final String month;
   final double amount;
@@ -937,4 +926,420 @@ final categoryMultiMonthTrendProvider =
   }
 
   return points;
+});
+
+// ---------------------------------------------------------------------------
+// Feature 1: Day-of-Week Spending Pattern
+// ---------------------------------------------------------------------------
+
+class DowSpendingPoint {
+  final int weekday; // 1=Mon, 7=Sun
+  final double avgAmount; // average daily spend in base currency
+
+  DowSpendingPoint({required this.weekday, required this.avgAmount});
+}
+
+final dowSpendingProvider =
+    FutureProvider.autoDispose<List<DowSpendingPoint>>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return [];
+
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  // Re-run when transactions change
+  ref.watch(transactionsStreamProvider);
+  final now = DateTime.now();
+
+  // Last 91 days = 13 weeks
+  final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 90));
+  final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap = {for (final a in accounts) a.id: a};
+
+  final txs = await transactionDao.getTransactionsInRange(profileId, start, end);
+
+  // Buckets: index 0 = Mon (weekday 1) ... index 6 = Sun (weekday 7)
+  final totals = List<double>.filled(7, 0);
+  final counts = List<int>.filled(7, 0);
+
+  for (final tx in txs) {
+    if (tx.type != TransactionType.expense) continue;
+    final idx = tx.date.weekday - 1; // 0..6
+    totals[idx] += _convertAmount(tx, accountMap, rates, baseCurrency);
+  }
+
+  // Count how many times each weekday occurred in the 91-day window
+  for (int d = 0; d < 91; d++) {
+    final day = start.add(Duration(days: d));
+    counts[day.weekday - 1] += 1;
+  }
+
+  return List.generate(7, (i) {
+    final avg = counts[i] > 0 ? totals[i] / counts[i] : 0.0;
+    return DowSpendingPoint(weekday: i + 1, avgAmount: avg);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Feature 2: Recurring vs Discretionary Split
+// ---------------------------------------------------------------------------
+
+class RecurringVsDiscretionary {
+  final double committedMonthly;
+  final double discretionaryMonthly;
+  final double totalAvgMonthly;
+
+  RecurringVsDiscretionary({
+    required this.committedMonthly,
+    required this.discretionaryMonthly,
+    required this.totalAvgMonthly,
+  });
+
+  double get committedPct =>
+      totalAvgMonthly > 0 ? (committedMonthly / totalAvgMonthly * 100) : 0;
+  double get discretionaryPct =>
+      totalAvgMonthly > 0 ? (discretionaryMonthly / totalAvgMonthly * 100) : 0;
+}
+
+final recurringVsDiscretionaryProvider =
+    FutureProvider.autoDispose<RecurringVsDiscretionary>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    return RecurringVsDiscretionary(
+      committedMonthly: 0,
+      discretionaryMonthly: 0,
+      totalAvgMonthly: 0,
+    );
+  }
+
+  final recurringDao = ref.watch(recurringDaoProvider);
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  // Re-run when transactions change
+  ref.watch(transactionsStreamProvider);
+  final now = DateTime.now();
+
+  // 1. Load active recurring expenses
+  final allRecurring = await recurringDao.getAllRecurring(profileId);
+  final expenseRecurring =
+      allRecurring.where((r) => r.type == TransactionType.expense);
+
+  // Pre-load accounts for currency lookup
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap2 = {for (final a in accounts) a.id: a};
+
+  // 2. Convert each to monthly equivalent
+  double committedMonthly = 0;
+  for (final r in expenseRecurring) {
+    double monthlyAmount;
+    switch (r.frequency) {
+      case RecurringFrequency.daily:
+        monthlyAmount = r.amount * 30;
+        break;
+      case RecurringFrequency.weekly:
+        monthlyAmount = r.amount * 4.33;
+        break;
+      case RecurringFrequency.monthly:
+        monthlyAmount = r.amount;
+        break;
+      case RecurringFrequency.yearly:
+        monthlyAmount = r.amount / 12;
+        break;
+    }
+    // Infer currency from linked account
+    final account = accountMap2[r.accountId];
+    if (account != null && account.currency != baseCurrency) {
+      monthlyAmount = CurrencyExchangeService.convertCurrency(
+        monthlyAmount, account.currency.code, baseCurrency.code, rates,
+      );
+    }
+    committedMonthly += monthlyAmount;
+  }
+
+  // 3. Average monthly expense over last 3 months
+  // (reuse accountMap2 loaded above)
+  final earliest = DateTime(now.year, now.month - 2, 1);
+  final latest = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  final txs =
+      await transactionDao.getTransactionsInRange(profileId, earliest, latest);
+
+  double totalExpense = 0;
+  for (final tx in txs) {
+    if (tx.type != TransactionType.expense) continue;
+    totalExpense += _convertAmount(tx, accountMap2, rates, baseCurrency);
+  }
+  final totalAvgMonthly = totalExpense / 3;
+
+  final discretionaryMonthly =
+      (totalAvgMonthly - committedMonthly).clamp(0.0, double.infinity);
+
+  return RecurringVsDiscretionary(
+    committedMonthly: committedMonthly,
+    discretionaryMonthly: discretionaryMonthly,
+    totalAvgMonthly: totalAvgMonthly,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Feature 3: Budget Performance History
+// ---------------------------------------------------------------------------
+
+class BudgetPerfMonth {
+  final String month;
+  final int totalBudgets;
+  final int exceededCount;
+
+  BudgetPerfMonth({
+    required this.month,
+    required this.totalBudgets,
+    required this.exceededCount,
+  });
+
+  double get exceededPct =>
+      totalBudgets > 0 ? (exceededCount / totalBudgets * 100) : 0;
+}
+
+final budgetPerformanceProvider =
+    FutureProvider.autoDispose<List<BudgetPerfMonth>>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return [];
+
+  final budgetDao = ref.watch(budgetDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
+  final accountDao = ref.watch(accountDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+  // Re-run when transactions change
+  ref.watch(transactionsStreamProvider);
+  final now = DateTime.now();
+
+  // 1. Load only monthly budgets
+  final allBudgets = await budgetDao.getAllBudgets(profileId);
+  final monthlyBudgets =
+      allBudgets.where((b) => b.period == BudgetPeriod.monthly).toList();
+  if (monthlyBudgets.isEmpty) return [];
+
+  final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
+  final accountMap = {for (final a in accounts) a.id: a};
+
+  // Fetch all transactions for the 6-month window at once
+  final earliest = DateTime(now.year, now.month - 5, 1);
+  final latest = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  final allTxs =
+      await transactionDao.getTransactionsInRange(profileId, earliest, latest);
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  final List<BudgetPerfMonth> result = [];
+
+  for (int i = 5; i >= 0; i--) {
+    final month = DateTime(now.year, now.month - i, 1);
+    final startOfMonth = DateTime(month.year, month.month, 1);
+    final endOfMonth =
+        DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+    // Sum actual expense per category for this month
+    final actualByCat = <int, double>{};
+    for (final tx in allTxs) {
+      if (tx.type != TransactionType.expense) continue;
+      if (tx.date.isBefore(startOfMonth) || tx.date.isAfter(endOfMonth)) {
+        continue;
+      }
+      final catId = tx.categoryId;
+      if (catId == null) continue;
+      actualByCat[catId] = (actualByCat[catId] ?? 0) +
+          _convertAmount(tx, accountMap, rates, baseCurrency);
+    }
+
+    int exceededCount = 0;
+    for (final budget in monthlyBudgets) {
+      final actual = actualByCat[budget.categoryId] ?? 0;
+      if (actual > budget.amount) exceededCount++;
+    }
+
+    result.add(BudgetPerfMonth(
+      month: monthNames[month.month - 1],
+      totalBudgets: monthlyBudgets.length,
+      exceededCount: exceededCount,
+    ));
+  }
+
+  return result;
+});
+
+// ---------------------------------------------------------------------------
+// Financial Health Score
+// ---------------------------------------------------------------------------
+
+class FinancialHealthScore {
+  final double score;
+  final String grade;
+  final double savingsComponent;
+  final double budgetComponent;
+  final double debtComponent;
+  final double trendComponent;
+
+  FinancialHealthScore({
+    required this.score,
+    required this.grade,
+    required this.savingsComponent,
+    required this.budgetComponent,
+    required this.debtComponent,
+    required this.trendComponent,
+  });
+}
+
+String _scoreToGrade(double score) {
+  if (score >= 80) return 'A';
+  if (score >= 65) return 'B';
+  if (score >= 50) return 'C';
+  if (score >= 35) return 'D';
+  return 'F';
+}
+
+double _savingsRateScore(double rate) {
+  if (rate < 0) return 0;
+  if (rate < 5) return 10;
+  if (rate < 10) return 30;
+  if (rate < 20) return 55;
+  if (rate < 30) return 75;
+  return 100;
+}
+
+final financialHealthScoreProvider =
+    FutureProvider.autoDispose<FinancialHealthScore>((ref) async {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) {
+    return FinancialHealthScore(
+      score: 0, grade: 'F',
+      savingsComponent: 0, budgetComponent: 0,
+      debtComponent: 0, trendComponent: 0,
+    );
+  }
+
+  // Watch transactions stream so this refreshes on transaction changes
+  ref.watch(transactionsStreamProvider);
+
+  // ── 1. Savings Rate Score ──────────────────────────────────────────────────
+  double savingsScore = 50;
+  final cashFlowValue = await ref.watch(dashboardCashFlowProvider.future);
+  final last3Flow = cashFlowValue.length >= 3
+      ? cashFlowValue.sublist(cashFlowValue.length - 3)
+      : cashFlowValue;
+
+  if (last3Flow.isNotEmpty) {
+    double rateSum = 0;
+    for (final f in last3Flow) {
+      final rate =
+          f.income > 0 ? ((f.income - f.expense) / f.income * 100) : 0.0;
+      rateSum += rate;
+    }
+    final avgRate = rateSum / last3Flow.length;
+    savingsScore = _savingsRateScore(avgRate);
+  }
+
+  // ── 2. Budget Adherence Score ──────────────────────────────────────────────
+  double budgetScore = 70;
+  final budgetPerf = await ref.watch(budgetPerformanceProvider.future);
+  final last3Budget = budgetPerf.length >= 3
+      ? budgetPerf.sublist(budgetPerf.length - 3)
+      : budgetPerf;
+
+  if (last3Budget.isNotEmpty) {
+    double perfSum = 0;
+    for (final m in last3Budget) {
+      if (m.totalBudgets > 0) {
+        perfSum += (1 - m.exceededCount / m.totalBudgets) * 100;
+      } else {
+        perfSum += 70;
+      }
+    }
+    budgetScore = perfSum / last3Budget.length;
+  }
+
+  // ── 3. Debt Burden Score ───────────────────────────────────────────────────
+  double debtScore = 100;
+  final debtDao = ref.watch(debtDaoProvider);
+  final baseCurrency = ref.watch(defaultCurrencyProvider);
+  final rates = ref.watch(todayRatesProvider);
+
+  final payableDebts = await debtDao.getDebtsByType(profileId, DebtType.payable);
+  double totalPayableRemaining = 0;
+  for (final d in payableDebts.where((d) => !d.isSettled)) {
+    final remaining = d.amount - d.paidAmount;
+    if (remaining <= 0) continue;
+    totalPayableRemaining += d.currency == baseCurrency
+        ? remaining
+        : CurrencyExchangeService.convertCurrency(
+            remaining, d.currency.code, baseCurrency.code, rates);
+  }
+
+  if (totalPayableRemaining > 0 && last3Flow.isNotEmpty) {
+    double incomeSum = last3Flow.fold(0.0, (s, f) => s + f.income);
+    final avgMonthlyIncome = incomeSum / last3Flow.length;
+    if (avgMonthlyIncome <= 0) {
+      debtScore = 50;
+    } else {
+      final ratio = totalPayableRemaining / (avgMonthlyIncome * 3);
+      if (ratio <= 0.5) {
+        debtScore = 90;
+      } else if (ratio <= 1.0) {
+        debtScore = 70;
+      } else if (ratio <= 2.0) {
+        debtScore = 40;
+      } else if (ratio <= 3.0) {
+        debtScore = 20;
+      } else {
+        debtScore = 5;
+      }
+    }
+  } else if (totalPayableRemaining > 0 && last3Flow.isEmpty) {
+    debtScore = 50;
+  }
+
+  // ── 4. Expense Trend Score ─────────────────────────────────────────────────
+  double trendScore = 50;
+  if (cashFlowValue.length >= 2) {
+    final currentExpense = cashFlowValue.last.expense;
+    final prevMonths = cashFlowValue.length >= 4
+        ? cashFlowValue.sublist(cashFlowValue.length - 4, cashFlowValue.length - 1)
+        : cashFlowValue.sublist(0, cashFlowValue.length - 1);
+    if (prevMonths.isNotEmpty) {
+      final avgExpense =
+          prevMonths.fold(0.0, (s, f) => s + f.expense) / prevMonths.length;
+      if (avgExpense > 0) {
+        if (currentExpense < avgExpense * 0.9) {
+          trendScore = 100;
+        } else if (currentExpense < avgExpense * 1.0) {
+          trendScore = 80;
+        } else if (currentExpense < avgExpense * 1.1) {
+          trendScore = 60;
+        } else if (currentExpense < avgExpense * 1.3) {
+          trendScore = 35;
+        } else {
+          trendScore = 10;
+        }
+      }
+    }
+  }
+
+  final finalScore = (savingsScore + budgetScore + debtScore + trendScore) / 4;
+  final grade = _scoreToGrade(finalScore);
+
+  return FinancialHealthScore(
+    score: finalScore,
+    grade: grade,
+    savingsComponent: savingsScore,
+    budgetComponent: budgetScore,
+    debtComponent: debtScore,
+    trendComponent: trendScore,
+  );
 });

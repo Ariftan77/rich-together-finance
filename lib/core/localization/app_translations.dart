@@ -326,6 +326,22 @@ abstract class AppTranslations {
   String get categoryTrendTitle;
   String get sectionTrends;
   String get sectionSpendingAnalysis;
+  String get sectionBehaviorPatterns;
+  String get dowSpendingTitle;
+  String get dowMon;
+  String get dowTue;
+  String get dowWed;
+  String get dowThu;
+  String get dowFri;
+  String get dowSat;
+  String get dowSun;
+  String get recurringSplitTitle;
+  String get recurringSplitCommitted;
+  String get recurringSplitDiscretionary;
+  String get recurringSplitNoData;
+  String get budgetPerfTitle;
+  String get budgetPerfExceeded;
+  String get budgetPerfNoBudgets;
   String get reportTabIncomeExpr; // This one I added but didn't use yet.
   String get reportTabCashflow;
   String get reportTabSpending;
@@ -502,4 +518,28 @@ abstract class AppTranslations {
   String get txnFilterDebt;
   String get txnFilterAdjustment;
   String get txnDaySummaryTxn;
+
+  // Debt Payoff Card (Phase 6)
+  String get debtPayoffTitle;
+  String get debtPayoffTotalRemaining;
+  String get debtPayoffOverdue;
+  String get debtPayoffDueSoon;
+  String get debtPayoffNoDeadline;
+  String get debtPayoffNextDue;
+  String get debtPayoffPaid;
+  String get debtPayoffCollected;
+
+  // Financial Health Score (Phase 7)
+  String get healthScoreTitle;
+  String get healthScoreLabel;
+  String get healthScoreSavings;
+  String get healthScoreBudget;
+  String get healthScoreDebt;
+  String get healthScoreTrend;
+  String get healthScoreGradeA;
+  String get healthScoreGradeB;
+  String get healthScoreGradeC;
+  String get healthScoreGradeD;
+  String get healthScoreGradeF;
+  String get healthScoreTapToExpand;
 }

@@ -330,6 +330,22 @@ class AppTranslationsEn implements AppTranslations {
   @override String get categoryTrendTitle => 'Category Trend';
   @override String get sectionTrends => 'Trends';
   @override String get sectionSpendingAnalysis => 'Spending Analysis';
+  @override String get sectionBehaviorPatterns => 'Behavior Patterns';
+  @override String get dowSpendingTitle => 'Spending by Day of Week';
+  @override String get dowMon => 'Mon';
+  @override String get dowTue => 'Tue';
+  @override String get dowWed => 'Wed';
+  @override String get dowThu => 'Thu';
+  @override String get dowFri => 'Fri';
+  @override String get dowSat => 'Sat';
+  @override String get dowSun => 'Sun';
+  @override String get recurringSplitTitle => 'Committed vs Discretionary';
+  @override String get recurringSplitCommitted => 'Committed';
+  @override String get recurringSplitDiscretionary => 'Discretionary';
+  @override String get recurringSplitNoData => 'No recurring expenses';
+  @override String get budgetPerfTitle => 'Budget Performance';
+  @override String get budgetPerfExceeded => 'budgets exceeded';
+  @override String get budgetPerfNoBudgets => 'Set up budgets to see performance';
   @override String get reportTabIncomeExpr => 'Income'; // Wait, this might be duplicate or needed
   @override String get reportTabCashflow => 'Cash Flow';
   @override String get reportTabSpending => 'Spending';
@@ -509,4 +525,28 @@ class AppTranslationsEn implements AppTranslations {
   @override String get txnFilterDebt => 'Debt';
   @override String get txnFilterAdjustment => 'Adjustment';
   @override String get txnDaySummaryTxn => 'Txn';
+
+  // Debt Payoff Card (Phase 6)
+  @override String get debtPayoffTitle => 'Payoff Overview';
+  @override String get debtPayoffTotalRemaining => 'Total Remaining';
+  @override String get debtPayoffOverdue => 'Overdue';
+  @override String get debtPayoffDueSoon => 'Due Soon';
+  @override String get debtPayoffNoDeadline => 'No Deadline';
+  @override String get debtPayoffNextDue => 'Next due';
+  @override String get debtPayoffPaid => 'paid';
+  @override String get debtPayoffCollected => 'collected';
+
+  // Financial Health Score (Phase 7)
+  @override String get healthScoreTitle => 'Financial Health';
+  @override String get healthScoreLabel => 'Health Score';
+  @override String get healthScoreSavings => 'Savings Rate';
+  @override String get healthScoreBudget => 'Budget Adherence';
+  @override String get healthScoreDebt => 'Debt Burden';
+  @override String get healthScoreTrend => 'Expense Trend';
+  @override String get healthScoreGradeA => 'Excellent';
+  @override String get healthScoreGradeB => 'Good';
+  @override String get healthScoreGradeC => 'Fair';
+  @override String get healthScoreGradeD => 'Needs Work';
+  @override String get healthScoreGradeF => 'Critical';
+  @override String get healthScoreTapToExpand => 'Tap to see breakdown';
 }

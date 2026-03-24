@@ -331,6 +331,22 @@ class AppTranslationsId implements AppTranslations {
   @override String get categoryTrendTitle => 'Tren Kategori';
   @override String get sectionTrends => 'Tren';
   @override String get sectionSpendingAnalysis => 'Analisis Pengeluaran';
+  @override String get sectionBehaviorPatterns => 'Pola Perilaku';
+  @override String get dowSpendingTitle => 'Pengeluaran per Hari';
+  @override String get dowMon => 'Sen';
+  @override String get dowTue => 'Sel';
+  @override String get dowWed => 'Rab';
+  @override String get dowThu => 'Kam';
+  @override String get dowFri => 'Jum';
+  @override String get dowSat => 'Sab';
+  @override String get dowSun => 'Min';
+  @override String get recurringSplitTitle => 'Tetap vs Bebas';
+  @override String get recurringSplitCommitted => 'Tetap';
+  @override String get recurringSplitDiscretionary => 'Bebas';
+  @override String get recurringSplitNoData => 'Tidak ada pengeluaran tetap';
+  @override String get budgetPerfTitle => 'Performa Anggaran';
+  @override String get budgetPerfExceeded => 'anggaran terlampaui';
+  @override String get budgetPerfNoBudgets => 'Buat anggaran untuk melihat performa';
   @override String get reportTabIncomeExpr => 'Pemasukan';
   @override String get reportTabCashflow => 'Arus Kas';
   @override String get reportTabSpending => 'Pengeluaran';
@@ -510,4 +526,28 @@ class AppTranslationsId implements AppTranslations {
   @override String get txnFilterDebt => 'Hutang';
   @override String get txnFilterAdjustment => 'Penyesuaian';
   @override String get txnDaySummaryTxn => 'Transaksi';
+
+  // Debt Payoff Card (Phase 6)
+  @override String get debtPayoffTitle => 'Ringkasan Pelunasan';
+  @override String get debtPayoffTotalRemaining => 'Total Sisa';
+  @override String get debtPayoffOverdue => 'Terlambat';
+  @override String get debtPayoffDueSoon => 'Segera Jatuh Tempo';
+  @override String get debtPayoffNoDeadline => 'Tanpa Tenggat';
+  @override String get debtPayoffNextDue => 'Jatuh tempo berikutnya';
+  @override String get debtPayoffPaid => 'terbayar';
+  @override String get debtPayoffCollected => 'terkumpul';
+
+  // Financial Health Score (Phase 7)
+  @override String get healthScoreTitle => 'Kesehatan Keuangan';
+  @override String get healthScoreLabel => 'Skor Kesehatan';
+  @override String get healthScoreSavings => 'Tingkat Tabungan';
+  @override String get healthScoreBudget => 'Kepatuhan Anggaran';
+  @override String get healthScoreDebt => 'Beban Utang';
+  @override String get healthScoreTrend => 'Tren Pengeluaran';
+  @override String get healthScoreGradeA => 'Sangat Baik';
+  @override String get healthScoreGradeB => 'Baik';
+  @override String get healthScoreGradeC => 'Cukup';
+  @override String get healthScoreGradeD => 'Perlu Perbaikan';
+  @override String get healthScoreGradeF => 'Kritis';
+  @override String get healthScoreTapToExpand => 'Ketuk untuk detail';
 }

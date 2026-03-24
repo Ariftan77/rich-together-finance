@@ -17,6 +17,10 @@ import '../widgets/savings_rate_chart.dart';
 import '../widgets/compact_savings_rate_card.dart';
 import '../widgets/month_over_month_card.dart';
 import '../widgets/ytd_top_categories.dart';
+import '../widgets/dow_spending_chart.dart';
+import '../widgets/recurring_split_card.dart';
+import '../widgets/budget_performance_chart.dart';
+import '../widgets/financial_health_card.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
 import '../../../reports/presentation/widgets/export_report_modal.dart';
 
@@ -187,6 +191,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         ref.invalidate(convertedMonthlyTransactionsProvider);
         ref.invalidate(dashboardCashFlowProvider);
         ref.invalidate(dashboardBalanceByCurrencyProvider);
+        ref.invalidate(financialHealthScoreProvider);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -325,6 +330,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 ],
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Financial Health Score
+            const FinancialHealthCard(),
 
             const SizedBox(height: 24),
 
@@ -906,6 +916,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         ref.invalidate(savingsRateTrendProvider);
         ref.invalidate(ytdTopCategoriesProvider);
         ref.invalidate(categoryMultiMonthTrendProvider);
+        ref.invalidate(dowSpendingProvider);
+        ref.invalidate(recurringVsDiscretionaryProvider);
+        ref.invalidate(budgetPerformanceProvider);
+        ref.invalidate(financialHealthScoreProvider);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -954,6 +968,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
             ),
+
+            const SizedBox(height: 24),
+
+            // ── Behavior Patterns section ──
+            _buildSectionHeader(trans.sectionBehaviorPatterns, isDark),
+            const SizedBox(height: 12),
+
+            // Day-of-week spending pattern
+            DowSpendingChart(
+              currencySymbol: baseCurrency.symbol,
+              showDecimal: showDecimal,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Recurring vs discretionary split
+            RecurringSplitCard(
+              currencySymbol: baseCurrency.symbol,
+              showDecimal: showDecimal,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Budget performance history
+            const BudgetPerformanceChart(),
 
             const SizedBox(height: 24),
           ],

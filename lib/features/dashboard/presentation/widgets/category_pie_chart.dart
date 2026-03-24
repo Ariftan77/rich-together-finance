@@ -355,7 +355,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                     pieTouchData: PieTouchData(
                       enabled: true,
                       touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                        if (event is FlLongPressStart) {
+                        if (event is FlTapUpEvent || event is FlLongPressStart) {
                           final index = pieTouchResponse
                               ?.touchedSection?.touchedSectionIndex;
                           if (index != null &&
@@ -391,6 +391,10 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: GestureDetector(
+                  onTap: () {
+                    setState(() => _touchedIndex = index);
+                    _showTooltipOverlay(context, slice);
+                  },
                   onLongPress: () {
                     setState(() => _touchedIndex = index);
                     _showTooltipOverlay(context, slice);

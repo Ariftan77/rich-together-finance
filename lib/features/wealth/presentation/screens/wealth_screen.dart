@@ -20,6 +20,7 @@ import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
+import '../widgets/debt_payoff_card.dart';
 
 
 /// Exposes the active sub-tab index so DashboardShell can show the right FAB.
@@ -748,6 +749,9 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
           children: [
+            const SizedBox(height: 4),
+            const DebtPayoffCard(),
+            const SizedBox(height: 16),
             if (payableGroups.isNotEmpty) ...[
               _buildDebtTypeSectionHeader(
                 icon: Icons.arrow_upward,
