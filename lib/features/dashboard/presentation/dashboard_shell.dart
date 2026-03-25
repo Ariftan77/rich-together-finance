@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/glass_bottom_nav.dart';
 import '../../../shared/theme/colors.dart';
-import '../../../shared/theme/app_theme_mode.dart';
-import '../../../shared/theme/theme_provider_widget.dart';
 import '../../accounts/presentation/screens/accounts_screen.dart';
 import '../../transactions/presentation/screens/transactions_history_screen.dart';
 import '../../transactions/presentation/screens/transaction_entry_screen.dart';
+import '../../../core/providers/database_providers.dart';
 import '../../accounts/presentation/screens/account_entry_screen.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
 import '../../../shared/widgets/fab_button.dart';
+import '../../../shared/widgets/transaction_speed_dial_fab.dart';
 import '../../../core/providers/app_init_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
 import '../../../core/services/ad_service.dart';
 import '../../../shared/widgets/ad_banner_widget.dart';
+import '../../../core/models/enums.dart';
 
 import '../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
@@ -31,10 +32,15 @@ class DashboardShell extends ConsumerStatefulWidget {
 class _DashboardShellState extends ConsumerState<DashboardShell>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  int _previousIndex = 0;
   late final AnimationController _tabAnimController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  /// Tracks whether the transaction speed-dial is currently open so we can
+  /// render a transparent barrier that dismisses it on outside tap.
+  bool _speedDialOpen = false;
+  final GlobalKey<TransactionSpeedDialFabState> _speedDialKey =
+      GlobalKey<TransactionSpeedDialFabState>();
 
   @override
   void initState() {
@@ -64,10 +70,13 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   }
 
   void _onTabTap(int index) {
+    // Close speed-dial if open when switching tabs.
+    if (_speedDialOpen) {
+      _speedDialKey.currentState?.close();
+    }
     if (index == _currentIndex) return;
     final direction = index > _currentIndex ? 1.0 : -1.0;
     setState(() {
-      _previousIndex = _currentIndex;
       _currentIndex = index;
       _slideAnimation = Tween<Offset>(
         begin: Offset(direction * 0.05, 0),
@@ -85,27 +94,68 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     SettingsScreen(), // 4: Settings
   ];
 
+  void _onSpeedDialSelected(int optionIndex) {
+    // Map option index to TransactionType:
+    //   0 = Income, 1 = Expense, 2 = Transfer
+    const typeMap = [
+      TransactionType.income,
+      TransactionType.expense,
+      TransactionType.transfer,
+    ];
+    final selectedType = typeMap[optionIndex];
+
+    // Pre-warm categories stream before navigating.
+    ref.read(categoriesStreamProvider);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            TransactionEntryScreen(transactionType: selectedType),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Trigger initialization (e.g. recurring transactions check)
     ref.watch(appInitProvider);
+    // Pre-warm categories stream so TransactionEntryScreen gets an immediate
+    // value instead of waiting for the first DB emission after navigation.
+    ref.watch(categoriesStreamProvider);
 
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient(context),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: IndexedStack(
-              index: _currentIndex < _screens.length ? _currentIndex : 0,
-              children: _screens,
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: AppColors.backgroundGradient(context),
+            ),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: IndexedStack(
+                  index: _currentIndex < _screens.length ? _currentIndex : 0,
+                  children: _screens,
+                ),
+              ),
             ),
           ),
-        ),
+          // Transparent barrier — only present when the speed-dial is open.
+          // Tapping it closes the dial without navigating anywhere.
+          if (_speedDialOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => _speedDialKey.currentState?.close(),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.25),
+                ),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
@@ -116,13 +166,13 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
             onTap: _onTabTap,
             items: [
               BottomNavItem(
-                icon: Icons.receipt_long_outlined, 
-                activeIcon: Icons.receipt_long, 
+                icon: Icons.receipt_long_outlined,
+                activeIcon: Icons.receipt_long,
                 label: ref.watch(translationsProvider).navTransactions,
               ),
               BottomNavItem(
-                icon: Icons.account_balance_wallet_outlined, 
-                activeIcon: Icons.account_balance_wallet, 
+                icon: Icons.account_balance_wallet_outlined,
+                activeIcon: Icons.account_balance_wallet,
                 label: ref.watch(translationsProvider).navWallet,
               ),
               BottomNavItem(
@@ -150,16 +200,12 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
 
   Widget? _getFab(BuildContext context) {
     switch (_currentIndex) {
-      case 0: // Transactions
-        return FabButton(
-          icon: Icons.add,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TransactionEntryScreen(),
-              ),
-            );
+      case 0: // Transactions — speed-dial with Income / Expense / Transfer
+        return TransactionSpeedDialFab(
+          key: _speedDialKey,
+          onSelected: _onSpeedDialSelected,
+          onOpenChanged: (isOpen) {
+            setState(() => _speedDialOpen = isOpen);
           },
         );
       case 1: // Wallet (Accounts)

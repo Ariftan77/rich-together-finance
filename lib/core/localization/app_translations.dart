@@ -95,6 +95,11 @@ abstract class AppTranslations {
   String get accountAdjustmentApplied;
   String get accountBalanceAdjustment;
   String get accountAdjustmentHint;
+  String get accountInitialBalance;
+  String get accountInitialBalanceHint;
+  String get accountAdjustBalance;
+  String get accountAdjustBalanceHint;
+  String get accountInitialBalanceApplied;
   String get accountApply;
   String get accountViewHistory;
   String get accountEditDetails;
@@ -515,6 +520,9 @@ abstract class AppTranslations {
   // Transaction History Screen
   String get txnCustomRange;
   String get txnNoTransactions;
+  String get txnNoTransactionsHint;
+  String get txnNoAccountHint;
+  String get txnZeroBalanceHint;
   String get txnFilterDebt;
   String get txnFilterAdjustment;
   String get txnDaySummaryTxn;

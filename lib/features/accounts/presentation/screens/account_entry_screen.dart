@@ -36,6 +36,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   AccountType _selectedType = AccountType.cash;
   Currency _selectedCurrency = Currency.idr;
   bool _isAdjusting = false;
+  // Null = not yet loaded; true/false = loaded result
+  bool? _accountHasTransactions;
 
   @override
   void initState() {
@@ -45,8 +47,18 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       _rawBalance = widget.account!.initialBalance;
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
+      _loadTransactionStatus();
     } else {
       _selectedCurrency = ref.read(defaultCurrencyProvider);
+    }
+  }
+
+  Future<void> _loadTransactionStatus() async {
+    if (widget.account == null) return;
+    final txDao = ref.read(transactionDaoProvider);
+    final txs = await txDao.getTransactionsByAccount(widget.account!.id);
+    if (mounted) {
+      setState(() => _accountHasTransactions = txs.isNotEmpty);
     }
   }
 
@@ -161,23 +173,45 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
 
     final targetBalance = _rawAdjustment;
 
-    final balances = ref.read(accountBalanceProvider);
-    final currentBalance = balances[widget.account!.id] ?? widget.account!.initialBalance;
-    final delta = targetBalance - currentBalance;
-
-    if (delta == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ref.read(translationsProvider).accountAdjustmentRequired)),
-      );
-      return;
-    }
-
-    final profileId = ref.read(activeProfileIdProvider);
-    if (profileId == null) return;
-
     setState(() => _isAdjusting = true);
 
     try {
+      // If the account has no transactions, update initialBalance directly
+      if (_accountHasTransactions == false) {
+        final accountDao = ref.read(accountDaoProvider);
+        await accountDao.updateAccount(
+          widget.account!.copyWith(initialBalance: targetBalance),
+        );
+        if (mounted) {
+          final navigator = Navigator.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(ref.read(translationsProvider).accountInitialBalanceApplied),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          navigator.pop();
+        }
+        return;
+      }
+
+      // Account has existing transactions — create an adjustment transaction
+      final balances = ref.read(accountBalanceProvider);
+      final currentBalance = balances[widget.account!.id] ?? widget.account!.initialBalance;
+      final delta = targetBalance - currentBalance;
+
+      if (delta == 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ref.read(translationsProvider).accountAdjustmentRequired)),
+          );
+        }
+        return;
+      }
+
+      final profileId = ref.read(activeProfileIdProvider);
+      if (profileId == null) return;
+
       final transactionDao = ref.read(transactionDaoProvider);
       final isPositive = delta > 0;
 
@@ -431,20 +465,51 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             const Divider(color: AppColors.glassBorder),
                             const SizedBox(height: 16),
                             
-                            // Adjustment Section
-                            Text(
-                              ref.watch(translationsProvider).accountBalanceAdjustment,
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                 color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              ref.watch(translationsProvider).accountAdjustmentHint,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                 color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                              ),
-                            ),
+                            // Adjustment Section — label adapts to whether the account has transactions
+                            Builder(builder: (context) {
+                              final t = ref.watch(translationsProvider);
+                              // While loading (_accountHasTransactions == null), default to adjust mode
+                              final hasTransactions = _accountHasTransactions ?? true;
+                              final sectionLabel = hasTransactions
+                                  ? t.accountAdjustBalance
+                                  : t.accountInitialBalance;
+                              final sectionHint = hasTransactions
+                                  ? t.accountAdjustBalanceHint
+                                  : t.accountInitialBalanceHint;
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        sectionLabel,
+                                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                          color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                                        ),
+                                      ),
+                                      if (_accountHasTransactions == null) ...[
+                                        const SizedBox(width: 8),
+                                        SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    sectionHint,
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                             const SizedBox(height: 12),
                             Row(
                               children: [

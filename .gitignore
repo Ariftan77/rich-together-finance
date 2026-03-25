@@ -11,6 +11,7 @@
 .svn/
 .swiftpm/
 /Richer_Mockup_Assets/
+/.claude/
 migrate_working_dir/
 
 # IntelliJ related

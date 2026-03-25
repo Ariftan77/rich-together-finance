@@ -26,8 +26,11 @@ import '../../../../shared/widgets/category_icon_widget.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
   final int? transactionId;  // If provided, edit mode
-  
-  const TransactionEntryScreen({super.key, this.transactionId});
+  /// When provided, pre-sets the transaction type before the first build,
+  /// preventing an AnimatedSwitcher mid-animation setState during edit loads.
+  final TransactionType? transactionType;
+
+  const TransactionEntryScreen({super.key, this.transactionId, this.transactionType});
 
   @override
   ConsumerState<TransactionEntryScreen> createState() => _TransactionEntryScreenState();
@@ -79,6 +82,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     super.initState();
     _amountController.text = '0';  // Default to single zero
 
+    // Pre-set the transaction type synchronously before the first build so that
+    // edit mode never triggers AnimatedSwitcher mid-animation via setState.
+    if (widget.transactionType != null) {
+      _selectedType = widget.transactionType!;
+    }
+
     // Filter bubbles as user types
     _titleController.addListener(_onTitleChanged);
 
@@ -87,9 +96,19 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       _titleFocusNode.addListener(_onTitleFocusChanged);
     }
 
-    // Load frequent titles
+    // Delay work until the page transition animation has completed so that
+    // heavy operations don't compete with the incoming route animation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFrequentTitles();
+      final route = ModalRoute.of(context);
+      if (route?.animation?.isCompleted == true) {
+        _loadFrequentTitles();
+      } else {
+        route?.animation?.addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _loadFrequentTitles();
+          }
+        });
+      }
     });
 
     // Load transaction data if editing
@@ -98,9 +117,19 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _loadTransaction();
       });
     } else {
-      // Auto-open calculator for new transactions
+      // Auto-open calculator for new transactions — wait for transition to finish
+      // so the bottom sheet doesn't fight the page slide animation.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _autoOpenCalculator();
+        final route = ModalRoute.of(context);
+        if (route?.animation?.isCompleted == true) {
+          _autoOpenCalculator();
+        } else {
+          route?.animation?.addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _autoOpenCalculator();
+            }
+          });
+        }
       });
     }
   }

@@ -149,7 +149,7 @@ class AccountsScreen extends ConsumerWidget {
                               '...',
                               style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 20),
                             ),
-                            error: (_, __) => Text(
+                            error: (e, s) => Text(
                               '--',
                               style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54, fontSize: 20),
                             ),
@@ -158,33 +158,6 @@ class AccountsScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Search bar
-              TextField(
-                onChanged: (value) =>
-                    ref.read(_walletSearchProvider.notifier).state = value,
-                style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
-                decoration: InputDecoration(
-                  hintText: trans.walletSearch,
-                  hintStyle: TextStyle(
-                    color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
-                  ),
-                  filled: true,
-                  fillColor: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -204,20 +177,47 @@ class AccountsScreen extends ConsumerWidget {
                       isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     ),
-                    if (selectedCurrencies.isNotEmpty || selectedTypes.isNotEmpty)
+                    if (selectedCurrencies.isNotEmpty || selectedTypes.isNotEmpty || searchQuery.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.all(4),
+                        width: 8,
+                        height: 8,
                         decoration: const BoxDecoration(
                           color: AppColors.primaryGold,
                           shape: BoxShape.circle,
                         ),
-                        child: const SizedBox(width: 4, height: 4),
                       ),
                   ],
                 ),
               ),
               if (isExpanded) ...[
+                const SizedBox(height: 12),
+                // Search bar
+                TextField(
+                  onChanged: (value) =>
+                      ref.read(_walletSearchProvider.notifier).state = value,
+                  style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+                  decoration: InputDecoration(
+                    hintText: trans.walletSearch,
+                    hintStyle: TextStyle(
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
+                    ),
+                    filled: true,
+                    fillColor: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Text('Currency', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isLight ? const Color(0xFF64748B) : Colors.white70)),
                 const SizedBox(height: 8),

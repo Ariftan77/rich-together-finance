@@ -13,8 +13,8 @@ import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../../data/onboarding_defaults.dart';
+import 'onboarding_stories_screen.dart';
 
 class GettingStartedScreen extends ConsumerStatefulWidget {
   const GettingStartedScreen({super.key});
@@ -133,7 +133,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardShell()),
+        MaterialPageRoute(builder: (_) => const OnboardingStoriesScreen()),
       );
     } catch (e, stack) {
       debugPrint('GettingStartedScreen: failed to complete onboarding: $e\n$stack');

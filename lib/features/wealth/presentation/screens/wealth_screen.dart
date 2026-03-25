@@ -292,7 +292,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         trans.budgetNoBudgetsHint,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isLight
-                              ? const Color(0xFFCBD5E1)
+                              ? const Color(0xFF94A3B8)
                               : Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
@@ -1862,7 +1862,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               subtitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: isLight
-                    ? const Color(0xFFCBD5E1)
+                    ? const Color(0xFF94A3B8)
                     : Colors.white.withValues(alpha: 0.3),
               ),
             ),

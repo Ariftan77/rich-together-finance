@@ -59,7 +59,7 @@ class BudgetScreen extends ConsumerWidget {
                           Text(
                             trans.budgetNoBudgetsHint,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: isLight ? const Color(0xFFCBD5E1) : Colors.white30,
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white30,
                             ),
                           ),
                         ],

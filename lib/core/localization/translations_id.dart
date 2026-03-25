@@ -99,6 +99,11 @@ class AppTranslationsId implements AppTranslations {
   @override String get accountAdjustmentApplied => 'Penyesuaian diterapkan';
   @override String get accountBalanceAdjustment => 'Penyesuaian Saldo';
   @override String get accountAdjustmentHint => 'Masukkan positif untuk tambah, negatif untuk kurang';
+  @override String get accountInitialBalance => 'Saldo Awal';
+  @override String get accountInitialBalanceHint => 'Menetapkan saldo awal langsung — tanpa membuat transaksi';
+  @override String get accountAdjustBalance => 'Sesuaikan Saldo';
+  @override String get accountAdjustBalanceHint => 'Membuat transaksi penyesuaian untuk mencapai saldo ini';
+  @override String get accountInitialBalanceApplied => 'Saldo awal diperbarui';
   @override String get accountApply => 'Terapkan';
   @override String get accountViewHistory => 'Lihat Riwayat Transaksi';
   @override String get accountEditDetails => 'Edit Detail';
@@ -523,6 +528,9 @@ class AppTranslationsId implements AppTranslations {
   // Transaction History Screen
   @override String get txnCustomRange => 'Rentang Khusus';
   @override String get txnNoTransactions => 'Tidak ada transaksi';
+  @override String get txnNoTransactionsHint => 'Ketuk + untuk mencatat transaksi pertama';
+  @override String get txnNoAccountHint => 'Tambahkan akun dompet terlebih dahulu, lalu catat transaksi';
+  @override String get txnZeroBalanceHint => 'Saldo akun Anda nol. Tambahkan pemasukan atau atur saldo awal di pengaturan akun';
   @override String get txnFilterDebt => 'Hutang';
   @override String get txnFilterAdjustment => 'Penyesuaian';
   @override String get txnDaySummaryTxn => 'Transaksi';

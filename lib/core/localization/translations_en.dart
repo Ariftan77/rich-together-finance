@@ -99,6 +99,11 @@ class AppTranslationsEn implements AppTranslations {
   @override String get accountAdjustmentApplied => 'Adjustment applied';
   @override String get accountBalanceAdjustment => 'Balance Adjustment';
   @override String get accountAdjustmentHint => 'Enter positive for increase, negative for decrease';
+  @override String get accountInitialBalance => 'Initial Balance';
+  @override String get accountInitialBalanceHint => 'Sets the starting balance directly — no transaction recorded';
+  @override String get accountAdjustBalance => 'Adjust Balance';
+  @override String get accountAdjustBalanceHint => 'Creates an adjustment transaction to reach this balance';
+  @override String get accountInitialBalanceApplied => 'Initial balance updated';
   @override String get accountApply => 'Apply';
   @override String get accountViewHistory => 'View Transaction History';
   @override String get accountEditDetails => 'Edit Details';
@@ -522,6 +527,9 @@ class AppTranslationsEn implements AppTranslations {
   // Transaction History Screen
   @override String get txnCustomRange => 'Custom Range';
   @override String get txnNoTransactions => 'No transactions found';
+  @override String get txnNoTransactionsHint => 'Tap + to record your first transaction';
+  @override String get txnNoAccountHint => 'Add a wallet account first, then record transactions';
+  @override String get txnZeroBalanceHint => 'Your accounts have zero balance. Add an income or set an initial balance in your account settings';
   @override String get txnFilterDebt => 'Debt';
   @override String get txnFilterAdjustment => 'Adjustment';
   @override String get txnDaySummaryTxn => 'Txn';

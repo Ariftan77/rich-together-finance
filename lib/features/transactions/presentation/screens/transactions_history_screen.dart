@@ -19,6 +19,7 @@ import '../../../../shared/widgets/glass_input.dart';
 
 import '../../../../core/providers/date_providers.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../accounts/presentation/providers/balance_provider.dart';
 import '../providers/search_provider.dart';
 import '../widgets/date_range_filter_modal.dart';
 import '../widgets/month_year_picker_modal.dart';
@@ -36,6 +37,7 @@ class TransactionsHistoryScreen extends ConsumerStatefulWidget {
 class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryScreen> {
   late TextEditingController _searchController;
   final ScrollController _scrollController = ScrollController();
+  bool _filterExpanded = false;
 
   @override
   void initState() {
@@ -285,21 +287,54 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   ),
                 ),
 
-                // Search Bar
+                // Filter toggle row
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: GlassInput(
-                    controller: _searchController,
-                    hintText: trans.commonSearch,
-                    prefixIcon: Icons.search,
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _filterExpanded = !_filterExpanded),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Filter',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Icon(
+                          _filterExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                        ),
+                        if (currentTypeFilter != null || _searchController.text.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGold,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
 
-                // Filters
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+                if (_filterExpanded) ...[
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: GlassInput(
+                      controller: _searchController,
+                      hintText: trans.commonSearch,
+                      prefixIcon: Icons.search,
+                    ),
+                  ),
+                  // Type filter chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: Row(
                       children: [
                         _FilterChip(
                           label: trans.filterAll,
@@ -337,8 +372,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                           onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.adjustmentIn, TransactionType.adjustmentOut],
                         ),
                       ],
+                    ),
                   ),
-                ),
+                ] else
+                  const SizedBox(height: 8),
 
                 // List
                 Expanded(
@@ -357,12 +394,53 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       final convertedTxs = filteredHelper.valueOrNull ?? [];
 
                       if (convertedTxs.isEmpty) {
+                        final accounts = accountsAsync.valueOrNull ?? [];
+                        final hasAccounts = accounts.isNotEmpty;
+                        final balances = ref.watch(accountBalanceProvider);
+                        final totalBalance = balances.values.fold(0.0, (sum, b) => sum + b);
+                        final isZeroBalance = hasAccounts && totalBalance == 0.0;
+
+                        final IconData emptyIcon;
+                        final String emptyHint;
+                        if (!hasAccounts) {
+                          emptyIcon = Icons.account_balance_wallet_outlined;
+                          emptyHint = trans.txnNoAccountHint;
+                        } else if (isZeroBalance) {
+                          emptyIcon = Icons.account_balance_outlined;
+                          emptyHint = trans.txnZeroBalanceHint;
+                        } else {
+                          emptyIcon = Icons.receipt_long_outlined;
+                          emptyHint = trans.txnNoTransactionsHint;
+                        }
+
                         return Center(
-                          child: Text(
-                            trans.txnNoTransactions,
-                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
-                            ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                emptyIcon,
+                                size: 64,
+                                color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                trans.txnNoTransactions,
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 40),
+                                child: Text(
+                                  emptyHint,
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }
