@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -57,7 +59,10 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final monthLabel =
@@ -67,7 +72,7 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -83,15 +88,15 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
                       IconButton(
                         icon: Icon(
                           Icons.arrow_back,
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         monthLabel,
-                        style: AppTypography.textTheme.headlineSmall?.copyWith(
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         ),
                       ),
                     ],
@@ -103,9 +108,9 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.08),
+                      color: isLight
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TabBar(
@@ -116,10 +121,10 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen>
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
-                      labelColor: isDark ? Colors.white : AppColors.textPrimaryLight,
-                      unselectedLabelColor: isDark
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : const Color(0xFF64748B),
+                      labelColor: isLight ? AppColors.textPrimaryLight : Colors.white,
+                      unselectedLabelColor: isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.6),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -174,7 +179,10 @@ class _ChartTabState extends ConsumerState<_ChartTab> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
@@ -203,9 +211,9 @@ class _ChartTabState extends ConsumerState<_ChartTab> {
             child: Text(
               dateRange,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : const Color(0xFF64748B),
+                color: isLight
+                    ? const Color(0xFF64748B)
+                    : Colors.white.withValues(alpha: 0.6),
                 fontSize: 13,
               ),
             ),
@@ -327,7 +335,10 @@ class _PieChartSectionState extends State<_PieChartSection> {
   void _showTooltipOverlay(BuildContext context, _PieSlice slice) {
     _removeOverlay();
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final overlay = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox;
     final chartCenter = renderBox.localToGlobal(
@@ -358,14 +369,14 @@ class _PieChartSectionState extends State<_PieChartSection> {
                 width: 260,
                 constraints: const BoxConstraints(maxHeight: 220),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xF0222222)
-                      : const Color(0xF0FFFFFF),
+                  color: isLight
+                      ? const Color(0xF0FFFFFF)
+                      : const Color(0xF0222222),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.1),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.15),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -376,8 +387,8 @@ class _PieChartSectionState extends State<_PieChartSection> {
                   ],
                 ),
                 child: slice.isOthers
-                    ? _buildOthersTooltip(isDark, slice)
-                    : _buildSingleTooltip(isDark, slice),
+                    ? _buildOthersTooltip(isLight, slice)
+                    : _buildSingleTooltip(isLight, slice),
               ),
             ),
           ),
@@ -388,7 +399,7 @@ class _PieChartSectionState extends State<_PieChartSection> {
     overlay.insert(_overlayEntry!);
   }
 
-  Widget _buildSingleTooltip(bool isDark, _PieSlice slice) {
+  Widget _buildSingleTooltip(bool isLight, _PieSlice slice) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -410,7 +421,7 @@ class _PieChartSectionState extends State<_PieChartSection> {
                 child: Text(
                   slice.label,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -423,7 +434,7 @@ class _PieChartSectionState extends State<_PieChartSection> {
           Text(
             '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -432,9 +443,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
           Text(
             '${slice.percentage.toStringAsFixed(1)}%',
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : const Color(0xFF64748B),
+              color: isLight
+                  ? const Color(0xFF64748B)
+                  : Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -443,7 +454,7 @@ class _PieChartSectionState extends State<_PieChartSection> {
     );
   }
 
-  Widget _buildOthersTooltip(bool isDark, _PieSlice slice) {
+  Widget _buildOthersTooltip(bool isLight, _PieSlice slice) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -453,7 +464,7 @@ class _PieChartSectionState extends State<_PieChartSection> {
           Text(
             '${slice.label} (${slice.percentage.toStringAsFixed(1)}%)',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -462,9 +473,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
           Text(
             '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.7)
-                  : const Color(0xFF64748B),
+              color: isLight
+                  ? const Color(0xFF64748B)
+                  : Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -483,9 +494,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
                           child: Text(
                             bd.categoryName,
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.8)
-                                  : AppColors.textPrimaryLight,
+                              color: isLight
+                                  ? AppColors.textPrimaryLight
+                                  : Colors.white.withValues(alpha: 0.8),
                               fontSize: 12,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -495,9 +506,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
                         Text(
                           '${widget.currencySymbol} ${Formatters.formatCurrency(bd.amount, showDecimal: widget.showDecimal)}',
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : const Color(0xFF64748B),
+                            color: isLight
+                                ? const Color(0xFF64748B)
+                                : Colors.white.withValues(alpha: 0.6),
                             fontSize: 11,
                           ),
                         ),
@@ -521,7 +532,10 @@ class _PieChartSectionState extends State<_PieChartSection> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (widget.data.isEmpty) {
       return GlassCard(
@@ -531,9 +545,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
           child: Text(
             widget.emptyLabel,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -618,9 +632,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
                       child: Text(
                         slice.label,
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.textPrimaryLight,
+                          color: isLight
+                              ? AppColors.textPrimaryLight
+                              : Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -630,9 +644,9 @@ class _PieChartSectionState extends State<_PieChartSection> {
                     Text(
                       '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : const Color(0xFF64748B),
+                        color: isLight
+                            ? const Color(0xFF64748B)
+                            : Colors.white.withValues(alpha: 0.7),
                         fontSize: 12,
                       ),
                     ),
@@ -671,7 +685,10 @@ class _CategoryTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -701,7 +718,7 @@ class _CategoryTab extends ConsumerWidget {
           Text(
             '${trans.entryTypeExpense} ${trans.reportDetailByCategory}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -725,7 +742,7 @@ class _CategoryTab extends ConsumerWidget {
           Text(
             '${trans.entryTypeIncome} ${trans.reportDetailByCategory}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -763,7 +780,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return GlassCard(
       padding: const EdgeInsets.all(16),
@@ -784,9 +804,9 @@ class _SummaryCard extends StatelessWidget {
               Container(
                 width: 1,
                 height: 48,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08),
+                color: isLight
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.1),
               ),
               Expanded(
                 child: _SummaryItem(
@@ -801,9 +821,9 @@ class _SummaryCard extends StatelessWidget {
           ),
           Divider(
             height: 24,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.08),
+            color: isLight
+                ? Colors.black.withValues(alpha: 0.08)
+                : Colors.white.withValues(alpha: 0.1),
           ),
           // Daily averages row
           Row(
@@ -820,9 +840,9 @@ class _SummaryCard extends StatelessWidget {
               Container(
                 width: 1,
                 height: 48,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08),
+                color: isLight
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.1),
               ),
               Expanded(
                 child: _SummaryItem(
@@ -858,16 +878,19 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Column(
       children: [
         Text(
           label,
           style: TextStyle(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.6)
-                : const Color(0xFF64748B),
+            color: isLight
+                ? const Color(0xFF64748B)
+                : Colors.white.withValues(alpha: 0.6),
             fontSize: 11,
           ),
         ),
@@ -902,7 +925,10 @@ class _CategoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (data.isEmpty) {
       return Center(
@@ -911,9 +937,9 @@ class _CategoryList extends StatelessWidget {
           child: Text(
             emptyLabel,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -967,7 +993,7 @@ class _CategoryList extends StatelessWidget {
                           size: 18,
                           color: bd.color != null && bd.color != 'transparent'
                               ? catColor
-                              : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                              : (isLight ? AppColors.textPrimaryLight : Colors.white),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -976,7 +1002,7 @@ class _CategoryList extends StatelessWidget {
                         child: Text(
                           bd.categoryName,
                           style: TextStyle(
-                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                            color: isLight ? AppColors.textPrimaryLight : Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -987,7 +1013,7 @@ class _CategoryList extends StatelessWidget {
                       Text(
                         '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
                         style: TextStyle(
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -996,9 +1022,9 @@ class _CategoryList extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 18,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -1008,9 +1034,9 @@ class _CategoryList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: barFraction,
-                      backgroundColor: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.08),
+                      backgroundColor: isLight
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(catColor),
                       minHeight: 6,
                     ),
@@ -1035,7 +1061,10 @@ class _TitleTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -1065,7 +1094,7 @@ class _TitleTab extends ConsumerWidget {
           Text(
             '${trans.entryTypeExpense} ${trans.reportDetailByTitle}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -1089,7 +1118,7 @@ class _TitleTab extends ConsumerWidget {
           Text(
             '${trans.entryTypeIncome} ${trans.reportDetailByTitle}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -1129,7 +1158,10 @@ class _TitleList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (data.isEmpty) {
       return Center(
@@ -1138,9 +1170,9 @@ class _TitleList extends StatelessWidget {
           child: Text(
             emptyLabel,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -1198,7 +1230,7 @@ class _TitleList extends StatelessWidget {
                             Text(
                               bd.title,
                               style: TextStyle(
-                                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1207,9 +1239,9 @@ class _TitleList extends StatelessWidget {
                             Text(
                               '${bd.count}x',
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.5)
-                                    : const Color(0xFF94A3B8),
+                                color: isLight
+                                    ? const Color(0xFF94A3B8)
+                                    : Colors.white.withValues(alpha: 0.5),
                                 fontSize: 11,
                               ),
                             ),
@@ -1220,7 +1252,7 @@ class _TitleList extends StatelessWidget {
                       Text(
                         '$currencySymbol ${Formatters.formatCurrency(bd.amount, showDecimal: showDecimal)}',
                         style: TextStyle(
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1229,9 +1261,9 @@ class _TitleList extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 18,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -1241,9 +1273,9 @@ class _TitleList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: barFraction,
-                      backgroundColor: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.08),
+                      backgroundColor: isLight
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.1),
                       valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primaryGold),
                       minHeight: 6,

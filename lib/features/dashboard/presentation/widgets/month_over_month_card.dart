@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -37,7 +39,10 @@ class MonthOverMonthCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final momAsync = ref.watch(monthOverMonthProvider);
 
@@ -56,34 +61,34 @@ class MonthOverMonthCard extends ConsumerWidget {
           child: Text(
             '${trans.error}: $err',
             style: TextStyle(
-              color: isDark ? AppColors.error : AppColors.errorLight,
+              color: isLight ? AppColors.errorLight : AppColors.error,
               fontSize: 13,
             ),
           ),
         ),
       ),
-      data: (data) => _buildContent(context, isDark, trans, data),
+      data: (data) => _buildContent(context, isLight, trans, data),
     );
   }
 
   Widget _buildContent(
     BuildContext context,
-    bool isDark,
+    bool isLight,
     dynamic trans,
     MonthComparison data,
   ) {
     // Muted label color — matches the rest of the codebase
-    final mutedColor = isDark
-        ? Colors.white.withValues(alpha: 0.6)
-        : const Color(0xFF64748B);
+    final mutedColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.6);
 
     // Primary text color
-    final primaryColor = isDark ? Colors.white : AppColors.textPrimaryLight;
+    final primaryColor = isLight ? AppColors.textPrimaryLight : Colors.white;
 
     // Column header color — slightly more muted than primary
-    final headerColor = isDark
-        ? Colors.white.withValues(alpha: 0.5)
-        : const Color(0xFF94A3B8);
+    final headerColor = isLight
+        ? const Color(0xFF94A3B8)
+        : Colors.white.withValues(alpha: 0.5);
 
     return GlassCard(
       child: Column(
@@ -131,7 +136,7 @@ class MonthOverMonthCard extends ConsumerWidget {
             valueColor: primaryColor,
           ),
 
-          _Divider(isDark: isDark),
+          _Divider(isLight: isLight),
 
           // Expense row
           _DataRow(
@@ -155,7 +160,7 @@ class MonthOverMonthCard extends ConsumerWidget {
             valueColor: primaryColor,
           ),
 
-          _Divider(isDark: isDark),
+          _Divider(isLight: isLight),
 
           // Net row — color depends on sign
           _NetRow(
@@ -167,7 +172,7 @@ class MonthOverMonthCard extends ConsumerWidget {
             showDecimal: showDecimal,
             labelColor: mutedColor,
             formatCompact: _formatCompact,
-            isDark: isDark,
+            isLight: isLight,
           ),
 
           // Delta badges — only render if at least one delta is available
@@ -177,7 +182,7 @@ class MonthOverMonthCard extends ConsumerWidget {
             _DeltaBadgeRow(
               deltaVsLastMonth: data.expenseDeltaVsLastMonth,
               deltaVsLastYear: data.expenseDeltaVsLastYear,
-              isDark: isDark,
+              isLight: isLight,
               trans: trans,
             ),
           ],
@@ -345,7 +350,7 @@ class _NetRow extends StatelessWidget {
   final String currencySymbol;
   final bool showDecimal;
   final Color labelColor;
-  final bool isDark;
+  final bool isLight;
   final String Function(double, {required String symbol, required bool showDecimal}) formatCompact;
 
   const _NetRow({
@@ -356,15 +361,15 @@ class _NetRow extends StatelessWidget {
     required this.currencySymbol,
     required this.showDecimal,
     required this.labelColor,
-    required this.isDark,
+    required this.isLight,
     required this.formatCompact,
   });
 
   Color _netColor(double value) {
     if (value >= 0) {
-      return isDark ? AppColors.success : AppColors.successLight;
+      return isLight ? AppColors.successLight : AppColors.success;
     }
-    return isDark ? AppColors.error : AppColors.errorLight;
+    return isLight ? AppColors.errorLight : AppColors.error;
   }
 
   String _netText(double value) {
@@ -437,18 +442,18 @@ class _NetRow extends StatelessWidget {
 
 /// A thin horizontal divider between table rows.
 class _Divider extends StatelessWidget {
-  final bool isDark;
+  final bool isLight;
 
-  const _Divider({required this.isDark});
+  const _Divider({required this.isLight});
 
   @override
   Widget build(BuildContext context) {
     return Divider(
       height: 1,
       thickness: 1,
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.08)
-          : Colors.black.withValues(alpha: 0.06),
+      color: isLight
+          ? Colors.black.withValues(alpha: 0.06)
+          : Colors.white.withValues(alpha: 0.08),
     );
   }
 }
@@ -457,13 +462,13 @@ class _Divider extends StatelessWidget {
 class _DeltaBadgeRow extends StatelessWidget {
   final double? deltaVsLastMonth;
   final double? deltaVsLastYear;
-  final bool isDark;
+  final bool isLight;
   final dynamic trans;
 
   const _DeltaBadgeRow({
     required this.deltaVsLastMonth,
     required this.deltaVsLastYear,
-    required this.isDark,
+    required this.isLight,
     required this.trans,
   });
 
@@ -477,13 +482,13 @@ class _DeltaBadgeRow extends StatelessWidget {
           _DeltaBadge(
             delta: deltaVsLastMonth!,
             label: trans.monthOverMonthLastMonth,
-            isDark: isDark,
+            isLight: isLight,
           ),
         if (deltaVsLastYear != null)
           _DeltaBadge(
             delta: deltaVsLastYear!,
             label: trans.monthOverMonthLastYear,
-            isDark: isDark,
+            isLight: isLight,
           ),
       ],
     );
@@ -497,20 +502,20 @@ class _DeltaBadgeRow extends StatelessWidget {
 class _DeltaBadge extends StatelessWidget {
   final double delta;
   final String label;
-  final bool isDark;
+  final bool isLight;
 
   const _DeltaBadge({
     required this.delta,
     required this.label,
-    required this.isDark,
+    required this.isLight,
   });
 
   @override
   Widget build(BuildContext context) {
     final isGood = delta <= 0; // spending less is better
     final baseColor = isGood
-        ? (isDark ? AppColors.success : AppColors.successLight)
-        : (isDark ? AppColors.error : AppColors.errorLight);
+        ? (isLight ? AppColors.successLight : AppColors.success)
+        : (isLight ? AppColors.errorLight : AppColors.error);
     final bgColor = baseColor.withValues(alpha: 0.12);
     final borderColor = baseColor.withValues(alpha: 0.30);
 

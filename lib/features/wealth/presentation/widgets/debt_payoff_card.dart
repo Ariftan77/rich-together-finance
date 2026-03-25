@@ -9,7 +9,9 @@ import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/currency_exchange_service.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 
@@ -23,7 +25,9 @@ class DebtPayoffCard extends ConsumerWidget {
     final rates = ref.watch(todayRatesProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return debtsAsync.when(
       data: (allDebts) {
@@ -105,13 +109,13 @@ class DebtPayoffCard extends ConsumerWidget {
           );
         }
 
-        final textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
-        final subtextColor = isDark
-            ? Colors.white.withValues(alpha: 0.55)
-            : const Color(0xFF64748B);
-        final dividerColor = isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : Colors.black.withValues(alpha: 0.08);
+        final textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+        final subtextColor = isLight
+            ? const Color(0xFF64748B)
+            : Colors.white.withValues(alpha: 0.55);
+        final dividerColor = isLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1);
 
         return GlassCard(
           padding: const EdgeInsets.all(16),
@@ -120,7 +124,7 @@ class DebtPayoffCard extends ConsumerWidget {
             children: [
               Text(
                 trans.debtPayoffTitle,
-                style: AppTypography.textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: textColor,
                   fontWeight: FontWeight.bold,
                 ),
@@ -132,11 +136,11 @@ class DebtPayoffCard extends ConsumerWidget {
                 _DebtSection(
                   label: trans.debtPayable,
                   data: buildSection(payableDebts),
-                  amountColor: isDark ? AppColors.error : AppColors.errorLight,
-                  progressColor: isDark ? AppColors.error : AppColors.errorLight,
+                  amountColor: isLight ? AppColors.errorLight : AppColors.error,
+                  progressColor: isLight ? AppColors.errorLight : AppColors.error,
                   baseCurrency: baseCurrency,
                   showDecimal: showDecimal,
-                  isDark: isDark,
+                  isLight: isLight,
                   subtextColor: subtextColor,
                   overdueLabel: trans.debtPayoffOverdue,
                   dueSoonLabel: trans.debtPayoffDueSoon,
@@ -158,11 +162,11 @@ class DebtPayoffCard extends ConsumerWidget {
                 _DebtSection(
                   label: trans.debtReceivable,
                   data: buildSection(receivableDebts),
-                  amountColor: isDark ? AppColors.success : AppColors.successLight,
-                  progressColor: isDark ? AppColors.success : AppColors.successLight,
+                  amountColor: isLight ? AppColors.successLight : AppColors.success,
+                  progressColor: isLight ? AppColors.successLight : AppColors.success,
                   baseCurrency: baseCurrency,
                   showDecimal: showDecimal,
-                  isDark: isDark,
+                  isLight: isLight,
                   subtextColor: subtextColor,
                   overdueLabel: trans.debtPayoffOverdue,
                   dueSoonLabel: trans.debtPayoffDueSoon,
@@ -218,7 +222,7 @@ class _DebtSection extends StatelessWidget {
   final Color progressColor;
   final Currency baseCurrency;
   final bool showDecimal;
-  final bool isDark;
+  final bool isLight;
   final Color subtextColor;
   final String overdueLabel;
   final String dueSoonLabel;
@@ -233,7 +237,7 @@ class _DebtSection extends StatelessWidget {
     required this.progressColor,
     required this.baseCurrency,
     required this.showDecimal,
-    required this.isDark,
+    required this.isLight,
     required this.subtextColor,
     required this.overdueLabel,
     required this.dueSoonLabel,
@@ -244,7 +248,7 @@ class _DebtSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
+    final textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +259,7 @@ class _DebtSection extends StatelessWidget {
           children: [
             Text(
               label,
-              style: AppTypography.textTheme.labelMedium?.copyWith(
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: amountColor,
                 fontWeight: FontWeight.w600,
               ),
@@ -263,7 +267,7 @@ class _DebtSection extends StatelessWidget {
             if (data.earliestDue != null)
               Text(
                 '$nextDueLabel: ${DateFormat.yMMMd().format(data.earliestDue!)}',
-                style: AppTypography.textTheme.labelSmall?.copyWith(
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: subtextColor,
                 ),
               ),
@@ -278,7 +282,7 @@ class _DebtSection extends StatelessWidget {
           children: [
             Text(
               '${baseCurrency.symbol} ${Formatters.formatCurrency(data.totalRemaining, showDecimal: showDecimal)}',
-              style: AppTypography.textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: amountColor,
                 fontWeight: FontWeight.bold,
               ),
@@ -286,7 +290,7 @@ class _DebtSection extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               'remaining',
-              style: AppTypography.textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: subtextColor,
               ),
             ),
@@ -296,7 +300,7 @@ class _DebtSection extends StatelessWidget {
         // Paid/collected label
         Text(
           '${baseCurrency.symbol} ${Formatters.formatCurrency(data.totalPaid, showDecimal: showDecimal)} $paidLabel',
-          style: AppTypography.textTheme.labelSmall?.copyWith(
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: subtextColor,
           ),
         ),
@@ -309,9 +313,9 @@ class _DebtSection extends StatelessWidget {
           child: LinearProgressIndicator(
             value: data.progress,
             minHeight: 6,
-            backgroundColor: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.black.withValues(alpha: 0.1),
+            backgroundColor: isLight
+                ? Colors.black.withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.12),
             valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           ),
         ),
@@ -320,13 +324,13 @@ class _DebtSection extends StatelessWidget {
 
         // Urgency breakdown
         _UrgencyRow(
-          color: isDark ? AppColors.error : AppColors.errorLight,
+          color: isLight ? AppColors.errorLight : AppColors.error,
           label: overdueLabel,
           count: data.overdue.length,
           amount: data.sumConverted(data.overdue),
           baseCurrency: baseCurrency,
           showDecimal: showDecimal,
-          isDark: isDark,
+          isLight: isLight,
         ),
         const SizedBox(height: 6),
         _UrgencyRow(
@@ -336,17 +340,17 @@ class _DebtSection extends StatelessWidget {
           amount: data.sumConverted(data.dueSoon),
           baseCurrency: baseCurrency,
           showDecimal: showDecimal,
-          isDark: isDark,
+          isLight: isLight,
         ),
         const SizedBox(height: 6),
         _UrgencyRow(
-          color: isDark ? AppColors.success : AppColors.successLight,
+          color: isLight ? AppColors.successLight : AppColors.success,
           label: noDeadlineLabel,
           count: data.noDeadline.length,
           amount: data.sumConverted(data.noDeadline),
           baseCurrency: baseCurrency,
           showDecimal: showDecimal,
-          isDark: isDark,
+          isLight: isLight,
         ),
       ],
     );
@@ -364,7 +368,7 @@ class _UrgencyRow extends StatelessWidget {
   final double amount;
   final Currency baseCurrency;
   final bool showDecimal;
-  final bool isDark;
+  final bool isLight;
 
   const _UrgencyRow({
     required this.color,
@@ -373,14 +377,14 @@ class _UrgencyRow extends StatelessWidget {
     required this.amount,
     required this.baseCurrency,
     required this.showDecimal,
-    required this.isDark,
+    required this.isLight,
   });
 
   @override
   Widget build(BuildContext context) {
-    final subtextColor = isDark
-        ? Colors.white.withValues(alpha: 0.55)
-        : const Color(0xFF64748B);
+    final subtextColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.55);
 
     return Row(
       children: [
@@ -396,9 +400,9 @@ class _UrgencyRow extends StatelessWidget {
         Expanded(
           child: Text(
             '$label: $count',
-            style: AppTypography.textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: count > 0
-                  ? (isDark ? Colors.white.withValues(alpha: 0.85) : AppColors.textPrimaryLight)
+                  ? (isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.85))
                   : subtextColor,
             ),
           ),
@@ -406,7 +410,7 @@ class _UrgencyRow extends StatelessWidget {
         if (count > 0)
           Text(
             '${baseCurrency.symbol} ${Formatters.formatCurrency(amount, showDecimal: showDecimal)}',
-            style: AppTypography.textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
             ),

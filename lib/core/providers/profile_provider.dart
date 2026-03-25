@@ -4,6 +4,7 @@ import '../database/database.dart';
 import '../database/daos/profile_dao.dart';
 import '../database/daos/settings_dao.dart';
 import '../models/enums.dart';
+import '../../shared/theme/app_theme_mode.dart';
 import 'database_providers.dart';
 
 /// Provider for ProfileDao
@@ -69,18 +70,16 @@ final showDecimalProvider = Provider<bool>((ref) {
   return settingsAsync.whenOrNull(data: (settings) => settings?.showDecimal) ?? false;
 });
 
-/// Provider for theme mode - returns Flutter's ThemeMode enum
-final themeModeProvider = Provider<ThemeMode>((ref) {
+/// Provider for the app-specific theme mode (Default/Dark/Light/System)
+final appThemeModeProvider = Provider<AppThemeMode>((ref) {
   final settingsAsync = ref.watch(activeProfileSettingsProvider);
   final mode = settingsAsync.whenOrNull(data: (settings) => settings?.themeMode) ?? 0;
-  switch (mode) {
-    case 1:
-      return ThemeMode.light;
-    case 2:
-      return ThemeMode.system;
-    default:
-      return ThemeMode.dark;
-  }
+  return AppThemeModeX.fromValue(mode);
+});
+
+/// Provider for Flutter's ThemeMode (derived from appThemeModeProvider)
+final themeModeProvider = Provider<ThemeMode>((ref) {
+  return ref.watch(appThemeModeProvider).toFlutterThemeMode();
 });
 
 /// Provider for biometric enabled status

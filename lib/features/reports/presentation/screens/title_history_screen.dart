@@ -6,8 +6,10 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
@@ -40,7 +42,10 @@ class _TitleHistoryScreenState extends ConsumerState<TitleHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -72,7 +77,7 @@ class _TitleHistoryScreenState extends ConsumerState<TitleHistoryScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -81,24 +86,24 @@ class _TitleHistoryScreenState extends ConsumerState<TitleHistoryScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
             ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   widget.title,
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   monthLabel,
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.5)
-                        : const Color(0xFF94A3B8),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 11,
                   ),
                 ),
@@ -164,14 +169,17 @@ class _TransactionList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (profileId == null) {
       return Center(
         child: Text(
           'No profile',
           style: TextStyle(
-            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+            color: isLight ? AppColors.textPrimaryLight : Colors.white,
           ),
         ),
       );
@@ -224,10 +232,10 @@ class _TransactionList extends ConsumerWidget {
           return Center(
             child: Text(
               'No transactions found',
-              style: AppTypography.textTheme.bodyLarge?.copyWith(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF94A3B8),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: isLight
+                    ? const Color(0xFF94A3B8)
+                    : Colors.white.withValues(alpha: 0.5),
               ),
             ),
           );
@@ -256,10 +264,10 @@ class _TransactionList extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
                   child: Text(
                     _formatDate(date),
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.5)
-                          : const Color(0xFF94A3B8),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: isLight
+                          ? const Color(0xFF94A3B8)
+                          : Colors.white.withValues(alpha: 0.5),
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                       fontSize: 11,
@@ -305,7 +313,10 @@ class _TxItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     final isExpense = transaction.type == TransactionType.expense ||
         transaction.type == TransactionType.adjustmentOut ||
@@ -357,8 +368,8 @@ class _TxItem extends StatelessWidget {
                   children: [
                     Text(
                       category?.name ?? transaction.type.displayName,
-                      style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -366,10 +377,10 @@ class _TxItem extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '$timeStr · ${account?.name ?? ''}',
-                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                         fontSize: 11,
                       ),
                     ),
@@ -378,7 +389,7 @@ class _TxItem extends StatelessWidget {
               ),
               Text(
                 '$currencyCode $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,

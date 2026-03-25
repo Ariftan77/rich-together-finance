@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -104,7 +106,10 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
   void _showTooltipOverlay(BuildContext context, _PieSlice slice) {
     _removeOverlay();
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final overlay = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox;
     final chartCenter = renderBox.localToGlobal(
@@ -133,14 +138,14 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                 width: 260,
                 constraints: const BoxConstraints(maxHeight: 220),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xF0222222)
-                      : const Color(0xF0FFFFFF),
+                  color: isLight
+                      ? const Color(0xF0FFFFFF)
+                      : const Color(0xF0222222),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.1),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.15),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -151,8 +156,8 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                   ],
                 ),
                 child: slice.isOthers
-                    ? _buildOthersTooltip(isDark, slice)
-                    : _buildSingleTooltip(isDark, slice),
+                    ? _buildOthersTooltip(isLight, slice)
+                    : _buildSingleTooltip(isLight, slice),
               ),
             ),
           ),
@@ -163,7 +168,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
     overlay.insert(_overlayEntry!);
   }
 
-  Widget _buildSingleTooltip(bool isDark, _PieSlice slice) {
+  Widget _buildSingleTooltip(bool isLight, _PieSlice slice) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -185,7 +190,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                 child: Text(
                   slice.label,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -198,7 +203,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
           Text(
             '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -207,9 +212,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
           Text(
             '${slice.percentage.toStringAsFixed(1)}%',
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : const Color(0xFF64748B),
+              color: isLight
+                  ? const Color(0xFF64748B)
+                  : Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -218,7 +223,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
     );
   }
 
-  Widget _buildOthersTooltip(bool isDark, _PieSlice slice) {
+  Widget _buildOthersTooltip(bool isLight, _PieSlice slice) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -228,7 +233,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
           Text(
             '${slice.label} (${slice.percentage.toStringAsFixed(1)}%)',
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -237,9 +242,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
           Text(
             '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.7)
-                  : const Color(0xFF64748B),
+              color: isLight
+                  ? const Color(0xFF64748B)
+                  : Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -258,9 +263,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                           child: Text(
                             bd.categoryName,
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.8)
-                                  : AppColors.textPrimaryLight,
+                              color: isLight
+                                  ? AppColors.textPrimaryLight
+                                  : Colors.white.withValues(alpha: 0.8),
                               fontSize: 12,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -270,9 +275,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                         Text(
                           '${widget.currencySymbol} ${Formatters.formatCurrency(bd.amount, showDecimal: widget.showDecimal)}',
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : const Color(0xFF64748B),
+                            color: isLight
+                                ? const Color(0xFF64748B)
+                                : Colors.white.withValues(alpha: 0.6),
                             fontSize: 11,
                           ),
                         ),
@@ -297,7 +302,10 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (widget.data.isEmpty) {
       return GlassCard(
@@ -307,9 +315,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
           child: Text(
             trans.reportNoData,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -328,7 +336,7 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
             Text(
               trans.chartSpending,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -337,9 +345,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
             Text(
               trans.commonThisMonth,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : const Color(0xFF64748B),
+                color: isLight
+                    ? const Color(0xFF64748B)
+                    : Colors.white.withValues(alpha: 0.6),
                 fontSize: 12,
               ),
             ),
@@ -423,9 +431,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                         child: Text(
                           slice.label,
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.textPrimaryLight,
+                            color: isLight
+                                ? AppColors.textPrimaryLight
+                                : Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -435,9 +443,9 @@ class _CategoryPieChartState extends ConsumerState<CategoryPieChart> {
                       Text(
                         '${widget.currencySymbol} ${Formatters.formatCurrency(slice.amount, showDecimal: widget.showDecimal)}',
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.7)
-                              : const Color(0xFF64748B),
+                          color: isLight
+                              ? const Color(0xFF64748B)
+                              : Colors.white.withValues(alpha: 0.7),
                           fontSize: 12,
                         ),
                       ),

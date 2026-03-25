@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 
 /// A glass-styled segmented control for selecting between multiple options
 class GlassSegmentedControl<T> extends StatelessWidget {
@@ -20,20 +22,35 @@ class GlassSegmentedControl<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    // Container background
+    final Color containerBg = isLight
+        ? Colors.black.withValues(alpha: 0.04)
+        : AppColors.glassBackground;
+
+    // Container border
+    final Color containerBorder = isLight
+        ? Colors.black.withValues(alpha: 0.1)
+        : Colors.white.withValues(alpha: 0.1);
+
+    // Unselected label color
+    final Color unselectedColor = isLight
+        ? const Color(0xFF94A3B8)
+        : Colors.white.withValues(alpha: 0.4);
+
+    // Selected segment highlight alpha
+    final double selectedAlpha = isLight ? 0.15 : 0.2;
 
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.glassBackground
-            : Colors.black.withValues(alpha: 0.04),
+        color: containerBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: containerBorder),
       ),
       child: Row(
         children: List.generate(options.length, (index) {
@@ -51,7 +68,7 @@ class GlassSegmentedControl<T> extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primaryGold.withValues(alpha: isDark ? 0.2 : 0.15)
+                      ? AppColors.primaryGold.withValues(alpha: selectedAlpha)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(9),
                 ),
@@ -61,9 +78,7 @@ class GlassSegmentedControl<T> extends StatelessWidget {
                   style: TextStyle(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                        : unselectedColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),

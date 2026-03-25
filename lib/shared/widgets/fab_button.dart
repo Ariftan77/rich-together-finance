@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 
 class FabButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -13,10 +15,17 @@ class FabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    // Light mode uses a slightly reduced opacity; default+dark use their own values
+    final double opacity = isLight ? 0.75 : 0.5;
+    final double shadowAlpha = isLight ? 0.25 : 0.4;
 
     return Opacity(
-      opacity: isDark ? 0.5 : 0.75,
+      opacity: opacity,
       child: Container(
         width: 64,
         height: 64,
@@ -29,7 +38,7 @@ class FabButton extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryGold.withValues(alpha: isDark ? 0.4 : 0.25),
+              color: AppColors.primaryGold.withValues(alpha: shadowAlpha),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),

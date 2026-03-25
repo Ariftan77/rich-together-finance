@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../providers/search_provider.dart';
 
 /// Modal bottom sheet for filtering transactions by date range
@@ -115,11 +117,17 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF221D10),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isLight
+            ? const Color(0xFFF8FAFC)
+            : const Color(0xFF221D10),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -133,7 +141,9 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: isLight
+                  ? Colors.black.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -146,8 +156,8 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
               children: [
                 Text(
                   trans.filterByDateRange,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -175,10 +185,14 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: isLight
+                      ? Colors.black.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Row(
@@ -192,7 +206,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                           Text(
                             trans.filterDateFrom,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                               fontSize: 12,
                             ),
                           ),
@@ -202,7 +216,9 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                                 ? DateFormat('MMM dd, yyyy').format(_dateFrom!)
                                 : trans.filterDateFromPlaceholder,
                             style: TextStyle(
-                              color: _dateFrom != null ? Colors.white : Colors.white.withValues(alpha: 0.4),
+                              color: _dateFrom != null
+                                  ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                  : (isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4)),
                               fontSize: 16,
                             ),
                           ),
@@ -211,7 +227,10 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                     ),
                     if (_dateFrom != null)
                       IconButton(
-                        icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.6)),
+                        icon: Icon(
+                          Icons.clear,
+                          color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
+                        ),
                         onPressed: () => setState(() => _dateFrom = null),
                       ),
                   ],
@@ -229,10 +248,14 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: isLight
+                      ? Colors.black.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Row(
@@ -246,7 +269,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                           Text(
                             trans.filterDateTo,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                               fontSize: 12,
                             ),
                           ),
@@ -256,7 +279,9 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                                 ? DateFormat('MMM dd, yyyy').format(_dateTo!)
                                 : trans.filterDateToPlaceholder,
                             style: TextStyle(
-                              color: _dateTo != null ? Colors.white : Colors.white.withValues(alpha: 0.4),
+                              color: _dateTo != null
+                                  ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                  : (isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4)),
                               fontSize: 16,
                             ),
                           ),
@@ -265,7 +290,10 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
                     ),
                     if (_dateTo != null)
                       IconButton(
-                        icon: Icon(Icons.clear, color: Colors.white.withValues(alpha: 0.6)),
+                        icon: Icon(
+                          Icons.clear,
+                          color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
+                        ),
                         onPressed: () => setState(() => _dateTo = null),
                       ),
                   ],
@@ -301,7 +329,7 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
             child: Text(
               trans.filterEmptyHint,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
               textAlign: TextAlign.center,

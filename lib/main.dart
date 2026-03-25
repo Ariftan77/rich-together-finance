@@ -11,6 +11,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'features/auth/presentation/widgets/app_lock_overlay.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'shared/theme/app_theme.dart';
+import 'shared/theme/theme_provider_widget.dart';
 import 'core/providers/profile_provider.dart';
 import 'core/services/sync_service.dart';
 import 'core/services/remote_config_service.dart';
@@ -94,15 +95,19 @@ class RichTogetherApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the theme mode from settings
     final themeMode = ref.watch(themeModeProvider);
-    
-    return MaterialApp(
-      title: 'Rich Together',
-      debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: const SplashScreen(),
-      builder: (context, child) => AppLockOverlay(child: child!),
+    final appThemeMode = ref.watch(appThemeModeProvider);
+
+    return AppThemeProvider(
+      themeMode: appThemeMode,
+      child: MaterialApp(
+        title: 'Rich Together',
+        debugShowCheckedModeBanner: false,
+        themeMode: themeMode,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: const SplashScreen(),
+        builder: (context, child) => AppLockOverlay(child: child!),
+      ),
     );
   }
 }

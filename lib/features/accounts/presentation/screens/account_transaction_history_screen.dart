@@ -6,8 +6,10 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
@@ -100,9 +102,7 @@ class _AccountTransactionHistoryScreenState
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.mainGradient
-                : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -111,29 +111,29 @@ class _AccountTransactionHistoryScreenState
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : AppColors.textPrimaryLight,
+              color: AppThemeProvider.isLightMode(context)
+                  ? AppColors.textPrimaryLight
+                  : Colors.white,
             ),
             title: Builder(
               builder: (ctx) {
-                final isDark = Theme.of(ctx).brightness == Brightness.dark;
+                final isLight = AppThemeProvider.isLightMode(ctx);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.account.name,
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       '${widget.account.type.displayName} · $currencySymbol',
-                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.5)
-                            : const Color(0xFF94A3B8),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.5),
                         fontSize: 11,
                       ),
                     ),
@@ -210,15 +210,15 @@ class _AccountTransactionHistoryScreenState
                 Expanded(
                   child: txsAsync.when(
                     data: (txs) {
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      final isLight = AppThemeProvider.isLightMode(context);
                       if (txs.isEmpty) {
                         return Center(
                           child: Text(
                             'No transactions found',
-                            style: AppTypography.textTheme.bodyLarge?.copyWith(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : const Color(0xFF94A3B8),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                         );
@@ -262,11 +262,11 @@ class _AccountTransactionHistoryScreenState
                                     const EdgeInsets.fromLTRB(4, 16, 4, 8),
                                 child: Text(
                                   _formatDate(date),
-                                  style: AppTypography.textTheme.labelSmall
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.5)
-                                        : const Color(0xFF94A3B8),
+                                    color: isLight
+                                        ? const Color(0xFF94A3B8)
+                                        : Colors.white.withValues(alpha: 0.5),
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,
                                     fontSize: 11,
@@ -324,7 +324,7 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -332,22 +332,22 @@ class _Chip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryGold
-              : (isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight),
+              : (isLight ? AppColors.glassBackgroundLight : AppColors.glassBackground),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryGold
-                : (isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08)),
+                : (isLight
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.1)),
           ),
         ),
         child: Text(
           label,
-          style: AppTypography.textTheme.labelMedium?.copyWith(
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: isSelected
                 ? Colors.black
-                : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                : (isLight ? AppColors.textPrimaryLight : Colors.white),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -371,7 +371,7 @@ class _TxItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     final isExpense = transaction.type == TransactionType.expense ||
         transaction.type == TransactionType.adjustmentOut ||
         transaction.type == TransactionType.debtOut;
@@ -434,8 +434,8 @@ class _TxItem extends StatelessWidget {
                               transaction.title!.isNotEmpty
                           ? transaction.title!
                           : transaction.type.displayName,
-                      style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -443,10 +443,10 @@ class _TxItem extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '$timeStr · ${category?.name ?? transaction.type.displayName}',
-                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                         fontSize: 11,
                       ),
                     ),
@@ -455,7 +455,7 @@ class _TxItem extends StatelessWidget {
               ),
               Text(
                 '$currencySymbol $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
-import '../theme/typography.dart';
+import '../theme/theme_provider_widget.dart';
+
 import 'glass_card.dart';
 
 class GlassInput extends StatelessWidget {
@@ -42,6 +44,16 @@ class GlassInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    // Text color: light theme uses dark text, default+dark use white
+    final Color textColor = isLight ? AppColors.textPrimaryLight : AppColors.textPrimary;
+    final Color hintColor = isLight ? AppColors.textTertiaryLight : AppColors.textTertiary;
+    final Color iconColor = isLight ? AppColors.textSecondaryLight : AppColors.textSecondary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -56,37 +68,23 @@ class GlassInput extends StatelessWidget {
             textInputAction: textInputAction,
             inputFormatters: inputFormatters,
             maxLength: maxLength,
-            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null, // Hide counter text but keep enforcement? Or show it? TextFields usually show it.
-            // If I want to hide it I can return null.
-            // But for PIN, maybe no counter is better if I visualy restrict.
-            // Let's keep default behavior for now or hide it?
-            // "maxLength: 6" usually shows "0/6".
-            // I'll stick to standard behavior or hiding it if it looks bad in GlassCard.
-            // Let's just pass maxLength.
-            style: AppTypography.textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark 
-                  ? AppColors.textPrimary 
-                  : AppColors.textPrimaryLight,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: textColor,
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
               hintText: hintText,
-              hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? AppColors.textTertiary 
-                    : AppColors.textTertiaryLight,
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: hintColor,
               ),
-              prefixIcon: prefixIcon != null 
-                  ? Icon(prefixIcon, color: Theme.of(context).brightness == Brightness.dark 
-                      ? AppColors.textSecondary 
-                      : AppColors.textSecondaryLight) 
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, color: iconColor)
                   : null,
               prefixText: prefixText,
-              prefixStyle: AppTypography.textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? AppColors.textPrimary 
-                      : AppColors.textPrimaryLight,
-                  fontWeight: FontWeight.bold,
+              prefixStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.bold,
               ),
               suffixIcon: suffixIcon,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),

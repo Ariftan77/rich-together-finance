@@ -5,8 +5,10 @@ import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
@@ -35,6 +37,10 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
     final accountsAsync = ref.watch(accountsStreamProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     final categoryMap = categoriesAsync.valueOrNull != null
         ? {for (var c in categoriesAsync.value!) c.id: c}
@@ -46,8 +52,8 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
+        decoration: BoxDecoration(
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(
@@ -58,13 +64,13 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      icon: Icon(Icons.arrow_back, color: isLight ? AppColors.textPrimaryLight : Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       trans.recurringTitle,
-                      style: AppTypography.textTheme.displaySmall?.copyWith(
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -85,16 +91,16 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 14),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
+                      prefixIcon: Icon(Icons.search, color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), size: 20),
                       hintText: 'Search recurring...',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+                      hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.3), fontSize: 14),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                              icon: Icon(Icons.close, color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), size: 18),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
@@ -127,21 +133,21 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                           children: [
                             Icon(
                               Icons.repeat,
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.2),
                               size: 64,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               trans.recurringNoRecurring,
-                              style: AppTypography.textTheme.bodyLarge!.copyWith(
-                                color: Colors.white.withValues(alpha: 0.5),
+                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               trans.recurringNoRecurringHint,
-                              style: AppTypography.textTheme.bodySmall!.copyWith(
-                                color: Colors.white.withValues(alpha: 0.3),
+                              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                           ],
@@ -153,8 +159,8 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                       return Center(
                         child: Text(
                           'No results for "$_searchQuery"',
-                          style: AppTypography.textTheme.bodyMedium!.copyWith(
-                            color: Colors.white.withValues(alpha: 0.4),
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
                       );
@@ -222,8 +228,8 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                                               Expanded(
                                                 child: Text(
                                                   item.name,
-                                                  style: AppTypography.textTheme.bodyMedium!.copyWith(
-                                                    color: Colors.white,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 14,
                                                   ),
@@ -242,7 +248,7 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                                                   child: Text(
                                                     'INACTIVE',
                                                     style: TextStyle(
-                                                      color: Colors.white.withValues(alpha: 0.5),
+                                                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                                                       fontSize: 9,
                                                       fontWeight: FontWeight.bold,
                                                       letterSpacing: 0.5,
@@ -254,16 +260,16 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                                           const SizedBox(height: 4),
                                           Text(
                                             '${item.frequency.displayName} • ${category?.name ?? item.type.displayName} • ${account?.name ?? 'Unknown'}',
-                                            style: AppTypography.textTheme.bodySmall!.copyWith(
-                                              color: Colors.white.withValues(alpha: 0.4),
+                                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                                               fontSize: 11,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             'Created ${DateFormat.yMMMd().format(item.createdAt)}',
-                                            style: AppTypography.textTheme.bodySmall!.copyWith(
-                                              color: Colors.white.withValues(alpha: 0.3),
+                                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                              color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.3),
                                               fontSize: 10,
                                             ),
                                           ),
@@ -276,7 +282,7 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                                       children: [
                                         Text(
                                           '${isExpense ? '-' : '+'}${Formatters.formatCurrency(item.amount, showDecimal: showDecimal)}',
-                                          style: AppTypography.textTheme.bodyMedium!.copyWith(
+                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                             color: color,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
@@ -286,8 +292,8 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
                                         if (isActive)
                                           Text(
                                             '${trans.recurringNextRun}: ${DateFormat.MMMd().format(item.nextDate)}',
-                                            style: AppTypography.textTheme.bodySmall!.copyWith(
-                                              color: Colors.white.withValues(alpha: 0.4),
+                                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                                               fontSize: 11,
                                             ),
                                           ),
@@ -391,8 +397,12 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                     : const Color(0xFF34D399);
     final trans = ref.watch(translationsProvider);
 
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
     return Dialog(
-      backgroundColor: const Color(0xFF2D2416),
+      backgroundColor: isDefault ? const Color(0xFF2D2416) : isLight ? Colors.white : const Color(0xFF0A0A0A),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -411,8 +421,8 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                   Expanded(
                     child: Text(
                       trans.recurringTitleEdit,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -430,22 +440,22 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
               const SizedBox(height: 20),
 
               // Name field
-              _buildLabel(trans.recurringName.toUpperCase()),
+              _buildLabel(trans.recurringName.toUpperCase(), isLight),
               const SizedBox(height: 8),
-              _buildTextField(_nameController, trans.entryTitleHint),
+              _buildTextField(_nameController, trans.entryTitleHint, isLight),
 
               const SizedBox(height: 16),
 
               // Amount field
-              _buildLabel(trans.entryAmount.toUpperCase()),
+              _buildLabel(trans.entryAmount.toUpperCase(), isLight),
               const SizedBox(height: 8),
-              _buildTextField(_amountController, trans.entryAmount,
+              _buildTextField(_amountController, trans.entryAmount, isLight,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true)),
 
               const SizedBox(height: 16),
 
               // Frequency
-              _buildLabel(trans.recurringFrequency.toUpperCase()),
+              _buildLabel(trans.recurringFrequency.toUpperCase(), isLight),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -481,7 +491,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                         style: TextStyle(
                           color: isSelected
                               ? const Color(0xFF1A1410)
-                              : Colors.white.withValues(alpha: 0.8),
+                              : (isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8)),
                           fontSize: 13,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         ),
@@ -494,7 +504,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
               const SizedBox(height: 16),
 
               // Info: Category & Account (read-only)
-              _buildLabel('INFO'),
+              _buildLabel('INFO', isLight),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -505,13 +515,13 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                 ),
                 child: Column(
                   children: [
-                    _buildInfoRow(trans.accountType, widget.item.type.displayName),
+                    _buildInfoRow(trans.accountType, widget.item.type.displayName, isLight),
                     const SizedBox(height: 6),
-                    _buildInfoRow(trans.entryCategory, widget.category?.name ?? '-'),
+                    _buildInfoRow(trans.entryCategory, widget.category?.name ?? '-', isLight),
                     const SizedBox(height: 6),
-                    _buildInfoRow(trans.entryAccount, widget.account?.name ?? '-'),
+                    _buildInfoRow(trans.entryAccount, widget.account?.name ?? '-', isLight),
                     const SizedBox(height: 6),
-                    _buildInfoRow(trans.recurringNextRun, DateFormat.yMMMd().format(widget.item.nextDate)),
+                    _buildInfoRow(trans.recurringNextRun, DateFormat.yMMMd().format(widget.item.nextDate), isLight),
                   ],
                 ),
               ),
@@ -532,7 +542,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                     Text(
                       'Active',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -563,7 +573,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                       child: Text(
                         trans.cancel,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -600,11 +610,11 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, bool isLight) {
     return Text(
       text,
       style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.6),
+        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.2,
@@ -614,7 +624,8 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
 
   Widget _buildTextField(
     TextEditingController controller,
-    String hint, {
+    String hint,
+    bool isLight, {
     TextInputType? keyboardType,
   }) {
     return Container(
@@ -628,12 +639,12 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 14),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.3),
             fontSize: 14,
           ),
         ),
@@ -641,21 +652,21 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, bool isLight) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
             fontSize: 12,
           ),
         ),
         Text(
           value,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -727,8 +738,12 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
     final trans = ref.read(translationsProvider);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2416),
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return AlertDialog(
+        backgroundColor: isDefault ? const Color(0xFF2D2416) : isLight ? Colors.white : const Color(0xFF0A0A0A),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -736,22 +751,22 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Delete Recurring?', // TODO: Add translation
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 18),
             ),
           ],
         ),
         content: Text(
           'This will permanently remove this recurring transaction.', // TODO: Add translation
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               trans.cancel,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              style: TextStyle(color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(
@@ -762,13 +777,14 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text(
-              trans.delete,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            child: const Text(
+              'Delete', // text on red button - keep white
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
-      ),
+      );
+      },
     );
 
     if (confirmed != true) return;

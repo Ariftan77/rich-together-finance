@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 
 /// Reusable settings tile for consistent look across settings screen
 class SettingsTile extends StatelessWidget {
@@ -22,7 +24,10 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return InkWell(
       onTap: onTap,
@@ -51,7 +56,7 @@ class SettingsTile extends StatelessWidget {
                    Text(
                     title,
                     style: TextStyle(
-                      color: titleColor ?? (isDark ? Colors.white : AppColors.textPrimaryLight),
+                      color: titleColor ?? (isLight ? AppColors.textPrimaryLight : Colors.white),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -62,9 +67,9 @@ class SettingsTile extends StatelessWidget {
                       child: Text(
                         subtitle!,
                         style: TextStyle(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : const Color(0xFF64748B),
+                          color: isLight
+                              ? const Color(0xFF64748B)
+                              : Colors.white.withValues(alpha: 0.6),
                           fontSize: 13,
                         ),
                       ),
@@ -77,9 +82,9 @@ class SettingsTile extends StatelessWidget {
             else if (onTap != null)
               Icon(
                 Icons.chevron_right,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF94A3B8),
+                color: isLight
+                    ? const Color(0xFF94A3B8)
+                    : Colors.white.withValues(alpha: 0.5),
               ),
           ],
         ),

@@ -6,7 +6,9 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
@@ -54,30 +56,41 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   void _showBalanceInfo() {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2416),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.primaryGold, size: 20),
-            const SizedBox(width: 8),
-            const Text('Initial Balance', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: Text(
-          'Enter the current balance of this account.\n\n'
-          'For most account types (Cash, Bank, E-Wallet, Investment), '
-          'this should be a positive number.\n\n'
-          'For Credit Cards, a negative value represents the amount you currently owe.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Got it', style: TextStyle(color: AppColors.primaryGold)),
+      builder: (ctx) {
+        final themeMode = AppThemeProvider.of(ctx);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(ctx) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return AlertDialog(
+          backgroundColor: isDefault
+              ? const Color(0xFF2D2416)
+              : isLight
+                  ? Colors.white
+                  : const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.primaryGold, size: 20),
+              const SizedBox(width: 8),
+              Text('Initial Balance', style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 16)),
+            ],
           ),
-        ],
-      ),
+          content: Text(
+            'Enter the current balance of this account.\n\n'
+            'For most account types (Cash, Bank, E-Wallet, Investment), '
+            'this should be a positive number.\n\n'
+            'For Credit Cards, a negative value represents the amount you currently owe.',
+            style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Got it', style: TextStyle(color: AppColors.primaryGold)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -153,9 +166,18 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     final balanceText = _rawBalance != 0
         ? Formatters.formatCurrency(_rawBalance, currency: _selectedCurrency, showDecimal: showDecimal)
         : 'Tap to enter amount';
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return Dialog(
-      backgroundColor: const Color(0xFF2D2416),
+      backgroundColor: isDefault
+          ? const Color(0xFF2D2416)
+          : isLight
+              ? Colors.white
+              : const Color(0xFF1A1A1A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         child: Padding(
@@ -169,10 +191,10 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 children: [
                   Icon(Icons.account_balance_wallet, color: AppColors.primaryGold, size: 22),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Add Account',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -183,7 +205,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               Text(
                 'CURRENCY',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
@@ -218,7 +240,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                   Text(
                     'INITIAL BALANCE',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
@@ -242,9 +264,15 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                   height: 50,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.04)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(
+                      color: isLight
+                          ? Colors.black.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.15),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -254,12 +282,14 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                         child: Text(
                           balanceText,
                           style: TextStyle(
-                            color: _rawBalance != 0 ? Colors.white : Colors.white54,
+                            color: _rawBalance != 0
+                                ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
                             fontSize: 15,
                           ),
                         ),
                       ),
-                      Icon(Icons.calculate_outlined, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                      Icon(Icons.calculate_outlined, color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), size: 18),
                     ],
                   ),
                 ),
@@ -270,7 +300,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               Text(
                 'ACCOUNT NAME',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
@@ -279,16 +309,22 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: isLight
+                      ? Colors.black.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  border: Border.all(
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.12)
+                        : Colors.white.withValues(alpha: 0.15),
+                  ),
                 ),
                 child: TextField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 15),
                   decoration: InputDecoration(
                     hintText: 'e.g. My BCA Account',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 15),
+                    hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), fontSize: 15),
                     prefixIcon: Icon(Icons.label_outline, color: AppColors.primaryGold.withValues(alpha: 0.7), size: 18),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -306,13 +342,15 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                       onPressed: _isLoading ? null : () => Navigator.pop(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.white.withValues(alpha: 0.05),
+                        backgroundColor: isLight
+                            ? Colors.black.withValues(alpha: 0.05)
+                            : Colors.white.withValues(alpha: 0.05),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
                         'Cancel',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -370,13 +408,19 @@ class _CompactDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+            color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
@@ -387,9 +431,15 @@ class _CompactDropdown<T> extends StatelessWidget {
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: isLight
+                ? Colors.black.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            border: Border.all(
+              color: isLight
+                  ? Colors.black.withValues(alpha: 0.12)
+                  : Colors.white.withValues(alpha: 0.15),
+            ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<T>(
@@ -397,9 +447,13 @@ class _CompactDropdown<T> extends StatelessWidget {
               items: items,
               onChanged: onChanged,
               isExpanded: true,
-              dropdownColor: const Color(0xFF221D10),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              icon: Icon(Icons.expand_more, color: Colors.white.withValues(alpha: 0.3), size: 18),
+              dropdownColor: isDefault
+                  ? const Color(0xFF221D10)
+                  : isLight
+                      ? Colors.white
+                      : const Color(0xFF1A1A1A),
+              style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 14),
+              icon: Icon(Icons.expand_more, color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.3), size: 18),
             ),
           ),
         ),

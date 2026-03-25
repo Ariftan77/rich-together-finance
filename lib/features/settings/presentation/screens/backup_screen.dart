@@ -6,7 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/backup_service.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
@@ -60,24 +62,29 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     // Security check or confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.bgDarkEnd,
-        title: Text(trans.backupRestoreConfirmTitle, style: const TextStyle(color: Colors.white)),
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return AlertDialog(
+        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
+        title: Text(trans.backupRestoreConfirmTitle, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
         content: Text(
           trans.backupRestoreConfirmContent,
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(trans.backupRestoreConfirmButton, style: const TextStyle(color: AppColors.error)),
           ),
         ],
-      ),
+        );
+      },
     );
 
     if (confirm != true) return;
@@ -171,37 +178,46 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       return;
     }
 
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+    final sheetBg = isDefault ? AppColors.surface : isLight ? Colors.white : const Color(0xFF111111);
     final selectedFileId = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => _buildBackupListSheet(backups),
+      builder: (context) => _buildBackupListSheet(backups, isLight),
     );
 
     if (selectedFileId == null || !mounted) return;
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.bgDarkEnd,
-        title: Text(trans.backupDriveConfirmTitle, style: const TextStyle(color: Colors.white)),
+      builder: (context) {
+        final dlgThemeMode = AppThemeProvider.of(context);
+        final dlgIsLight = dlgThemeMode == AppThemeMode.light || (dlgThemeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final dlgIsDefault = dlgThemeMode == AppThemeMode.defaultTheme;
+        return AlertDialog(
+        backgroundColor: dlgIsDefault ? AppColors.bgDarkEnd : dlgIsLight ? Colors.white : const Color(0xFF111111),
+        title: Text(trans.backupDriveConfirmTitle, style: TextStyle(color: dlgIsLight ? AppColors.textPrimaryLight : Colors.white)),
         content: Text(
           trans.backupDriveConfirmContent,
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: dlgIsLight ? const Color(0xFF374151) : Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: TextStyle(color: dlgIsLight ? const Color(0xFF374151) : Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(trans.backupRestoreConfirmButton, style: const TextStyle(color: AppColors.error)),
           ),
         ],
-      ),
+        );
+      },
     );
 
     if (confirm != true || !mounted) return;
@@ -223,7 +239,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   }
 
-  Widget _buildBackupListSheet(List<drive.File> backups) {
+  Widget _buildBackupListSheet(List<drive.File> backups, bool isLight) {
     final trans = ref.read(translationsProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -232,7 +248,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           padding: const EdgeInsets.all(16),
           child: Text(
             trans.backupSelectBackup,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
         Divider(color: Colors.white.withValues(alpha: 0.1)),
@@ -246,10 +262,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               : '';
           return ListTile(
             leading: const Icon(Icons.backup, color: AppColors.primaryGold),
-            title: Text(name, style: const TextStyle(color: Colors.white)),
+            title: Text(name, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
             subtitle: Text(
               '$dateText  $sizeText'.trim(),
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54, fontSize: 12),
             ),
             onTap: () => Navigator.pop(context, file.id),
           );
@@ -261,12 +277,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = AppThemeProvider.isLightMode(context);
     return Stack(
       children: [
         // Background
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -276,8 +293,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-             titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+             titleTextStyle: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
@@ -303,8 +320,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                               ),
                               child: const Icon(Icons.upload_file, color: AppColors.primaryGold),
                             ),
-                            title: Text(trans.backupExport, style: const TextStyle(color: Colors.white)),
-                            subtitle: Text(trans.backupExportSubtitle, style: const TextStyle(color: Colors.white54)),
+                            title: Text(trans.backupExport, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
+                            subtitle: Text(trans.backupExportSubtitle, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54)),
                             onTap: _handleExport,
                           ),
                           Divider(color: Colors.white.withValues(alpha: 0.1)),
@@ -317,8 +334,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                               ),
                               child: const Icon(Icons.download_rounded, color: AppColors.primaryGold),
                             ),
-                            title: Text(trans.backupImport, style: const TextStyle(color: Colors.white)),
-                            subtitle: Text(trans.backupImportSubtitle, style: const TextStyle(color: Colors.white54)),
+                            title: Text(trans.backupImport, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
+                            subtitle: Text(trans.backupImportSubtitle, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54)),
                             onTap: _handleImport,
                           ),
                         ],

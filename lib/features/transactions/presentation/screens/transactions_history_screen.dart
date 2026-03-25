@@ -7,8 +7,10 @@ import '../../../../core/providers/database_providers.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/widgets/category_icon_widget.dart';
 // import '../../../../shared/widgets/glass_item.dart'; // Removed
 import '../../../../shared/widgets/glass_card.dart';
@@ -124,14 +126,15 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
         : DateTime(DateTime.now().year, DateTime.now().month, 1);
     final canGoNext = selectedMonth.isBefore(latestTxMonth);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final canPop = Navigator.canPop(context);
 
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -147,14 +150,14 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                          Padding(
                            padding: const EdgeInsets.only(right: 8.0),
                            child: IconButton(
-                             icon: Icon(Icons.arrow_back, color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+                             icon: Icon(Icons.arrow_back, color: isLight ? AppColors.textPrimaryLight : AppColors.textPrimary),
                              onPressed: () => Navigator.pop(context),
                            ),
                          ),
                       Text(
                         trans.navTransactions,
-                        style: AppTypography.textTheme.displaySmall?.copyWith(
-                          color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          color: isLight ? AppColors.textPrimaryLight : AppColors.textPrimary,
                         ),
                       ),
                       const Spacer(),
@@ -162,7 +165,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       IconButton(
                         icon: Icon(
                           Icons.repeat,
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         ),
                         onPressed: () {
                           Navigator.push(
@@ -186,11 +189,11 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                               IconButton(
                                 icon: Icon(
                                   Icons.filter_list,
-                                  color: hasDateFilter 
-                                      ? AppColors.primaryGold 
-                                      : (Theme.of(context).brightness == Brightness.dark 
-                                          ? Colors.white 
-                                          : AppColors.textPrimaryLight),
+                                  color: hasDateFilter
+                                      ? AppColors.primaryGold
+                                      : (AppThemeProvider.isLightMode(context)
+                                          ? AppColors.textPrimaryLight
+                                          : Colors.white),
                                 ),
                                 onPressed: () {
                                   showModalBottomSheet(
@@ -229,7 +232,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.chevron_left, color: isDark ? Colors.white : AppColors.textPrimaryLight),
+                        icon: Icon(Icons.chevron_left, color: isLight ? AppColors.textPrimaryLight : Colors.white),
                         onPressed: () {
                           final prev = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
                           _changeMonth(prev);
@@ -245,10 +248,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 hasCustomRange
                                     ? trans.txnCustomRange
                                     : DateFormat('MMMM yyyy').format(selectedMonth),
-                                style: AppTypography.textTheme.titleMedium?.copyWith(
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: hasCustomRange
                                       ? AppColors.primaryGold
-                                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                                      : (isLight ? AppColors.textPrimaryLight : Colors.white),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -257,7 +260,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 Icons.arrow_drop_down,
                                 color: hasCustomRange
                                     ? AppColors.primaryGold
-                                    : (isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B)),
+                                    : (isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7)),
                                 size: 20,
                               ),
                             ],
@@ -268,8 +271,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         icon: Icon(
                           Icons.chevron_right,
                           color: canGoNext || hasCustomRange
-                              ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                              : (isDark ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFCBD5E1)),
+                              ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                              : (isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.25)),
                         ),
                         onPressed: canGoNext || hasCustomRange
                             ? () {
@@ -357,8 +360,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         return Center(
                           child: Text(
                             trans.txnNoTransactions,
-                            style: AppTypography.textTheme.bodyLarge!.copyWith(
-                              color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
+                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                         );
@@ -424,8 +427,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                     Text(
                                       _formatDateSection(date, today, trans).toUpperCase(),
                                       textAlign: TextAlign.center,
-                                      style: AppTypography.textTheme.labelSmall!.copyWith(
-                                        color: isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B),
+                                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                                        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.5,
                                         fontSize: 12,
@@ -450,7 +453,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                         _DayStatChip(
                                           label: trans.txnDaySummaryTxn,
                                           value: '${cts.length}',
-                                          color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
+                                          color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                                         ),
                                       ],
                                     ),
@@ -500,14 +503,14 @@ class _DayStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
-          style: AppTypography.textTheme.labelSmall!.copyWith(
-            color: isDark ? Colors.white.withValues(alpha: 0.35) : const Color(0xFF94A3B8),
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+            color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.35),
             fontSize: 10,
             letterSpacing: 0.8,
           ),
@@ -515,7 +518,7 @@ class _DayStatChip extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: AppTypography.textTheme.labelSmall!.copyWith(
+          style: Theme.of(context).textTheme.labelSmall!.copyWith(
             color: color,
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -535,7 +538,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -546,13 +549,13 @@ class _FilterChip extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryGold
-                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
+                : (isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1)),
           ),
         ),
         child: Text(
           label,
-          style: AppTypography.textTheme.labelMedium!.copyWith( // Fixed
-            color: isSelected ? Colors.black : (isDark ? Colors.white : AppColors.textPrimaryLight),
+          style: Theme.of(context).textTheme.labelMedium!.copyWith( // Fixed
+            color: isSelected ? Colors.black : (isLight ? AppColors.textPrimaryLight : Colors.white),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -574,7 +577,7 @@ class _TransactionItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     final showDecimal = ref.watch(showDecimalProvider);
     final trans = ref.watch(translationsProvider);
     final isExpense = transaction.type == TransactionType.expense;
@@ -657,8 +660,8 @@ class _TransactionItem extends ConsumerWidget {
                     transaction.title != null && transaction.title!.isNotEmpty 
                       ? transaction.title! 
                       : localizedTypeName(transaction.type),
-                    style: AppTypography.textTheme.bodyMedium!.copyWith(
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -671,8 +674,8 @@ class _TransactionItem extends ConsumerWidget {
                       final timeStr = _formatTime(transaction.date);
                       return Text(
                         '$timeStr • $categoryName',
-                        style: AppTypography.textTheme.bodySmall!.copyWith(
-                          color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                          color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                           fontSize: 11,
                         ),
                       );
@@ -690,7 +693,7 @@ class _TransactionItem extends ConsumerWidget {
                     final currencySymbol = account?.currency.code ?? 'IDR';
                     return Text(
                       '$currencySymbol $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
-                      style: AppTypography.textTheme.bodyMedium!.copyWith(
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color: color,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -704,8 +707,8 @@ class _TransactionItem extends ConsumerWidget {
                     final accountName = account?.name ?? trans.loading;
                     return Text(
                       accountName,
-                      style: AppTypography.textTheme.bodySmall!.copyWith(
-                        color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                         fontSize: 11,
                       ),
                     );

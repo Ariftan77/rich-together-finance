@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 
@@ -25,6 +27,7 @@ class AccountCard extends ConsumerWidget {
     final showDecimal = ref.watch(showDecimalProvider);
     final currencySymbol = account.currency.symbol;
     final accountType = account.type;
+    final isLight = AppThemeProvider.isLightMode(context);
 
     return GlassCard(
       onTap: onTap,
@@ -38,11 +41,15 @@ class AccountCard extends ConsumerWidget {
               children: [
                 Text(
                   '${account.name} (${account.currency.code})',
-                  style: AppTypography.textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                  ),
                 ),
                 Text(
                   accountType.displayName,
-                  style: AppTypography.textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isLight ? const Color(0xFF64748B) : Colors.white70,
+                  ),
                 ),
               ],
             ),
@@ -52,7 +59,7 @@ class AccountCard extends ConsumerWidget {
             children: [
               Text(
                 '${balance < 0 ? '-' : ''}$currencySymbol ${Formatters.formatCurrency(balance.abs(), currency: account.currency, showDecimal: showDecimal)}',
-                style: AppTypography.textTheme.labelLarge?.copyWith(
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: account.type.isCreditCard && balance < 0
                       ? AppColors.error
                       : AppColors.primaryGoldAccent,

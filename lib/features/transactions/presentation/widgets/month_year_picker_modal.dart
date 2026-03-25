@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 
 class MonthYearPickerModal extends StatefulWidget {
   final DateTime initialMonth;
@@ -41,11 +43,15 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
   @override
   Widget build(BuildContext context) {
     final canGoNextYear = _selectedYear < widget.maxMonth.year;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF221D10),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF221D10),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -57,7 +63,9 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: isLight
+                  ? Colors.black.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -68,10 +76,10 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Select Month',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -98,13 +106,13 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
               children: [
                 IconButton(
                   onPressed: () => setState(() => _selectedYear--),
-                  icon: const Icon(Icons.chevron_left, color: Colors.white),
+                  icon: Icon(Icons.chevron_left, color: isLight ? AppColors.textPrimaryLight : Colors.white),
                 ),
                 const SizedBox(width: 16),
                 Text(
                   '$_selectedYear',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
@@ -118,8 +126,10 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
                   icon: Icon(
                     Icons.chevron_right,
                     color: canGoNextYear
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.25),
+                        ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                        : (isLight
+                            ? const Color(0xFFCBD5E1)
+                            : Colors.white.withValues(alpha: 0.25)),
                   ),
                 ),
               ],
@@ -158,12 +168,16 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
                     decoration: BoxDecoration(
                       color: highlighted && !isDisabled
                           ? AppColors.primaryGold
-                          : Colors.white.withValues(alpha: 0.07),
+                          : (isLight
+                              ? Colors.black.withValues(alpha: 0.05)
+                              : Colors.white.withValues(alpha: 0.07)),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: highlighted && !isDisabled
                             ? AppColors.primaryGold
-                            : Colors.white.withValues(alpha: 0.1),
+                            : (isLight
+                                ? Colors.black.withValues(alpha: 0.1)
+                                : Colors.white.withValues(alpha: 0.1)),
                       ),
                     ),
                     alignment: Alignment.center,
@@ -171,10 +185,12 @@ class _MonthYearPickerModalState extends State<MonthYearPickerModal> {
                       _monthNames[index],
                       style: TextStyle(
                         color: isDisabled
-                            ? Colors.white.withValues(alpha: 0.25)
+                            ? (isLight
+                                ? const Color(0xFFCBD5E1)
+                                : Colors.white.withValues(alpha: 0.25))
                             : highlighted
                                 ? Colors.black
-                                : Colors.white,
+                                : (isLight ? AppColors.textPrimaryLight : Colors.white),
                         fontWeight: highlighted
                             ? FontWeight.bold
                             : FontWeight.normal,

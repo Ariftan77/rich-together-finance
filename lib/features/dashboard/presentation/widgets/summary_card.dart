@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 
 /// Reusable summary card widget for displaying metrics
@@ -21,7 +23,10 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return GlassCard(
       child: Padding(
@@ -48,9 +53,9 @@ class SummaryCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : const Color(0xFF374151),
+                      color: isLight
+                          ? const Color(0xFF374151)
+                          : Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -62,7 +67,7 @@ class SummaryCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 fontSize: 21.6,
                 fontWeight: FontWeight.bold,
               ),
@@ -72,9 +77,9 @@ class SummaryCard extends StatelessWidget {
               Text(
                 subtitle!,
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF64748B),
+                  color: isLight
+                      ? const Color(0xFF64748B)
+                      : Colors.white.withValues(alpha: 0.5),
                   fontSize: 11,
                 ),
               ),

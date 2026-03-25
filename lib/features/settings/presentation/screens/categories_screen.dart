@@ -6,8 +6,10 @@ import '../../../../core/database/daos/transaction_dao.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
@@ -44,6 +46,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   Widget build(BuildContext context) {
     final profileId = ref.watch(activeProfileIdProvider);
     final trans = ref.watch(translationsProvider);
+    final isLight = AppThemeProvider.isLightMode(context);
 
     if (profileId == null) {
       return const Scaffold(
@@ -58,8 +61,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       children: [
         // Background
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -69,8 +72,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+            titleTextStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: _showAddCategoryDialog,
@@ -85,21 +88,21 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 child: Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15)),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) => setState(() => _searchQuery = v.trim()),
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 15),
                     decoration: InputDecoration(
                       hintText: trans.categoriesSearchHint,
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 15),
+                      hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), fontSize: 15),
                       prefixIcon: Icon(Icons.search, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                              icon: Icon(Icons.close, color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5), size: 18),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
@@ -118,11 +121,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    _buildFilterBubble(trans.filterAll, null),
+                    _buildFilterBubble(trans.filterAll, null, isLight),
                     const SizedBox(width: 8),
-                    _buildFilterBubble(trans.categoriesFilterExpense, CategoryType.expense),
+                    _buildFilterBubble(trans.categoriesFilterExpense, CategoryType.expense, isLight),
                     const SizedBox(width: 8),
-                    _buildFilterBubble(trans.categoriesFilterIncome, CategoryType.income),
+                    _buildFilterBubble(trans.categoriesFilterIncome, CategoryType.income, isLight),
                   ],
                 ),
               ),
@@ -133,7 +136,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   stream: categoriesStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+                      return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)));
                     }
 
                     if (!snapshot.hasData) {
@@ -150,7 +153,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     }).toList();
 
                     if (categories.isEmpty) {
-                      return Center(child: Text(trans.categoryNoneFound, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
+                      return Center(child: Text(trans.categoryNoneFound, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5))));
                     }
           
                     return ListView.separated(
@@ -159,7 +162,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = categories[index];
-                        return _buildCategoryTile(item);
+                        return _buildCategoryTile(item, isLight);
                       },
                     );
                   },
@@ -172,23 +175,23 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     );
   }
 
-  Widget _buildFilterBubble(String label, CategoryType? type) {
+  Widget _buildFilterBubble(String label, CategoryType? type, bool isLight) {
     final isSelected = _selectedFilter == type;
     return GestureDetector(
       onTap: () => setState(() => _selectedFilter = type),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.1),
+          color: isSelected ? AppColors.primaryGold : (isLight ? Colors.black.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : Colors.white.withValues(alpha: 0.2),
+            color: isSelected ? AppColors.primaryGold : (isLight ? Colors.black.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.2)),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected ? Colors.black : (isLight ? AppColors.textPrimaryLight : Colors.white),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 14,
           ),
@@ -236,9 +239,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     }
   }
 
-  Widget _buildCategoryTile(CategoryWithUsage item) {
+  Widget _buildCategoryTile(CategoryWithUsage item, bool isLight) {
     final isEditing = _editingCategoryId == item.category.id;
     final isSystem = item.category.isSystem;
+    final themeMode = AppThemeProvider.of(context);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -259,7 +264,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   child: CategoryIconWidget(
                     iconString: isEditing ? (_editingIcon ?? item.category.icon) : item.category.icon,
                     size: 20,
-                    color: Colors.white,
+                    color: isDefault ? AppColors.primaryGold : isLight ? AppColors.textPrimaryLight : Colors.white,
                   ),
                 ),
                 if (isEditing) ...[
@@ -283,8 +288,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                 ? TextField(
                     controller: _editController,
                     autofocus: true,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -293,7 +298,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                       hintText: ref.watch(translationsProvider).entryCategory,
-                      hintStyle: const TextStyle(color: Colors.white30),
+                      hintStyle: TextStyle(color: isLight ? const Color(0xFFCBD5E1) : Colors.white30),
                     ),
                     onSubmitted: (_) => _saveCategory(item.category),
                   )
@@ -302,8 +307,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     children: [
                       Text(
                         item.category.name,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -312,7 +317,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       Text(
                         ref.watch(translationsProvider).categoryUsedInTransactions(item.usageCount),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                           fontSize: 12,
                         ),
                       ),
@@ -327,12 +332,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
               onPressed: () => _saveCategory(item.category),
             ),
             IconButton(
-              icon: const Icon(Icons.close, color: Colors.white70),
+              icon: Icon(Icons.close, color: isLight ? const Color(0xFF64748B) : Colors.white70),
               onPressed: _cancelEdit,
             ),
           ] else ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white70),
+              icon: Icon(Icons.edit_outlined, color: isLight ? const Color(0xFF64748B) : Colors.white70),
               onPressed: () => _startEdit(item.category),
             ),
             IconButton(
@@ -416,13 +421,17 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     if (item.usageCount > 0) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: AppColors.bgDarkEnd,
+        builder: (context) {
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
+          return AlertDialog(
+          backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(trans.categoryCannotDeleteTitle, style: const TextStyle(color: Colors.white)),
+          title: Text(trans.categoryCannotDeleteTitle, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
           content: Text(
             trans.categoryCannotDeleteContent(item.usageCount),
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+            style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.8)),
           ),
           actions: [
             TextButton(
@@ -430,7 +439,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
               child: Text(trans.ok, style: const TextStyle(color: AppColors.primaryGold)),
             ),
           ],
-        ),
+          );
+        },
       );
       return;
     }
@@ -438,25 +448,30 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     // 2. Confirm delete
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.bgDarkEnd,
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return AlertDialog(
+        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('${trans.delete} ${trans.entryCategory}?', style: const TextStyle(color: Colors.white)),
+        title: Text('${trans.delete} ${trans.entryCategory}?', style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
         content: Text(
           '"${item.category.name}"',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(trans.cancel, style: const TextStyle(color: Colors.white70)),
+            child: Text(trans.cancel, style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(trans.delete, style: const TextStyle(color: AppColors.error)),
           ),
         ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {

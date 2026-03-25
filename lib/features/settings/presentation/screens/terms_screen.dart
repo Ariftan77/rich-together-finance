@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 
 class TermsScreen extends ConsumerWidget {
   const TermsScreen({super.key});
@@ -10,12 +12,13 @@ class TermsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trans = ref.watch(translationsProvider);
+    final isLight = AppThemeProvider.isLightMode(context);
 
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -24,8 +27,8 @@ class TermsScreen extends ConsumerWidget {
             title: Text(trans.termsTitle),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+            titleTextStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -34,7 +37,7 @@ class TermsScreen extends ConsumerWidget {
               children: [
               Text(
                 trans.termsTitle,
-                style: AppTypography.textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: AppColors.primaryGold,
                 ),
               ),
@@ -42,20 +45,20 @@ class TermsScreen extends ConsumerWidget {
               Text(
                 trans.termsLastUpdated,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 24),
 
-              _buildSection(trans.termsAcceptanceTitle, trans.termsAcceptanceContent),
-              _buildSection(trans.termsUsageTitle, trans.termsUsageContent),
-              _buildSection(trans.termsAccuracyTitle, trans.termsAccuracyContent),
-              _buildSection(trans.termsAdviceTitle, trans.termsAdviceContent),
-              _buildSection(trans.termsLiabilityTitle, trans.termsLiabilityContent),
-              _buildSection(trans.termsUpdatesTitle, trans.termsUpdatesContent),
-              _buildSection(trans.termsSecurityTitle, trans.termsSecurityContent),
-              _buildSection(trans.termsContactTitle, trans.termsContactContent),
+              _buildSection(trans.termsAcceptanceTitle, trans.termsAcceptanceContent, isLight),
+              _buildSection(trans.termsUsageTitle, trans.termsUsageContent, isLight),
+              _buildSection(trans.termsAccuracyTitle, trans.termsAccuracyContent, isLight),
+              _buildSection(trans.termsAdviceTitle, trans.termsAdviceContent, isLight),
+              _buildSection(trans.termsLiabilityTitle, trans.termsLiabilityContent, isLight),
+              _buildSection(trans.termsUpdatesTitle, trans.termsUpdatesContent, isLight),
+              _buildSection(trans.termsSecurityTitle, trans.termsSecurityContent, isLight),
+              _buildSection(trans.termsContactTitle, trans.termsContactContent, isLight),
             ],
           ),
         ),
@@ -64,7 +67,7 @@ class TermsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection(String title, String content) {
+  Widget _buildSection(String title, String content, bool isLight) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -72,8 +75,8 @@ class TermsScreen extends ConsumerWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -82,7 +85,7 @@ class TermsScreen extends ConsumerWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.7),
               fontSize: 14,
               height: 1.5,
             ),

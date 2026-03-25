@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
@@ -37,7 +39,10 @@ class YtdTopCategories extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final accentColor = Theme.of(context).colorScheme.primary;
     final categoriesAsync = ref.watch(ytdTopCategoriesProvider);
 
@@ -60,9 +65,9 @@ class YtdTopCategories extends ConsumerWidget {
             child: Text(
               trans.reportNoData,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF94A3B8),
+                color: isLight
+                    ? const Color(0xFF94A3B8)
+                    : Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             ),
@@ -78,9 +83,9 @@ class YtdTopCategories extends ConsumerWidget {
                 child: Text(
                   trans.reportNoData,
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.5)
-                        : const Color(0xFF94A3B8),
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                 ),
@@ -95,7 +100,7 @@ class YtdTopCategories extends ConsumerWidget {
             categories: categories,
             currencySymbol: currencySymbol,
             showDecimal: showDecimal,
-            isDark: isDark,
+            isLight: isLight,
             accentColor: accentColor,
           ),
         );
@@ -112,14 +117,14 @@ class _YtdTopCategoriesContent extends ConsumerStatefulWidget {
   final List<YtdCategoryItem> categories;
   final String currencySymbol;
   final bool showDecimal;
-  final bool isDark;
+  final bool isLight;
   final Color accentColor;
 
   const _YtdTopCategoriesContent({
     required this.categories,
     required this.currencySymbol,
     required this.showDecimal,
-    required this.isDark,
+    required this.isLight,
     required this.accentColor,
   });
 
@@ -148,7 +153,7 @@ class _YtdTopCategoriesContentState
           Text(
             trans.ytdTopCategoriesTitle,
             style: TextStyle(
-              color: widget.isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: widget.isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -163,7 +168,7 @@ class _YtdTopCategoriesContentState
                 item: item,
                 maxAmount: _maxAmount,
                 isSelected: isSelected,
-                isDark: widget.isDark,
+                isLight: widget.isLight,
                 accentColor: widget.accentColor,
                 currencySymbol: widget.currencySymbol,
                 showDecimal: widget.showDecimal,
@@ -184,7 +189,7 @@ class _YtdTopCategoriesContentState
                         categories: widget.categories,
                         currencySymbol: widget.currencySymbol,
                         showDecimal: widget.showDecimal,
-                        isDark: widget.isDark,
+                        isLight: widget.isLight,
                         accentColor: widget.accentColor,
                         trans: trans,
                         onClose: () {
@@ -210,7 +215,7 @@ class _CategoryRow extends StatelessWidget {
   final YtdCategoryItem item;
   final double maxAmount;
   final bool isSelected;
-  final bool isDark;
+  final bool isLight;
   final Color accentColor;
   final String currencySymbol;
   final bool showDecimal;
@@ -220,7 +225,7 @@ class _CategoryRow extends StatelessWidget {
     required this.item,
     required this.maxAmount,
     required this.isSelected,
-    required this.isDark,
+    required this.isLight,
     required this.accentColor,
     required this.currencySymbol,
     required this.showDecimal,
@@ -230,12 +235,12 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categoryColor = _parseColor(item.categoryColor, accentColor);
-    final barBg = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.06);
-    final highlightBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : Colors.black.withValues(alpha: 0.04);
+    final barBg = isLight
+        ? Colors.black.withValues(alpha: 0.06)
+        : Colors.white.withValues(alpha: 0.08);
+    final highlightBg = isLight
+        ? Colors.black.withValues(alpha: 0.04)
+        : Colors.white.withValues(alpha: 0.06);
     final barFraction =
         maxAmount > 0 ? (item.amount / maxAmount).clamp(0.0, 1.0) : 0.0;
 
@@ -286,9 +291,9 @@ class _CategoryRow extends StatelessWidget {
                   child: Text(
                     item.categoryName,
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.white
-                          : AppColors.textPrimaryLight,
+                      color: isLight
+                          ? AppColors.textPrimaryLight
+                          : Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -301,9 +306,9 @@ class _CategoryRow extends StatelessWidget {
                 Text(
                   '$currencySymbol ${Formatters.formatCurrency(item.amount, showDecimal: showDecimal)}',
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.9)
-                        : AppColors.textPrimaryLight,
+                    color: isLight
+                        ? AppColors.textPrimaryLight
+                        : Colors.white.withValues(alpha: 0.9),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -317,9 +322,9 @@ class _CategoryRow extends StatelessWidget {
                     '${item.percentage.toStringAsFixed(1)}%',
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.45)
-                          : const Color(0xFF94A3B8),
+                      color: isLight
+                          ? const Color(0xFF94A3B8)
+                          : Colors.white.withValues(alpha: 0.45),
                       fontSize: 11,
                     ),
                   ),
@@ -373,7 +378,7 @@ class _TrendSection extends ConsumerWidget {
   final List<YtdCategoryItem> categories;
   final String currencySymbol;
   final bool showDecimal;
-  final bool isDark;
+  final bool isLight;
   final Color accentColor;
   final AppTranslations trans;
   final VoidCallback onClose;
@@ -383,7 +388,7 @@ class _TrendSection extends ConsumerWidget {
     required this.categories,
     required this.currencySymbol,
     required this.showDecimal,
-    required this.isDark,
+    required this.isLight,
     required this.accentColor,
     required this.trans,
     required this.onClose,
@@ -409,9 +414,9 @@ class _TrendSection extends ConsumerWidget {
         children: [
           // ── Divider ────────────────────────────────────────────────────
           Divider(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.08),
+            color: isLight
+                ? Colors.black.withValues(alpha: 0.08)
+                : Colors.white.withValues(alpha: 0.1),
             height: 24,
           ),
 
@@ -425,9 +430,9 @@ class _TrendSection extends ConsumerWidget {
                     Text(
                       trans.categoryTrendTitle,
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.55)
-                            : const Color(0xFF94A3B8),
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.55),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.4,
@@ -452,17 +457,17 @@ class _TrendSection extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.06),
+                    color: isLight
+                        ? Colors.black.withValues(alpha: 0.06)
+                        : Colors.white.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.close,
                     size: 14,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : const Color(0xFF64748B),
+                    color: isLight
+                        ? const Color(0xFF64748B)
+                        : Colors.white.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -487,9 +492,9 @@ class _TrendSection extends ConsumerWidget {
                 child: Text(
                   trans.reportNoData,
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.4)
-                        : const Color(0xFF94A3B8),
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
                     fontSize: 13,
                   ),
                 ),
@@ -504,9 +509,9 @@ class _TrendSection extends ConsumerWidget {
                     child: Text(
                       trans.reportNoData,
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                         fontSize: 13,
                       ),
                     ),
@@ -517,7 +522,7 @@ class _TrendSection extends ConsumerWidget {
               return _TrendBarChart(
                 points: points,
                 barColor: barColor,
-                isDark: isDark,
+                isLight: isLight,
                 currencySymbol: currencySymbol,
                 showDecimal: showDecimal,
               );
@@ -536,14 +541,14 @@ class _TrendSection extends ConsumerWidget {
 class _TrendBarChart extends StatefulWidget {
   final List<CategoryMonthPoint> points;
   final Color barColor;
-  final bool isDark;
+  final bool isLight;
   final String currencySymbol;
   final bool showDecimal;
 
   const _TrendBarChart({
     required this.points,
     required this.barColor,
-    required this.isDark,
+    required this.isLight,
     required this.currencySymbol,
     required this.showDecimal,
   });
@@ -563,9 +568,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
     // Add 15% headroom so the tallest bar never clips the top
     final chartMaxY = maxY > 0 ? maxY * 1.15 : 1.0;
 
-    final labelColor = widget.isDark
-        ? Colors.white.withValues(alpha: 0.45)
-        : const Color(0xFF94A3B8);
+    final labelColor = widget.isLight
+        ? const Color(0xFF94A3B8)
+        : Colors.white.withValues(alpha: 0.45);
 
     return SizedBox(
       height: 150,
@@ -575,9 +580,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              tooltipBgColor: widget.isDark
-                  ? const Color(0xF0222222)
-                  : const Color(0xF0FFFFFF),
+              tooltipBgColor: widget.isLight
+                  ? const Color(0xF0FFFFFF)
+                  : const Color(0xF0222222),
               tooltipRoundedRadius: 8,
               tooltipPadding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -586,9 +591,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
                 return BarTooltipItem(
                   '${point.month}\n',
                   TextStyle(
-                    color: widget.isDark
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : const Color(0xFF64748B),
+                    color: widget.isLight
+                        ? const Color(0xFF64748B)
+                        : Colors.white.withValues(alpha: 0.7),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -597,9 +602,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
                       text:
                           '${widget.currencySymbol} ${Formatters.formatCurrency(point.amount, showDecimal: widget.showDecimal)}',
                       style: TextStyle(
-                        color: widget.isDark
-                            ? Colors.white
-                            : AppColors.textPrimaryLight,
+                        color: widget.isLight
+                            ? AppColors.textPrimaryLight
+                            : Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -661,9 +666,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
             drawVerticalLine: false,
             horizontalInterval: chartMaxY / 3,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: widget.isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.05),
+              color: widget.isLight
+                  ? Colors.black.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.06),
               strokeWidth: 1,
             ),
           ),
@@ -689,9 +694,9 @@ class _TrendBarChartState extends State<_TrendBarChart> {
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
                     toY: chartMaxY,
-                    color: widget.isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : Colors.black.withValues(alpha: 0.03),
+                    color: widget.isLight
+                        ? Colors.black.withValues(alpha: 0.03)
+                        : Colors.white.withValues(alpha: 0.04),
                   ),
                 ),
               ],

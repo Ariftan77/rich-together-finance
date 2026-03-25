@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
@@ -39,11 +41,12 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = AppThemeProvider.isLightMode(context);
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -52,8 +55,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             title: Text(ref.watch(translationsProvider).settingsAboutTitle),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+            titleTextStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -79,7 +82,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               // App Name
               Text(
                 'About Richer',
-                style: AppTypography.textTheme.headlineMedium?.copyWith(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: AppColors.primaryGold,
                 ),
               ),
@@ -89,7 +92,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               Text(
                 ref.watch(translationsProvider).aboutTagline,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                   fontSize: 16,
                 ),
               ),
@@ -99,13 +102,13 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: isLight ? Colors.black.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${ref.watch(translationsProvider).settingsVersion} $_version (Build $_buildNumber)',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
                 ),
@@ -113,11 +116,11 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               const SizedBox(height: 48),
 
               // Features
-              _buildFeatureSection(),
+              _buildFeatureSection(isLight),
               const SizedBox(height: 32),
 
               // Encryption Note
-              _buildEncryptionNote(),
+              _buildEncryptionNote(isLight),
               const SizedBox(height: 48),
 
               // Developer Info
@@ -125,12 +128,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 icon: Icons.code,
                 title: ref.watch(translationsProvider).aboutDeveloper,
                 subtitle: 'Arif Tan',
+                isLight: isLight,
               ),
               const SizedBox(height: 12),
               _buildInfoTile(
                 icon: Icons.email_outlined,
                 title: ref.watch(translationsProvider).aboutContact,
                 subtitle: 'axiomtech.dev@gmail.com',
+                isLight: isLight,
               ),
               const SizedBox(height: 48),
 
@@ -139,7 +144,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 ref.watch(translationsProvider).aboutCopyright,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                   fontSize: 12,
                 ),
               ),
@@ -152,7 +157,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     );
   }
 
-  Widget _buildFeatureSection() {
+  Widget _buildFeatureSection(bool isLight) {
     final t = ref.watch(translationsProvider);
     final features = [
       {'emoji': '📊', 'text': t.aboutFeatureExpense},
@@ -177,7 +182,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       children: [
         Text(
           t.aboutFeatures,
-          style: AppTypography.textTheme.titleMedium?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: AppColors.primaryGold,
           ),
         ),
@@ -186,11 +191,12 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ...features.map((f) => _buildFeatureChip(f['emoji']!, f['text']!)),
+            ...features.map((f) => _buildFeatureChip(f['emoji']!, f['text']!, isLight: isLight)),
             ...comingSoonFeatures.map((f) => _buildFeatureChip(
               f['emoji']!,
               '${f['text']!} (${t.aboutComingSoon})',
               isComingSoon: true,
+              isLight: isLight,
             )),
           ],
         ),
@@ -198,17 +204,17 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     );
   }
 
-  Widget _buildFeatureChip(String emoji, String text, {bool isComingSoon = false}) {
+  Widget _buildFeatureChip(String emoji, String text, {bool isComingSoon = false, required bool isLight}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isComingSoon
             ? AppColors.primaryGold.withValues(alpha: 0.1)
-            : Colors.white.withValues(alpha: 0.05),
+            : (isLight ? Colors.black.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.05)),
         borderRadius: BorderRadius.circular(20),
         border: isComingSoon
             ? Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3))
-            : null,
+            : (isLight ? Border.all(color: Colors.black.withValues(alpha: 0.08)) : null),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -220,7 +226,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             style: TextStyle(
               color: isComingSoon
                   ? AppColors.primaryGold.withValues(alpha: 0.8)
-                  : Colors.white,
+                  : (isLight ? AppColors.textPrimaryLight : Colors.white),
               fontSize: 13,
               fontStyle: isComingSoon ? FontStyle.italic : FontStyle.normal,
             ),
@@ -234,12 +240,14 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     required IconData icon,
     required String title,
     required String subtitle,
+    required bool isLight,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
+        border: isLight ? Border.all(color: Colors.black.withValues(alpha: 0.08)) : null,
       ),
       child: Row(
         children: [
@@ -250,8 +258,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -260,7 +268,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
               ),
@@ -271,7 +279,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     );
   }
 
-  Widget _buildEncryptionNote() {
+  Widget _buildEncryptionNote(bool isLight) {
     final t = ref.watch(translationsProvider);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -291,7 +299,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               const SizedBox(width: 8),
               Text(
                 t.privacyEncryptionTitle,
-                style: AppTypography.textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: AppColors.primaryGold,
                   fontWeight: FontWeight.bold,
                 ),
@@ -302,7 +310,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           Text(
             t.privacyEncryptionContent,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.8),
               fontSize: 13,
               height: 1.4,
             ),

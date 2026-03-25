@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/budget_provider.dart';
@@ -14,7 +16,8 @@ class BudgetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -29,7 +32,7 @@ class BudgetScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 trans.budgetTitle,
-                style: AppTypography.textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
             Expanded(
@@ -43,20 +46,20 @@ class BudgetScreen extends ConsumerWidget {
                           Icon(
                             Icons.pie_chart_outline,
                             size: 64,
-                            color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                            color: isLight ? const Color(0xFF94A3B8) : Colors.white54,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             trans.budgetNoBudgets,
-                            style: AppTypography.textTheme.bodyLarge?.copyWith(
-                              color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white54,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             trans.budgetNoBudgetsHint,
-                            style: AppTypography.textTheme.bodyMedium?.copyWith(
-                              color: isDark ? Colors.white30 : const Color(0xFFCBD5E1),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isLight ? const Color(0xFFCBD5E1) : Colors.white30,
                             ),
                           ),
                         ],
@@ -105,16 +108,16 @@ class BudgetScreen extends ConsumerWidget {
                                         children: [
                                           Text(
                                             item.categoryName,
-                                            style: AppTypography.textTheme.titleMedium,
+                                            style: Theme.of(context).textTheme.titleMedium,
                                           ),
                                           Text(
                                             isOverBudget
                                               ? '${trans.budgetExceeded} ${Formatters.formatCurrency(item.spentAmount - item.budget.amount, currency: baseCurrency, showDecimal: showDecimal)}'
                                               : '${trans.budgetRemaining} ${Formatters.formatCurrency(item.remainingAmount, currency: baseCurrency, showDecimal: showDecimal)}',
-                                            style: AppTypography.textTheme.bodySmall?.copyWith(
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                               color: isOverBudget
                                                   ? Colors.redAccent
-                                                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                                  : (isLight ? const Color(0xFF64748B) : Colors.white70),
                                             ),
                                           ),
                                         ],
@@ -125,12 +128,12 @@ class BudgetScreen extends ConsumerWidget {
                                       children: [
                                         Text(
                                           Formatters.formatCurrency(item.budget.amount, currency: baseCurrency, showDecimal: showDecimal),
-                                          style: AppTypography.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                                         ),
                                         Text(
                                           trans.budgetAmount,
-                                          style: AppTypography.textTheme.bodySmall?.copyWith(
-                                            color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: isLight ? const Color(0xFF94A3B8) : Colors.white54,
                                           ),
                                         ),
                                       ],
@@ -142,9 +145,9 @@ class BudgetScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(4),
                                   child: LinearProgressIndicator(
                                     value: item.progress.clamp(0.0, 1.0),
-                                    backgroundColor: isDark
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: 0.08),
+                                    backgroundColor: isLight
+                                        ? Colors.black.withValues(alpha: 0.08)
+                                        : Colors.white10,
                                     color: progressColor,
                                     minHeight: 8,
                                   ),
@@ -155,12 +158,12 @@ class BudgetScreen extends ConsumerWidget {
                                   children: [
                                     Text(
                                       '${(item.progress * 100).toStringAsFixed(1)}%',
-                                      style: AppTypography.textTheme.bodySmall?.copyWith(color: progressColor),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: progressColor),
                                     ),
                                     Text(
                                       '${trans.budgetSpent}: ${Formatters.formatCurrency(item.spentAmount, currency: baseCurrency, showDecimal: showDecimal)}',
-                                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: isLight ? const Color(0xFF64748B) : Colors.white70,
                                       ),
                                     ),
                                   ],

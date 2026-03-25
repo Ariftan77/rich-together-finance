@@ -6,8 +6,10 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_button.dart';
@@ -86,10 +88,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Header
               Row(
                 children: [
-                  Text(
-                    ref.watch(translationsProvider).navSettings,
-                    style: AppTypography.textTheme.displaySmall,
-                  ),
+                  Builder(builder: (context) {
+                    final isLight = AppThemeProvider.isLightMode(context);
+                    return Text(
+                      ref.watch(translationsProvider).navSettings,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                      ),
+                    );
+                  }),
                   const Spacer(),
                   _buildNotificationBell(),
                 ],
@@ -130,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'PREMIUM',
-                                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                     color: AppColors.primaryGold,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
@@ -205,13 +212,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Version info at bottom
               Center(
                 child: Builder(builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isLight = AppThemeProvider.isLightMode(context);
                   return Text(
                     '${ref.watch(translationsProvider).settingsVersion} $_appVersion',
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.5)
-                          : const Color(0xFF94A3B8),
+                      color: isLight
+                          ? const Color(0xFF94A3B8)
+                          : Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,
                     ),
                   );
@@ -227,11 +234,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isLight = AppThemeProvider.isLightMode(context);
       return Text(
         title,
-        style: AppTypography.textTheme.titleMedium?.copyWith(
-          color: isDark ? AppColors.primaryGold : AppColors.primaryGoldTextLight,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: isLight ? AppColors.primaryGoldTextLight : AppColors.primaryGold,
         ),
       );
     });
@@ -263,18 +270,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile?.name ?? ref.watch(translationsProvider).settingsNoProfile,
-                      style: AppTypography.textTheme.titleMedium,
-                    ),
+                    Builder(builder: (context) {
+                      final isLight = AppThemeProvider.isLightMode(context);
+                      return Text(
+                        profile?.name ?? ref.watch(translationsProvider).settingsNoProfile,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                        ),
+                      );
+                    }),
                       Builder(builder: (context) {
-                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final isLight = AppThemeProvider.isLightMode(context);
                         return Text(
                           ref.watch(translationsProvider).settingsTapToSwitch,
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : const Color(0xFF64748B),
+                            color: isLight
+                                ? const Color(0xFF64748B)
+                                : Colors.white.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
                         );
@@ -283,12 +295,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
               Builder(builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final isLight = AppThemeProvider.isLightMode(context);
                 return Icon(
                   Icons.chevron_right,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF94A3B8),
+                  color: isLight
+                      ? const Color(0xFF94A3B8)
+                      : Colors.white.withValues(alpha: 0.5),
                 );
               }),
             ],
@@ -337,19 +349,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Builder(builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isLight = AppThemeProvider.isLightMode(context);
                   return Row(
                     children: [
                       Icon(
                         Icons.attach_money,
-                        color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                         size: 20,
                       ),
                       const SizedBox(width: 12),
                       Text(
                         ref.watch(translationsProvider).settingsBaseCurrency,
                         style: TextStyle(
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                           fontSize: 16,
                         ),
                       ),
@@ -374,24 +386,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               activeColor: AppColors.primaryGold,
             ),
           ),
-          // _buildDivider(),
-          // SettingsTile(
-          //   icon: Icons.brightness_6,
-          //   title: 'Theme',
-          //   subtitle: _themeModeName(settings?.themeMode ?? 0),
-          //   onTap: () => _showThemeSelector(settings?.themeMode ?? 0),
-          // ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.brightness_6,
+            title: 'Theme',
+            subtitle: _themeModeName(settings?.themeMode ?? 0),
+            onTap: () => _showThemeSelector(settings?.themeMode ?? 0),
+          ),
         ],
       ),
     );
   }
 
   String _themeModeName(int mode) {
-    switch (mode) {
-      case 1: return 'Light';
-      case 2: return 'System';
-      default: return 'Dark';
-    }
+    return AppThemeModeX.fromValue(mode).label;
   }
 
   Widget _buildSecuritySection(UserSetting? settings) {
@@ -465,10 +473,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         clipBehavior: Clip.none,
         children: [
           Builder(builder: (context) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final isLight = AppThemeProvider.isLightMode(context);
             return Icon(
               Icons.notifications_outlined,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isLight ? const Color(0xFF374151) : Colors.white70,
               size: 28,
             );
           }),
@@ -561,25 +569,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light ||
+              (themeMode == AppThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
           return AlertDialog(
-          backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+          backgroundColor: isDefault
+              ? AppColors.bgDarkEnd
+              : isLight
+                  ? Colors.white
+                  : const Color(0xFF111111),
           contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
           title: Text(
             ref.watch(translationsProvider).settingsSendFeedback,
-            style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+            style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           ),
           content: TextField(
             controller: controller,
             maxLines: 5,
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
-            style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+            style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
             decoration: InputDecoration(
               hintText: ref.watch(translationsProvider).settingsSendFeedbackHint,
-              hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+              hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white38),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                borderSide: BorderSide(color: isLight ? const Color(0xFFCBD5E1) : Colors.white24),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: AppColors.primaryGold),
@@ -592,7 +608,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   ref.watch(translationsProvider).genericCancel,
-                  style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+                  style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
                 ),
               ),
             isSending
@@ -670,12 +686,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildDivider() {
     return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isLight = AppThemeProvider.isLightMode(context);
       return Divider(
         height: 1,
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : Colors.black.withValues(alpha: 0.08),
+        color: isLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1),
       );
     });
   }
@@ -729,11 +745,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+        backgroundColor: isDefault
+            ? AppColors.bgDarkEnd
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(ref.watch(translationsProvider).settingsVerifyPin, style: AppTypography.textTheme.titleLarge),
+        title: Text(ref.watch(translationsProvider).settingsVerifyPin, style: Theme.of(context).textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -751,7 +775,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               ref.watch(translationsProvider).genericCancel,
-              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+              style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
             ),
           ),
           TextButton(
@@ -779,16 +803,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _showNewPinDialog() {
     final pinController = TextEditingController();
     final confirmController = TextEditingController();
-    
+
     return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+        backgroundColor: isDefault
+            ? AppColors.bgDarkEnd
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(ref.watch(translationsProvider).settingsSetNewPin, style: AppTypography.textTheme.titleLarge),
+        title: Text(ref.watch(translationsProvider).settingsSetNewPin, style: Theme.of(context).textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -814,7 +846,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               ref.watch(translationsProvider).genericCancel,
-              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+              style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
             ),
           ),
           TextButton(
@@ -883,9 +915,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light ||
+              (themeMode == AppThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
           return AlertDialog(
-          backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+          backgroundColor: isDefault
+              ? AppColors.bgDarkEnd
+              : isLight
+                  ? Colors.white
+                  : const Color(0xFF111111),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(ref.watch(translationsProvider).settingsClearDataTitle, style: const TextStyle(color: AppColors.error)),
           content: Column(
@@ -893,13 +933,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text(
                 ref.watch(translationsProvider).settingsClearDataContent,
-                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+                style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
               ),
               const SizedBox(height: 16),
               Text(
                 ref.watch(translationsProvider).settingsClearDataConfirmPrompt,
                 style: TextStyle(
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -920,7 +960,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 ref.watch(translationsProvider).genericCancel,
-                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+                style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
               ),
             ),
             TextButton(
@@ -933,7 +973,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Text(
                 ref.watch(translationsProvider).settingsClearEverything,
                 style: TextStyle(
-                  color: canProceed ? AppColors.error : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                  color: canProceed ? AppColors.error : (isLight ? const Color(0xFFCBD5E1) : Colors.white24),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -986,15 +1026,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showThemeSelector(int currentMode) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+      backgroundColor: isDefault
+          ? AppColors.bgDarkEnd
+          : isLight
+              ? Colors.white
+              : const Color(0xFF111111),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        final isDarkSheet = Theme.of(context).brightness == Brightness.dark;
+        final sheetThemeMode = AppThemeProvider.of(context);
+        final isSheetLight = sheetThemeMode == AppThemeMode.light ||
+            (sheetThemeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1002,29 +1053,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: isDarkSheet ? Colors.white24 : const Color(0xFFCBD5E1),
+                color: isSheetLight ? const Color(0xFFCBD5E1) : Colors.white24,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.dark_mode, color: AppColors.primaryGold),
-              title: Text('Dark', style: TextStyle(color: isDarkSheet ? Colors.white : AppColors.textPrimaryLight)),
-              trailing: currentMode == 0 ? const Icon(Icons.check, color: AppColors.primaryGold) : null,
-              onTap: () { Navigator.pop(context); _updateThemeMode(0); },
-            ),
-            ListTile(
-              leading: const Icon(Icons.light_mode, color: AppColors.primaryGold),
-              title: Text('Light', style: TextStyle(color: isDarkSheet ? Colors.white : AppColors.textPrimaryLight)),
-              trailing: currentMode == 1 ? const Icon(Icons.check, color: AppColors.primaryGold) : null,
-              onTap: () { Navigator.pop(context); _updateThemeMode(1); },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_suggest, color: AppColors.primaryGold),
-              title: Text('System', style: TextStyle(color: isDarkSheet ? Colors.white : AppColors.textPrimaryLight)),
-              trailing: currentMode == 2 ? const Icon(Icons.check, color: AppColors.primaryGold) : null,
-              onTap: () { Navigator.pop(context); _updateThemeMode(2); },
-            ),
+            ...AppThemeMode.values.map((mode) => ListTile(
+              leading: Icon(mode.icon, color: AppColors.primaryGold),
+              title: Text(
+                mode.label,
+                style: TextStyle(
+                  color: isSheetLight ? AppColors.textPrimaryLight : Colors.white,
+                ),
+              ),
+              trailing: currentMode == mode.value
+                  ? const Icon(Icons.check, color: AppColors.primaryGold)
+                  : null,
+              onTap: () { Navigator.pop(context); _updateThemeMode(mode.value); },
+            )),
             const SizedBox(height: 16),
           ],
         );
@@ -1040,10 +1086,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showLanguageSelector() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+      backgroundColor: isDefault
+          ? AppColors.bgDarkEnd
+          : isLight
+              ? Colors.white
+              : const Color(0xFF111111),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1057,14 +1111,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text(
                 ref.watch(translationsProvider).settingsLanguage,
-                style: AppTypography.textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
               ListTile(
                 leading: const Text('🇺🇸', style: TextStyle(fontSize: 20)),
                 title: Text(
                   'English',
-                  style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+                  style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
                 ),
                 trailing: currentLocale.languageCode == 'en'
                     ? const Icon(Icons.check, color: AppColors.primaryGold)
@@ -1081,7 +1135,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: const Text('🇮🇩', style: TextStyle(fontSize: 20)),
                 title: Text(
                   'Bahasa Indonesia',
-                  style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+                  style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
                 ),
                 trailing: currentLocale.languageCode == 'id'
                     ? const Icon(Icons.check, color: AppColors.primaryGold)
@@ -1122,9 +1176,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           if (notifSettings.isReminderEnabled) ...[
             Builder(builder: (context) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final isLight = AppThemeProvider.isLightMode(context);
               return Divider(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1),
               );
             }),
             SettingsTile(
@@ -1235,7 +1289,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildSignedInAccountTile(PremiumAuthService auth) {
     final photoUrl = auth.photoUrl;
     return Builder(builder: (context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isLight = AppThemeProvider.isLightMode(context);
       return InkWell(
         onTap: null,
         child: Padding(
@@ -1266,7 +1320,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Text(
                       auth.displayName ?? 'Google Account',
                       style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1277,7 +1331,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         child: Text(
                           auth.email!,
                           style: TextStyle(
-                            color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                            color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                             fontSize: 13,
                           ),
                         ),
@@ -1288,7 +1342,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               IconButton(
                 icon: Icon(
                   Icons.logout,
-                  color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                   size: 20,
                 ),
                 onPressed: _handleGoogleSignOut,
@@ -1321,9 +1375,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await showDialog<void>(
         context: context,
         builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light ||
+              (themeMode == AppThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
           return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
+          backgroundColor: isDefault
+              ? const Color(0xFF2D2416)
+              : isLight
+                  ? Colors.white
+                  : const Color(0xFF111111),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
@@ -1342,7 +1404,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           content: Text(
             'Please reopen the app to completely remove ads.',
             style: TextStyle(
-              color: isDark ? Colors.white.withValues(alpha: 0.85) : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.85),
             ),
           ),
           actions: [
@@ -1368,22 +1430,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
         contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
         title: Text(
           trans.premiumRedeemVoucher,
-          style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+          style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
         ),
         content: TextField(
           controller: codeController,
-          style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+          style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           decoration: InputDecoration(
             hintText: trans.premiumEnterVoucherCode,
-            hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+            hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white38),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+              borderSide: BorderSide(color: isLight ? const Color(0xFFCBD5E1) : Colors.white24),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: AppColors.primaryGold),
@@ -1395,7 +1459,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               trans.genericCancel,
-              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+              style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
             ),
           ),
           TextButton(
@@ -1578,9 +1642,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -1588,7 +1654,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(width: 12),
             Text(
               'Google Sign-In Required',
-              style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 18),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
             ),
           ],
         ),
@@ -1599,7 +1665,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               'You need to sign in with Google to purchase premium features.',
               style: TextStyle(
-                color: isDark ? Colors.white.withValues(alpha: 0.9) : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.9),
               ),
             ),
             const SizedBox(height: 16),
@@ -1620,7 +1686,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: Text(
                       'This allows you to restore your purchase on any device.',
                       style: TextStyle(
-                        color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight,
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8),
                         fontSize: 13,
                       ),
                     ),
@@ -1635,7 +1701,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               trans.genericCancel,
-              style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+              style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
             ),
           ),
           ElevatedButton.icon(
@@ -1687,9 +1753,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -1698,7 +1766,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Expanded(
               child: Text(
                 'Premium Activated',
-                style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 18),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
               ),
             ),
           ],
@@ -1706,7 +1774,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: Text(
           trans.premiumRestartAppToHideAds,
           style: TextStyle(
-            color: isDark ? Colors.white.withValues(alpha: 0.9) : AppColors.textPrimaryLight,
+            color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.9),
           ),
         ),
         actions: [

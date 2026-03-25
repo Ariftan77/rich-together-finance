@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/glass_bottom_nav.dart';
 import '../../../shared/theme/colors.dart';
+import '../../../shared/theme/app_theme_mode.dart';
+import '../../../shared/theme/theme_provider_widget.dart';
 import '../../accounts/presentation/screens/accounts_screen.dart';
 import '../../transactions/presentation/screens/transactions_history_screen.dart';
 import '../../transactions/presentation/screens/transaction_entry_screen.dart';
@@ -88,16 +90,11 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // Trigger initialization (e.g. recurring transactions check)
     ref.watch(appInitProvider);
 
-    // Determine if using light theme
-    // final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
       body: Container(
         decoration: BoxDecoration(
-          gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: FadeTransition(
           opacity: _fadeAnimation,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/models/enums.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 import '../utils/formatters.dart';
 
 /// A calculator-style bottom sheet for amount input.
@@ -321,12 +323,43 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+
+    // Modal background:
+    // default=warm dark, dark=true black, light=white
+    final Color modalBg = isDefault
+        ? const Color(0xFF1A1410)
+        : isLight
+            ? Colors.white
+            : const Color(0xFF0A0A0A);
+
+    // Drag handle color
+    final Color handleColor = isLight
+        ? Colors.black.withValues(alpha: 0.15)
+        : Colors.white.withValues(alpha: 0.2);
+
+    // Expression text color
+    final Color expressionColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.6);
+
+    // Large number color
+    final Color numberColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+
+    // Divider color
+    final Color dividerColor = isLight
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.08);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1410) : Colors.white,
+        color: modalBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -338,9 +371,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.2)
-                  : Colors.black.withValues(alpha: 0.15),
+              color: handleColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -356,9 +387,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                   _displayExpression,
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : const Color(0xFF64748B),
+                    color: expressionColor,
                     fontSize: _hasOperator ? 18 : 14,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
@@ -384,7 +413,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                     _displayResult,
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      color: numberColor,
                       fontSize: 36,
                       fontWeight: FontWeight.w800,
                     ),
@@ -400,9 +429,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.08),
+            color: dividerColor,
           ),
 
           const SizedBox(height: 8),
@@ -419,21 +446,21 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                   _CalcButton(label: '÷', onTap: () => _onOperator('÷'), type: _ButtonType.operator),
                   _CalcButton(label: '×', onTap: () => _onOperator('×'), type: _ButtonType.operator),
                   _CalcButton(icon: Icons.backspace_outlined, onTap: _onBackspace, type: _ButtonType.function),
-                ], isDark: isDark),
+                ], isLight: isLight),
                 // Row 2: 7, 8, 9, -
                 _buildRow([
                   _CalcButton(label: '7', onTap: () => _onDigit('7')),
                   _CalcButton(label: '8', onTap: () => _onDigit('8')),
                   _CalcButton(label: '9', onTap: () => _onDigit('9')),
                   _CalcButton(label: '−', onTap: () => _onOperator('-'), type: _ButtonType.operator),
-                ], isDark: isDark),
+                ], isLight: isLight),
                 // Row 3: 4, 5, 6, +
                 _buildRow([
                   _CalcButton(label: '4', onTap: () => _onDigit('4')),
                   _CalcButton(label: '5', onTap: () => _onDigit('5')),
                   _CalcButton(label: '6', onTap: () => _onDigit('6')),
                   _CalcButton(label: '+', onTap: () => _onOperator('+'), type: _ButtonType.operator),
-                ], isDark: isDark),
+                ], isLight: isLight),
                 // Row 4: 1, 2, 3, OK (tall)
                 Row(
                   children: [
@@ -445,7 +472,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                             _CalcButton(label: '1', onTap: () => _onDigit('1')),
                             _CalcButton(label: '2', onTap: () => _onDigit('2')),
                             _CalcButton(label: '3', onTap: () => _onDigit('3')),
-                          ], useFlex: false, isDark: isDark),
+                          ], useFlex: false, isLight: isLight),
                           // Row 5: 00, 0, .
                           _buildRow([
                             _CalcButton(label: '00', onTap: () { _onDigit('0'); _onDigit('0'); }),
@@ -456,7 +483,7 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                                   ? _onDecimal
                                   : () { _onDigit('0'); _onDigit('0'); _onDigit('0'); },
                             ),
-                          ], useFlex: false, isDark: isDark),
+                          ], useFlex: false, isLight: isLight),
                         ],
                       ),
                     ),
@@ -495,18 +522,18 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
                               height: 34,
                               margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.08),
+                                color: isLight
+                                    ? Colors.black.withValues(alpha: 0.08)
+                                    : Colors.white.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Center(
                                 child: Text(
                                   'Cancel',
                                   style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white60
-                                        : const Color(0xFF64748B),
+                                    color: isLight
+                                        ? const Color(0xFF64748B)
+                                        : Colors.white60,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -555,12 +582,12 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     );
   }
 
-  Widget _buildRow(List<_CalcButton> buttons, {bool useFlex = true, required bool isDark}) {
+  Widget _buildRow(List<_CalcButton> buttons, {bool useFlex = true, required bool isLight}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: buttons.map((btn) {
-          final child = _buildButton(btn, isDark: isDark);
+          final child = _buildButton(btn, isLight: isLight);
           return useFlex
               ? Expanded(child: child)
               : Expanded(child: child);
@@ -569,17 +596,17 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
     );
   }
 
-  Widget _buildButton(_CalcButton btn, {required bool isDark}) {
+  Widget _buildButton(_CalcButton btn, {required bool isLight}) {
     Color bgColor;
     Color textColor;
     double fontSize;
 
     switch (btn.type) {
       case _ButtonType.digit:
-        bgColor = isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.08);
-        textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
+        bgColor = isLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.08);
+        textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
         fontSize = 22;
         break;
       case _ButtonType.operator:
@@ -588,12 +615,12 @@ class _CalculatorBottomSheetState extends State<CalculatorBottomSheet> {
         fontSize = 24;
         break;
       case _ButtonType.function:
-        bgColor = isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.04);
-        textColor = isDark
-            ? Colors.white.withValues(alpha: 0.7)
-            : const Color(0xFF64748B);
+        bgColor = isLight
+            ? Colors.black.withValues(alpha: 0.04)
+            : Colors.white.withValues(alpha: 0.05);
+        textColor = isLight
+            ? const Color(0xFF64748B)
+            : Colors.white.withValues(alpha: 0.7);
         fontSize = 18;
         break;
     }

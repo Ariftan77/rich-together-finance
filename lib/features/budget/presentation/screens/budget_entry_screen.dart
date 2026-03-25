@@ -5,8 +5,10 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -182,7 +184,9 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -191,7 +195,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -201,12 +205,12 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
             ),
             title: Text(
               widget.budget == null ? trans.budgetTitleAdd : trans.budgetTitleEdit,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
               ),
             ),
           ),
@@ -235,15 +239,15 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                                 : trans.budgetAmount,
                             style: TextStyle(
                               color: _rawAmount > 0
-                                  ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                  : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
+                                  ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                  : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
                               fontSize: 15,
                             ),
                           ),
                         ),
                         Icon(
                           Icons.calculate_outlined,
-                          color: isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF94A3B8),
+                          color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                           size: 20,
                         ),
                       ],
@@ -253,7 +257,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 const SizedBox(height: 24),
 
                 // Currency Selector
-                Text(trans.goalCurrency, style: AppTypography.textTheme.labelLarge),
+                Text(trans.goalCurrency, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 CurrencyPickerField(
                   value: _selectedCurrency,
@@ -277,7 +281,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                           child: Text(
                             trans.entryCategory.toUpperCase(),
                             style: TextStyle(
-                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                              color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.2,
@@ -338,14 +342,14 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                             height: 56,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.04),
+                              color: isLight
+                                  ? Colors.black.withValues(alpha: 0.04)
+                                  : Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.15)
-                                    : Colors.black.withValues(alpha: 0.12),
+                                color: isLight
+                                    ? Colors.black.withValues(alpha: 0.12)
+                                    : Colors.white.withValues(alpha: 0.15),
                               ),
                             ),
                             child: Row(
@@ -361,17 +365,17 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                                     selectedCategory?.name ?? trans.entrySelectCategory,
                                     style: TextStyle(
                                       color: selectedCategory != null
-                                          ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                          : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8)),
+                                          ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                          : (isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4)),
                                       fontSize: 15,
                                     ),
                                   ),
                                 ),
                                 Icon(
                                   Icons.expand_more,
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.3)
-                                      : const Color(0xFFCBD5E1),
+                                  color: isLight
+                                      ? const Color(0xFFCBD5E1)
+                                      : Colors.white.withValues(alpha: 0.3),
                                 ),
                               ],
                             ),
@@ -387,7 +391,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                 const SizedBox(height: 24),
 
                 // Period Selector
-                Text(trans.budgetPeriod, style: AppTypography.textTheme.labelLarge),
+                Text(trans.budgetPeriod, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -417,7 +421,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                       labelStyle: TextStyle(
                         color: isSelected
                             ? Colors.black
-                            : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                            : (isLight ? AppColors.textPrimaryLight : Colors.white),
                       ),
                     );
                   }).toList(),

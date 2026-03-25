@@ -5,8 +5,10 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -239,22 +241,24 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       showDialog<void>(
         context: context,
         builder: (ctx) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final ctxThemeMode = AppThemeProvider.of(ctx);
+          final ctxIsDefault = ctxThemeMode == AppThemeMode.defaultTheme;
+          final ctxIsLight = ctxThemeMode == AppThemeMode.light || (ctxThemeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(ctx) == Brightness.light);
           return AlertDialog(
-            backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
+            backgroundColor: ctxIsDefault ? const Color(0xFF2D2416) : ctxIsLight ? Colors.white : const Color(0xFF0A0A0A),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
                 const Icon(Icons.block, color: Colors.red, size: 22),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('Cannot Delete', style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 16)),
+                  child: Text('Cannot Delete', style: TextStyle(color: ctxIsLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 16)),
                 ),
               ],
             ),
             content: Text(
               '"${widget.account!.name}" has ${txs.length} transaction${txs.length == 1 ? '' : 's'} linked to it and cannot be deleted.\n\nTo remove this account, first delete all its transactions.',
-              style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight, fontSize: 14, height: 1.5),
+              style: TextStyle(color: ctxIsLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
             ),
             actions: [
               TextButton(
@@ -272,27 +276,29 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final ctxThemeMode = AppThemeProvider.of(ctx);
+        final ctxIsDefault = ctxThemeMode == AppThemeMode.defaultTheme;
+        final ctxIsLight = ctxThemeMode == AppThemeMode.light || (ctxThemeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(ctx) == Brightness.light);
         return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF2D2416) : Colors.white,
+          backgroundColor: ctxIsDefault ? const Color(0xFF2D2416) : ctxIsLight ? Colors.white : const Color(0xFF0A0A0A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               const Icon(Icons.delete_outline, color: Colors.red, size: 22),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Delete Account', style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 16)),
+                child: Text('Delete Account', style: TextStyle(color: ctxIsLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 16)),
               ),
             ],
           ),
           content: Text(
             'Are you sure you want to delete "${widget.account!.name}"?\n\nThis action cannot be undone.',
-            style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.textPrimaryLight, fontSize: 14, height: 1.5),
+            style: TextStyle(color: ctxIsLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8), fontSize: 14, height: 1.5),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B))),
+              child: Text('Cancel', style: TextStyle(color: ctxIsLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6))),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -313,17 +319,19 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   Widget build(BuildContext context) {
     final isEditing = widget.account != null;
     final balances = ref.watch(accountBalanceProvider);
-    final currentBalance = isEditing 
+    final currentBalance = isEditing
         ? (balances[widget.account!.id] ?? widget.account!.initialBalance)
         : 0.0;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isDarkMode = themeMode != AppThemeMode.light && !(themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isLight = !isDarkMode;
     final showDecimal = ref.watch(showDecimalProvider);
 
     return Stack(
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: isDarkMode ? AppColors.mainGradient : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -387,14 +395,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                                     children: [
                                       Text(
                                         widget.account!.name,
-                                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       Text(
                                         widget.account!.type.displayName,
-                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                           color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
                                         ),
                                       ),
@@ -411,7 +419,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             Center(
                               child: Text(
                                 '${widget.account!.currency.code} ${Formatters.formatCurrency(currentBalance, currency: widget.account!.currency, showDecimal: showDecimal)}',
-                                style: AppTypography.textTheme.displaySmall?.copyWith(
+                                style: Theme.of(context).textTheme.displaySmall?.copyWith(
                                   color: AppColors.primaryGold,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 25.6,
@@ -426,14 +434,14 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             // Adjustment Section
                             Text(
                               ref.watch(translationsProvider).accountBalanceAdjustment,
-                              style: AppTypography.textTheme.labelLarge?.copyWith(
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                  color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               ref.watch(translationsProvider).accountAdjustmentHint,
-                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                  color: isDarkMode ? AppColors.textSecondary : AppColors.textSecondaryLight,
                               ),
                             ),
@@ -496,7 +504,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       const SizedBox(height: 16),
                       Text(
                         ref.watch(translationsProvider).accountEditDetails,
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                           fontWeight: FontWeight.bold,
                         ),
@@ -524,7 +532,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       const SizedBox(height: 24),
                       Text(
                         ref.watch(translationsProvider).accountEditDetails,
-                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                            color: isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight,
                         ),
                       ),
@@ -536,7 +544,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                         validator: (v) => v!.isEmpty ? ref.watch(translationsProvider).accountNameExists : null, // Reusing localized error or add specific one. Wait "Name required"
                       ),
                       const SizedBox(height: 24),
-                      Text(ref.watch(translationsProvider).accountCurrency, style: AppTypography.textTheme.labelLarge),
+                      Text(ref.watch(translationsProvider).accountCurrency, style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       CurrencyPickerField(
                         value: _selectedCurrency,
@@ -575,7 +583,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                       ),
 
                       const SizedBox(height: 24),
-                      Text(ref.watch(translationsProvider).accountType, style: AppTypography.textTheme.labelLarge),
+                      Text(ref.watch(translationsProvider).accountType, style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,

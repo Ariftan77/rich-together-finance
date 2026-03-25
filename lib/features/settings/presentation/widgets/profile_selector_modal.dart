@@ -6,8 +6,10 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/remote_config_service.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import 'add_profile_dialog.dart';
@@ -52,9 +54,17 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     return AlertDialog(
-      backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+      backgroundColor: isDefault
+          ? AppColors.bgDarkEnd
+          : isLight
+              ? Colors.white
+              : const Color(0xFF111111),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         '${widget.title} "${widget.profile.name}"?',
@@ -67,7 +77,7 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
           Text(
             widget.content,
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isLight ? const Color(0xFF374151) : Colors.white70,
               fontSize: 13,
               height: 1.5,
             ),
@@ -76,7 +86,7 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
           Text(
             widget.confirmPrompt,
             style: TextStyle(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
@@ -97,7 +107,7 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
           child: Text(
             widget.cancelText,
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isLight ? const Color(0xFF374151) : Colors.white70,
             ),
           ),
         ),
@@ -113,7 +123,7 @@ class _DeleteProfileDialogState extends State<_DeleteProfileDialog> {
             style: TextStyle(
               color: _canProceed
                   ? Colors.red
-                  : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                  : (isLight ? const Color(0xFFCBD5E1) : Colors.white24),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -131,14 +141,22 @@ class ProfileSelectorModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final profilesAsync = ref.watch(allProfilesProvider);
     final activeProfileId = ref.watch(activeProfileIdProvider);
     final trans = ref.watch(translationsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.bgDarkEnd : const Color(0xFFF8FAFC),
+        color: isDefault
+            ? AppColors.bgDarkEnd
+            : isLight
+                ? const Color(0xFFF8FAFC)
+                : const Color(0xFF111111),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.all(24),
@@ -151,12 +169,14 @@ class ProfileSelectorModal extends ConsumerWidget {
             children: [
               Text(
                 trans.profileSwitchTitle,
-                style: AppTypography.textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                ),
               ),
               IconButton(
                 icon: Icon(
                   Icons.close,
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -201,7 +221,10 @@ class ProfileSelectorModal extends ConsumerWidget {
     bool isActive = false,
     bool canDelete = false,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return InkWell(
       onTap: () async {
         if (!isActive) {
@@ -215,9 +238,9 @@ class ProfileSelectorModal extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primaryGold.withValues(alpha: 0.15)
-              : (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.black.withValues(alpha: 0.04)),
+              : (isLight
+                  ? Colors.black.withValues(alpha: 0.04)
+                  : Colors.white.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(12),
           border: isActive
               ? Border.all(color: AppColors.primaryGold, width: 1)
@@ -244,7 +267,7 @@ class ProfileSelectorModal extends ConsumerWidget {
               child: Text(
                 profile.name,
                 style: TextStyle(
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
                   fontSize: 16,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -347,20 +370,33 @@ class ProfileSelectorModal extends ConsumerWidget {
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
     final trans = ref.read(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
       // Show confirmation BEFORE popping — context must still be attached
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: isDark ? AppColors.bgDarkEnd : Colors.white,
+          backgroundColor: isDefault
+              ? AppColors.bgDarkEnd
+              : isLight
+                  ? Colors.white
+                  : const Color(0xFF111111),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(trans.profileAddNewAdTitle, style: AppTypography.textTheme.titleLarge),
+          title: Text(
+            trans.profileAddNewAdTitle,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
+            ),
+          ),
           content: Text(
             trans.profileAddNewAdContent,
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isLight ? const Color(0xFF374151) : Colors.white70,
             ),
           ),
           actions: [
@@ -369,7 +405,7 @@ class ProfileSelectorModal extends ConsumerWidget {
               child: Text(
                 trans.cancel,
                 style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  color: isLight ? const Color(0xFF374151) : Colors.white70,
                 ),
               ),
             ),

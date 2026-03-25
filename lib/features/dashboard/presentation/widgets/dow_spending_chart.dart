@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -27,7 +29,11 @@ class DowSpendingChart extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final accentColor = Theme.of(context).colorScheme.primary;
     final trans = ref.watch(translationsProvider);
     final dowAsync = ref.watch(dowSpendingProvider);
@@ -51,7 +57,7 @@ class DowSpendingChart extends ConsumerWidget {
             child: Text(
               'Error loading data',
               style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                color: isLight ? const Color(0xFF64748B) : Colors.white54,
               ),
             ),
           ),
@@ -68,7 +74,7 @@ class DowSpendingChart extends ConsumerWidget {
                   Text(
                     trans.dowSpendingTitle,
                     style: TextStyle(
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -78,9 +84,9 @@ class DowSpendingChart extends ConsumerWidget {
                     child: Text(
                       'No expense data in the last 13 weeks',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8),
+                        color: isLight
+                            ? const Color(0xFF94A3B8)
+                            : Colors.white.withValues(alpha: 0.4),
                         fontSize: 13,
                       ),
                     ),
@@ -107,13 +113,13 @@ class DowSpendingChart extends ConsumerWidget {
           trans.dowSun,
         ];
 
-        final mutedColor = isDark
-            ? Colors.white.withValues(alpha: 0.3)
-            : const Color(0xFFCBD5E1);
+        final mutedColor = isLight
+            ? const Color(0xFFCBD5E1)
+            : Colors.white.withValues(alpha: 0.3);
 
-        final tooltipBg = isDark
-            ? const Color(0xFF1E293B)
-            : const Color(0xFFFFFFFF);
+        final tooltipBg = isLight
+            ? const Color(0xFFFFFFFF)
+            : const Color(0xFF1E293B);
 
         return GlassCard(
           child: Padding(
@@ -124,7 +130,7 @@ class DowSpendingChart extends ConsumerWidget {
                 Text(
                   trans.dowSpendingTitle,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -133,9 +139,9 @@ class DowSpendingChart extends ConsumerWidget {
                 Text(
                   'Last 13 weeks · Daily average',
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.4)
-                        : const Color(0xFF94A3B8),
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
                     fontSize: 11,
                   ),
                 ),
@@ -153,9 +159,9 @@ class DowSpendingChart extends ConsumerWidget {
                             return BarTooltipItem(
                               _formatCompact(rod.toY, symbol: currencySymbol),
                               TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.textPrimaryLight,
+                                color: isLight
+                                    ? AppColors.textPrimaryLight
+                                    : Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -183,9 +189,9 @@ class DowSpendingChart extends ConsumerWidget {
                                 child: Text(
                                   dayLabels[idx],
                                   style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.6)
-                                        : const Color(0xFF64748B),
+                                    color: isLight
+                                        ? const Color(0xFF64748B)
+                                        : Colors.white.withValues(alpha: 0.6),
                                     fontSize: 10,
                                     fontWeight: idx == maxIdx
                                         ? FontWeight.w700
@@ -205,9 +211,9 @@ class DowSpendingChart extends ConsumerWidget {
                               return Text(
                                 _formatCompact(value, symbol: currencySymbol),
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.4)
-                                      : const Color(0xFF94A3B8),
+                                  color: isLight
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white.withValues(alpha: 0.4),
                                   fontSize: 9,
                                 ),
                               );
@@ -218,9 +224,9 @@ class DowSpendingChart extends ConsumerWidget {
                       gridData: FlGridData(
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.06),
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.06)
+                              : Colors.white.withValues(alpha: 0.06),
                           strokeWidth: 1,
                         ),
                       ),

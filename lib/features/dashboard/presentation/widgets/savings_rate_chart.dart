@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -32,11 +34,14 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final savingsAsync = ref.watch(savingsRateTrendProvider);
 
     return savingsAsync.when(
-      data: (points) => _buildChart(context, isDark, trans, points),
+      data: (points) => _buildChart(context, isLight, trans, points),
       loading: () => GlassCard(
         child: Container(
           height: 300,
@@ -59,7 +64,7 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
 
   Widget _buildChart(
     BuildContext context,
-    bool isDark,
+    bool isLight,
     dynamic trans,
     List<SavingsRatePoint> points,
   ) {
@@ -75,9 +80,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
           child: Text(
             trans.reportNoData,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -108,8 +113,8 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
 
     final isPositive = currentRate >= 0;
     final currentRateColor = isPositive
-        ? (isDark ? AppColors.success : AppColors.successLight)
-        : (isDark ? AppColors.error : AppColors.errorLight);
+        ? (isLight ? AppColors.successLight : AppColors.success)
+        : (isLight ? AppColors.errorLight : AppColors.error);
 
     return GlassCard(
       child: Padding(
@@ -121,7 +126,7 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
             Text(
               trans.chartSavingsRate,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -130,9 +135,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
             Text(
               trans.reportNet,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : const Color(0xFF64748B),
+                color: isLight
+                    ? const Color(0xFF64748B)
+                    : Colors.white.withValues(alpha: 0.6),
                 fontSize: 12,
               ),
             ),
@@ -161,13 +166,13 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                       });
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: isDark
-                          ? const Color(0xF0222222)
-                          : const Color(0xF0FFFFFF),
+                      tooltipBgColor: isLight
+                          ? const Color(0xF0FFFFFF)
+                          : const Color(0xF0222222),
                       tooltipBorder: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : Colors.black.withValues(alpha: 0.1),
+                        color: isLight
+                            ? Colors.black.withValues(alpha: 0.1)
+                            : Colors.white.withValues(alpha: 0.15),
                       ),
                       tooltipRoundedRadius: 10,
                       tooltipPadding: const EdgeInsets.symmetric(
@@ -197,9 +202,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                               TextSpan(
                                 text: '${p.month}\n',
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white
-                                      : AppColors.textPrimaryLight,
+                                  color: isLight
+                                      ? AppColors.textPrimaryLight
+                                      : Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -215,18 +220,18 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                               TextSpan(
                                 text: '+ $incomeStr\n',
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.8)
-                                      : const Color(0xFF374151),
+                                  color: isLight
+                                      ? const Color(0xFF374151)
+                                      : Colors.white.withValues(alpha: 0.8),
                                   fontSize: 11,
                                 ),
                               ),
                               TextSpan(
                                 text: '- $expenseStr',
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.6)
-                                      : const Color(0xFF64748B),
+                                  color: isLight
+                                      ? const Color(0xFF64748B)
+                                      : Colors.white.withValues(alpha: 0.6),
                                   fontSize: 11,
                                 ),
                               ),
@@ -253,9 +258,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                             child: Text(
                               points[idx].month,
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.6)
-                                    : const Color(0xFF64748B),
+                                color: isLight
+                                    ? const Color(0xFF64748B)
+                                    : Colors.white.withValues(alpha: 0.6),
                                 fontSize: 10,
                               ),
                             ),
@@ -272,9 +277,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                           return Text(
                             '${value.toStringAsFixed(0)}%',
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.6)
-                                  : const Color(0xFF64748B),
+                              color: isLight
+                                  ? const Color(0xFF64748B)
+                                  : Colors.white.withValues(alpha: 0.6),
                               fontSize: 10,
                             ),
                           );
@@ -296,17 +301,17 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                       // Zero line is thicker and more prominent
                       if (value == 0) {
                         return FlLine(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.25)
-                              : Colors.black.withValues(alpha: 0.2),
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : Colors.white.withValues(alpha: 0.25),
                           strokeWidth: 1.5,
                           dashArray: [6, 4],
                         );
                       }
                       return FlLine(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.07)
-                            : Colors.black.withValues(alpha: 0.06),
+                        color: isLight
+                            ? Colors.black.withValues(alpha: 0.06)
+                            : Colors.white.withValues(alpha: 0.07),
                         strokeWidth: 1,
                       );
                     },
@@ -334,9 +339,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
                             radius: isTouched ? 6 : 4,
                             color: dotColor,
                             strokeWidth: 2,
-                            strokeColor: isDark
-                                ? const Color(0xFF1A1A1A)
-                                : Colors.white,
+                            strokeColor: isLight
+                                ? Colors.white
+                                : const Color(0xFF1A1A1A),
                           );
                         },
                       ),
@@ -378,7 +383,7 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
             // Summary row — current month rate + trend arrow
             _buildSummaryRow(
               context,
-              isDark: isDark,
+              isLight: isLight,
               trans: trans,
               currentRate: currentRate,
               delta: delta,
@@ -392,7 +397,7 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
 
   Widget _buildSummaryRow(
     BuildContext context, {
-    required bool isDark,
+    required bool isLight,
     required dynamic trans,
     required double currentRate,
     required double delta,
@@ -400,15 +405,15 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
   }) {
     final isUp = delta >= 0;
     final trendColor = isUp
-        ? (isDark ? AppColors.success : AppColors.successLight)
-        : (isDark ? AppColors.error : AppColors.errorLight);
+        ? (isLight ? AppColors.successLight : AppColors.success)
+        : (isLight ? AppColors.errorLight : AppColors.error);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.04),
+        color: isLight
+            ? Colors.black.withValues(alpha: 0.04)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -421,9 +426,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
               Text(
                 trans.savingsRateLabel,
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.6)
-                      : const Color(0xFF64748B),
+                  color: isLight
+                      ? const Color(0xFF64748B)
+                      : Colors.white.withValues(alpha: 0.6),
                   fontSize: 11,
                 ),
               ),
@@ -449,9 +454,9 @@ class _SavingsRateChartState extends ConsumerState<SavingsRateChart> {
               Text(
                 trans.savingsRateVsPrev,
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF94A3B8),
+                  color: isLight
+                      ? const Color(0xFF94A3B8)
+                      : Colors.white.withValues(alpha: 0.5),
                   fontSize: 10,
                 ),
               ),

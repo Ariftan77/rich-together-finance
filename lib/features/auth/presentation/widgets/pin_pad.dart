@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 
 class PinPad extends StatelessWidget {
   final Function(String) onDigitPressed;
@@ -18,34 +20,37 @@ class PinPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('1', isDark),
-            _buildDigitButton('2', isDark),
-            _buildDigitButton('3', isDark),
+            _buildDigitButton(context, '1', isLight),
+            _buildDigitButton(context, '2', isLight),
+            _buildDigitButton(context, '3', isLight),
           ],
         ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('4', isDark),
-            _buildDigitButton('5', isDark),
-            _buildDigitButton('6', isDark),
+            _buildDigitButton(context, '4', isLight),
+            _buildDigitButton(context, '5', isLight),
+            _buildDigitButton(context, '6', isLight),
           ],
         ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildDigitButton('7', isDark),
-            _buildDigitButton('8', isDark),
-            _buildDigitButton('9', isDark),
+            _buildDigitButton(context, '7', isLight),
+            _buildDigitButton(context, '8', isLight),
+            _buildDigitButton(context, '9', isLight),
           ],
         ),
         const SizedBox(height: 20),
@@ -61,13 +66,13 @@ class PinPad extends StatelessWidget {
                     ),
                   )
                 : const SizedBox(width: 64, height: 64),
-            _buildDigitButton('0', isDark),
+            _buildDigitButton(context, '0', isLight),
             IconButton(
               onPressed: onDeletePressed,
               icon: const Icon(Icons.backspace_outlined, size: 28),
               style: IconButton.styleFrom(
                 foregroundColor:
-                    isDark ? Colors.white : AppColors.textPrimaryLight,
+                    isLight ? AppColors.textPrimaryLight : Colors.white,
               ),
             ),
           ],
@@ -76,19 +81,19 @@ class PinPad extends StatelessWidget {
     );
   }
 
-  Widget _buildDigitButton(String digit, bool isDark) {
+  Widget _buildDigitButton(BuildContext context, String digit, bool isLight) {
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : Colors.black.withValues(alpha: 0.08),
+        color: isLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.2)
-              : Colors.black.withValues(alpha: 0.12),
+          color: isLight
+              ? Colors.black.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.2),
         ),
       ),
       child: Material(
@@ -102,7 +107,7 @@ class PinPad extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
               ),
             ),
           ),

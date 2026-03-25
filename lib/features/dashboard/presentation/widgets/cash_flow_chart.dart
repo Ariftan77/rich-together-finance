@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -23,7 +25,10 @@ class CashFlowChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (data.isEmpty) {
       return GlassCard(
@@ -33,9 +38,9 @@ class CashFlowChart extends ConsumerWidget {
           child: Text(
             trans.reportNoData,
             style: TextStyle(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              color: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),
@@ -63,7 +68,7 @@ class CashFlowChart extends ConsumerWidget {
             Text(
               trans.chartCashflow,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -71,9 +76,9 @@ class CashFlowChart extends ConsumerWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildLegend(trans.entryTypeIncome, AppColors.success, isDark),
+                _buildLegend(trans.entryTypeIncome, AppColors.success, isLight),
                 const SizedBox(width: 16),
-                _buildLegend(trans.entryTypeExpense, AppColors.error, isDark),
+                _buildLegend(trans.entryTypeExpense, AppColors.error, isLight),
               ],
             ),
             const SizedBox(height: 16),
@@ -116,9 +121,9 @@ class CashFlowChart extends ConsumerWidget {
                               child: Text(
                                 data[value.toInt()].month,
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.6)
-                                      : const Color(0xFF64748B),
+                                  color: isLight
+                                      ? const Color(0xFF64748B)
+                                      : Colors.white.withValues(alpha: 0.6),
                                   fontSize: 10,
                                 ),
                               ),
@@ -136,9 +141,9 @@ class CashFlowChart extends ConsumerWidget {
                           return Text(
                             _formatCompact(value),
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.6)
-                                  : const Color(0xFF64748B),
+                              color: isLight
+                                  ? const Color(0xFF64748B)
+                                  : Colors.white.withValues(alpha: 0.6),
                               fontSize: 10,
                             ),
                           );
@@ -154,9 +159,9 @@ class CashFlowChart extends ConsumerWidget {
                     horizontalInterval: maxValue / 5,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.08),
+                        color: isLight
+                            ? Colors.black.withValues(alpha: 0.08)
+                            : Colors.white.withValues(alpha: 0.1),
                         strokeWidth: 1,
                       );
                     },
@@ -193,7 +198,7 @@ class CashFlowChart extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegend(String label, Color color, bool isDark) {
+  Widget _buildLegend(String label, Color color, bool isLight) {
     return Row(
       children: [
         Container(
@@ -208,9 +213,9 @@ class CashFlowChart extends ConsumerWidget {
         Text(
           label,
           style: TextStyle(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.7)
-                : const Color(0xFF374151),
+            color: isLight
+                ? const Color(0xFF374151)
+                : Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),

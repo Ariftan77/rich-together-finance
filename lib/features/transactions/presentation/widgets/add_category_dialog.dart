@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../settings/presentation/widgets/category_icon_picker.dart';
 
@@ -87,9 +89,19 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return Dialog(
-      backgroundColor: const Color(0xFF2D2416),
+      backgroundColor: isDefault
+          ? const Color(0xFF2D2416)
+          : isLight
+              ? Colors.white
+              : const Color(0xFF1A1A1A),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -112,7 +124,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                   child: Text(
                     trans.entryAddCategory,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -178,7 +190,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
               Text(
                 '${trans.entryCategory}: ${widget.type == CategoryType.income ? trans.entryTypeIncome : trans.entryTypeExpense}',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
                 ),
               ),
@@ -211,7 +223,9 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     child: CategoryIconWidget(
                       iconString: _icon,
                       size: 24,
-                      color: _colorHex == 'transparent' ? Colors.white : Colors.white,
+                      color: _colorHex == 'transparent'
+                          ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                          : Colors.white,
                     ),
                   ),
                 ),
@@ -223,7 +237,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                       Text(
                         trans.entryCategory.toUpperCase(),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.2,
@@ -232,23 +246,27 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                       const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.04)
+                              : Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: isLight
+                                ? Colors.black.withValues(alpha: 0.12)
+                                : Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
                         child: TextField(
                           controller: _nameController,
                           autofocus: true,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: isLight ? AppColors.textPrimaryLight : Colors.white,
                             fontSize: 15,
                           ),
                           decoration: InputDecoration(
                             hintText: trans.entrySearchCategory,
                             hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                               fontSize: 15,
                             ),
                             border: InputBorder.none,
@@ -273,7 +291,9 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     onPressed: _isLoading ? null : () => Navigator.pop(context),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      backgroundColor: isLight
+                          ? Colors.black.withValues(alpha: 0.05)
+                          : Colors.white.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -281,7 +301,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     child: Text(
                       trans.cancel,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),

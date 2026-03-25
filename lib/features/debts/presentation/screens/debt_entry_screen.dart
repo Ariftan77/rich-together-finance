@@ -8,7 +8,9 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -217,7 +219,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final trans = ref.watch(translationsProvider);
     final accountsAsync = ref.watch(accountsStreamProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -226,7 +230,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            gradient: isDark ? AppColors.mainGradient : AppColors.mainGradientLight,
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -236,12 +240,12 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
             ),
             title: Text(
               widget.debt == null ? trans.debtTitleAdd : trans.debtTitleEdit,
               style: TextStyle(
-                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
               ),
             ),
           ),
@@ -254,7 +258,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Debt Type
-                    Text('Type', style: AppTypography.textTheme.labelLarge),
+                    Text('Type', style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 8),
                     Row(
                       children: DebtType.values.map((type) {
@@ -284,9 +288,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                             labelStyle: TextStyle(
                               color: isSelected
                                   ? Colors.white
-                                  : (isDark
-                                      ? Colors.white70
-                                      : const Color(0xFF64748B)),
+                                  : (isLight
+                                      ? const Color(0xFF64748B)
+                                      : Colors.white70),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -334,17 +338,17 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                     : trans.goalTargetAmount,
                                 style: TextStyle(
                                   color: _rawAmount > 0
-                                      ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                      : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
+                                      ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                      : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
                                   fontSize: 15,
                                 ),
                               ),
                             ),
                             Icon(
                               Icons.calculate_outlined,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : const Color(0xFF94A3B8),
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white.withValues(alpha: 0.5),
                               size: 20,
                             ),
                           ],
@@ -355,7 +359,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
                     // Account Selection (Only for creation)
                     if (widget.debt == null) ...[
-                      Text('Account (Optional — Impacts Balance)', style: AppTypography.textTheme.labelLarge),
+                      Text('Account (Optional — Impacts Balance)', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       accountsAsync.when(
                         data: (accounts) {
@@ -399,9 +403,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                 color: AppColors.glassBackground,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.1)
-                                      : Colors.black.withValues(alpha: 0.08),
+                                  color: isLight
+                                      ? Colors.black.withValues(alpha: 0.08)
+                                      : Colors.white.withValues(alpha: 0.1),
                                 ),
                               ),
                               child: Row(
@@ -417,17 +421,17 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                       selectedAccount?.name ?? 'Select Account',
                                       style: TextStyle(
                                         color: selectedAccount != null
-                                            ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                            : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
+                                            ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                            : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
                                         fontSize: 15,
                                       ),
                                     ),
                                   ),
                                   Icon(
                                     Icons.chevron_right,
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.5)
-                                        : const Color(0xFF94A3B8),
+                                    color: isLight
+                                        ? const Color(0xFF94A3B8)
+                                        : Colors.white.withValues(alpha: 0.5),
                                     size: 20,
                                   ),
                                 ],
@@ -443,7 +447,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
                     // Show Account in Edit Mode (Read Only)
                     if (widget.debt != null && _selectedAccountId != null) ...[
-                      Text('Account (Affected)', style: AppTypography.textTheme.labelLarge),
+                      Text('Account (Affected)', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       accountsAsync.when(
                         data: (accounts) {
@@ -462,7 +466,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                     ],
 
                     // Currency Display (Read-only, derived from Account)
-                    Text(trans.goalCurrency, style: AppTypography.textTheme.labelLarge),
+                    Text(trans.goalCurrency, style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -470,25 +474,25 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         color: AppColors.glassBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.08),
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.08)
+                              : Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.currency_exchange,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF64748B),
+                            color: isLight
+                                ? const Color(0xFF64748B)
+                                : Colors.white70,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
                           Text(
                             _selectedCurrency.code,
                             style: TextStyle(
-                              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
                               fontSize: 16,
                             ),
                           ),
@@ -499,7 +503,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
                     // Created Date (edit mode only)
                     if (widget.debt != null) ...[
-                      Text(trans.debtCreatedDate, style: AppTypography.textTheme.labelLarge),
+                      Text(trans.debtCreatedDate, style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       GlassCard(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -508,9 +512,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                           children: [
                             Icon(
                               Icons.calendar_today,
-                              color: isDark
-                                  ? Colors.white54
-                                  : const Color(0xFF94A3B8),
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white54,
                               size: 20,
                             ),
                             const SizedBox(width: 12),
@@ -518,9 +522,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                               DateFormat.yMMMd(ref.watch(localeProvider).languageCode)
                                   .format(widget.debt!.createdAt),
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white70
-                                    : const Color(0xFF64748B),
+                                color: isLight
+                                    ? const Color(0xFF64748B)
+                                    : Colors.white70,
                                 fontSize: 15,
                               ),
                             ),
@@ -532,7 +536,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
                     // Due Date
                     Text(trans.debtDueDate,
-                        style: AppTypography.textTheme.labelLarge),
+                        style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _selectDueDate,
@@ -551,8 +555,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                   : trans.goalNoDeadline,
                               style: TextStyle(
                                 color: _dueDate != null
-                                    ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                                    : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
+                                    ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                    : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
                                 fontSize: 15,
                               ),
                             ),
@@ -563,9 +567,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                     setState(() => _dueDate = null),
                                 child: Icon(
                                   Icons.clear,
-                                  color: isDark
-                                      ? Colors.white54
-                                      : const Color(0xFF94A3B8),
+                                  color: isLight
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white54,
                                   size: 20,
                                 ),
                               ),
@@ -602,28 +606,26 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (context) {
-                                final isDarkDialog =
-                                    Theme.of(context).brightness == Brightness.dark;
                                 return AlertDialog(
-                                  backgroundColor: isDarkDialog
+                                  backgroundColor: isDefault
                                       ? const Color(0xFF2D2416)
-                                      : Colors.white,
+                                      : isLight ? Colors.white : const Color(0xFF0A0A0A),
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20)),
                                   title: Text(
                                     'Delete Debt?',
                                     style: TextStyle(
-                                      color: isDarkDialog
-                                          ? Colors.white
-                                          : AppColors.textPrimaryLight,
+                                      color: isLight
+                                          ? AppColors.textPrimaryLight
+                                          : Colors.white,
                                     ),
                                   ),
                                   content: Text(
                                     'This action cannot be undone.',
                                     style: TextStyle(
-                                      color: isDarkDialog
-                                          ? Colors.white.withValues(alpha: 0.9)
-                                          : AppColors.textPrimaryLight,
+                                      color: isLight
+                                          ? AppColors.textPrimaryLight
+                                          : Colors.white.withValues(alpha: 0.9),
                                     ),
                                   ),
                                   actions: [
@@ -633,9 +635,9 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                         child: Text(
                                           trans.cancel,
                                           style: TextStyle(
-                                            color: isDarkDialog
-                                                ? Colors.white54
-                                                : const Color(0xFF64748B),
+                                            color: isLight
+                                                ? const Color(0xFF64748B)
+                                                : Colors.white54,
                                           ),
                                         )),
                                     TextButton(

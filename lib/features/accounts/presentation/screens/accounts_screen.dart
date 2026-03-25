@@ -5,8 +5,10 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
@@ -84,7 +86,8 @@ class AccountsScreen extends ConsumerWidget {
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -97,7 +100,9 @@ class AccountsScreen extends ConsumerWidget {
               // Header with title
               Text(
                 trans.walletTitle,
-                style: AppTypography.textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                ),
               ),
               const SizedBox(height: 12),
               // Total Balance Card
@@ -125,7 +130,7 @@ class AccountsScreen extends ConsumerWidget {
                           Text(
                             trans.dashboardTotalBalance,
                             style: TextStyle(
-                              color: isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B),
+                              color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -135,18 +140,18 @@ class AccountsScreen extends ConsumerWidget {
                             data: (v) => Text(
                               '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                               style: TextStyle(
-                                color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             loading: () => Text(
                               '...',
-                              style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontSize: 20),
+                              style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 20),
                             ),
-                            error: (_, __) => const Text(
+                            error: (_, __) => Text(
                               '--',
-                              style: TextStyle(color: Colors.white54, fontSize: 20),
+                              style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54, fontSize: 20),
                             ),
                           ),
                         ],
@@ -160,18 +165,18 @@ class AccountsScreen extends ConsumerWidget {
               TextField(
                 onChanged: (value) =>
                     ref.read(_walletSearchProvider.notifier).state = value,
-                style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimaryLight),
+                style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
                 decoration: InputDecoration(
                   hintText: trans.walletSearch,
                   hintStyle: TextStyle(
-                    color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                    color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF94A3B8),
+                    color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                   ),
                   filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+                  fillColor: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -190,14 +195,14 @@ class AccountsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'Filter',
-                      style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     ),
                     if (selectedCurrencies.isNotEmpty || selectedTypes.isNotEmpty)
                       Container(
@@ -214,7 +219,7 @@ class AccountsScreen extends ConsumerWidget {
               ),
               if (isExpanded) ...[
                 const SizedBox(height: 12),
-                Text('Currency', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                Text('Currency', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isLight ? const Color(0xFF64748B) : Colors.white70)),
                 const SizedBox(height: 8),
                 MultiCurrencyPickerField(
                   selected: selectedCurrencies,
@@ -222,7 +227,7 @@ class AccountsScreen extends ConsumerWidget {
                       ref.read(_walletCurrencyFilterProvider.notifier).state = updated,
                 ),
                 const SizedBox(height: 16),
-                Text('Account Type', style: AppTypography.textTheme.labelMedium?.copyWith(color: Colors.white70)),
+                Text('Account Type', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: isLight ? const Color(0xFF64748B) : Colors.white70)),
                 const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -266,7 +271,7 @@ class AccountsScreen extends ConsumerWidget {
                         child: Text(
                           trans.walletNoAccounts,
                           textAlign: TextAlign.center,
-                          style: AppTypography.textTheme.bodyLarge,
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       );
                     }
@@ -285,12 +290,12 @@ class AccountsScreen extends ConsumerWidget {
                           children: [
                             Icon(Icons.search_off,
                                 size: 48,
-                                color: isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFCBD5E1)),
+                                color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.3)),
                             const SizedBox(height: 12),
                             Text(
                               trans.walletNoResults,
-                              style: AppTypography.textTheme.bodyLarge
-                                  ?.copyWith(color: Colors.white54),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
                             ),
                           ],
                         ),
@@ -377,7 +382,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLight = AppThemeProvider.isLightMode(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -388,15 +393,15 @@ class _FilterChip extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryGold
-                : isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08),
+                : isLight
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.1),
           ),
         ),
         child: Text(
           label,
-          style: AppTypography.textTheme.labelMedium!.copyWith(
-            color: isSelected ? Colors.black : (isDark ? Colors.white : AppColors.textPrimaryLight),
+          style: Theme.of(context).textTheme.labelMedium!.copyWith(
+            color: isSelected ? Colors.black : (isLight ? AppColors.textPrimaryLight : Colors.white),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -79,10 +81,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        ref.watch(translationsProvider).dashboardOverview,
-                        style: AppTypography.textTheme.displaySmall,
-                      ),
+                      Builder(builder: (context) {
+                        final themeMode = AppThemeProvider.of(context);
+                        final isLight = themeMode == AppThemeMode.light ||
+                            (themeMode == AppThemeMode.system &&
+                                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+                        return Text(
+                          ref.watch(translationsProvider).dashboardOverview,
+                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                            color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                          ),
+                        );
+                      }),
                       AnimatedBuilder(
                         animation: _tabController,
                         builder: (_, __) {
@@ -108,12 +118,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   ),
                   const SizedBox(height: 16),
                   Builder(builder: (context) {
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final themeMode = AppThemeProvider.of(context);
+                    final isLight = themeMode == AppThemeMode.light ||
+                        (themeMode == AppThemeMode.system &&
+                            MediaQuery.platformBrightnessOf(context) == Brightness.light);
                     return Container(
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : const Color(0xFFE2E8F0),
+                      color: isLight
+                          ? const Color(0xFFE2E8F0)
+                          : Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TabBar(
@@ -124,10 +137,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
-                      labelColor: isDark ? Colors.white : AppColors.textPrimaryLight,
-                      unselectedLabelColor: isDark
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : const Color(0xFF64748B),
+                      labelColor: isLight ? AppColors.textPrimaryLight : Colors.white,
+                      unselectedLabelColor: isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.6),
                       labelStyle: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -373,13 +386,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      thickness: 0.5,
-      color: Colors.white.withValues(alpha: 0.08),
-      indent: 16,
-      endIndent: 16,
-    );
+    return Builder(builder: (context) {
+      final themeMode = AppThemeProvider.of(context);
+      final isLight = themeMode == AppThemeMode.light ||
+          (themeMode == AppThemeMode.system &&
+              MediaQuery.platformBrightnessOf(context) == Brightness.light);
+      return Divider(
+        height: 1,
+        thickness: 0.5,
+        color: isLight
+            ? Colors.black.withValues(alpha: 0.1)
+            : Colors.white.withValues(alpha: 0.08),
+        indent: 16,
+        endIndent: 16,
+      );
+    });
   }
 
   void _showAmountBreakdown(
@@ -405,8 +426,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF2D2416),
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return Dialog(
+        backgroundColor: isDefault
+            ? const Color(0xFF2D2416)
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -421,8 +452,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -476,8 +507,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           const Spacer(),
                           Text(
                             '$prefix${baseCurrency.symbol} ${Formatters.formatCurrency(convertedAmount, showDecimal: showDecimal)}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -491,7 +522,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           child: Text(
                             '${Formatters.formatRate(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                               fontSize: 11,
                             ),
                           ),
@@ -509,7 +540,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: Text(
                     trans.close,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -518,7 +549,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 
@@ -539,8 +571,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF2D2416),
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return Dialog(
+        backgroundColor: isDefault
+            ? const Color(0xFF2D2416)
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -556,8 +598,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   const SizedBox(width: 12),
                   Text(
                     trans.dashboardBalanceCurrency,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -608,8 +650,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           const Spacer(),
                           Text(
                             '${isNegative ? '-' : ''}${baseCurrency.symbol} ${Formatters.formatCurrency(convertedAmount, showDecimal: showDecimal)}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -623,7 +665,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           child: Text(
                             '${Formatters.formatRate(rate)} × ${isNegative ? '-' : ''}${currency.symbol} ${Formatters.formatCurrency(absOriginal, showDecimal: showDecimal)}',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                               fontSize: 11,
                             ),
                           ),
@@ -641,7 +683,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: Text(
                     trans.close,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -650,7 +692,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 
@@ -687,8 +730,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF2D2416),
+      builder: (context) {
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+        return Dialog(
+        backgroundColor: isDefault
+            ? const Color(0xFF2D2416)
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -704,8 +757,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   const SizedBox(width: 12),
                   Text(
                     trans.dashboardNetWorth,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -722,15 +775,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   Text(
                     trans.dashboardTotalBalance,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
                       fontSize: 14,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '${baseCurrency.symbol} ${Formatters.formatCurrency(totalBalance, showDecimal: showDecimal)}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -748,7 +801,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     Text(
                       trans.debtReceivable,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -775,7 +828,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     Text(
                       trans.debtPayable,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -795,7 +848,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               // Divider + Net Worth total
               if (activeDebt != null && activeDebt.hasAny) ...[
                 const SizedBox(height: 12),
-                Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+                Divider(color: isLight ? const Color(0xFFE2E8F0) : Colors.white.withValues(alpha: 0.15), height: 1),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -833,7 +886,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: Text(
                     trans.close,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -842,13 +895,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 
   Widget _buildReportsTab() {
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Column(
       children: [
@@ -857,23 +914,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFFE2E8F0),
+              color: isLight
+                  ? const Color(0xFFE2E8F0)
+                  : Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: TabBar(
               controller: _reportSubTabController,
               indicator: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: isDark ? 0.25 : 0.2),
+                color: AppColors.primaryGold.withValues(alpha: isLight ? 0.2 : 0.25),
                 borderRadius: BorderRadius.circular(10),
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: AppColors.primaryGold,
-              unselectedLabelColor: isDark
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : const Color(0xFF94A3B8),
+              unselectedLabelColor: isLight
+                  ? const Color(0xFF94A3B8)
+                  : Colors.white.withValues(alpha: 0.5),
               labelStyle: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -908,7 +965,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -928,7 +988,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Trends section ──
-            _buildSectionHeader(trans.sectionTrends, isDark),
+            _buildSectionHeader(trans.sectionTrends, isLight),
             const SizedBox(height: 12),
 
             // Cash Flow Chart
@@ -960,7 +1020,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             const SizedBox(height: 24),
 
             // ── Spending Analysis section ──
-            _buildSectionHeader(trans.sectionSpendingAnalysis, isDark),
+            _buildSectionHeader(trans.sectionSpendingAnalysis, isLight),
             const SizedBox(height: 12),
 
             // YTD Top Categories (with inline category trend)
@@ -972,7 +1032,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             const SizedBox(height: 24),
 
             // ── Behavior Patterns section ──
-            _buildSectionHeader(trans.sectionBehaviorPatterns, isDark),
+            _buildSectionHeader(trans.sectionBehaviorPatterns, isLight),
             const SizedBox(height: 12),
 
             // Day-of-week spending pattern
@@ -1001,13 +1061,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  Widget _buildSectionHeader(String title, bool isDark) {
+  Widget _buildSectionHeader(String title, bool isLight) {
     return Text(
       title,
       style: TextStyle(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.4)
-            : const Color(0xFF94A3B8),
+        color: isLight
+            ? const Color(0xFF94A3B8)
+            : Colors.white.withValues(alpha: 0.4),
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.0,
@@ -1021,6 +1081,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -1032,8 +1096,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             return Center(
               child: Text(
                 trans.reportNoData,
-                style: AppTypography.textTheme.bodyLarge!.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
+                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             );
@@ -1071,8 +1135,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         children: [
                           Text(
                             monthLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1080,7 +1144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           Icon(
                             Icons.chevron_right,
                             size: 20,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
@@ -1153,7 +1217,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       const SizedBox(height: 10),
                       Divider(
                         height: 1,
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: isLight ? const Color(0xFFE2E8F0) : Colors.white.withValues(alpha: 0.1),
                       ),
                       const SizedBox(height: 10),
                       // Net
@@ -1163,7 +1227,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           Text(
                             trans.reportNet,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1218,6 +1282,10 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -1244,7 +1312,7 @@ class _SummaryRow extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1253,7 +1321,7 @@ class _SummaryRow extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                         fontSize: 11,
                       ),
                     ),
@@ -1263,8 +1331,8 @@ class _SummaryRow extends StatelessWidget {
             // Amount
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: isLight ? AppColors.textPrimaryLight : Colors.white,
                 fontSize: 12, // Reduced by 20% from 15
                 fontWeight: FontWeight.bold,
               ),
@@ -1276,7 +1344,7 @@ class _SummaryRow extends StatelessWidget {
               child: onTap != null
                   ? Icon(
                       Icons.chevron_right,
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.3),
                       size: 16,
                     )
                   : const SizedBox.shrink(),
@@ -1307,6 +1375,10 @@ class _ReportRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1324,7 +1396,7 @@ class _ReportRow extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                 fontSize: 13,
               ),
             ),

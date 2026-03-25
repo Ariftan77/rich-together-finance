@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 
 /// An inline searchable dropdown that opens a filtered list below the field.
 /// Matches the app's glass/dark style. No modal — just tap the field to expand.
@@ -131,7 +133,7 @@ class _GenericSearchableDropdownState<T>
     final listHeight =
         (_filteredItems.isEmpty ? itemHeight : _filteredItems.length * itemHeight)
             .clamp(itemHeight, widget.maxVisibleItems * itemHeight);
-    
+
     // Calculate extra height for "Add New" button
     final addNewHeight = widget.onAddNew != null ? 49.0 : 0.0; // 48 button + 1 divider
 
@@ -146,7 +148,43 @@ class _GenericSearchableDropdownState<T>
         final currentTotalHeight =
             searchFieldHeight + verticalPadding * 2 + currentListHeight + 8 + addNewHeight;
 
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
+        final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+        // Dropdown popup background:
+        // default=warm dark, dark=true black, light=light gray
+        final Color dropdownBg = isDefault
+            ? const Color(0xFF2D2416)
+            : isLight
+                ? const Color(0xFFF8FAFC)
+                : const Color(0xFF0A0A0A);
+
+        // Search field fill
+        final Color searchBg = isLight
+            ? Colors.black.withValues(alpha: 0.04)
+            : Colors.white.withValues(alpha: 0.05);
+
+        // Search field border
+        final Color searchBorder = isLight
+            ? Colors.black.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.12);
+
+        // Text colors
+        final Color textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+        final Color hintColor = isLight
+            ? const Color(0xFF94A3B8)
+            : Colors.white.withValues(alpha: 0.35);
+
+        // Divider
+        final Color dividerColor = isLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1);
+
+        // Item text
+        final Color itemTextColor = isLight ? AppColors.textPrimaryLight : Colors.white;
 
         return Stack(
           children: [
@@ -170,9 +208,7 @@ class _GenericSearchableDropdownState<T>
                   child: Container(
                     constraints: BoxConstraints(maxHeight: currentTotalHeight),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF2D2416)
-                          : const Color(0xFFF8FAFC),
+                      color: dropdownBg,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: AppColors.primaryGold.withValues(alpha: 0.3),
@@ -194,39 +230,28 @@ class _GenericSearchableDropdownState<T>
                           child: Container(
                             height: searchFieldHeight,
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.04),
+                              color: searchBg,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.12)
-                                    : Colors.black.withValues(alpha: 0.12),
-                              ),
+                              border: Border.all(color: searchBorder),
                             ),
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               onChanged: _filterItems,
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.textPrimaryLight,
+                                color: textColor,
                                 fontSize: 14,
                               ),
                               decoration: InputDecoration(
                                 hintText: widget.searchHint,
                                 hintStyle: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.35)
-                                      : const Color(0xFF94A3B8),
+                                  color: hintColor,
                                   fontSize: 14,
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search,
                                   size: 18,
-                                  color: AppColors.primaryGold
-                                      .withValues(alpha: 0.7),
+                                  color: AppColors.primaryGold.withValues(alpha: 0.7),
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
@@ -243,22 +268,20 @@ class _GenericSearchableDropdownState<T>
                                   child: Text(
                                     widget.noItemsFoundText,
                                     style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white.withValues(alpha: 0.5)
-                                          : const Color(0xFF94A3B8),
+                                      color: isLight
+                                          ? const Color(0xFF94A3B8)
+                                          : Colors.white.withValues(alpha: 0.5),
                                       fontSize: 14,
                                     ),
                                   ),
                                 )
                               : ListView.builder(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
                                   shrinkWrap: true,
                                   itemCount: _filteredItems.length,
                                   itemBuilder: (context, index) {
                                     final item = _filteredItems[index];
-                                    final isSelected =
-                                        item == widget.selectedItem;
+                                    final isSelected = item == widget.selectedItem;
 
                                     return InkWell(
                                       onTap: () => _selectItem(item),
@@ -267,21 +290,17 @@ class _GenericSearchableDropdownState<T>
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 16),
                                         color: isSelected
-                                            ? AppColors.primaryGold
-                                                .withValues(alpha: 0.12)
+                                            ? AppColors.primaryGold.withValues(alpha: 0.12)
                                             : Colors.transparent,
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                widget
-                                                    .itemLabelBuilder(item),
+                                                widget.itemLabelBuilder(item),
                                                 style: TextStyle(
                                                   color: isSelected
                                                       ? AppColors.primaryGold
-                                                      : (isDark
-                                                          ? Colors.white
-                                                          : AppColors.textPrimaryLight),
+                                                      : itemTextColor,
                                                   fontSize: 15,
                                                   fontWeight: isSelected
                                                       ? FontWeight.w600
@@ -304,12 +323,7 @@ class _GenericSearchableDropdownState<T>
                         ),
                         // Add New Button (if provided)
                         if (widget.onAddNew != null) ...[
-                          Divider(
-                            height: 1,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.black.withValues(alpha: 0.08),
-                          ),
+                          Divider(height: 1, color: dividerColor),
                           InkWell(
                             onTap: () {
                               final text = _searchController.text.trim();
@@ -329,7 +343,7 @@ class _GenericSearchableDropdownState<T>
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      _searchController.text.trim().isEmpty 
+                                      _searchController.text.trim().isEmpty
                                           ? 'Add New Category'
                                           : 'Add "${_searchController.text.trim()}"',
                                       style: const TextStyle(
@@ -359,10 +373,42 @@ class _GenericSearchableDropdownState<T>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
     final selectedLabel = widget.selectedItem != null
         ? widget.itemLabelBuilder(widget.selectedItem as T)
         : null;
+
+    // Label color
+    final Color labelColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.6);
+
+    // Trigger container fill
+    final Color containerBg = isLight
+        ? Colors.black.withValues(alpha: 0.04)
+        : Colors.white.withValues(alpha: 0.05);
+
+    // Trigger border
+    final Color containerBorder = _isOpen
+        ? AppColors.primaryGold.withValues(alpha: 0.5)
+        : (isLight
+            ? Colors.black.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.15));
+
+    // Value/hint text color
+    final Color valueColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+    final Color hintColor = isLight
+        ? const Color(0xFF94A3B8)
+        : Colors.white.withValues(alpha: 0.4);
+
+    // Chevron icon
+    final Color chevronColor = isLight
+        ? const Color(0xFFCBD5E1)
+        : Colors.white.withValues(alpha: 0.3);
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -374,9 +420,7 @@ class _GenericSearchableDropdownState<T>
             child: Text(
               widget.label.toUpperCase(),
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : const Color(0xFF64748B),
+                color: labelColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.2,
@@ -389,17 +433,9 @@ class _GenericSearchableDropdownState<T>
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.04),
+                color: containerBg,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _isOpen
-                      ? AppColors.primaryGold.withValues(alpha: 0.5)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : Colors.black.withValues(alpha: 0.12)),
-                ),
+                border: Border.all(color: containerBorder),
               ),
               child: Row(
                 children: [
@@ -413,11 +449,7 @@ class _GenericSearchableDropdownState<T>
                     child: Text(
                       selectedLabel ?? widget.hint,
                       style: TextStyle(
-                        color: selectedLabel != null
-                            ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                            : (isDark
-                                ? Colors.white.withValues(alpha: 0.4)
-                                : const Color(0xFF94A3B8)),
+                        color: selectedLabel != null ? valueColor : hintColor,
                         fontSize: 15,
                       ),
                     ),
@@ -425,12 +457,7 @@ class _GenericSearchableDropdownState<T>
                   AnimatedRotation(
                     turns: _isOpen ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.3)
-                          : const Color(0xFFCBD5E1),
-                    ),
+                    child: Icon(Icons.expand_more, color: chevronColor),
                   ),
                 ],
               ),

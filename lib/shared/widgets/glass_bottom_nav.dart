@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 
 class GlassBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -16,7 +18,30 @@ class GlassBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    // Nav background color
+    final Color navBgColor = isDefault
+        ? AppColors.glassBackground
+        : isLight
+            ? Colors.white.withValues(alpha: 0.85)
+            : const Color(0xFF000000).withValues(alpha: 0.85);
+
+    // Nav border color
+    final Color navBorderColor = isDefault
+        ? AppColors.glassBorder
+        : isLight
+            ? Colors.black.withValues(alpha: 0.1)
+            : const Color(0xFF2A2A2A);
+
+    // Inactive icon/label color
+    final Color inactiveColor = isLight
+        ? const Color(0xFF64748B)
+        : AppColors.textSecondary;
 
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
@@ -26,7 +51,7 @@ class GlassBottomNav extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+            color: Colors.black.withValues(alpha: isLight ? 0.08 : 0.2),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -36,19 +61,15 @@ class GlassBottomNav extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
           filter: ImageFilter.blur(
-            sigmaX: isDark ? 16 : 20,
-            sigmaY: isDark ? 16 : 20,
+            sigmaX: isLight ? 20 : 16,
+            sigmaY: isLight ? 20 : 16,
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.glassBackground
-                  : Colors.white.withValues(alpha: 0.72),
+              color: navBgColor,
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: isDark
-                    ? AppColors.glassBorder
-                    : Colors.black.withValues(alpha: 0.1),
+                color: navBorderColor,
                 width: 1.0,
               ),
             ),
@@ -71,7 +92,7 @@ class GlassBottomNav extends StatelessWidget {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primaryGold.withValues(alpha: isDark ? 0.2 : 0.15)
+                                  ? AppColors.primaryGold.withValues(alpha: isLight ? 0.15 : 0.2)
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),
@@ -79,7 +100,7 @@ class GlassBottomNav extends StatelessWidget {
                               isSelected ? item.activeIcon : item.icon,
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                  : inactiveColor,
                               size: 24,
                             ),
                           ),
@@ -89,7 +110,7 @@ class GlassBottomNav extends StatelessWidget {
                             style: TextStyle(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+                                  : inactiveColor,
                               fontSize: 10,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                             ),

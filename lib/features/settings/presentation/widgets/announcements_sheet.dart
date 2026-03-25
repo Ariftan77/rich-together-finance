@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/announcement_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 
 void showAnnouncementsSheet(BuildContext context, WidgetRef ref) {
   // Mark all as read immediately so badge clears
@@ -31,19 +33,27 @@ class _AnnouncementsSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider);
     final announcementsAsync = ref.watch(announcementsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.bgDarkEnd : Colors.white,
+        color: isDefault
+            ? AppColors.bgDarkEnd
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.08),
+          color: isLight
+              ? Colors.black.withValues(alpha: 0.08)
+              : Colors.white.withValues(alpha: 0.08),
         ),
       ),
       padding: EdgeInsets.only(
@@ -61,7 +71,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+              color: isLight ? const Color(0xFFCBD5E1) : Colors.white24,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -72,12 +82,12 @@ class _AnnouncementsSheet extends ConsumerWidget {
               children: [
                 const Icon(Icons.campaign_outlined, color: AppColors.primaryGold, size: 22),
                 const SizedBox(width: 10),
-                Text(trans.settingsWhatsNew, style: AppTypography.textTheme.titleLarge),
+                Text(trans.settingsWhatsNew, style: Theme.of(context).textTheme.titleLarge),
               ],
             ),
           ),
           Divider(
-            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+            color: isLight ? const Color(0xFFE2E8F0) : Colors.white12,
             height: 1,
           ),
           // Content
@@ -95,7 +105,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
                   child: Text(
                     trans.settingsNoAnnouncements,
                     style: TextStyle(
-                      color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                      color: isLight ? const Color(0xFF94A3B8) : Colors.white54,
                     ),
                   ),
                 ),
@@ -117,9 +127,9 @@ class _AnnouncementsSheet extends ConsumerWidget {
                           Text(
                             trans.settingsNoAnnouncements,
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white54
-                                  : const Color(0xFF94A3B8),
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white54,
                             ),
                           ),
                         ],
@@ -132,7 +142,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
                   shrinkWrap: true,
                   itemCount: list.length,
                   separatorBuilder: (context, index) => Divider(
-                    color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                    color: isLight ? const Color(0xFFE2E8F0) : Colors.white12,
                     height: 1,
                     indent: 20,
                     endIndent: 20,
@@ -146,7 +156,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
                         children: [
                           Text(
                             a.title(locale.languageCode),
-                            style: AppTypography.textTheme.titleSmall?.copyWith(
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               color: AppColors.primaryGold,
                             ),
                           ),
@@ -154,9 +164,9 @@ class _AnnouncementsSheet extends ConsumerWidget {
                           Text(
                             a.body(locale.languageCode),
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white70
-                                  : const Color(0xFF374151),
+                              color: isLight
+                                  ? const Color(0xFF374151)
+                                  : Colors.white70,
                               fontSize: 14,
                               height: 1.5,
                             ),

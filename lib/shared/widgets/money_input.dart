@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../theme/colors.dart';
-import '../theme/typography.dart';
+
 import 'glass_card.dart';
 
 /// Reusable money input field with automatic thousand separators formatting
@@ -100,17 +100,17 @@ class _MoneyInputState extends State<MoneyInput> {
           child: TextFormField(
             controller: _controller,
             keyboardType: TextInputType.number,
-            style: AppTypography.textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
               hintText: widget.hintText,
-              hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textTertiary,
               ),
               prefixText: widget.prefixText,
-              prefixStyle: AppTypography.textTheme.bodyLarge?.copyWith(
+              prefixStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),

@@ -6,8 +6,10 @@ import 'package:mailer/smtp_server.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/remote_config_service.dart';
 import '../../../../core/services/premium_auth_service.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 
 class HelpFaqScreen extends ConsumerStatefulWidget {
   const HelpFaqScreen({super.key});
@@ -44,21 +46,25 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: AppColors.bgDarkEnd,
+        builder: (context, setState) {
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
+          return AlertDialog(
+          backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
           contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-          title: Text(ref.watch(translationsProvider).settingsSendFeedback, style: const TextStyle(color: Colors.white)),
+          title: Text(ref.watch(translationsProvider).settingsSendFeedback, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
           content: TextField(
             controller: controller,
             maxLines: 5,
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
             decoration: InputDecoration(
               hintText: ref.watch(translationsProvider).settingsSendFeedbackHint,
-              hintStyle: const TextStyle(color: Colors.white38),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
+              hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white38),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: isLight ? const Color(0xFFCBD5E1) : Colors.white24),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: AppColors.primaryGold),
@@ -69,7 +75,7 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
             if (!isSending)
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(ref.watch(translationsProvider).genericCancel, style: const TextStyle(color: Colors.white70)),
+                child: Text(ref.watch(translationsProvider).genericCancel, style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70)),
               ),
             isSending
                 ? const Padding(
@@ -103,7 +109,8 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
                     child: Text(ref.watch(translationsProvider).settingsSendFeedback, style: const TextStyle(color: AppColors.primaryGold)),
                   ),
           ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -144,12 +151,13 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
   Widget build(BuildContext context) {
     final ref = this.ref;
     final trans = ref.watch(translationsProvider);
+    final isLight = AppThemeProvider.isLightMode(context);
 
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.mainGradient,
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -158,8 +166,8 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
             title: Text(trans.helpTitle),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.white),
-            titleTextStyle: AppTypography.textTheme.displaySmall?.copyWith(color: Colors.white),
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+            titleTextStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: isLight ? AppColors.textPrimaryLight : Colors.white),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -168,20 +176,20 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
               children: [
               Text(
                 trans.helpTitle,
-                style: AppTypography.textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: AppColors.primaryGold,
                 ),
               ),
               const SizedBox(height: 24),
 
-              _buildFaqItem(context, trans.helpFaq1Question, trans.helpFaq1Answer),
-              _buildFaqItem(context, trans.helpFaq2Question, trans.helpFaq2Answer),
-              _buildFaqItem(context, trans.helpFaq3Question, trans.helpFaq3Answer),
-              _buildFaqItem(context, trans.helpFaq4Question, trans.helpFaq4Answer),
-              _buildFaqItem(context, trans.helpFaq5Question, trans.helpFaq5Answer),
-              _buildFaqItem(context, trans.helpFaq6Question, trans.helpFaq6Answer),
-              _buildFaqItem(context, trans.helpFaq7Question, trans.helpFaq7Answer),
-              _buildFaqItem(context, trans.helpFaq8Question, trans.helpFaq8Answer),
+              _buildFaqItem(context, trans.helpFaq1Question, trans.helpFaq1Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq2Question, trans.helpFaq2Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq3Question, trans.helpFaq3Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq4Question, trans.helpFaq4Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq5Question, trans.helpFaq5Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq6Question, trans.helpFaq6Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq7Question, trans.helpFaq7Answer, isLight),
+              _buildFaqItem(context, trans.helpFaq8Question, trans.helpFaq8Answer, isLight),
 
               const SizedBox(height: 32),
 
@@ -205,13 +213,13 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
                     const SizedBox(height: 12),
                     Text(
                       trans.helpContactSupport,
-                      style: AppTypography.textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       trans.helpContactEmail,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -242,22 +250,23 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
     );
   }
 
-  Widget _buildFaqItem(BuildContext context, String question, String answer) {
+  Widget _buildFaqItem(BuildContext context, String question, String answer, bool isLight) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: isLight ? const Color(0xFFF1F5F9) : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
+        border: isLight ? Border.all(color: Colors.black.withValues(alpha: 0.08)) : null,
       ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         iconColor: AppColors.primaryGold,
-        collapsedIconColor: Colors.white.withValues(alpha: 0.5),
+        collapsedIconColor: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.5),
         title: Text(
           question,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isLight ? AppColors.textPrimaryLight : Colors.white,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
@@ -266,7 +275,7 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
           Text(
             answer,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: isLight ? const Color(0xFF374151) : Colors.white.withValues(alpha: 0.7),
               fontSize: 14,
               height: 1.5,
             ),

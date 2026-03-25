@@ -6,7 +6,9 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
@@ -23,7 +25,10 @@ class RecentTransactionsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     if (transactions.isEmpty) {
         return GlassCard(
@@ -33,9 +38,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
             child: Text(
               ref.watch(translationsProvider).noTransactions,
               style: TextStyle(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF94A3B8),
+                color: isLight
+                    ? const Color(0xFF94A3B8)
+                    : Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             ),
@@ -65,7 +70,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                       Text(
                         ref.watch(translationsProvider).recentTransactions,
                         style: TextStyle(
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -118,9 +123,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                         decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : Colors.black.withValues(alpha: 0.08),
+                              color: isLight
+                                  ? Colors.black.withValues(alpha: 0.08)
+                                  : Colors.white.withValues(alpha: 0.1),
                               width: 1,
                             ),
                           ),
@@ -192,7 +197,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                   Text(
                                     transaction.title ?? categoryName,
                                     style: TextStyle(
-                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -205,27 +210,27 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                       Text(
                                         accountName,
                                         style: TextStyle(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.6)
-                                              : const Color(0xFF64748B),
+                                          color: isLight
+                                              ? const Color(0xFF64748B)
+                                              : Colors.white.withValues(alpha: 0.6),
                                           fontSize: 12,
                                         ),
                                       ),
                                       Text(
                                         ' • ',
                                         style: TextStyle(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.6)
-                                              : const Color(0xFF64748B),
+                                          color: isLight
+                                              ? const Color(0xFF64748B)
+                                              : Colors.white.withValues(alpha: 0.6),
                                           fontSize: 12,
                                         ),
                                       ),
                                       Text(
                                         DateFormat('MMM dd', ref.watch(localeProvider).languageCode).format(transaction.date),
                                         style: TextStyle(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.6)
-                                              : const Color(0xFF64748B),
+                                          color: isLight
+                                              ? const Color(0xFF64748B)
+                                              : Colors.white.withValues(alpha: 0.6),
                                           fontSize: 12,
                                         ),
                                       ),

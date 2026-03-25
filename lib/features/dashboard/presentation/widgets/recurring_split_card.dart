@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -27,7 +29,11 @@ class RecurringSplitCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final accentColor = Theme.of(context).colorScheme.primary;
     final trans = ref.watch(translationsProvider);
     final splitAsync = ref.watch(recurringVsDiscretionaryProvider);
@@ -51,7 +57,7 @@ class RecurringSplitCard extends ConsumerWidget {
             child: Text(
               'Error loading data',
               style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                color: isLight ? const Color(0xFF64748B) : Colors.white54,
               ),
             ),
           ),
@@ -61,9 +67,9 @@ class RecurringSplitCard extends ConsumerWidget {
         final hasCommitted = split.committedMonthly > 0;
         final hasData = split.totalAvgMonthly > 0 || hasCommitted;
 
-        final mutedColor = isDark
-            ? Colors.white.withValues(alpha: 0.25)
-            : const Color(0xFFCBD5E1);
+        final mutedColor = isLight
+            ? const Color(0xFFCBD5E1)
+            : Colors.white.withValues(alpha: 0.25);
 
         return GlassCard(
           child: Padding(
@@ -74,7 +80,7 @@ class RecurringSplitCard extends ConsumerWidget {
                 Text(
                   trans.recurringSplitTitle,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -83,9 +89,9 @@ class RecurringSplitCard extends ConsumerWidget {
                 Text(
                   'Monthly average · last 3 months',
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.4)
-                        : const Color(0xFF94A3B8),
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
                     fontSize: 11,
                   ),
                 ),
@@ -100,17 +106,17 @@ class RecurringSplitCard extends ConsumerWidget {
                           Icon(
                             Icons.repeat_outlined,
                             size: 32,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.3)
-                                : const Color(0xFFCBD5E1),
+                            color: isLight
+                                ? const Color(0xFFCBD5E1)
+                                : Colors.white.withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             trans.recurringSplitNoData,
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.4)
-                                  : const Color(0xFF94A3B8),
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white.withValues(alpha: 0.4),
                               fontSize: 13,
                             ),
                           ),
@@ -165,7 +171,7 @@ class RecurringSplitCard extends ConsumerWidget {
                                 symbol: currencySymbol,
                               ),
                               pct: split.committedPct,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                             const SizedBox(height: 12),
                             _LegendRow(
@@ -176,7 +182,7 @@ class RecurringSplitCard extends ConsumerWidget {
                                 symbol: currencySymbol,
                               ),
                               pct: split.discretionaryPct,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                           ],
                         ),
@@ -198,14 +204,14 @@ class _LegendRow extends StatelessWidget {
   final String label;
   final String amount;
   final double pct;
-  final bool isDark;
+  final bool isLight;
 
   const _LegendRow({
     required this.color,
     required this.label,
     required this.amount,
     required this.pct,
-    required this.isDark,
+    required this.isLight,
   });
 
   @override
@@ -227,9 +233,9 @@ class _LegendRow extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.6)
-                      : const Color(0xFF64748B),
+                  color: isLight
+                      ? const Color(0xFF64748B)
+                      : Colors.white.withValues(alpha: 0.6),
                   fontSize: 11,
                 ),
               ),
@@ -237,7 +243,7 @@ class _LegendRow extends StatelessWidget {
               Text(
                 amount,
                 style: TextStyle(
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  color: isLight ? AppColors.textPrimaryLight : Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),

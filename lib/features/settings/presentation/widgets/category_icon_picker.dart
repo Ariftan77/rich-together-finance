@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/utils/phosphor_icon_registry.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 
@@ -174,6 +176,10 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
   @override
   Widget build(BuildContext context) {
     final isPhosphor = _sourceMode > 0;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -181,9 +187,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
       maxChildSize: 0.95,
       builder: (context, _) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF2D2416),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF2D2416),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -193,7 +199,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: isLight ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -204,9 +210,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Select Icon & Color',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, {
@@ -219,7 +225,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                   ],
                 ),
               ),
-              const Divider(color: Colors.white24, height: 1),
+              Divider(color: isLight ? Colors.black.withValues(alpha: 0.1) : Colors.white24, height: 1),
 
               // Preview
               Padding(
@@ -231,7 +237,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                       color: _hexToColor(_selectedColorHex),
                       shape: BoxShape.circle,
                       border: _selectedColorHex == 'transparent'
-                          ? Border.all(color: Colors.white24, width: 1.5)
+                          ? Border.all(color: isLight ? Colors.black.withValues(alpha: 0.15) : Colors.white24, width: 1.5)
                           : null,
                     ),
                     child: CategoryIconWidget(
@@ -247,7 +253,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
               // Source toggle: Emoji / Curated / All
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildSourceToggle(),
+                child: _buildSourceToggle(isLight),
               ),
               const SizedBox(height: 12),
 
@@ -260,7 +266,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                     Text(
                       'Colors',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: isLight ? AppColors.textPrimaryLight.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -287,15 +293,15 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.white
-                                      : isTransparent ? Colors.white38 : Colors.transparent,
+                                      ? (isLight ? Colors.black : Colors.white)
+                                      : isTransparent ? (isLight ? Colors.black38 : Colors.white38) : Colors.transparent,
                                   width: isSelected ? 3 : 1.5,
                                 ),
                                 boxShadow: isSelected && !isTransparent
                                     ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)]
                                     : null,
                               ),
-                              child: isTransparent ? CustomPaint(painter: _CrossPainter()) : null,
+                              child: isTransparent ? CustomPaint(painter: _CrossPainter(isLight: isLight)) : null,
                             ),
                           );
                         },
@@ -315,10 +321,10 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                     child: TextField(
                       controller: _searchController,
                       onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Search icons...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                        hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4), fontSize: 14),
                         prefixIcon: Icon(Icons.search, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? GestureDetector(
@@ -326,19 +332,19 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                                   _searchController.clear();
                                   _searchQuery = '';
                                 }),
-                                child: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.5), size: 18),
+                                child: Icon(Icons.close, color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5), size: 18),
                               )
                             : null,
                         filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.06),
+                        fillColor: isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.06),
                         contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          borderSide: BorderSide(color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -353,7 +359,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
 
               // Search results or tabbed content
               if (isPhosphor && _searchQuery.isNotEmpty)
-                Expanded(child: _buildSearchResults())
+                Expanded(child: _buildSearchResults(isLight))
               else ...[
                 // Tab bar
                 TabBar(
@@ -361,10 +367,10 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   labelColor: AppColors.primaryGold,
-                  unselectedLabelColor: Colors.white54,
+                  unselectedLabelColor: isLight ? const Color(0xFF94A3B8) : Colors.white54,
                   indicatorColor: AppColors.primaryGold,
                   indicatorSize: TabBarIndicatorSize.label,
-                  dividerColor: Colors.white24,
+                  dividerColor: isLight ? Colors.black.withValues(alpha: 0.1) : Colors.white24,
                   labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
                   tabs: _activeGroups.keys.map((name) => Tab(text: name)).toList(),
@@ -373,7 +379,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-                    children: isPhosphor ? _buildPhosphorTabs() : _buildEmojiTabs(),
+                    children: isPhosphor ? _buildPhosphorTabs(isLight) : _buildEmojiTabs(),
                   ),
                 ),
               ],
@@ -384,25 +390,25 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     );
   }
 
-  Widget _buildSourceToggle() {
+  Widget _buildSourceToggle(bool isLight) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          _buildToggleItem('Emoji', _sourceMode == 0, () => _switchSource(0)),
-          _buildToggleItem('Curated', _sourceMode == 1, () => _switchSource(1)),
-          _buildToggleItem('All Icons', _sourceMode == 2, () => _switchSource(2)),
+          _buildToggleItem('Emoji', _sourceMode == 0, () => _switchSource(0), isLight),
+          _buildToggleItem('Curated', _sourceMode == 1, () => _switchSource(1), isLight),
+          _buildToggleItem('All Icons', _sourceMode == 2, () => _switchSource(2), isLight),
         ],
       ),
     );
   }
 
-  Widget _buildToggleItem(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildToggleItem(String label, bool isSelected, VoidCallback onTap, bool isLight) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -418,7 +424,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? AppColors.primaryGold : Colors.white54,
+              color: isSelected ? AppColors.primaryGold : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -428,7 +434,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(bool isLight) {
     final results = phosphorIconMap.keys
         .where((name) => _humanize(name).contains(_searchQuery) || name.toLowerCase().contains(_searchQuery))
         .toList();
@@ -437,7 +443,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
       return Center(
         child: Text(
           'No icons found for "$_searchQuery"',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.5)),
         ),
       );
     }
@@ -452,12 +458,16 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
       itemCount: results.length,
       itemBuilder: (context, index) {
         final name = results[index];
-        return _buildPhosphorIconCell(name);
+        return _buildPhosphorIconCell(name, isLight);
       },
     );
   }
 
   List<Widget> _buildEmojiTabs() {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return _emojiGroups.values.map((emojis) {
       return GridView.builder(
         padding: const EdgeInsets.all(16),
@@ -476,10 +486,10 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primaryGold.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.05),
+                    : (isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryGold : Colors.transparent,
+                  color: isSelected ? AppColors.primaryGold : (isLight ? Colors.black.withValues(alpha: 0.06) : Colors.transparent),
                   width: 2,
                 ),
               ),
@@ -492,7 +502,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     }).toList();
   }
 
-  List<Widget> _buildPhosphorTabs() {
+  List<Widget> _buildPhosphorTabs(bool isLight) {
     return _activeGroups.values.map((iconNames) {
       return GridView.builder(
         padding: const EdgeInsets.all(16),
@@ -502,12 +512,12 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
           crossAxisSpacing: 10,
         ),
         itemCount: iconNames.length,
-        itemBuilder: (context, index) => _buildPhosphorIconCell(iconNames[index]),
+        itemBuilder: (context, index) => _buildPhosphorIconCell(iconNames[index], isLight),
       );
     }).toList();
   }
 
-  Widget _buildPhosphorIconCell(String name) {
+  Widget _buildPhosphorIconCell(String name, bool isLight) {
     final dbKey = 'ph:$name';
     final isSelected = dbKey == _selectedIcon;
     final iconData = phosphorIconMap[name] ?? PhosphorIconsFill.question;
@@ -517,10 +527,10 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryGold.withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.05),
+              : (isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : Colors.transparent,
+            color: isSelected ? AppColors.primaryGold : (isLight ? Colors.black.withValues(alpha: 0.06) : Colors.transparent),
             width: 2,
           ),
         ),
@@ -528,7 +538,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
         child: PhosphorIcon(
           iconData,
           size: 22,
-          color: isSelected ? AppColors.primaryGold : Colors.white70,
+          color: isSelected ? AppColors.primaryGold : (isLight ? const Color(0xFF64748B) : Colors.white70),
         ),
       ),
     );
@@ -536,10 +546,13 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
 }
 
 class _CrossPainter extends CustomPainter {
+  final bool isLight;
+  const _CrossPainter({this.isLight = false});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white38
+      ..color = isLight ? Colors.black38 : Colors.white38
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
     final inset = size.width * 0.25;

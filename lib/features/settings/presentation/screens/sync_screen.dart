@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/sync_service.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/glass_card.dart';
 
 class SyncScreen extends ConsumerStatefulWidget {
@@ -108,16 +110,13 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     final syncService = ref.watch(syncServiceProvider);
     final user = syncService.currentUser;
     final trans = ref.watch(translationsProvider);
+    final isLight = AppThemeProvider.isLightMode(context);
 
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.bgDarkStart, AppColors.bgDarkEnd],
-            ),
+          decoration: BoxDecoration(
+            gradient: AppColors.backgroundGradient(context),
           ),
         ),
         Scaffold(
@@ -127,9 +126,9 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            titleTextStyle: const TextStyle(
-              color: Colors.white,
+            iconTheme: IconThemeData(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+            titleTextStyle: TextStyle(
+              color: isLight ? AppColors.textPrimaryLight : Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -144,11 +143,11 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (user != null) ...[
-                        _buildUserInfo(user, trans),
+                        _buildUserInfo(user, trans, isLight),
                         const SizedBox(height: 24),
-                        _buildSyncActions(trans),
+                        _buildSyncActions(trans, isLight),
                       ] else ...[
-                        _buildAuthForm(trans),
+                        _buildAuthForm(trans, isLight),
                       ],
                     ],
                   ),
@@ -158,7 +157,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     );
   }
 
-  Widget _buildUserInfo(User user, dynamic trans) {
+  Widget _buildUserInfo(User user, dynamic trans, bool isLight) {
     return GlassCard(
       child: Column(
         children: [
@@ -177,13 +176,13 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
           const SizedBox(height: 16),
           Text(
             '${trans.syncConnectedAs} ${user.email}',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             trans.syncBackedUp,
-            style: const TextStyle(color: Colors.white70),
+            style: TextStyle(color: isLight ? const Color(0xFF64748B) : Colors.white70),
             textAlign: TextAlign.center,
           ),
         ],
@@ -191,7 +190,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     );
   }
 
-  Widget _buildSyncActions(dynamic trans) {
+  Widget _buildSyncActions(dynamic trans, bool isLight) {
     return GlassCard(
       child: Column(
         children: [
@@ -206,11 +205,11 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             ),
             title: Text(
               trans.syncNow,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
             ),
             subtitle: Text(
               trans.syncCompleted,
-              style: const TextStyle(color: Colors.white54),
+              style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
             ),
             onTap: _performSync,
           ),
@@ -235,7 +234,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     );
   }
 
-  Widget _buildAuthForm(dynamic trans) {
+  Widget _buildAuthForm(dynamic trans, bool isLight) {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +250,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
               const SizedBox(width: 12),
               Text(
                 _isLogin ? trans.syncSignIn : trans.syncSignUp,
-                style: AppTypography.textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ],
           ),
@@ -263,6 +262,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
               controller: _nameController,
               hintText: trans.syncFullName,
               prefixIcon: Icons.person_outline,
+              isLight: isLight,
             ),
             const SizedBox(height: 16),
           ],
@@ -273,6 +273,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             hintText: trans.syncEmail,
             prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
+            isLight: isLight,
           ),
           const SizedBox(height: 16),
 
@@ -282,10 +283,11 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             hintText: trans.syncPassword,
             prefixIcon: Icons.lock_outline,
             obscureText: _obscurePassword,
+            isLight: isLight,
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white54,
+                color: isLight ? const Color(0xFF94A3B8) : Colors.white54,
               ),
               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
@@ -373,6 +375,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     required TextEditingController controller,
     required String hintText,
     required IconData prefixIcon,
+    required bool isLight,
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -381,11 +384,11 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-        prefixIcon: Icon(prefixIcon, color: Colors.white54),
+        hintStyle: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4)),
+        prefixIcon: Icon(prefixIcon, color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.05),

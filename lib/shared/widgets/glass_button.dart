@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
+import '../theme/theme_provider_widget.dart';
 import 'glass_card.dart';
 
 enum GlassButtonSize { small, medium, large }
@@ -28,20 +30,30 @@ class GlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ... existing variable declarations ...
     final double paddingVertical = _getPaddingVertical();
     final double paddingHorizontal = _getPaddingHorizontal();
     final TextStyle textStyle = _getTextStyle(context);
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color bgColor = isPrimary 
-        ? AppColors.primaryGold.withValues(alpha: 0.8) 
-        : (isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight);
-    final Color borderColor = isPrimary 
-        ? AppColors.primaryGoldAccent.withValues(alpha: 0.5) 
-        : (isDark ? AppColors.glassBorder : AppColors.glassBorderLight);
+
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    // Secondary button surface: light=light glass, default+dark=warm/dark glass
+    final Color bgColor = isPrimary
+        ? AppColors.primaryGold.withValues(alpha: 0.8)
+        : (isLight ? AppColors.glassBackgroundLight : AppColors.glassBackground);
+    final Color borderColor = isPrimary
+        ? AppColors.primaryGoldAccent.withValues(alpha: 0.5)
+        : (isLight ? AppColors.glassBorderLight : AppColors.glassBorder);
+
+    // Content text/icon color for secondary: light=dark text, default+dark=white
+    final Color secondaryContentColor = isLight
+        ? AppColors.textPrimaryLight
+        : AppColors.textPrimary;
 
     Widget content;
-    
+
     if (isLoading) {
       content = SizedBox(
         height: 20,
@@ -49,9 +61,7 @@ class GlassButton extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(
-            isPrimary 
-                ? Colors.black 
-                : (isDark ? Colors.white : AppColors.textPrimaryLight)
+            isPrimary ? Colors.black : secondaryContentColor,
           ),
         ),
       );
@@ -63,22 +73,23 @@ class GlassButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, 
-              color: isPrimary ? Colors.black : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-              size: 20
+            Icon(
+              icon,
+              color: isPrimary ? Colors.black : secondaryContentColor,
+              size: 20,
             ),
             const SizedBox(width: 8),
           ],
           Text(
             text!,
             style: textStyle.copyWith(
-              color: isPrimary ? Colors.black : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+              color: isPrimary ? Colors.black : secondaryContentColor,
             ),
           ),
         ],
       );
     }
-    
+
     if (isFullWidth) {
       content = Center(child: content);
     }
@@ -127,11 +138,11 @@ class GlassButton extends StatelessWidget {
   TextStyle _getTextStyle(BuildContext context) {
     final baseStyle = Theme.of(context).textTheme.labelLarge!;
     switch (size) {
-      case GlassButtonSize.small: 
+      case GlassButtonSize.small:
         return baseStyle.copyWith(fontSize: 12);
-      case GlassButtonSize.medium: 
+      case GlassButtonSize.medium:
         return baseStyle.copyWith(fontSize: 14);
-      case GlassButtonSize.large: 
+      case GlassButtonSize.large:
         return baseStyle.copyWith(fontSize: 16);
     }
   }

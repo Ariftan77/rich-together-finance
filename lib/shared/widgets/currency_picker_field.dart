@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../core/models/enums.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
-import '../theme/typography.dart';
+import '../theme/theme_provider_widget.dart';
+
 import 'glass_card.dart';
 
 /// A tappable field that opens a searchable currency picker modal.
 /// Shows flag, country name, currency code and symbol.
 ///
 /// Pass [isDark] to explicitly force dark or light styling regardless of the
-/// ambient [Theme]. When omitted (null) the widget reads brightness from the
-/// inherited theme, which is the correct default for all existing call sites.
+/// ambient theme. When omitted (null) the widget reads the AppThemeProvider,
+/// which is the correct default for all existing call sites.
 class CurrencyPickerField extends StatelessWidget {
   final Currency value;
   final ValueChanged<Currency> onChanged;
   final String? label;
 
   /// Override the brightness used for this field and the picker sheet.
-  /// When null, the ambient [Theme.brightness] is used.
+  /// When null, the ambient AppThemeProvider is used.
   final bool? isDark;
 
   const CurrencyPickerField({
@@ -29,9 +31,19 @@ class CurrencyPickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveDark = isDark ?? (Theme.of(context).brightness == Brightness.dark);
+    // Resolve effective light/dark. Explicit isDark override takes precedence.
+    final bool effectiveIsLight;
+    if (isDark != null) {
+      effectiveIsLight = !isDark!;
+    } else {
+      final themeMode = AppThemeProvider.of(context);
+      effectiveIsLight = themeMode == AppThemeMode.light ||
+          (themeMode == AppThemeMode.system &&
+              MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    }
+
     return GestureDetector(
-      onTap: () => _showPicker(context, effectiveDark),
+      onTap: () => _showPicker(context, effectiveIsLight),
       child: GlassCard(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         borderRadius: 20,
@@ -48,15 +60,19 @@ class CurrencyPickerField extends StatelessWidget {
                 children: [
                   Text(
                     value.countryName,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: effectiveDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: effectiveIsLight
+                          ? AppColors.textPrimaryLight
+                          : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     '${value.code} · ${value.name}',
-                    style: AppTypography.textTheme.bodySmall?.copyWith(
-                      color: effectiveDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: effectiveIsLight
+                          ? AppColors.textSecondaryLight
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -80,7 +96,9 @@ class CurrencyPickerField extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(
               Icons.chevron_right,
-              color: effectiveDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+              color: effectiveIsLight
+                  ? AppColors.textSecondaryLight
+                  : AppColors.textSecondary,
               size: 20,
             ),
           ],
@@ -89,14 +107,14 @@ class CurrencyPickerField extends StatelessWidget {
     );
   }
 
-  void _showPicker(BuildContext context, bool effectiveDark) {
+  void _showPicker(BuildContext context, bool effectiveIsLight) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _CurrencyPickerSheet(
         selected: value,
-        isDark: effectiveDark,
+        isLight: effectiveIsLight,
         onSelected: (currency) {
           Navigator.pop(ctx);
           onChanged(currency);
@@ -110,13 +128,13 @@ class _CurrencyPickerSheet extends StatefulWidget {
   final Currency selected;
   final ValueChanged<Currency> onSelected;
 
-  /// Whether to render in dark mode. Forwarded from [CurrencyPickerField].
-  final bool isDark;
+  /// Whether to render in light mode. Forwarded from [CurrencyPickerField].
+  final bool isLight;
 
   const _CurrencyPickerSheet({
     required this.selected,
     required this.onSelected,
-    required this.isDark,
+    required this.isLight,
   });
 
   @override
@@ -192,16 +210,42 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDark;
-    final bgColor = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF8FAFC);
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.08);
+    final isLight = widget.isLight;
+
+    // Also resolve themeMode to distinguish default from dark for bg color
+    final themeMode = AppThemeProvider.of(context);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    // Modal background:
+    // default=warm, dark=true black, light=light gray
+    final Color bgColor = isDefault
+        ? const Color(0xFF1A1A2E)
+        : isLight
+            ? const Color(0xFFF8FAFC)
+            : const Color(0xFF0A0A0A);
+
+    final Color borderColor = isLight
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.1);
 
     // Keyboard-aware height: shrink the sheet so it is not hidden behind the
     // software keyboard when the search field is focused.
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     final availableHeight = MediaQuery.of(context).size.height * 0.75;
+
+    // Text colors
+    final Color primaryTextColor = isLight ? AppColors.textPrimaryLight : AppColors.textPrimary;
+    final Color secondaryTextColor = isLight ? AppColors.textSecondaryLight : AppColors.textSecondary;
+
+    // Search field fill
+    final Color searchBg = isLight
+        ? Colors.black.withValues(alpha: 0.05)
+        : Colors.white.withValues(alpha: 0.08);
+
+    // Handle color
+    final Color handleColor = isLight
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.white.withValues(alpha: 0.3);
 
     return Container(
       height: availableHeight,
@@ -221,9 +265,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.2),
+              color: handleColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -236,8 +278,8 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
               children: [
                 Text(
                   'Select Currency',
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: primaryTextColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -251,9 +293,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: searchBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: borderColor),
               ),
@@ -262,18 +302,18 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                 onChanged: _onSearch,
                 autofocus: false,
                 style: TextStyle(
-                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  color: primaryTextColor,
                   fontSize: 15,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search by country or currency...',
                   hintStyle: TextStyle(
-                    color: isDark ? AppColors.textTertiary : AppColors.textTertiaryLight,
+                    color: isLight ? AppColors.textTertiaryLight : AppColors.textTertiary,
                     fontSize: 15,
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    color: secondaryTextColor,
                     size: 20,
                   ),
                   border: InputBorder.none,
@@ -292,11 +332,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                 ? Center(
                     child: Text(
                       'No results found',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.textSecondary
-                            : AppColors.textSecondaryLight,
-                      ),
+                      style: TextStyle(color: secondaryTextColor),
                     ),
                   )
                 : ListView.builder(
@@ -329,15 +365,12 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         currency.countryName,
                                         style: TextStyle(
-                                          color: isDark
-                                              ? AppColors.textPrimary
-                                              : AppColors.textPrimaryLight,
+                                          color: primaryTextColor,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -345,9 +378,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                                       Text(
                                         '${currency.code} · ${currency.name}',
                                         style: TextStyle(
-                                          color: isDark
-                                              ? AppColors.textSecondary
-                                              : AppColors.textSecondaryLight,
+                                          color: secondaryTextColor,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -359,13 +390,10 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                                       horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? AppColors.primaryGold
-                                            .withValues(alpha: 0.2)
-                                        : (isDark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.08)
-                                            : Colors.black
-                                                .withValues(alpha: 0.06)),
+                                        ? AppColors.primaryGold.withValues(alpha: 0.2)
+                                        : (isLight
+                                            ? Colors.black.withValues(alpha: 0.06)
+                                            : Colors.white.withValues(alpha: 0.08)),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -373,9 +401,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                                     style: TextStyle(
                                       color: isSelected
                                           ? AppColors.primaryGold
-                                          : (isDark
-                                              ? AppColors.textSecondary
-                                              : AppColors.textSecondaryLight),
+                                          : secondaryTextColor,
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),

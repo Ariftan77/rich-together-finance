@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../providers/dashboard_providers.dart';
@@ -11,27 +13,30 @@ class CompactSavingsRateCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final trans = ref.watch(translationsProvider);
     final savingsAsync = ref.watch(savingsRateTrendProvider);
 
     return savingsAsync.when(
       loading: () => _buildShell(
-        isDark: isDark,
+        isLight: isLight,
         title: trans.savingsRateLabel,
-        child: _buildLoadingContent(isDark),
+        child: _buildLoadingContent(isLight),
       ),
       error: (_, __) => _buildShell(
-        isDark: isDark,
+        isLight: isLight,
         title: trans.savingsRateLabel,
-        child: _buildErrorContent(isDark, trans.reportNoData),
+        child: _buildErrorContent(isLight, trans.reportNoData),
       ),
       data: (points) {
         if (points.isEmpty) {
           return _buildShell(
-            isDark: isDark,
+            isLight: isLight,
             title: trans.savingsRateLabel,
-            child: _buildErrorContent(isDark, trans.reportNoData),
+            child: _buildErrorContent(isLight, trans.reportNoData),
           );
         }
 
@@ -43,11 +48,11 @@ class CompactSavingsRateCard extends ConsumerWidget {
         final sparkPoints = points.length > 6 ? points.sublist(points.length - 6) : points;
 
         return _buildShell(
-          isDark: isDark,
+          isLight: isLight,
           title: trans.savingsRateLabel,
           child: _buildDataContent(
             context: context,
-            isDark: isDark,
+            isLight: isLight,
             currentRate: currentRate,
             delta: delta,
             sparkPoints: sparkPoints,
@@ -59,7 +64,7 @@ class CompactSavingsRateCard extends ConsumerWidget {
   }
 
   Widget _buildShell({
-    required bool isDark,
+    required bool isLight,
     required String title,
     required Widget child,
   }) {
@@ -75,9 +80,9 @@ class CompactSavingsRateCard extends ConsumerWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : const Color(0xFF64748B),
+              color: isLight
+                  ? const Color(0xFF64748B)
+                  : Colors.white.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 6),
@@ -87,7 +92,7 @@ class CompactSavingsRateCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoadingContent(bool isDark) {
+  Widget _buildLoadingContent(bool isLight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -96,23 +101,23 @@ class CompactSavingsRateCard extends ConsumerWidget {
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.5)
-                : const Color(0xFF94A3B8),
+            color: isLight
+                ? const Color(0xFF94A3B8)
+                : Colors.white.withValues(alpha: 0.5),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildErrorContent(bool isDark, String message) {
+  Widget _buildErrorContent(bool isLight, String message) {
     return Text(
       message,
       style: TextStyle(
         fontSize: 12,
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.5)
-            : const Color(0xFF94A3B8),
+        color: isLight
+            ? const Color(0xFF94A3B8)
+            : Colors.white.withValues(alpha: 0.5),
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -121,7 +126,7 @@ class CompactSavingsRateCard extends ConsumerWidget {
 
   Widget _buildDataContent({
     required BuildContext context,
-    required bool isDark,
+    required bool isLight,
     required double currentRate,
     required double? delta,
     required List<SavingsRatePoint> sparkPoints,
@@ -129,8 +134,8 @@ class CompactSavingsRateCard extends ConsumerWidget {
   }) {
     final isPositive = currentRate >= 0;
     final rateColor = isPositive
-        ? (isDark ? AppColors.success : AppColors.successLight)
-        : (isDark ? AppColors.error : AppColors.errorLight);
+        ? (isLight ? AppColors.successLight : AppColors.success)
+        : (isLight ? AppColors.errorLight : AppColors.error);
 
     final formattedRate =
         '${isPositive ? '+' : ''}${currentRate.toStringAsFixed(1)}%';
@@ -157,7 +162,7 @@ class CompactSavingsRateCard extends ConsumerWidget {
                 const SizedBox(height: 2),
                 _TrendRow(
                   delta: delta,
-                  isDark: isDark,
+                  isLight: isLight,
                   vsPrevLabel: vsPrevLabel,
                 ),
               ],
@@ -185,12 +190,12 @@ class CompactSavingsRateCard extends ConsumerWidget {
 
 class _TrendRow extends StatelessWidget {
   final double delta;
-  final bool isDark;
+  final bool isLight;
   final String vsPrevLabel;
 
   const _TrendRow({
     required this.delta,
-    required this.isDark,
+    required this.isLight,
     required this.vsPrevLabel,
   });
 
@@ -198,8 +203,8 @@ class _TrendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUp = delta >= 0;
     final trendColor = isUp
-        ? (isDark ? AppColors.success : AppColors.successLight)
-        : (isDark ? AppColors.error : AppColors.errorLight);
+        ? (isLight ? AppColors.successLight : AppColors.success)
+        : (isLight ? AppColors.errorLight : AppColors.error);
 
     final deltaText = '${isUp ? '+' : ''}${delta.toStringAsFixed(1)}%';
 
@@ -224,9 +229,9 @@ class _TrendRow extends StatelessWidget {
           vsPrevLabel,
           style: TextStyle(
             fontSize: 11,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.5)
-                : const Color(0xFF94A3B8),
+            color: isLight
+                ? const Color(0xFF94A3B8)
+                : Colors.white.withValues(alpha: 0.5),
           ),
         ),
       ],

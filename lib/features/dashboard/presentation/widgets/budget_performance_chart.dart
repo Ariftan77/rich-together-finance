@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../providers/dashboard_providers.dart';
@@ -9,19 +11,22 @@ import '../providers/dashboard_providers.dart';
 class BudgetPerformanceChart extends ConsumerWidget {
   const BudgetPerformanceChart({super.key});
 
-  Color _barColor(BudgetPerfMonth point, bool isDark) {
+  Color _barColor(BudgetPerfMonth point, bool isLight) {
     if (point.exceededCount == 0) {
-      return isDark ? AppColors.success : AppColors.successLight;
+      return isLight ? AppColors.successLight : AppColors.success;
     }
     final pct = point.exceededPct;
     if (pct <= 33) return Colors.amber;
     if (pct <= 66) return Colors.orange;
-    return isDark ? AppColors.error : AppColors.errorLight;
+    return isLight ? AppColors.errorLight : AppColors.error;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final accentColor = Theme.of(context).colorScheme.primary;
     final trans = ref.watch(translationsProvider);
     final perfAsync = ref.watch(budgetPerformanceProvider);
@@ -45,7 +50,7 @@ class BudgetPerformanceChart extends ConsumerWidget {
             child: Text(
               'Error loading data',
               style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                color: isLight ? const Color(0xFF64748B) : Colors.white54,
               ),
             ),
           ),
@@ -62,7 +67,7 @@ class BudgetPerformanceChart extends ConsumerWidget {
                   Text(
                     trans.budgetPerfTitle,
                     style: TextStyle(
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -74,18 +79,18 @@ class BudgetPerformanceChart extends ConsumerWidget {
                         Icon(
                           Icons.pie_chart_outline,
                           size: 32,
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.3)
-                              : const Color(0xFFCBD5E1),
+                          color: isLight
+                              ? const Color(0xFFCBD5E1)
+                              : Colors.white.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           trans.budgetPerfNoBudgets,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.4)
-                                : const Color(0xFF94A3B8),
+                            color: isLight
+                                ? const Color(0xFF94A3B8)
+                                : Colors.white.withValues(alpha: 0.4),
                             fontSize: 13,
                           ),
                         ),
@@ -101,9 +106,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
 
         final maxCount =
             points.map((p) => p.totalBudgets).reduce((a, b) => a > b ? a : b);
-        final tooltipBg = isDark
-            ? const Color(0xFF1E293B)
-            : const Color(0xFFFFFFFF);
+        final tooltipBg = isLight
+            ? const Color(0xFFFFFFFF)
+            : const Color(0xFF1E293B);
 
         return GlassCard(
           child: Padding(
@@ -114,7 +119,7 @@ class BudgetPerformanceChart extends ConsumerWidget {
                 Text(
                   trans.budgetPerfTitle,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -123,9 +128,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
                 Text(
                   'Last 6 months · Monthly budgets',
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.4)
-                        : const Color(0xFF94A3B8),
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
                     fontSize: 11,
                   ),
                 ),
@@ -144,9 +149,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
                             return BarTooltipItem(
                               '${point.exceededCount}/${point.totalBudgets} ${trans.budgetPerfExceeded}',
                               TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.textPrimaryLight,
+                                color: isLight
+                                    ? AppColors.textPrimaryLight
+                                    : Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -174,9 +179,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
                                 child: Text(
                                   points[idx].month,
                                   style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.6)
-                                        : const Color(0xFF64748B),
+                                    color: isLight
+                                        ? const Color(0xFF64748B)
+                                        : Colors.white.withValues(alpha: 0.6),
                                     fontSize: 10,
                                   ),
                                 ),
@@ -196,9 +201,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
                               return Text(
                                 value.toInt().toString(),
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.4)
-                                      : const Color(0xFF94A3B8),
+                                  color: isLight
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white.withValues(alpha: 0.4),
                                   fontSize: 10,
                                 ),
                               );
@@ -211,9 +216,9 @@ class BudgetPerformanceChart extends ConsumerWidget {
                         checkToShowHorizontalLine: (value) =>
                             value == value.roundToDouble(),
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.06),
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.06)
+                              : Colors.white.withValues(alpha: 0.06),
                           strokeWidth: 1,
                         ),
                       ),
@@ -225,7 +230,7 @@ class BudgetPerformanceChart extends ConsumerWidget {
                           barRods: [
                             BarChartRodData(
                               toY: point.exceededCount.toDouble(),
-                              color: _barColor(point, isDark),
+                              color: _barColor(point, isLight),
                               width: 28,
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(4),
@@ -242,13 +247,13 @@ class BudgetPerformanceChart extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _LegendDot(color: isDark ? AppColors.success : AppColors.successLight, label: '0 exceeded'),
+                    _LegendDot(color: isLight ? AppColors.successLight : AppColors.success, label: '0 exceeded'),
                     const SizedBox(width: 12),
                     _LegendDot(color: Colors.amber, label: '1–33%'),
                     const SizedBox(width: 12),
                     _LegendDot(color: Colors.orange, label: '34–66%'),
                     const SizedBox(width: 12),
-                    _LegendDot(color: isDark ? AppColors.error : AppColors.errorLight, label: '67%+'),
+                    _LegendDot(color: isLight ? AppColors.errorLight : AppColors.error, label: '67%+'),
                   ],
                 ),
               ],
@@ -268,7 +273,10 @@ class _LegendDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -281,9 +289,9 @@ class _LegendDot extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.5)
-                : const Color(0xFF94A3B8),
+            color: isLight
+                ? const Color(0xFF94A3B8)
+                : Colors.white.withValues(alpha: 0.5),
             fontSize: 9,
           ),
         ),

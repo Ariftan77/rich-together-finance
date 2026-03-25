@@ -6,7 +6,9 @@ import '../../../../core/localization/app_translations.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
 
 void showExportReportModal(BuildContext context) {
   showModalBottomSheet(
@@ -38,7 +40,10 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
   }
 
   Future<void> _pickDate({required bool isFrom}) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final initial = isFrom ? _dateFrom : _dateTo;
     final picked = await showDatePicker(
       context: context,
@@ -46,17 +51,17 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
-        data: isDark
-            ? ThemeData.dark().copyWith(
-                colorScheme: const ColorScheme.dark(
-                  primary: AppColors.primaryGold,
-                  surface: Color(0xFF221D10),
-                ),
-              )
-            : ThemeData.light().copyWith(
+        data: isLight
+            ? ThemeData.light().copyWith(
                 colorScheme: const ColorScheme.light(
                   primary: AppColors.primaryGold,
                   surface: Colors.white,
+                ),
+              )
+            : ThemeData.dark().copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: Color(0xFF221D10),
                 ),
               ),
         child: child!,
@@ -123,14 +128,22 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final trans = ref.watch(translationsProvider);
     final locale = ref.watch(localeProvider).toString();
     final dateFormat = DateFormat('MMM dd, yyyy', locale);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF221D10) : Colors.white,
+        color: isDefault
+            ? const Color(0xFF221D10)
+            : isLight
+                ? Colors.white
+                : const Color(0xFF111111),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -145,9 +158,9 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.3)
-                  : const Color(0xFFCBD5E1),
+              color: isLight
+                  ? const Color(0xFFCBD5E1)
+                  : Colors.white.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -163,7 +176,7 @@ class _ExportReportModalState extends ConsumerState<_ExportReportModal> {
                 Text(
                   trans.exportReport,
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -262,7 +275,10 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -272,14 +288,14 @@ class _DateField extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.04),
+            color: isLight
+                ? Colors.black.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.12),
+              color: isLight
+                  ? Colors.black.withValues(alpha: 0.12)
+                  : Colors.white.withValues(alpha: 0.1),
             ),
           ),
           child: Row(
@@ -294,9 +310,9 @@ class _DateField extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.6)
-                            : const Color(0xFF64748B),
+                        color: isLight
+                            ? const Color(0xFF64748B)
+                            : Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -304,7 +320,7 @@ class _DateField extends StatelessWidget {
                     Text(
                       value,
                       style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -314,9 +330,9 @@ class _DateField extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.4)
-                    : const Color(0xFF94A3B8),
+                color: isLight
+                    ? const Color(0xFF94A3B8)
+                    : Colors.white.withValues(alpha: 0.4),
                 size: 20,
               ),
             ],

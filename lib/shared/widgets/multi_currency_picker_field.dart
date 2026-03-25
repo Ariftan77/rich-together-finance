@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/models/enums.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
-import '../theme/typography.dart';
+import '../theme/theme_provider_widget.dart';
+
 import 'glass_card.dart';
 
 /// A tappable field that opens a searchable multi-select currency picker modal.
@@ -19,7 +21,11 @@ class MultiCurrencyPickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
     final hasSelection = selected.isNotEmpty;
 
     String displayText;
@@ -32,6 +38,20 @@ class MultiCurrencyPickerField extends StatelessWidget {
       displayText = selected.map((c) => c.code).join(', ');
     }
 
+    // Icon color when no selection
+    final Color emptyIconColor = isLight
+        ? const Color(0xFF94A3B8)
+        : Colors.white.withValues(alpha: 0.5);
+
+    // Text color
+    final Color selectedTextColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+    final Color emptyTextColor = isLight ? const Color(0xFF94A3B8) : Colors.white54;
+
+    // Close/chevron icon color
+    final Color actionIconColor = isLight
+        ? const Color(0xFF94A3B8)
+        : AppColors.textSecondary;
+
     return GestureDetector(
       onTap: () => _showPicker(context),
       child: GlassCard(
@@ -41,11 +61,7 @@ class MultiCurrencyPickerField extends StatelessWidget {
           children: [
             Icon(
               Icons.currency_exchange,
-              color: hasSelection
-                  ? AppColors.primaryGold
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF94A3B8)),
+              color: hasSelection ? AppColors.primaryGold : emptyIconColor,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -53,9 +69,7 @@ class MultiCurrencyPickerField extends StatelessWidget {
               child: Text(
                 displayText,
                 style: TextStyle(
-                  color: hasSelection
-                      ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                      : (isDark ? Colors.white54 : const Color(0xFF94A3B8)),
+                  color: hasSelection ? selectedTextColor : emptyTextColor,
                   fontSize: 14,
                   fontWeight: hasSelection ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -68,7 +82,7 @@ class MultiCurrencyPickerField extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 child: Icon(
                   Icons.close,
-                  color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                  color: actionIconColor,
                   size: 18,
                 ),
               ),
@@ -76,7 +90,7 @@ class MultiCurrencyPickerField extends StatelessWidget {
             ],
             Icon(
               Icons.expand_more,
-              color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+              color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondary,
               size: 20,
             ),
           ],
@@ -169,11 +183,45 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF8FAFC);
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.08);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    // Modal background:
+    // default=warm dark, dark=true black, light=light gray
+    final Color bgColor = isDefault
+        ? const Color(0xFF1A1A2E)
+        : isLight
+            ? const Color(0xFFF8FAFC)
+            : const Color(0xFF0A0A0A);
+
+    final Color borderColor = isLight
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.1);
+
+    // Handle color
+    final Color handleColor = isLight
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.white.withValues(alpha: 0.3);
+
+    // Title and text colors
+    final Color titleColor = isLight ? AppColors.textPrimaryLight : AppColors.textPrimary;
+
+    // Search field fill
+    final Color searchBg = isLight
+        ? Colors.black.withValues(alpha: 0.05)
+        : Colors.white.withValues(alpha: 0.08);
+
+    // Item text colors
+    final Color itemPrimaryColor = isLight ? AppColors.textPrimaryLight : AppColors.textPrimary;
+    final Color itemSecondaryColor = isLight ? AppColors.textSecondaryLight : AppColors.textSecondary;
+
+    // Checkbox border when unselected
+    final Color checkboxBorderColor = isLight
+        ? const Color(0xFFCBD5E1)
+        : Colors.white.withValues(alpha: 0.3);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
@@ -189,9 +237,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.2),
+              color: handleColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -205,8 +251,8 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                 Expanded(
                   child: Text(
                     'Filter by Currency',
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: titleColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -232,9 +278,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+                color: searchBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: borderColor),
               ),
@@ -243,18 +287,18 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                 onChanged: _onSearch,
                 autofocus: false,
                 style: TextStyle(
-                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  color: itemPrimaryColor,
                   fontSize: 15,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search by country or currency...',
                   hintStyle: TextStyle(
-                    color: isDark ? AppColors.textTertiary : AppColors.textTertiaryLight,
+                    color: isLight ? AppColors.textTertiaryLight : AppColors.textTertiary,
                     fontSize: 15,
                   ),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondary,
                     size: 20,
                   ),
                   border: InputBorder.none,
@@ -273,7 +317,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                     child: Text(
                       'No results found',
                       style: TextStyle(
-                        color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                        color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondary,
                       ),
                     ),
                   )
@@ -305,9 +349,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                                     Text(
                                       currency.countryName,
                                       style: TextStyle(
-                                        color: isDark
-                                            ? AppColors.textPrimary
-                                            : AppColors.textPrimaryLight,
+                                        color: itemPrimaryColor,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -315,9 +357,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                                     Text(
                                       '${currency.code} · ${currency.name}',
                                       style: TextStyle(
-                                        color: isDark
-                                            ? AppColors.textSecondary
-                                            : AppColors.textSecondaryLight,
+                                        color: itemSecondaryColor,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -335,9 +375,7 @@ class _MultiCurrencyPickerSheetState extends State<_MultiCurrencyPickerSheet> {
                                   border: Border.all(
                                     color: isSelected
                                         ? AppColors.primaryGold
-                                        : (isDark
-                                            ? Colors.white.withValues(alpha: 0.3)
-                                            : const Color(0xFFCBD5E1)),
+                                        : checkboxBorderColor,
                                     width: 1.5,
                                   ),
                                 ),

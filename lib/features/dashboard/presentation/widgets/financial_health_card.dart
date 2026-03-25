@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
-import '../../../../shared/theme/typography.dart';
+import '../../../../shared/theme/theme_provider_widget.dart';
+
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/dashboard_providers.dart';
 
@@ -51,13 +53,16 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
   Widget build(BuildContext context) {
     final healthAsync = ref.watch(financialHealthScoreProvider);
     final trans = ref.watch(translationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
     final textColor =
-        isDark ? Colors.white : AppColors.textPrimaryLight;
-    final subtextColor = isDark
-        ? Colors.white.withValues(alpha: 0.55)
-        : const Color(0xFF64748B);
+        isLight ? AppColors.textPrimaryLight : Colors.white;
+    final subtextColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.55);
 
     return healthAsync.when(
       data: (health) {
@@ -77,7 +82,7 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                   // Score number
                   Text(
                     '$scoreInt',
-                    style: AppTypography.textTheme.displaySmall?.copyWith(
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       color: gradeColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 48,
@@ -96,7 +101,7 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                     alignment: Alignment.center,
                     child: Text(
                       health.grade,
-                      style: AppTypography.textTheme.titleSmall?.copyWith(
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: gradeColor,
                         fontWeight: FontWeight.bold,
                       ),
@@ -109,14 +114,14 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                       children: [
                         Text(
                           trans.healthScoreTitle,
-                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: textColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           gradeLabel,
-                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: gradeColor,
                           ),
                         ),
@@ -141,9 +146,9 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                 child: LinearProgressIndicator(
                   value: (health.score / 100).clamp(0.0, 1.0),
                   minHeight: 6,
-                  backgroundColor: isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.black.withValues(alpha: 0.1),
+                  backgroundColor: isLight
+                      ? Colors.black.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.12),
                   valueColor: AlwaysStoppedAnimation<Color>(gradeColor),
                 ),
               ),
@@ -153,7 +158,7 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     trans.healthScoreTapToExpand,
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: subtextColor,
                     ),
                   ),
@@ -172,28 +177,28 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                               icon: Icons.savings_outlined,
                               label: trans.healthScoreSavings,
                               score: health.savingsComponent,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                             const SizedBox(height: 10),
                             _ComponentRow(
                               icon: Icons.bar_chart,
                               label: trans.healthScoreBudget,
                               score: health.budgetComponent,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                             const SizedBox(height: 10),
                             _ComponentRow(
                               icon: Icons.credit_card_outlined,
                               label: trans.healthScoreDebt,
                               score: health.debtComponent,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                             const SizedBox(height: 10),
                             _ComponentRow(
                               icon: Icons.trending_up,
                               label: trans.healthScoreTrend,
                               score: health.trendComponent,
-                              isDark: isDark,
+                              isLight: isLight,
                             ),
                           ],
                         ),
@@ -219,7 +224,7 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
             const SizedBox(width: 12),
             Text(
               trans.loading,
-              style: AppTypography.textTheme.bodySmall
+              style: Theme.of(context).textTheme.bodySmall
                   ?.copyWith(color: subtextColor),
             ),
           ],
@@ -234,13 +239,13 @@ class _ComponentRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final double score;
-  final bool isDark;
+  final bool isLight;
 
   const _ComponentRow({
     required this.icon,
     required this.label,
     required this.score,
-    required this.isDark,
+    required this.isLight,
   });
 
   Color _scoreColor(double s) {
@@ -254,10 +259,10 @@ class _ComponentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _scoreColor(score);
-    final textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
-    final subtextColor = isDark
-        ? Colors.white.withValues(alpha: 0.55)
-        : const Color(0xFF64748B);
+    final textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
+    final subtextColor = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.55);
 
     return Row(
       children: [
@@ -266,7 +271,7 @@ class _ComponentRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: AppTypography.textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: textColor,
             ),
           ),
@@ -279,9 +284,9 @@ class _ComponentRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (score / 100).clamp(0.0, 1.0),
               minHeight: 5,
-              backgroundColor: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.08),
+              backgroundColor: isLight
+                  ? Colors.black.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.1),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
@@ -292,7 +297,7 @@ class _ComponentRow extends StatelessWidget {
           child: Text(
             '${score.round()}',
             textAlign: TextAlign.end,
-            style: AppTypography.textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
             ),
