@@ -266,6 +266,12 @@ class AppTranslationsId implements AppTranslations {
   @override String get goalNoGoals => 'Belum ada target';
   @override String get goalNoGoalsHint => 'Tap + untuk membuat target keuangan';
   @override String get goalDeleted => 'Target dihapus';
+  @override String get goalSelectAccounts => 'Pilih Akun';
+  @override String get goalAllAccounts => 'Semua Akun';
+  @override String get goalNoAccountsAvailable => 'Tidak ada akun tersedia';
+  @override String get goalSearchAccounts => 'Cari akun...';
+  @override String get goalClearAll => 'Hapus semua';
+  @override String get goalAccountsSelected => 'akun dipilih';
 
   // Debts
   @override String get debtTitle => 'Hutang';

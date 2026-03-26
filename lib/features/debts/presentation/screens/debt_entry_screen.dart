@@ -357,226 +357,426 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Account Selection (Only for creation)
+                    // Account + Currency Row
                     if (widget.debt == null) ...[
-                      Text('Account (Optional — Impacts Balance)', style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      accountsAsync.when(
-                        data: (accounts) {
-                          if (accounts.isEmpty) {
-                            return const Text('No accounts found. Create one first.', style: TextStyle(color: Colors.red));
-                          }
-                          final selectedAccount = _selectedAccountId != null
-                              ? accounts.where((a) => a.id == _selectedAccountId).firstOrNull
-                              : null;
-                          return GestureDetector(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (modalContext) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: MediaQuery.of(modalContext).viewInsets.bottom,
-                                  ),
-                                  child: AccountSelector(
-                                    accounts: accounts,
-                                    selectedAccountId: _selectedAccountId,
-                                    balances: ref.read(accountBalanceProvider),
-                                    showDecimal: ref.read(showDecimalProvider),
-                                    onAccountSelected: (id) {
-                                      if (id != null) {
-                                        setState(() {
-                                          _selectedAccountId = id;
-                                          final account = accounts.firstWhere((a) => a.id == id);
-                                          _selectedCurrency = account.currency;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: AppColors.glassBackground,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isLight
-                                      ? Colors.black.withValues(alpha: 0.08)
-                                      : Colors.white.withValues(alpha: 0.1),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet_outlined,
-                                    color: AppColors.primaryGold,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      selectedAccount?.name ?? 'Select Account',
-                                      style: TextStyle(
-                                        color: selectedAccount != null
-                                            ? (isLight ? AppColors.textPrimaryLight : Colors.white)
-                                            : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: isLight
-                                        ? const Color(0xFF94A3B8)
-                                        : Colors.white.withValues(alpha: 0.5),
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                        loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                        error: (e, s) => Text('Error loading accounts: $e', style: const TextStyle(color: Colors.red)),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Show Account in Edit Mode (Read Only)
-                    if (widget.debt != null && _selectedAccountId != null) ...[
-                      Text('Account (Affected)', style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      accountsAsync.when(
-                        data: (accounts) {
-                          final account = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
-                          return GlassInput(
-                            controller: TextEditingController(text: account?.name ?? 'Unknown Account'),
-                            readOnly: true,
-                            hintText: 'Account Name',
-                            prefixIcon: Icons.account_balance_wallet,
-                          );
-                        },
-                        loading: () => const SizedBox(),
-                        error: (_, __) => const SizedBox(),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Currency Display (Read-only, derived from Account)
-                    Text(trans.goalCurrency, style: Theme.of(context).textTheme.labelLarge),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.glassBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isLight
-                              ? Colors.black.withValues(alpha: 0.08)
-                              : Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Row(
+                      // Creation mode: Account selector + Currency badge
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.currency_exchange,
-                            color: isLight
-                                ? const Color(0xFF64748B)
-                                : Colors.white70,
-                            size: 20,
+                          // Account selector (left, expanded)
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Account', style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                accountsAsync.when(
+                                  data: (accounts) {
+                                    if (accounts.isEmpty) {
+                                      return const Text('No accounts found.', style: TextStyle(color: Colors.red, fontSize: 13));
+                                    }
+                                    final selectedAccount = _selectedAccountId != null
+                                        ? accounts.where((a) => a.id == _selectedAccountId).firstOrNull
+                                        : null;
+                                    return GestureDetector(
+                                      onTap: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (modalContext) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                            ),
+                                            child: AccountSelector(
+                                              accounts: accounts,
+                                              selectedAccountId: _selectedAccountId,
+                                              balances: ref.read(accountBalanceProvider),
+                                              showDecimal: ref.read(showDecimalProvider),
+                                              onAccountSelected: (id) {
+                                                if (id != null) {
+                                                  setState(() {
+                                                    _selectedAccountId = id;
+                                                    final account = accounts.firstWhere((a) => a.id == id);
+                                                    _selectedCurrency = account.currency;
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        height: 50,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.glassBackground,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isLight
+                                                ? Colors.black.withValues(alpha: 0.08)
+                                                : Colors.white.withValues(alpha: 0.1),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.account_balance_wallet_outlined,
+                                              color: AppColors.primaryGold,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                selectedAccount?.name ?? trans.entrySelectAccount,
+                                                style: TextStyle(
+                                                  color: selectedAccount != null
+                                                      ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                                      : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                                  fontSize: 14,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.expand_more,
+                                              color: isLight
+                                                  ? const Color(0xFFCBD5E1)
+                                                  : Colors.white.withValues(alpha: 0.3),
+                                              size: 18,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  loading: () => const SizedBox(height: 50, child: Center(child: CircularProgressIndicator(color: AppColors.primaryGold, strokeWidth: 2))),
+                                  error: (e, s) => Text('Error: $e', style: const TextStyle(color: Colors.red, fontSize: 12)),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 12),
-                          Text(
-                            _selectedCurrency.code,
-                            style: TextStyle(
-                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                              fontSize: 16,
+                          // Currency display (right, compact)
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.goalCurrency, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 50,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.glassBackground,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? Colors.black.withValues(alpha: 0.08)
+                                          : Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.currency_exchange,
+                                        color: isLight
+                                            ? const Color(0xFF64748B)
+                                            : Colors.white70,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _selectedCurrency.code,
+                                        style: TextStyle(
+                                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
+                    ],
 
-                    // Created Date (edit mode only)
+                    // Edit mode: Account (read-only) + Currency in one row
                     if (widget.debt != null) ...[
-                      Text(trans.debtCreatedDate, style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        borderRadius: 12,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              color: isLight
-                                  ? const Color(0xFF94A3B8)
-                                  : Colors.white54,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              DateFormat.yMMMd(ref.watch(localeProvider).languageCode)
-                                  .format(widget.debt!.createdAt),
-                              style: TextStyle(
-                                color: isLight
-                                    ? const Color(0xFF64748B)
-                                    : Colors.white70,
-                                fontSize: 15,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_selectedAccountId != null) ...[
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Account', style: Theme.of(context).textTheme.labelLarge),
+                                  const SizedBox(height: 8),
+                                  accountsAsync.when(
+                                    data: (accounts) {
+                                      final account = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
+                                      return Container(
+                                        height: 50,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.glassBackground,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isLight
+                                                ? Colors.black.withValues(alpha: 0.08)
+                                                : Colors.white.withValues(alpha: 0.1),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.account_balance_wallet_outlined,
+                                              color: isLight
+                                                  ? const Color(0xFF64748B)
+                                                  : Colors.white70,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                account?.name ?? 'Unknown',
+                                                style: TextStyle(
+                                                  color: isLight
+                                                      ? const Color(0xFF64748B)
+                                                      : Colors.white70,
+                                                  fontSize: 14,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    loading: () => const SizedBox(height: 50),
+                                    error: (_, __) => const SizedBox(height: 50),
+                                  ),
+                                ],
                               ),
                             ),
+                            const SizedBox(width: 12),
                           ],
-                        ),
+                          Expanded(
+                            flex: _selectedAccountId != null ? 2 : 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.goalCurrency, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 50,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.glassBackground,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? Colors.black.withValues(alpha: 0.08)
+                                          : Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.currency_exchange,
+                                        color: isLight
+                                            ? const Color(0xFF64748B)
+                                            : Colors.white70,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _selectedCurrency.code,
+                                        style: TextStyle(
+                                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                     ],
 
-                    // Due Date
-                    Text(trans.debtDueDate,
-                        style: Theme.of(context).textTheme.labelLarge),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _selectDueDate,
-                      child: GlassCard(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        borderRadius: 12,
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today,
-                                color: AppColors.primaryGold, size: 20),
-                            const SizedBox(width: 12),
-                            Text(
-                              _dueDate != null
-                                  ? DateFormat.yMMMd().format(_dueDate!)
-                                  : trans.goalNoDeadline,
-                              style: TextStyle(
-                                color: _dueDate != null
-                                    ? (isLight ? AppColors.textPrimaryLight : Colors.white)
-                                    : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
-                                fontSize: 15,
-                              ),
+                    // Dates section
+                    if (widget.debt != null) ...[
+                      // Edit mode: Created Date + Due Date side by side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.debtCreatedDate, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 50,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.glassBackground,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? Colors.black.withValues(alpha: 0.08)
+                                          : Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        color: isLight
+                                            ? const Color(0xFF94A3B8)
+                                            : Colors.white54,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          DateFormat.yMMMd(ref.watch(localeProvider).languageCode)
+                                              .format(widget.debt!.createdAt),
+                                          style: TextStyle(
+                                            color: isLight
+                                                ? const Color(0xFF64748B)
+                                                : Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const Spacer(),
-                            if (_dueDate != null)
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _dueDate = null),
-                                child: Icon(
-                                  Icons.clear,
-                                  color: isLight
-                                      ? const Color(0xFF94A3B8)
-                                      : Colors.white54,
-                                  size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.debtDueDate, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                GestureDetector(
+                                  onTap: _selectDueDate,
+                                  child: Container(
+                                    height: 50,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.glassBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isLight
+                                            ? Colors.black.withValues(alpha: 0.08)
+                                            : Colors.white.withValues(alpha: 0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.event,
+                                            color: AppColors.primaryGold, size: 16),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            _dueDate != null
+                                                ? DateFormat.yMMMd().format(_dueDate!)
+                                                : trans.goalNoDeadline,
+                                            style: TextStyle(
+                                              color: _dueDate != null
+                                                  ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                                  : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (_dueDate != null) ...[
+                                          const SizedBox(width: 4),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _dueDate = null),
+                                            child: Icon(
+                                              Icons.clear,
+                                              color: isLight
+                                                  ? const Color(0xFF94A3B8)
+                                                  : Colors.white54,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Creation mode: Due Date only (full width)
+                      Text(trans.debtDueDate,
+                          style: Theme.of(context).textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _selectDueDate,
+                        child: GlassCard(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          borderRadius: 12,
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today,
+                                  color: AppColors.primaryGold, size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                _dueDate != null
+                                    ? DateFormat.yMMMd().format(_dueDate!)
+                                    : trans.goalNoDeadline,
+                                style: TextStyle(
+                                  color: _dueDate != null
+                                      ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                      : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                  fontSize: 15,
                                 ),
                               ),
-                          ],
+                              const Spacer(),
+                              if (_dueDate != null)
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _dueDate = null),
+                                  child: Icon(
+                                    Icons.clear,
+                                    color: isLight
+                                        ? const Color(0xFF94A3B8)
+                                        : Colors.white54,
+                                    size: 20,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 24),
 
                     // Note

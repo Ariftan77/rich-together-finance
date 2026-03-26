@@ -654,6 +654,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         title: Text('Add Note', style: TextStyle(color: isLightNote ? AppColors.textPrimaryLight : Colors.white)),
         content: TextField(
           controller: _noteController,
+          autofocus: true,
           style: TextStyle(color: isLightNote ? AppColors.textPrimaryLight : Colors.white),
           decoration: InputDecoration(
             hintText: 'Enter note...',

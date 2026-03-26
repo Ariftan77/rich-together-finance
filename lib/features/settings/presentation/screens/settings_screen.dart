@@ -587,6 +587,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           content: TextField(
             controller: controller,
+            autofocus: true,
             maxLines: 5,
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,

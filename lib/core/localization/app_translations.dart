@@ -261,6 +261,12 @@ abstract class AppTranslations {
   String get goalNoGoals;
   String get goalNoGoalsHint;
   String get goalDeleted;
+  String get goalSelectAccounts;
+  String get goalAllAccounts;
+  String get goalNoAccountsAvailable;
+  String get goalSearchAccounts;
+  String get goalClearAll;
+  String get goalAccountsSelected;
 
   // Debts
   String get debtTitle;

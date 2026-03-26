@@ -265,6 +265,12 @@ class AppTranslationsEn implements AppTranslations {
   @override String get goalNoGoals => 'No goals yet';
   @override String get goalNoGoalsHint => 'Tap + to create a financial goal';
   @override String get goalDeleted => 'Goal deleted';
+  @override String get goalSelectAccounts => 'Select Accounts';
+  @override String get goalAllAccounts => 'All Accounts';
+  @override String get goalNoAccountsAvailable => 'No accounts available';
+  @override String get goalSearchAccounts => 'Search accounts...';
+  @override String get goalClearAll => 'Clear all';
+  @override String get goalAccountsSelected => 'accounts selected';
 
   // Debts
   @override String get debtTitle => 'Debts';

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 
@@ -6,23 +8,43 @@ import '../../../dashboard/presentation/dashboard_shell.dart';
 ///
 /// Displays 3 slides with full-bleed images, auto-advancing progress bars,
 /// tap-to-navigate, and long-press-to-pause behaviour.
-class OnboardingStoriesScreen extends StatefulWidget {
+///
+/// Each slide contains 3 frames (WebP images). Frames are derived from the
+/// controller's animation value — no extra timer is needed. The progress bar
+/// still represents the whole story duration so the UX is unchanged.
+class OnboardingStoriesScreen extends ConsumerStatefulWidget {
   const OnboardingStoriesScreen({super.key});
 
   @override
-  State<OnboardingStoriesScreen> createState() => _OnboardingStoriesScreenState();
+  ConsumerState<OnboardingStoriesScreen> createState() =>
+      _OnboardingStoriesScreenState();
 }
 
-class _OnboardingStoriesScreenState extends State<OnboardingStoriesScreen>
+class _OnboardingStoriesScreenState
+    extends ConsumerState<OnboardingStoriesScreen>
     with SingleTickerProviderStateMixin {
-  static const List<String> _images = [
-    'assets/images/onboarding_1.png',
-    'assets/images/onboarding_2.png',
-    'assets/images/onboarding_3.png',
-  ];
+  // ---------------------------------------------------------------------------
+  // Story / frame data
+  // ---------------------------------------------------------------------------
+
+  /// Returns the frame lists for the current language suffix.
+  /// Index 0 = story 1, index 1 = story 2, index 2 = story 3.
+  /// Each inner list has 3 frame paths.
+  List<List<String>> _buildStoryFrames(String langSuffix) {
+    return List.generate(3, (storyIndex) {
+      final s = storyIndex + 1; // 1-based story number
+      return List.generate(3, (frameIndex) {
+        final f = frameIndex + 1; // 1-based frame number
+        return 'assets/images/onboarding_${s}_${f}_$langSuffix.webp';
+      });
+    });
+  }
 
   static const int _slideCount = 3;
-  static const Duration _slideDuration = Duration(seconds: 4);
+  static const int _frameCount = 3;
+
+  /// Total duration for one story (3 frames × 2 s each).
+  static const Duration _slideDuration = Duration(seconds: 6);
 
   late AnimationController _controller;
   int _currentIndex = 0;
@@ -116,6 +138,11 @@ class _OnboardingStoriesScreenState extends State<OnboardingStoriesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final locale = ref.watch(localeProvider);
+    final langSuffix = locale.languageCode == 'id' ? 'id' : 'en';
+    final storyFrames = _buildStoryFrames(langSuffix);
+    final currentFrames = storyFrames[_currentIndex];
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
@@ -126,10 +153,14 @@ class _OnboardingStoriesScreenState extends State<OnboardingStoriesScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Full-bleed background image
-            _SlideImage(imagePath: _images[_currentIndex]),
+            // Full-bleed background image — animated frame switcher
+            _SlideImage(
+              frames: currentFrames,
+              controller: _controller,
+              frameCount: _frameCount,
+            ),
 
-            // Top scrim for progress bars readability
+            // Top scrim for progress bar readability
             _TopScrim(),
 
             // Bottom scrim for button readability
@@ -176,22 +207,81 @@ class _OnboardingStoriesScreenState extends State<OnboardingStoriesScreen>
 }
 
 // =============================================================================
-// Slide image
+// Slide image — multi-frame with crossfade
 // =============================================================================
 
-class _SlideImage extends StatelessWidget {
-  final String imagePath;
+/// Renders the current story frame derived from [controller]'s value.
+/// Frames are equally distributed across the 0→1 animation range.
+/// [AnimatedSwitcher] with a [FadeTransition] crossfades between frames.
+class _SlideImage extends StatefulWidget {
+  final List<String> frames;
+  final AnimationController controller;
+  final int frameCount;
 
-  const _SlideImage({required this.imagePath});
+  const _SlideImage({
+    required this.frames,
+    required this.controller,
+    required this.frameCount,
+  });
+
+  @override
+  State<_SlideImage> createState() => _SlideImageState();
+}
+
+class _SlideImageState extends State<_SlideImage> {
+  late int _frameIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _frameIndex = 0;
+    widget.controller.addListener(_onControllerValue);
+  }
+
+  @override
+  void didUpdateWidget(_SlideImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerValue);
+      widget.controller.addListener(_onControllerValue);
+    }
+    // Reset frame when the story (and therefore frames list) changes.
+    if (oldWidget.frames != widget.frames) {
+      _frameIndex = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerValue);
+    super.dispose();
+  }
+
+  void _onControllerValue() {
+    final derived = (widget.controller.value * widget.frameCount)
+        .floor()
+        .clamp(0, widget.frameCount - 1);
+    if (derived != _frameIndex) {
+      setState(() => _frameIndex = derived);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Image.asset(
-        imagePath,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
+    final path = widget.frames[_frameIndex];
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
+      child: SizedBox.expand(
+        key: ValueKey<String>(path),
+        child: Image.asset(
+          path,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
       ),
     );
   }

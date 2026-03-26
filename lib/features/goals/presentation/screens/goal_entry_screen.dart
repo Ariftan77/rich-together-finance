@@ -17,6 +17,7 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
+import '../../../../shared/widgets/multi_account_picker_field.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class GoalEntryScreen extends ConsumerStatefulWidget {
@@ -347,7 +348,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                       data: (accounts) {
                         if (accounts.isEmpty) {
                           return Text(
-                            'No accounts available',
+                            trans.goalNoAccountsAvailable,
                             style: TextStyle(
                               color: isLight
                                   ? const Color(0xFF94A3B8)
@@ -355,72 +356,17 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                             ),
                           );
                         }
-                        return Column(
-                          children: accounts.map((account) {
-                            final isLinked =
-                                _linkedAccountIds.contains(account.id);
-                            final balance = balances[account.id] ?? 0;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: GlassCard(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                borderRadius: 12,
-                                onTap: () {
-                                  setState(() {
-                                    if (isLinked) {
-                                      _linkedAccountIds.remove(account.id);
-                                    } else {
-                                      _linkedAccountIds.add(account.id);
-                                    }
-                                  });
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      isLinked
-                                          ? Icons.check_circle
-                                          : Icons.circle_outlined,
-                                      color: isLinked
-                                          ? AppColors.primaryGold
-                                          : (isLight
-                                              ? const Color(0xFFCBD5E1)
-                                              : Colors.white30),
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            account.name,
-                                            style: TextStyle(
-                                              color: isLight
-                                                  ? AppColors.textPrimaryLight
-                                                  : Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${account.currency.code} ${NumberFormat.decimalPattern().format(balance)}',
-                                            style: TextStyle(
-                                              color: isLight
-                                                  ? const Color(0xFF64748B)
-                                                  : Colors.white54,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                        return MultiAccountPickerField(
+                          accounts: accounts,
+                          selectedIds: _linkedAccountIds.toSet(),
+                          balances: balances,
+                          showDecimal: showDecimal,
+                          trans: trans,
+                          onChanged: (ids) {
+                            setState(() {
+                              _linkedAccountIds = ids.toList();
+                            });
+                          },
                         );
                       },
                       loading: () => const Center(
