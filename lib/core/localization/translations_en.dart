@@ -550,6 +550,136 @@ class AppTranslationsEn implements AppTranslations {
   @override String get debtPayoffPaid => 'paid';
   @override String get debtPayoffCollected => 'collected';
 
+  // Coach Mark Tour - Transactions Screen
+  @override String get tourRecurringTitle => 'Recurring';
+  @override String get tourRecurringDesc => 'View and manage your recurring transactions here.';
+  @override String get tourDateFilterTitle => 'Date Filter';
+  @override String get tourDateFilterDesc => 'Filter transactions by a custom date range.';
+  @override String get tourMonthNavTitle => 'Switch Month';
+  @override String get tourMonthNavDesc => 'Tap the arrows or swipe to browse previous and next months.';
+  @override String get tourSearchTitle => 'Search & Filter';
+  @override String get tourSearchDesc => 'Search by keyword or filter by category and transaction type.';
+  @override String get tourAddTitle => 'Add Transaction';
+  @override String get tourAddDesc => 'Tap here to record a new income or expense.';
+  @override String get tourNavbarTitle => 'Navigation';
+  @override String get tourNavbarDesc => 'Switch between Dashboard, Transactions, Accounts, Reports, and Settings.';
+  @override String get tourWalletInitTitle => 'Set Initial Balance';
+  @override String get tourWalletInitDesc => 'Tap the Wallet icon here to add your accounts and set their initial balance before recording transactions.';
+
+  // Coach Mark Tour - Dashboard Screen
+  @override String get tourDashTabsTitle => 'Two Views in One';
+  @override String get tourDashTabsDesc => "Tap 'Reports' to access your full analytics and monthly breakdowns.";
+  @override String get tourDashSummaryRowsTitle => 'Tap Rows for Detail';
+  @override String get tourDashSummaryRowsDesc => 'Tap any summary row to see a currency-by-currency breakdown with live exchange rates.';
+  @override String get tourDashFinHealthTitle => 'Your Financial Score';
+  @override String get tourDashFinHealthDesc => 'This card grades your overall financial health — tap it to understand each factor.';
+  @override String get tourDashPieChartTitle => 'Interactive Pie Chart';
+  @override String get tourDashPieChartDesc => 'Long-press any slice or legend item to see the exact amount and percentage.';
+  @override String get tourDashPullRefreshTitle => 'Refresh Data';
+  @override String get tourDashPullRefreshDesc => 'Pull down on the dashboard to force-refresh all balances.';
+  @override String get tourDashExportTitle => 'Export Reports';
+  @override String get tourDashExportDesc => 'Switch to Reports tab and tap the download icon to export a financial report.';
+  @override String get tourDashReportsSubTabsTitle => 'Two Analytics Views';
+  @override String get tourDashReportsSubTabsDesc => "'Deep Analytics' shows trend charts; 'Monthly Details' lists every month.";
+  @override String get tourDashMonthlyCardTitle => 'Tap Month for Full Report';
+  @override String get tourDashMonthlyCardDesc => 'Tap any month card to open a deep-dive report with charts and categories.';
+  @override String get tourDashScrollMoreTitle => 'More History Below';
+  @override String get tourDashScrollMoreDesc => 'Scroll to the bottom to automatically load older months.';
+
+  // Coach Mark Tour - Accounts Screen
+  @override String get tourAccFiltersTitle => 'Hidden Filters';
+  @override String get tourAccFiltersDesc => 'Tap Filter \u25be to expand search, currency, and account-type filters.';
+  @override String get tourAccFilterDotTitle => 'Active Filter Indicator';
+  @override String get tourAccFilterDotDesc => 'A gold dot means one or more filters are active.';
+  @override String get tourAccCurrencyTitle => 'Filter by Currency';
+  @override String get tourAccCurrencyDesc => 'Select currencies to show only accounts in those currencies.';
+  @override String get tourAccTypeTitle => 'Filter by Account Type';
+  @override String get tourAccTypeDesc => 'Tap a type chip to narrow accounts by category.';
+  @override String get tourAccTotalTitle => 'All Accounts Combined';
+  @override String get tourAccTotalDesc => 'This balance updates in real-time as you change filters.';
+  @override String get tourAccTapEditTitle => 'Tap to Edit Account';
+  @override String get tourAccTapEditDesc => 'Tap any account card to edit its name, type, currency, or balance.';
+
+  // Coach Mark Tour - Wealth Screen
+  @override String get tourWealthTabsTitle => 'Three Wealth Tools';
+  @override String get tourWealthTabsDesc => 'Swipe or tap tabs for Budget, Goals, and Debt management.';
+  @override String get tourWealthBudgetFilterTitle => 'Budget Filters';
+  @override String get tourWealthBudgetFilterDesc => 'Tap Filter \u25be to narrow budgets by currency or period.';
+  @override String get tourWealthPeriodCollapseTitle => 'Collapse Budget Groups';
+  @override String get tourWealthPeriodCollapseDesc => 'Tap a period header to collapse or expand that group.';
+  @override String get tourWealthPeriodBarTitle => 'Period Overview Bar';
+  @override String get tourWealthPeriodBarDesc => 'The progress bar shows combined spending across all budgets in that period.';
+  @override String get tourWealthBudgetTapTitle => 'Tap to Edit Budget';
+  @override String get tourWealthBudgetTapDesc => 'Tap any budget card to change category, amount, or period.';
+  @override String get tourWealthGoalTapTitle => 'Tap Goal to Edit';
+  @override String get tourWealthGoalTapDesc => 'Tap a goal card to update its target, deadline, or linked accounts.';
+  @override String get tourWealthGoalLongPressTitle => 'Long Press for Breakdown';
+  @override String get tourWealthGoalLongPressDesc => 'Long-press a goal card to see which accounts contribute to its progress.';
+  @override String get tourWealthDebtPayoffTitle => 'Debt Payoff Projection';
+  @override String get tourWealthDebtPayoffDesc => 'This card projects when you will be debt-free based on current pace.';
+  @override String get tourWealthDebtGroupTitle => 'Collapse by Person';
+  @override String get tourWealthDebtGroupDesc => "Tap a person's name to collapse or expand their debts.";
+  @override String get tourWealthDebtTapTitle => 'Tap Debt to Record Payment';
+  @override String get tourWealthDebtTapDesc => 'Tap any debt card to record a payment or update the amount.';
+
+  // Coach Mark Tour - Settings Screen
+  @override String get tourSettingsBellTitle => 'Announcements Bell';
+  @override String get tourSettingsBellDesc => 'Tap the bell to read app announcements. A red dot means unread messages.';
+  @override String get tourSettingsProfileTitle => 'Switch Profiles';
+  @override String get tourSettingsProfileDesc => 'Tap your profile to switch or create a new profile.';
+  @override String get tourSettingsBackupTitle => 'Back Up Your Data';
+  @override String get tourSettingsBackupDesc => 'Use Backup & Restore to export or restore your data.';
+  @override String get tourSettingsLockTitle => 'Protect with PIN';
+  @override String get tourSettingsLockDesc => 'Enable App Lock to require a PIN every time the app opens.';
+  @override String get tourSettingsBioTitle => 'Biometric Requires PIN First';
+  @override String get tourSettingsBioDesc => 'The fingerprint toggle only activates after PIN is set.';
+  @override String get tourSettingsThemeTitle => 'Change App Theme';
+  @override String get tourSettingsThemeDesc => 'Tap Theme to choose Default, Light, Dark, or System.';
+  @override String get tourSettingsCatsTitle => 'Custom Categories';
+  @override String get tourSettingsCatsDesc => 'Add, edit, or delete transaction categories and icons.';
+  @override String get tourSettingsFeedbackTitle => 'Send Us Feedback';
+  @override String get tourSettingsFeedbackDesc => 'Write a message directly to the development team.';
+
+  // Coach Mark Tour - Report Details Screen
+  @override String get tourReportTabsTitle => 'Three Report Angles';
+  @override String get tourReportTabsDesc => 'Chart (pie), Category (ranked list), and Title (transaction names).';
+  @override String get tourReportSegmentTitle => 'Switch Expense vs Income';
+  @override String get tourReportSegmentDesc => 'Tap the segmented control to toggle between Expense and Income pie.';
+  @override String get tourReportPieLongTitle => 'Long Press Pie for Details';
+  @override String get tourReportPieLongDesc => 'Long-press any slice to see the exact amount and percentage.';
+  @override String get tourReportCategoryTitle => 'Tap Category for History';
+  @override String get tourReportCategoryDesc => 'Tap any category row to see all historical months for that category.';
+  @override String get tourReportTitleRowTitle => 'Tap Title for History';
+  @override String get tourReportTitleRowDesc => 'Tap any transaction title to see its full spending history.';
+
+  // Coach Mark Tour - Account Transaction History Screen
+  @override String get tourAccHistTypeTitle => 'Filter by Type';
+  @override String get tourAccHistTypeDesc => 'Tap a chip to show only that transaction type.';
+  @override String get tourAccHistSearchTitle => 'Search Transactions';
+  @override String get tourAccHistSearchDesc => 'Type to filter transactions by name, category, or note in real time.';
+  @override String get tourAccHistScrollTitle => 'More Transactions Below';
+  @override String get tourAccHistScrollDesc => 'Scroll to the bottom to automatically load the next 20 transactions.';
+  @override String get tourAccHistTapTitle => 'Tap to Edit Transaction';
+  @override String get tourAccHistTapDesc => 'Tap any transaction row to open the full entry form.';
+
+  // Coach Mark Tour - Recurring List Screen
+  @override String get tourRecurringSearchTitle => 'Search Recurring';
+  @override String get tourRecurringSearchDesc => 'Type to filter recurring rules by name, category, or account.';
+  @override String get tourRecurringInactiveTitle => 'Inactive Rules Still Exist';
+  @override String get tourRecurringInactiveDesc => "Dimmed cards are paused \u2014 they won't auto-post until re-enabled.";
+  @override String get tourRecurringNextRunTitle => 'Scheduled Next Run';
+  @override String get tourRecurringNextRunDesc => 'Each active rule shows the next date it will create a transaction.';
+  @override String get tourRecurringTapTitle => 'Tap to Edit or Pause';
+  @override String get tourRecurringTapDesc => 'Tap any recurring card to change amount, frequency, or toggle active/inactive.';
+
+  // Coach Mark Tour - Wallet Screen
+  @override String get tourWalletBalanceTitle => 'Total Balance';
+  @override String get tourWalletBalanceDesc => 'See your combined balance across all filtered accounts, converted to your base currency.';
+  @override String get tourWalletFabTitle => 'Add Account';
+  @override String get tourWalletFabDesc => 'Tap here to create a new wallet — cash, bank, e-wallet, or investment account.';
+  @override String get tourWalletCardTitle => 'Edit Account';
+  @override String get tourWalletCardDesc => 'Tap any account card to view its transaction history or edit its details.';
+
   // Financial Health Score (Phase 7)
   @override String get healthScoreTitle => 'Financial Health';
   @override String get healthScoreLabel => 'Health Score';

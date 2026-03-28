@@ -21,6 +21,8 @@ import '../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../wealth/presentation/screens/wealth_screen.dart';
 import '../../debts/presentation/screens/debt_entry_screen.dart';
+import '../../../shared/tour/tour_keys.dart';
+import '../../../core/providers/nav_providers.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -39,8 +41,9 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   /// Tracks whether the transaction speed-dial is currently open so we can
   /// render a transparent barrier that dismisses it on outside tap.
   bool _speedDialOpen = false;
-  final GlobalKey<TransactionSpeedDialFabState> _speedDialKey =
-      GlobalKey<TransactionSpeedDialFabState>();
+  /// Typed key for [TransactionSpeedDialFab] — allows the tour to call toggle().
+  /// Separate from [TourKeys.fab] which is on the [KeyedSubtree] for spotlight positioning.
+  final GlobalKey<TransactionSpeedDialFabState> _speedDialKey = TourKeys.speedDial;
 
   @override
   void initState() {
@@ -84,6 +87,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       ).animate(CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut));
     });
     _tabAnimController.forward(from: 0.0);
+    // Keep the provider in sync so screens can gate their coach-mark tours.
+    ref.read(shellTabIndexProvider.notifier).state = index;
   }
 
   final List<Widget> _screens = const [
@@ -161,7 +166,12 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
         mainAxisSize: MainAxisSize.min,
         children: [
           const AdBannerWidget(),
+          // TourKeys.bottomNav is placed directly on GlassBottomNav so the
+          // coach-mark always gets a fully-sized, stable RenderBox.  The outer
+          // Column can have zero height when the ad hasn't loaded yet, which
+          // caused the tour to skip step 6.
           GlassBottomNav(
+            key: TourKeys.bottomNav,
             currentIndex: _currentIndex,
             onTap: _onTabTap,
             items: [
@@ -201,24 +211,30 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   Widget? _getFab(BuildContext context) {
     switch (_currentIndex) {
       case 0: // Transactions — speed-dial with Income / Expense / Transfer
-        return TransactionSpeedDialFab(
-          key: _speedDialKey,
-          onSelected: _onSpeedDialSelected,
-          onOpenChanged: (isOpen) {
-            setState(() => _speedDialOpen = isOpen);
-          },
+        return KeyedSubtree(
+          key: TourKeys.fab,
+          child: TransactionSpeedDialFab(
+            key: _speedDialKey,
+            onSelected: _onSpeedDialSelected,
+            onOpenChanged: (isOpen) {
+              setState(() => _speedDialOpen = isOpen);
+            },
+          ),
         );
       case 1: // Wallet (Accounts)
-        return FabButton(
-          icon: Icons.add_card,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AccountEntryScreen(),
-              ),
-            );
-          },
+        return KeyedSubtree(
+          key: TourKeys.walletFab,
+          child: FabButton(
+            icon: Icons.add_card,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AccountEntryScreen(),
+                ),
+              );
+            },
+          ),
         );
       case 2: // Overview
         return null;

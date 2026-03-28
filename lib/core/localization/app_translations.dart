@@ -543,6 +543,136 @@ abstract class AppTranslations {
   String get debtPayoffPaid;
   String get debtPayoffCollected;
 
+  // Coach Mark Tour - Transactions Screen
+  String get tourRecurringTitle;
+  String get tourRecurringDesc;
+  String get tourDateFilterTitle;
+  String get tourDateFilterDesc;
+  String get tourMonthNavTitle;
+  String get tourMonthNavDesc;
+  String get tourSearchTitle;
+  String get tourSearchDesc;
+  String get tourAddTitle;
+  String get tourAddDesc;
+  String get tourNavbarTitle;
+  String get tourNavbarDesc;
+  String get tourWalletInitTitle;
+  String get tourWalletInitDesc;
+
+  // Coach Mark Tour - Dashboard Screen
+  String get tourDashTabsTitle;
+  String get tourDashTabsDesc;
+  String get tourDashSummaryRowsTitle;
+  String get tourDashSummaryRowsDesc;
+  String get tourDashFinHealthTitle;
+  String get tourDashFinHealthDesc;
+  String get tourDashPieChartTitle;
+  String get tourDashPieChartDesc;
+  String get tourDashPullRefreshTitle;
+  String get tourDashPullRefreshDesc;
+  String get tourDashExportTitle;
+  String get tourDashExportDesc;
+  String get tourDashReportsSubTabsTitle;
+  String get tourDashReportsSubTabsDesc;
+  String get tourDashMonthlyCardTitle;
+  String get tourDashMonthlyCardDesc;
+  String get tourDashScrollMoreTitle;
+  String get tourDashScrollMoreDesc;
+
+  // Coach Mark Tour - Accounts Screen
+  String get tourAccFiltersTitle;
+  String get tourAccFiltersDesc;
+  String get tourAccFilterDotTitle;
+  String get tourAccFilterDotDesc;
+  String get tourAccCurrencyTitle;
+  String get tourAccCurrencyDesc;
+  String get tourAccTypeTitle;
+  String get tourAccTypeDesc;
+  String get tourAccTotalTitle;
+  String get tourAccTotalDesc;
+  String get tourAccTapEditTitle;
+  String get tourAccTapEditDesc;
+
+  // Coach Mark Tour - Wealth Screen
+  String get tourWealthTabsTitle;
+  String get tourWealthTabsDesc;
+  String get tourWealthBudgetFilterTitle;
+  String get tourWealthBudgetFilterDesc;
+  String get tourWealthPeriodCollapseTitle;
+  String get tourWealthPeriodCollapseDesc;
+  String get tourWealthPeriodBarTitle;
+  String get tourWealthPeriodBarDesc;
+  String get tourWealthBudgetTapTitle;
+  String get tourWealthBudgetTapDesc;
+  String get tourWealthGoalTapTitle;
+  String get tourWealthGoalTapDesc;
+  String get tourWealthGoalLongPressTitle;
+  String get tourWealthGoalLongPressDesc;
+  String get tourWealthDebtPayoffTitle;
+  String get tourWealthDebtPayoffDesc;
+  String get tourWealthDebtGroupTitle;
+  String get tourWealthDebtGroupDesc;
+  String get tourWealthDebtTapTitle;
+  String get tourWealthDebtTapDesc;
+
+  // Coach Mark Tour - Settings Screen
+  String get tourSettingsBellTitle;
+  String get tourSettingsBellDesc;
+  String get tourSettingsProfileTitle;
+  String get tourSettingsProfileDesc;
+  String get tourSettingsBackupTitle;
+  String get tourSettingsBackupDesc;
+  String get tourSettingsLockTitle;
+  String get tourSettingsLockDesc;
+  String get tourSettingsBioTitle;
+  String get tourSettingsBioDesc;
+  String get tourSettingsThemeTitle;
+  String get tourSettingsThemeDesc;
+  String get tourSettingsCatsTitle;
+  String get tourSettingsCatsDesc;
+  String get tourSettingsFeedbackTitle;
+  String get tourSettingsFeedbackDesc;
+
+  // Coach Mark Tour - Report Details Screen
+  String get tourReportTabsTitle;
+  String get tourReportTabsDesc;
+  String get tourReportSegmentTitle;
+  String get tourReportSegmentDesc;
+  String get tourReportPieLongTitle;
+  String get tourReportPieLongDesc;
+  String get tourReportCategoryTitle;
+  String get tourReportCategoryDesc;
+  String get tourReportTitleRowTitle;
+  String get tourReportTitleRowDesc;
+
+  // Coach Mark Tour - Account Transaction History Screen
+  String get tourAccHistTypeTitle;
+  String get tourAccHistTypeDesc;
+  String get tourAccHistSearchTitle;
+  String get tourAccHistSearchDesc;
+  String get tourAccHistScrollTitle;
+  String get tourAccHistScrollDesc;
+  String get tourAccHistTapTitle;
+  String get tourAccHistTapDesc;
+
+  // Coach Mark Tour - Recurring List Screen
+  String get tourRecurringSearchTitle;
+  String get tourRecurringSearchDesc;
+  String get tourRecurringInactiveTitle;
+  String get tourRecurringInactiveDesc;
+  String get tourRecurringNextRunTitle;
+  String get tourRecurringNextRunDesc;
+  String get tourRecurringTapTitle;
+  String get tourRecurringTapDesc;
+
+  // Coach Mark Tour - Wallet Screen
+  String get tourWalletBalanceTitle;
+  String get tourWalletBalanceDesc;
+  String get tourWalletFabTitle;
+  String get tourWalletFabDesc;
+  String get tourWalletCardTitle;
+  String get tourWalletCardDesc;
+
   // Financial Health Score (Phase 7)
   String get healthScoreTitle;
   String get healthScoreLabel;

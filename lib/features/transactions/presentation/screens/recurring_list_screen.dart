@@ -25,6 +25,11 @@ class _RecurringListScreenState extends ConsumerState<RecurringListScreen> {
   String _searchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();

@@ -551,6 +551,136 @@ class AppTranslationsId implements AppTranslations {
   @override String get debtPayoffPaid => 'terbayar';
   @override String get debtPayoffCollected => 'terkumpul';
 
+  // Coach Mark Tour - Transactions Screen
+  @override String get tourRecurringTitle => 'Transaksi Berulang';
+  @override String get tourRecurringDesc => 'Lihat dan kelola transaksi berulang Anda di sini.';
+  @override String get tourDateFilterTitle => 'Filter Tanggal';
+  @override String get tourDateFilterDesc => 'Filter transaksi berdasarkan rentang tanggal tertentu.';
+  @override String get tourMonthNavTitle => 'Ganti Bulan';
+  @override String get tourMonthNavDesc => 'Ketuk panah atau geser untuk berpindah bulan.';
+  @override String get tourSearchTitle => 'Cari & Filter';
+  @override String get tourSearchDesc => 'Cari berdasarkan kata kunci atau filter berdasarkan kategori dan jenis transaksi.';
+  @override String get tourAddTitle => 'Tambah Transaksi';
+  @override String get tourAddDesc => 'Ketuk di sini untuk mencatat pemasukan atau pengeluaran baru.';
+  @override String get tourNavbarTitle => 'Navigasi';
+  @override String get tourNavbarDesc => 'Pindah antara Dashboard, Transaksi, Akun, Laporan, dan Pengaturan.';
+  @override String get tourWalletInitTitle => 'Atur Saldo Awal';
+  @override String get tourWalletInitDesc => 'Ketuk ikon Dompet di sini untuk menambahkan akun dan mengatur saldo awalnya sebelum mencatat transaksi.';
+
+  // Coach Mark Tour - Dashboard Screen
+  @override String get tourDashTabsTitle => 'Dua Tampilan Sekaligus';
+  @override String get tourDashTabsDesc => "Ketuk 'Laporan' untuk mengakses analitik lengkap dan rincian bulanan.";
+  @override String get tourDashSummaryRowsTitle => 'Ketuk Baris untuk Detail';
+  @override String get tourDashSummaryRowsDesc => 'Ketuk baris ringkasan untuk melihat rincian per mata uang dengan kurs terkini.';
+  @override String get tourDashFinHealthTitle => 'Skor Keuangan Anda';
+  @override String get tourDashFinHealthDesc => 'Kartu ini menilai kesehatan keuangan Anda \u2014 ketuk untuk memahami setiap faktor.';
+  @override String get tourDashPieChartTitle => 'Diagram Lingkaran Interaktif';
+  @override String get tourDashPieChartDesc => 'Tekan lama irisan untuk melihat jumlah dan persentase tepat tiap kategori.';
+  @override String get tourDashPullRefreshTitle => 'Perbarui Data';
+  @override String get tourDashPullRefreshDesc => 'Tarik ke bawah untuk memperbarui semua saldo.';
+  @override String get tourDashExportTitle => 'Ekspor Laporan';
+  @override String get tourDashExportDesc => 'Pindah ke tab Laporan dan ketuk ikon unduhan untuk mengekspor laporan keuangan.';
+  @override String get tourDashReportsSubTabsTitle => 'Dua Tampilan Analitik';
+  @override String get tourDashReportsSubTabsDesc => "'Analitik Mendalam' menampilkan grafik; 'Detail Bulanan' menampilkan setiap bulan.";
+  @override String get tourDashMonthlyCardTitle => 'Ketuk Bulan untuk Laporan';
+  @override String get tourDashMonthlyCardDesc => 'Ketuk kartu bulan untuk membuka laporan mendalam.';
+  @override String get tourDashScrollMoreTitle => 'Lebih Banyak Riwayat';
+  @override String get tourDashScrollMoreDesc => 'Gulir ke bawah untuk memuat bulan-bulan sebelumnya.';
+
+  // Coach Mark Tour - Accounts Screen
+  @override String get tourAccFiltersTitle => 'Filter Tersembunyi';
+  @override String get tourAccFiltersDesc => 'Ketuk Filter \u25be untuk membuka pencarian dan filter akun.';
+  @override String get tourAccFilterDotTitle => 'Indikator Filter Aktif';
+  @override String get tourAccFilterDotDesc => 'Titik emas berarti ada filter yang aktif.';
+  @override String get tourAccCurrencyTitle => 'Filter Mata Uang';
+  @override String get tourAccCurrencyDesc => 'Pilih mata uang untuk menampilkan akun tertentu.';
+  @override String get tourAccTypeTitle => 'Filter Jenis Akun';
+  @override String get tourAccTypeDesc => 'Ketuk chip untuk menyaring akun berdasarkan jenis.';
+  @override String get tourAccTotalTitle => 'Semua Akun Digabung';
+  @override String get tourAccTotalDesc => 'Saldo ini diperbarui saat Anda mengubah filter.';
+  @override String get tourAccTapEditTitle => 'Ketuk untuk Edit';
+  @override String get tourAccTapEditDesc => 'Ketuk kartu akun untuk mengubah detail akun.';
+
+  // Coach Mark Tour - Wealth Screen
+  @override String get tourWealthTabsTitle => 'Tiga Alat Kekayaan';
+  @override String get tourWealthTabsDesc => 'Geser atau ketuk tab untuk Anggaran, Tujuan, dan Utang.';
+  @override String get tourWealthBudgetFilterTitle => 'Filter Anggaran';
+  @override String get tourWealthBudgetFilterDesc => 'Ketuk Filter \u25be untuk menyaring anggaran.';
+  @override String get tourWealthPeriodCollapseTitle => 'Ciutkan Grup Anggaran';
+  @override String get tourWealthPeriodCollapseDesc => 'Ketuk header periode untuk menciutkan atau memperluas grup.';
+  @override String get tourWealthPeriodBarTitle => 'Bilah Ringkasan Periode';
+  @override String get tourWealthPeriodBarDesc => 'Bilah progres menampilkan pengeluaran gabungan.';
+  @override String get tourWealthBudgetTapTitle => 'Ketuk untuk Edit Anggaran';
+  @override String get tourWealthBudgetTapDesc => 'Ketuk kartu anggaran untuk mengubah detail.';
+  @override String get tourWealthGoalTapTitle => 'Ketuk Tujuan untuk Edit';
+  @override String get tourWealthGoalTapDesc => 'Ketuk kartu tujuan untuk memperbarui target.';
+  @override String get tourWealthGoalLongPressTitle => 'Tekan Lama untuk Rincian';
+  @override String get tourWealthGoalLongPressDesc => 'Tekan lama kartu tujuan untuk melihat kontribusi akun.';
+  @override String get tourWealthDebtPayoffTitle => 'Proyeksi Pelunasan Utang';
+  @override String get tourWealthDebtPayoffDesc => 'Kartu ini memproyeksikan kapan Anda bebas utang.';
+  @override String get tourWealthDebtGroupTitle => 'Ciutkan berdasarkan Orang';
+  @override String get tourWealthDebtGroupDesc => 'Ketuk nama orang untuk menciutkan utang mereka.';
+  @override String get tourWealthDebtTapTitle => 'Ketuk untuk Catat Pembayaran';
+  @override String get tourWealthDebtTapDesc => 'Ketuk kartu utang untuk mencatat pembayaran.';
+
+  // Coach Mark Tour - Settings Screen
+  @override String get tourSettingsBellTitle => 'Lonceng Pengumuman';
+  @override String get tourSettingsBellDesc => 'Ketuk lonceng untuk membaca pengumuman. Titik merah berarti pesan belum dibaca.';
+  @override String get tourSettingsProfileTitle => 'Ganti Profil';
+  @override String get tourSettingsProfileDesc => 'Ketuk profil untuk beralih atau membuat profil baru.';
+  @override String get tourSettingsBackupTitle => 'Cadangkan Data';
+  @override String get tourSettingsBackupDesc => 'Gunakan Backup & Restore untuk mengekspor atau memulihkan data.';
+  @override String get tourSettingsLockTitle => 'Lindungi dengan PIN';
+  @override String get tourSettingsLockDesc => 'Aktifkan Kunci Aplikasi agar PIN diperlukan.';
+  @override String get tourSettingsBioTitle => 'Biometrik Butuh PIN Dulu';
+  @override String get tourSettingsBioDesc => 'Sidik jari hanya aktif setelah PIN diatur.';
+  @override String get tourSettingsThemeTitle => 'Ubah Tema';
+  @override String get tourSettingsThemeDesc => 'Ketuk Tema untuk memilih tampilan aplikasi.';
+  @override String get tourSettingsCatsTitle => 'Kategori Kustom';
+  @override String get tourSettingsCatsDesc => 'Tambah, ubah, atau hapus kategori transaksi.';
+  @override String get tourSettingsFeedbackTitle => 'Kirim Masukan';
+  @override String get tourSettingsFeedbackDesc => 'Tulis pesan langsung kepada tim pengembang.';
+
+  // Coach Mark Tour - Report Details Screen
+  @override String get tourReportTabsTitle => 'Tiga Sudut Laporan';
+  @override String get tourReportTabsDesc => 'Grafik, Kategori, dan Judul transaksi.';
+  @override String get tourReportSegmentTitle => 'Ganti Pengeluaran vs Pemasukan';
+  @override String get tourReportSegmentDesc => 'Ketuk kontrol untuk beralih antara diagram Pengeluaran dan Pemasukan.';
+  @override String get tourReportPieLongTitle => 'Tekan Lama untuk Detail';
+  @override String get tourReportPieLongDesc => 'Tekan lama irisan untuk melihat jumlah dan persentase.';
+  @override String get tourReportCategoryTitle => 'Ketuk Kategori untuk Riwayat';
+  @override String get tourReportCategoryDesc => 'Ketuk kategori untuk melihat riwayat bulanan.';
+  @override String get tourReportTitleRowTitle => 'Ketuk Judul untuk Riwayat';
+  @override String get tourReportTitleRowDesc => 'Ketuk judul untuk melihat riwayat pengeluaran lengkap.';
+
+  // Coach Mark Tour - Account Transaction History Screen
+  @override String get tourAccHistTypeTitle => 'Filter berdasarkan Jenis';
+  @override String get tourAccHistTypeDesc => 'Ketuk chip untuk menampilkan jenis transaksi tertentu.';
+  @override String get tourAccHistSearchTitle => 'Cari Transaksi';
+  @override String get tourAccHistSearchDesc => 'Ketik untuk memfilter transaksi secara real time.';
+  @override String get tourAccHistScrollTitle => 'Lebih Banyak di Bawah';
+  @override String get tourAccHistScrollDesc => 'Gulir ke bawah untuk memuat 20 transaksi berikutnya.';
+  @override String get tourAccHistTapTitle => 'Ketuk untuk Edit';
+  @override String get tourAccHistTapDesc => 'Ketuk baris transaksi untuk membuka formulir lengkap.';
+
+  // Coach Mark Tour - Recurring List Screen
+  @override String get tourRecurringSearchTitle => 'Cari Berulang';
+  @override String get tourRecurringSearchDesc => 'Ketik untuk menyaring aturan berulang.';
+  @override String get tourRecurringInactiveTitle => 'Aturan Tidak Aktif Ada';
+  @override String get tourRecurringInactiveDesc => 'Kartu redup dijeda \u2014 tidak diposting sampai diaktifkan.';
+  @override String get tourRecurringNextRunTitle => 'Jadwal Berikutnya';
+  @override String get tourRecurringNextRunDesc => 'Setiap aturan aktif menampilkan tanggal transaksi berikutnya.';
+  @override String get tourRecurringTapTitle => 'Ketuk untuk Edit atau Jeda';
+  @override String get tourRecurringTapDesc => 'Ketuk kartu untuk mengubah atau mengaktifkan/menonaktifkan.';
+
+  // Coach Mark Tour - Wallet Screen
+  @override String get tourWalletBalanceTitle => 'Total Saldo';
+  @override String get tourWalletBalanceDesc => 'Lihat total saldo dari semua akun yang difilter, dikonversi ke mata uang dasar kamu.';
+  @override String get tourWalletFabTitle => 'Tambah Akun';
+  @override String get tourWalletFabDesc => 'Ketuk di sini untuk membuat akun baru — tunai, bank, e-wallet, atau investasi.';
+  @override String get tourWalletCardTitle => 'Edit Akun';
+  @override String get tourWalletCardDesc => 'Ketuk kartu akun mana saja untuk melihat riwayat transaksi atau mengubah detailnya.';
+
   // Financial Health Score (Phase 7)
   @override String get healthScoreTitle => 'Kesehatan Keuangan';
   @override String get healthScoreLabel => 'Skor Kesehatan';

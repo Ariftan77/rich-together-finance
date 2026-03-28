@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -10,6 +12,9 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/tour/tour_keys.dart';
+import '../../../../shared/tour/tour_content.dart';
+import '../../../../core/providers/nav_providers.dart';
 
 import '../../../../shared/widgets/category_icon_widget.dart';
 // import '../../../../shared/widgets/glass_item.dart'; // Removed
@@ -39,6 +44,14 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
   final ScrollController _scrollController = ScrollController();
   bool _filterExpanded = false;
 
+  // --- Coach-mark tour keys (widgets owned by this screen) ---
+  final GlobalKey _tourKeyRecurring  = GlobalKey(debugLabel: 'tour_recurring');
+  final GlobalKey _tourKeyDateFilter = GlobalKey(debugLabel: 'tour_date_filter');
+  final GlobalKey _tourKeyMonthNav   = GlobalKey(debugLabel: 'tour_month_nav');
+  final GlobalKey _tourKeySearch     = GlobalKey(debugLabel: 'tour_search_filter');
+
+  static const String _tourPrefsKey = 'tour_seen_transactions';
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +60,210 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
       ref.read(transactionSearchQueryProvider.notifier).state = _searchController.text;
     });
     _scrollController.addListener(_onScroll);
+
+    // Launch the tour on first run, after the first frame is rendered.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
+  }
+
+  Future<void> _maybeLaunchTour({bool delayed = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_tourPrefsKey) ?? false;
+    if (seen) return;
+    if (!mounted) return;
+    // Only launch when this screen's tab (index 0) is actually visible.
+    // IndexedStack builds all children on first render, so without this check
+    // every screen would fire its tour simultaneously on app start.
+    if (ref.read(shellTabIndexProvider) != 0) return;
+    // When triggered by a tab-switch, wait for the slide animation to finish
+    // before showing the tour so all widgets are fully laid out.
+    if (delayed) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+    }
+    _launchTour();
+  }
+
+  void _launchTour() {
+    final trans = ref.read(translationsProvider);
+
+    // Build the list of targets.  Steps 1-4 highlight widgets in this screen;
+    // step 5 highlights the FAB; steps 6-7 spotlight the bottom nav bar.
+    final targets = <TargetFocus>[
+      // 1. Recurring button
+      TargetFocus(
+        identify: 'recurring',
+        keyTarget: _tourKeyRecurring,
+        alignSkip: Alignment.bottomLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) => TourContent(
+              step: 1, total: 7,
+              title: trans.tourRecurringTitle,
+              description: trans.tourRecurringDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.Circle,
+        color: Colors.white,
+      ),
+
+      // 2. Date filter button
+      TargetFocus(
+        identify: 'date_filter',
+        keyTarget: _tourKeyDateFilter,
+        alignSkip: Alignment.bottomLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) => TourContent(
+              step: 2, total: 7,
+              title: trans.tourDateFilterTitle,
+              description: trans.tourDateFilterDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.Circle,
+        color: Colors.white,
+      ),
+
+      // 3. Month navigation row (left/right arrows + month label)
+      TargetFocus(
+        identify: 'month_nav',
+        keyTarget: _tourKeyMonthNav,
+        alignSkip: Alignment.bottomRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) => TourContent(
+              step: 3, total: 7,
+              title: trans.tourMonthNavTitle,
+              description: trans.tourMonthNavDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+
+      // 4. Search + filter section
+      TargetFocus(
+        identify: 'search_filter',
+        keyTarget: _tourKeySearch,
+        alignSkip: Alignment.bottomRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) => TourContent(
+              step: 4, total: 7,
+              title: trans.tourSearchTitle,
+              description: trans.tourSearchDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+
+      // 5. FAB (lives in DashboardShell — referenced via TourKeys.fab)
+      // onClickTarget fires when the user taps the highlighted FAB area,
+      // simulating the real FAB press so they land on TransactionEntryScreen.
+      TargetFocus(
+        identify: 'fab',
+        keyTarget: TourKeys.fab,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) => TourContent(
+              step: 5, total: 7,
+              title: trans.tourAddTitle,
+              description: trans.tourAddDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.Circle,
+        color: Colors.white,
+      ),
+
+      // 6. Bottom nav bar
+      TargetFocus(
+        identify: 'navbar',
+        keyTarget: TourKeys.bottomNav,
+        alignSkip: Alignment.topRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) => TourContent(
+              step: 6, total: 7,
+              title: trans.tourNavbarTitle,
+              description: trans.tourNavbarDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+
+      // 7. Wallet nav item — set initial balance first
+      TargetFocus(
+        identify: 'wallet_init',
+        keyTarget: TourKeys.bottomNav,
+        alignSkip: Alignment.topRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) => TourContent(
+              step: 7, total: 7,
+              title: trans.tourWalletInitTitle,
+              description: trans.tourWalletInitDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+    ];
+
+    Future<void> markSeen() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_tourPrefsKey, true);
+    }
+
+    late TutorialCoachMark coachMark;
+    coachMark = TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.6,
+      textSkip: 'SKIP',
+      textStyleSkip: const TextStyle(
+        color: Colors.white70,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+      ),
+      paddingFocus: 10,
+      // When leaving step 4 (search_filter) → step 5 (fab), open the speed dial
+      // so the user sees the 3 options as step 5 appears.
+      // We do NOT call next() here — enableOverlayTab handles the advance.
+      onClickOverlay: (target) {
+        if (target.identify == 'search_filter') {
+          TourKeys.speedDial.currentState?.toggle();
+        }
+      },
+      onFinish: () => markSeen(),
+      onSkip: () {
+        markSeen();
+        return true;
+      },
+    );
+    coachMark.show(context: context);
   }
 
   void _onScroll() {
@@ -114,6 +331,13 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
   @override
   Widget build(BuildContext context) {
+    // Re-trigger tour when the user navigates back to this tab after app start.
+    // initState only fires once; ref.listen fires every time the tab index
+    // changes to 0 while this screen is alive in the IndexedStack.
+    ref.listen<int>(shellTabIndexProvider, (previous, next) {
+      if (next == 0) _maybeLaunchTour(delayed: true);
+    });
+
     final filteredHelper = ref.watch(convertedFilteredTransactionsProvider);
     final currentTypeFilter = ref.watch(transactionTypeFilterProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
@@ -165,6 +389,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       const Spacer(),
                       // Recurring button
                       IconButton(
+                        key: _tourKeyRecurring,
                         icon: Icon(
                           Icons.repeat,
                           color: isLight ? AppColors.textPrimaryLight : Colors.white,
@@ -179,49 +404,54 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         },
                         tooltip: 'Recurring',
                       ),
-                      // Filter button
-                      Consumer(
-                        builder: (context, ref, child) {
-                          final dateFrom = ref.watch(dateFromFilterProvider);
-                          final dateTo = ref.watch(dateToFilterProvider);
-                          final hasDateFilter = dateFrom != null || dateTo != null;
-                          
-                          return Stack(
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.filter_list,
-                                  color: hasDateFilter
-                                      ? AppColors.primaryGold
-                                      : (AppThemeProvider.isLightMode(context)
-                                          ? AppColors.textPrimaryLight
-                                          : Colors.white),
+                      // Filter button — key is on the KeyedSubtree wrapper so it
+                      // sits outside the Consumer's rebuild scope and always has
+                      // a valid RenderBox when the coach-mark tour resolves it.
+                      KeyedSubtree(
+                        key: _tourKeyDateFilter,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final dateFrom = ref.watch(dateFromFilterProvider);
+                            final dateTo = ref.watch(dateToFilterProvider);
+                            final hasDateFilter = dateFrom != null || dateTo != null;
+
+                            return Stack(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.filter_list,
+                                    color: hasDateFilter
+                                        ? AppColors.primaryGold
+                                        : (AppThemeProvider.isLightMode(context)
+                                            ? AppColors.textPrimaryLight
+                                            : Colors.white),
+                                  ),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => const DateRangeFilterModal(),
+                                    );
+                                  },
                                 ),
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => const DateRangeFilterModal(),
-                                  );
-                                },
-                              ),
-                              if (hasDateFilter)
-                                Positioned(
-                                  right: 8,
-                                  top: 8,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryGold,
-                                      shape: BoxShape.circle,
+                                if (hasDateFilter)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGold,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          );
-                        },
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -229,6 +459,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                 
                 // Month Navigation Row
                 Padding(
+                  key: _tourKeyMonthNav,
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -287,8 +518,12 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   ),
                 ),
 
-                // Filter toggle row
-                Padding(
+                // Filter toggle row — key on the outer SizedBox so the coach
+                // mark gets a reliable full-width render object to spotlight.
+                SizedBox(
+                  key: _tourKeySearch,
+                  width: double.infinity,
+                  child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                   child: GestureDetector(
                     onTap: () => setState(() => _filterExpanded = !_filterExpanded),
@@ -317,6 +552,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                           ),
                       ],
                     ),
+                  ),
                   ),
                 ),
 
@@ -565,6 +801,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     return DateFormat('EEE, d MMM').format(date);
   }
 }
+
 
 
 

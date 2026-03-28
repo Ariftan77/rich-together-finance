@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/nav_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../shared/tour/tour_content.dart';
+import '../../../../shared/tour/tour_keys.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
@@ -70,11 +75,131 @@ final _walletFilteredTotalBalanceProvider = StreamProvider.autoDispose<double>((
   yield total;
 });
 
-class AccountsScreen extends ConsumerWidget {
+class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
+}
+
+class _AccountsScreenState extends ConsumerState<AccountsScreen> {
+  final GlobalKey _tourKeyBalance = GlobalKey(debugLabel: 'tour_wallet_balance');
+  final GlobalKey _tourKeyAccountCard = GlobalKey(debugLabel: 'tour_wallet_card');
+  static const String _tourPrefsKey = 'tour_seen_wallet';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
+  }
+
+  Future<void> _maybeLaunchTour({bool delayed = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_tourPrefsKey) ?? false;
+    if (seen) return;
+    if (!mounted) return;
+    // Only launch when wallet tab (index 1) is visible.
+    if (ref.read(shellTabIndexProvider) != 1) return;
+    if (delayed) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+    }
+    _launchTour();
+  }
+
+  void _launchTour() {
+    final trans = ref.read(translationsProvider);
+
+    final targets = <TargetFocus>[
+      // 1. Total balance card
+      TargetFocus(
+        identify: 'wallet_balance',
+        keyTarget: _tourKeyBalance,
+        alignSkip: Alignment.bottomRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, _) => TourContent(
+              step: 1, total: 3,
+              title: trans.tourWalletBalanceTitle,
+              description: trans.tourWalletBalanceDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+      // 2. Add account FAB
+      TargetFocus(
+        identify: 'wallet_fab',
+        keyTarget: TourKeys.walletFab,
+        alignSkip: Alignment.topRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, _) => TourContent(
+              step: 2, total: 3,
+              title: trans.tourWalletFabTitle,
+              description: trans.tourWalletFabDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.Circle,
+        color: Colors.white,
+      ),
+      // 3. Tap account card to edit
+      TargetFocus(
+        identify: 'wallet_card',
+        keyTarget: _tourKeyAccountCard,
+        alignSkip: Alignment.topRight,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, _) => TourContent(
+              step: 3, total: 3,
+              title: trans.tourWalletCardTitle,
+              description: trans.tourWalletCardDesc,
+            ),
+          ),
+        ],
+        shape: ShapeLightFocus.RRect,
+        color: Colors.white,
+      ),
+    ];
+
+    Future<void> markSeen() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_tourPrefsKey, true);
+    }
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.6,
+      textSkip: 'SKIP',
+      textStyleSkip: const TextStyle(
+        color: Colors.white70,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+      ),
+      paddingFocus: 10,
+      onFinish: () => markSeen(),
+      onSkip: () {
+        markSeen();
+        return true;
+      },
+    ).show(context: context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<int>(shellTabIndexProvider, (previous, next) {
+      if (next == 1) _maybeLaunchTour(delayed: true);
+    });
+
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);
     final trans = ref.watch(translationsProvider);
@@ -107,6 +232,7 @@ class AccountsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               // Total Balance Card
               GlassCard(
+                key: _tourKeyBalance,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   children: [
@@ -306,7 +432,7 @@ class AccountsScreen extends ConsumerWidget {
                       itemCount: filtered.length,
                       itemBuilder: (context, index) {
                         final account = filtered[index];
-                        return AccountCard(
+                        final card = AccountCard(
                           account: account,
                           balance: balances[account.id] ?? account.initialBalance,
                           onTap: () {
@@ -319,6 +445,9 @@ class AccountsScreen extends ConsumerWidget {
                             );
                           },
                         );
+                        return index == 0
+                            ? KeyedSubtree(key: _tourKeyAccountCard, child: card)
+                            : card;
                       },
                     );
                   },

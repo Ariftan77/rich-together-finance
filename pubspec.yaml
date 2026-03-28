@@ -72,6 +72,9 @@ dependencies:
   mailer: ^7.1.0
   permission_handler: ^12.0.1
 
+  # Coach Mark / Spotlight Tour
+  tutorial_coach_mark: ^1.2.11
+
   # Export
   excel: ^4.0.6
 
