@@ -30,6 +30,7 @@ import '../widgets/date_range_filter_modal.dart';
 import '../widgets/month_year_picker_modal.dart';
 import 'transaction_entry_screen.dart';
 import 'recurring_list_screen.dart';
+import '../../../debts/presentation/screens/debt_entry_screen.dart';
 
 
 class TransactionsHistoryScreen extends ConsumerStatefulWidget {
@@ -734,7 +735,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 margin: const EdgeInsets.fromLTRB(4, 16, 4, 8),
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 borderRadius: 12,
-                                backgroundColor: Colors.black.withValues(alpha: 0.15),
+                                backgroundColor: isLight ? const Color(0xFFE2E8F0) : Colors.black.withValues(alpha: 0.15),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
@@ -742,7 +743,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                       _formatDateSection(date, today, trans).toUpperCase(),
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                                        color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.7),
+                                        color: isLight ? const Color(0xFF1E293B) : Colors.white.withValues(alpha: 0.7),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.5,
                                         fontSize: 12,
@@ -933,14 +934,53 @@ class _TransactionItem extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: GestureDetector(
-        onTap: () {
-          // Navigate to edit page
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TransactionEntryScreen(transactionId: transaction.id),
-            ),
-          );
+        onTap: () async {
+          if (isDebtIn || isDebtOut) {
+            // Debt transactions — navigate to the corresponding DebtEntryScreen.
+            // Parse person name from title "Debt: <name>" or fall back to the
+            // raw title / empty string.
+            final title = transaction.title ?? '';
+            final personName = title.startsWith('Debt: ')
+                ? title.substring(6).trim()
+                : title.trim();
+
+            final debtType = isDebtIn ? DebtType.payable : DebtType.receivable;
+            final profileId = ref.read(activeProfileIdProvider);
+            final navigator = Navigator.of(context);
+
+            if (profileId != null && personName.isNotEmpty) {
+              final debt = await ref.read(debtDaoProvider).findDebtByNameAndType(
+                profileId,
+                personName,
+                debtType,
+                accountId: transaction.accountId,
+                date: transaction.date,
+              );
+              if (!context.mounted) return;
+              if (debt != null) {
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (context) => DebtEntryScreen(debt: debt),
+                  ),
+                );
+                return;
+              }
+            }
+            // Fallback: debt record not found — open normal transaction editor.
+            navigator.push(
+              MaterialPageRoute(
+                builder: (context) => TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+              ),
+            );
+          } else {
+            // Navigate to edit page
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+              ),
+            );
+          }
         },
         child: GlassCard(
           padding: const EdgeInsets.all(16),

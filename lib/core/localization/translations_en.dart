@@ -693,4 +693,21 @@ class AppTranslationsEn implements AppTranslations {
   @override String get healthScoreGradeD => 'Needs Work';
   @override String get healthScoreGradeF => 'Critical';
   @override String get healthScoreTapToExpand => 'Tap to see breakdown';
+
+  // Financial Health Score – methodology sheet
+  @override String get healthScoreMethodologyTitle => 'How is this calculated?';
+  @override String get healthScoreFormulaLabel => 'Overall Score';
+  @override String get healthScoreFormulaDesc => '(Savings + Budget + Debt + Trend) ÷ 4\nEach component is scored 0–100 and weighted equally at 25%.';
+  @override String get healthScoreGradeScaleLabel => 'Grade Scale';
+  @override String get healthScoreWeight => '25% weight';
+  @override String get healthScoreSavingsDesc => 'Average savings rate over the last 3 months.\nSavings rate = (Income − Expense) ÷ Income × 100';
+  @override String get healthScoreSavingsFormula => '< 0% → 0  •  0–4% → 10  •  5–9% → 30\n10–19% → 55  •  20–29% → 75  •  ≥ 30% → 100';
+  @override String get healthScoreBudgetDesc => 'How many monthly budgets you stayed within, averaged over the last 3 months.\nScore = (1 − exceeded ÷ total) × 100';
+  @override String get healthScoreBudgetNote => '* Only monthly budgets are counted. Months with no budgets contribute a neutral 70.';
+  @override String get healthScoreDebtDesc => 'Total outstanding debt (money you owe) compared to 3× your average monthly income.';
+  @override String get healthScoreDebtFormula => 'Ratio = Debt ÷ (Avg income × 3)\n≤ 0.5× → 90  •  ≤ 1× → 70  •  ≤ 2× → 40\n≤ 3× → 20  •  > 3× → 5  •  No debt → 100';
+  @override String get healthScoreTrendDesc => 'Current month\'s expenses compared to the average of up to 3 previous months.';
+  @override String get healthScoreTrendFormula => '< 90% → 100  •  90–99% → 80  •  100–109% → 60\n110–129% → 35  •  ≥ 130% → 10';
+  @override String get healthScoreThresholdLabel => 'Score thresholds';
+  @override String get healthScoreCurrentScore => 'Your score';
 }

@@ -686,4 +686,21 @@ abstract class AppTranslations {
   String get healthScoreGradeD;
   String get healthScoreGradeF;
   String get healthScoreTapToExpand;
+
+  // Financial Health Score – methodology sheet
+  String get healthScoreMethodologyTitle;
+  String get healthScoreFormulaLabel;
+  String get healthScoreFormulaDesc;
+  String get healthScoreGradeScaleLabel;
+  String get healthScoreWeight;
+  String get healthScoreSavingsDesc;
+  String get healthScoreSavingsFormula;
+  String get healthScoreBudgetDesc;
+  String get healthScoreBudgetNote;
+  String get healthScoreDebtDesc;
+  String get healthScoreDebtFormula;
+  String get healthScoreTrendDesc;
+  String get healthScoreTrendFormula;
+  String get healthScoreThresholdLabel;
+  String get healthScoreCurrentScore;
 }

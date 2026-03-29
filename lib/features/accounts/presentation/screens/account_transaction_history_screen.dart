@@ -407,7 +407,7 @@ class _TxItem extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) =>
-                TransactionEntryScreen(transactionId: transaction.id),
+                TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
           ),
         ),
         child: GlassCard(

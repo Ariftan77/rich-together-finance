@@ -694,4 +694,21 @@ class AppTranslationsId implements AppTranslations {
   @override String get healthScoreGradeD => 'Perlu Perbaikan';
   @override String get healthScoreGradeF => 'Kritis';
   @override String get healthScoreTapToExpand => 'Ketuk untuk detail';
+
+  // Financial Health Score – methodology sheet
+  @override String get healthScoreMethodologyTitle => 'Bagaimana cara menghitung ini?';
+  @override String get healthScoreFormulaLabel => 'Skor Keseluruhan';
+  @override String get healthScoreFormulaDesc => '(Tabungan + Anggaran + Utang + Tren) ÷ 4\nSetiap komponen dinilai 0–100 dengan bobot sama 25%.';
+  @override String get healthScoreGradeScaleLabel => 'Skala Nilai';
+  @override String get healthScoreWeight => 'Bobot 25%';
+  @override String get healthScoreSavingsDesc => 'Rata-rata tingkat tabungan selama 3 bulan terakhir.\nTingkat tabungan = (Pemasukan − Pengeluaran) ÷ Pemasukan × 100';
+  @override String get healthScoreSavingsFormula => '< 0% → 0  •  0–4% → 10  •  5–9% → 30\n10–19% → 55  •  20–29% → 75  •  ≥ 30% → 100';
+  @override String get healthScoreBudgetDesc => 'Berapa banyak anggaran bulanan yang berhasil dipatuhi, dirata-rata selama 3 bulan terakhir.\nSkor = (1 − terlampaui ÷ total) × 100';
+  @override String get healthScoreBudgetNote => '* Hanya anggaran bulanan yang dihitung. Bulan tanpa anggaran berkontribusi nilai netral 70.';
+  @override String get healthScoreDebtDesc => 'Total utang yang belum lunas dibandingkan dengan 3× rata-rata penghasilan bulanan.';
+  @override String get healthScoreDebtFormula => 'Rasio = Utang ÷ (Rata-rata penghasilan × 3)\n≤ 0,5× → 90  •  ≤ 1× → 70  •  ≤ 2× → 40\n≤ 3× → 20  •  > 3× → 5  •  Tanpa utang → 100';
+  @override String get healthScoreTrendDesc => 'Pengeluaran bulan ini dibandingkan rata-rata hingga 3 bulan sebelumnya.';
+  @override String get healthScoreTrendFormula => '< 90% → 100  •  90–99% → 80  •  100–109% → 60\n110–129% → 35  •  ≥ 130% → 10';
+  @override String get healthScoreThresholdLabel => 'Ambang skor';
+  @override String get healthScoreCurrentScore => 'Skor kamu';
 }

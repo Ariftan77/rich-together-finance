@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -46,6 +52,7 @@ class WealthScreen extends ConsumerStatefulWidget {
 class _WealthScreenState extends ConsumerState<WealthScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey _debtShareKey = GlobalKey();
 
   @override
   void initState() {
@@ -749,7 +756,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           );
         }
 
-        // Group by type, then by personName (preserving insertion order)
+        // Group by type, then by personName (sorted alphabetically)
         final payableGroups = <String, List<Debt>>{};
         final receivableGroups = <String, List<Debt>>{};
         for (final d in debts) {
@@ -759,6 +766,17 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             receivableGroups.putIfAbsent(d.personName, () => []).add(d);
           }
         }
+        final sortedPayableGroups = Map.fromEntries(
+          payableGroups.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
+        );
+        final sortedReceivableGroups = Map.fromEntries(
+          receivableGroups.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
+        );
+
+        final themeMode = AppThemeProvider.of(context);
+        final isLight = themeMode == AppThemeMode.light ||
+            (themeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
@@ -766,7 +784,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             const SizedBox(height: 4),
             const DebtPayoffCard(),
             const SizedBox(height: 16),
-            if (payableGroups.isNotEmpty) ...[
+            if (sortedPayableGroups.isNotEmpty) ...[
               _buildDebtTypeSectionHeader(
                 icon: Icons.arrow_upward,
                 label: trans.debtPayable,
@@ -774,7 +792,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 count: debts.where((d) => d.type == DebtType.payable).length,
               ),
               const SizedBox(height: 8),
-              for (final entry in payableGroups.entries)
+              for (final entry in sortedPayableGroups.entries)
                 _buildDebtPersonGroup(
                   type: DebtType.payable,
                   personName: entry.key,
@@ -785,7 +803,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 ),
               const SizedBox(height: 8),
             ],
-            if (receivableGroups.isNotEmpty) ...[
+            if (sortedReceivableGroups.isNotEmpty) ...[
               _buildDebtTypeSectionHeader(
                 icon: Icons.arrow_downward,
                 label: trans.debtReceivable,
@@ -793,7 +811,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 count: debts.where((d) => d.type == DebtType.receivable).length,
               ),
               const SizedBox(height: 8),
-              for (final entry in receivableGroups.entries)
+              for (final entry in sortedReceivableGroups.entries)
                 _buildDebtPersonGroup(
                   type: DebtType.receivable,
                   personName: entry.key,
@@ -941,6 +959,20 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   const SizedBox(width: 4),
                   _buildCurrencyBadge(singleCurrency.code),
                 ],
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _sharePersonDebts(personName, type, debts),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.share_outlined,
+                      size: 16,
+                      color: isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -2000,6 +2032,336 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ===================== DEBT SHARE =====================
+
+  /// Captures the debt share widget for a single person and shares it as a PNG.
+  Future<void> _sharePersonDebts(
+    String personName,
+    DebtType type,
+    List<Debt> debts,
+  ) async {
+    if (!mounted) return;
+
+    final locale = ref.read(localeProvider).languageCode;
+
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (_) => Positioned(
+        left: -9999,
+        top: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: _buildPersonDebtShareWidget(personName, type, debts, locale),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+
+      final boundary = _debtShareKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        overlayEntry.remove();
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      overlayEntry.remove();
+      overlayEntry = null;
+
+      if (byteData == null) {
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/debt_${personName.replaceAll(' ', '_')}.png');
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+
+      if (mounted) Navigator.of(context).pop();
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Debt summary for $personName - RichTogether',
+      );
+    } catch (e) {
+      overlayEntry?.remove();
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share: $e')),
+        );
+      }
+    }
+  }
+
+  /// Builds the share image for a single person's debt group.
+  Widget _buildPersonDebtShareWidget(
+    String personName,
+    DebtType type,
+    List<Debt> debts,
+    String locale,
+  ) {
+    final typeColor = type == DebtType.payable ? AppColors.error : AppColors.success;
+    final typeLabel = type == DebtType.payable ? 'I Owe' : 'Owed to Me';
+    final typeIcon = type == DebtType.payable ? Icons.arrow_upward : Icons.arrow_downward;
+    final dateFormat = DateFormat.yMMMd(locale);
+    const bgColor = Color(0xFF1A1208);
+    const cardColor = Color(0xFF2D2416);
+    const gold = AppColors.primaryGold;
+    final now = DateTime.now();
+
+    // Aggregate totals by currency
+    final totalByCurrency = <Currency, double>{};
+    final remainingByCurrency = <Currency, double>{};
+    for (final d in debts) {
+      totalByCurrency.update(d.currency, (v) => v + d.amount, ifAbsent: () => d.amount);
+      remainingByCurrency.update(
+        d.currency,
+        (v) => v + (d.amount - d.paidAmount),
+        ifAbsent: () => d.amount - d.paidAmount,
+      );
+    }
+
+    Widget debtRow(Debt d) {
+      final remaining = d.amount - d.paidAmount;
+      final isOverdue = d.dueDate != null && d.dueDate!.isBefore(now);
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: typeColor.withValues(alpha: 0.35),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Amount row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Created: ${dateFormat.format(d.createdAt)}',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      ),
+                      if (d.dueDate != null)
+                        Row(
+                          children: [
+                            const Text('Due: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                            Text(
+                              dateFormat.format(d.dueDate!),
+                              style: TextStyle(
+                                color: isOverdue ? AppColors.error : const Color(0xFF94A3B8),
+                                fontSize: 11,
+                                fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                            ),
+                            if (isOverdue) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.error.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'OVERDUE',
+                                  style: TextStyle(color: AppColors.error, fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${d.currency.code} ${Formatters.formatCurrency(remaining, showDecimal: false)}',
+                      style: TextStyle(
+                        color: typeColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (d.paidAmount > 0)
+                      Text(
+                        'Settled: ${d.currency.code} ${Formatters.formatCurrency(d.paidAmount, showDecimal: false)}',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      ),
+                    Text(
+                      'Total: ${d.currency.code} ${Formatters.formatCurrency(d.amount, showDecimal: false)}',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (d.note != null && d.note!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              const Divider(color: Color(0x20FFFFFF), height: 1),
+              const SizedBox(height: 6),
+              Text(
+                d.note!,
+                style: const TextStyle(
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return RepaintBoundary(
+      key: _debtShareKey,
+      child: Container(
+        width: 380,
+        padding: const EdgeInsets.all(20),
+        color: bgColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header: app name + date
+            Row(
+              children: [
+                const Icon(Icons.handshake_outlined, color: gold, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'RichTogether',
+                  style: TextStyle(color: gold, fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Text(
+                  DateFormat('d MMM yyyy').format(now),
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                ),
+              ],
+            ),
+            const Divider(color: Color(0x40D4AF37), height: 20),
+            // Person name + type badge
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(typeIcon, color: typeColor, size: 14),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    personName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: typeColor.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    typeLabel,
+                    style: TextStyle(color: typeColor, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // Debt rows
+            ...debts.map(debtRow),
+            // Total summary
+            const Divider(color: Color(0x40D4AF37), height: 20),
+            for (final entry in remainingByCurrency.entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total Remaining (${entry.key.code})',
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    ),
+                    Text(
+                      '${entry.key.code} ${Formatters.formatCurrency(entry.value, showDecimal: false)}',
+                      style: TextStyle(
+                        color: typeColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            for (final entry in totalByCurrency.entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total Amount (${entry.key.code})',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                    Text(
+                      '${entry.key.code} ${Formatters.formatCurrency(entry.value, showDecimal: false)}',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            const Center(
+              child: Text(
+                'Generated by Richer',
+                style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10),
+              ),
+            ),
+          ],
         ),
       ),
     );

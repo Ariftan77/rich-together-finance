@@ -114,6 +114,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                           MaterialPageRoute(
                             builder: (context) => TransactionEntryScreen(
                               transactionId: transaction.id,
+                              transactionType: transaction.type,
                             ),
                           ),
                         );

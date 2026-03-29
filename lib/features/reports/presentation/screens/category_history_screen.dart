@@ -341,7 +341,7 @@ class _TxItem extends StatelessWidget {
           nav.push(
             MaterialPageRoute(
               builder: (_) =>
-                  TransactionEntryScreen(transactionId: transaction.id),
+                  TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
             ),
           );
         },
