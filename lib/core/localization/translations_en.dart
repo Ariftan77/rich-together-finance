@@ -43,6 +43,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get commonMax => 'MAX';
   @override String get commonOthers => 'Others';
   @override String get filterAll => 'All';
+  @override String get commonShare => 'Share';
 
   // Transaction Entry
   @override String get entryTitleAdd => 'Add Transaction';
@@ -283,6 +284,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get debtCreatedDate => 'Created Date';
   @override String get debtDueDate => 'Due Date';
   @override String get debtSettle => 'Settle';
+  @override String get debtSettleGroup => 'Settle All';
   @override String get debtSettleAccount => 'Settlement Account';
   @override String get debtNoDebts => 'No debts';
   @override String get debtNoDebtsHint => 'Tap + to add a debt record';

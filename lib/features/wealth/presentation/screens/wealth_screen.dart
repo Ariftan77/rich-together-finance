@@ -28,6 +28,8 @@ import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
+import '../../../transactions/presentation/widgets/account_selector.dart';
+import '../../../accounts/presentation/providers/balance_provider.dart';
 import '../widgets/debt_payoff_card.dart';
 
 
@@ -959,20 +961,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   const SizedBox(width: 4),
                   _buildCurrencyBadge(singleCurrency.code),
                 ],
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => _sharePersonDebts(personName, type, debts),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.share_outlined,
-                      size: 16,
-                      color: isLight
-                          ? const Color(0xFF64748B)
-                          : Colors.white.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -1003,6 +991,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     const SizedBox(height: 8),
                     if (debts.length > 1)
                       _buildDebtGroupSummaryCard(
+                        personName: personName,
+                        type: type,
                         debts: debts,
                         typeColor: typeColor,
                         showDecimal: showDecimal,
@@ -1020,6 +1010,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   Widget _buildDebtGroupSummaryCard({
+    required String personName,
+    required DebtType type,
     required List<Debt> debts,
     required Color typeColor,
     required bool showDecimal,
@@ -1144,6 +1136,63 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               ),
             )),
           ],
+          
+          const SizedBox(height: 12),
+          Divider(
+            height: 1, 
+            color: isLight 
+                ? Colors.black.withValues(alpha: 0.05) 
+                : Colors.white.withValues(alpha: 0.1),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (isSingle && remaining != null && remaining > 0) ...[
+                GestureDetector(
+                  onTap: () => _showGroupSettleDialog(personName, type, debts.where((d) => d.amount > d.paidAmount).toList(), currency!),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      trans.debtSettleGroup,
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              GestureDetector(
+                onTap: () => _sharePersonDebts(personName, type, debts),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    trans.commonShare,
+                    style: const TextStyle(
+                      color: AppColors.primaryGold,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1487,6 +1536,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
     final remaining = debt.amount - debt.paidAmount;
     final showDecimal = ref.read(showDecimalProvider);
+    final balances = ref.read(accountBalanceProvider);
 
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -1498,6 +1548,10 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
+            final selectedAccount = selectedAccountId != null
+                ? accounts.where((a) => a.id == selectedAccountId).firstOrNull
+                : null;
+
             return Container(
               decoration: BoxDecoration(
                 color: isDefault
@@ -1676,24 +1730,72 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-                  DropdownButtonFormField<int>(
-                    value: selectedAccountId,
-                    dropdownColor: AppColors.cardSurface,
-                    style: TextStyle(
-                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                    ),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.glassBackground,
-                      border: OutlineInputBorder(
+                  GestureDetector(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (modalContext) => Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                          ),
+                          child: AccountSelector(
+                            accounts: accounts,
+                            selectedAccountId: selectedAccountId,
+                            balances: balances,
+                            showDecimal: showDecimal,
+                            onAccountSelected: (id) {
+                              if (id != null) {
+                                setSheetState(() => selectedAccountId = id);
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassBackground,
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                        border: Border.all(
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.08)
+                              : Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: AppColors.primaryGold,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              selectedAccount?.name ?? trans.entrySelectAccount,
+                              style: TextStyle(
+                                color: selectedAccount != null
+                                    ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                    : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(
+                            Icons.expand_more,
+                            color: isLight
+                                ? const Color(0xFFCBD5E1)
+                                : Colors.white.withValues(alpha: 0.3),
+                            size: 18,
+                          ),
+                        ],
                       ),
                     ),
-                    items: accounts
-                        .map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.name)))
-                        .toList(),
-                    onChanged: (val) => setSheetState(() => selectedAccountId = val),
                   ),
                   const SizedBox(height: 24),
 
@@ -1747,6 +1849,325 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             ),
           );
         }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(trans.debtSettled), backgroundColor: AppColors.success),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${trans.error}: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showGroupSettleDialog(
+    String personName,
+    DebtType type,
+    List<Debt> groupDebts,
+    Currency currency,
+  ) async {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+    final trans = ref.read(translationsProvider);
+    final accountsAsync = ref.read(accountsStreamProvider);
+    final allAccounts = accountsAsync.valueOrNull ?? [];
+    final accounts = allAccounts.where((a) => a.currency == currency).toList();
+
+    if (accounts.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(trans.entryNoAccounts)),
+        );
+      }
+      return;
+    }
+
+    final showDecimal = ref.read(showDecimalProvider);
+    final balances = ref.read(accountBalanceProvider);
+
+    double totalRemaining = 0.0;
+    for (final d in groupDebts) {
+      totalRemaining += (d.amount - d.paidAmount);
+    }
+    if (totalRemaining <= 0) return;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        double payAmount = totalRemaining;
+        int? selectedAccountId;
+
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final selectedAccount = selectedAccountId != null
+                ? accounts.where((a) => a.id == selectedAccountId).firstOrNull
+                : null;
+
+            return Container(
+              decoration: BoxDecoration(
+                color: isDefault
+                    ? const Color(0xFF2D2416)
+                    : isLight
+                        ? const Color(0xFFF8FAFC)
+                        : const Color(0xFF111111),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24, right: 24, top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Text(
+                    'Settle Group Debts',
+                    style: TextStyle(
+                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    personName,
+                    style: TextStyle(
+                      color: isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Remaining amount
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? Colors.black.withValues(alpha: 0.04)
+                          : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trans.goalRemaining,
+                          style: TextStyle(
+                            color: isLight
+                                ? const Color(0xFF94A3B8)
+                                : Colors.white.withValues(alpha: 0.4),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          Formatters.formatCurrency(totalRemaining, currency: currency, showDecimal: showDecimal),
+                          style: TextStyle(
+                            color: type == DebtType.payable ? AppColors.error : AppColors.success,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Amount
+                  Text(
+                    trans.commonAmount,
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF64748B) : const Color(0xB3FFFFFF),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await CalculatorBottomSheet.show(
+                        ctx,
+                        initialValue: payAmount,
+                        currency: currency,
+                        showDecimal: showDecimal,
+                      );
+                      if (picked != null && picked > 0) {
+                        setSheetState(() => payAmount = picked.clamp(0.0, totalRemaining));
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calculate_outlined, color: AppColors.primaryGold, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              Formatters.formatCurrency(payAmount, currency: currency, showDecimal: showDecimal),
+                              style: TextStyle(
+                                color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.edit_outlined,
+                            color: isLight
+                                ? const Color(0xFF94A3B8)
+                                : Colors.white.withValues(alpha: 0.4),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Account selector
+                  Text(
+                    trans.debtSettleAccount,
+                    style: TextStyle(
+                      color: isLight ? const Color(0xFF64748B) : const Color(0xB3FFFFFF),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (modalContext) => Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                          ),
+                          child: AccountSelector(
+                            accounts: accounts,
+                            selectedAccountId: selectedAccountId,
+                            balances: balances,
+                            showDecimal: showDecimal,
+                            onAccountSelected: (id) {
+                              if (id != null) {
+                                setSheetState(() => selectedAccountId = id);
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isLight
+                              ? Colors.black.withValues(alpha: 0.08)
+                              : Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: AppColors.primaryGold,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              selectedAccount?.name ?? trans.entrySelectAccount,
+                              style: TextStyle(
+                                color: selectedAccount != null
+                                    ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                    : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(
+                            Icons.expand_more,
+                            color: isLight
+                                ? const Color(0xFFCBD5E1)
+                                : Colors.white.withValues(alpha: 0.3),
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Confirm button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedAccountId != null && payAmount > 0
+                          ? () => Navigator.pop(sheetContext, {'accountId': selectedAccountId, 'amount': payAmount})
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(trans.debtSettle,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      final accountId = result['accountId'] as int;
+      final amount = result['amount'] as double;
+      final profileId = ref.read(activeProfileIdProvider);
+
+      if (profileId == null) return;
+
+      try {
+        await ref.read(debtDaoProvider).recordGroupPayment(profileId, personName, type, amount);
+
+        final transactionDao = ref.read(transactionDaoProvider);
+        await transactionDao.insertTransaction(
+          TransactionsCompanion(
+            profileId: drift.Value(profileId),
+            accountId: drift.Value(accountId),
+            type: drift.Value(type == DebtType.payable
+                ? TransactionType.expense
+                : TransactionType.income),
+            amount: drift.Value(amount),
+            title: drift.Value('Group Debt Payment: $personName'),
+            note: drift.Value('Settled debts for $personName'),
+            date: drift.Value(DateTime.now()),
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2104,7 +2525,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'Debt summary for $personName - RichTogether',
+        text: 'Debt summary for $personName - Richer',
       );
     } catch (e) {
       overlayEntry?.remove();
@@ -2260,10 +2681,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             // Header: app name + date
             Row(
               children: [
-                const Icon(Icons.handshake_outlined, color: gold, size: 20),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.asset('assets/images/app_icon.png', width: 20, height: 20),
+                ),
                 const SizedBox(width: 8),
                 const Text(
-                  'RichTogether',
+                  'Richer',
                   style: TextStyle(color: gold, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),

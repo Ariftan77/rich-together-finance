@@ -39,6 +39,7 @@ abstract class AppTranslations {
   String get commonMax;
   String get commonOthers;
   String get filterAll;
+  String get commonShare;
 
   // Transaction Entry
   String get entryTitleAdd;
@@ -279,6 +280,7 @@ abstract class AppTranslations {
   String get debtCreatedDate;
   String get debtDueDate;
   String get debtSettle;
+  String get debtSettleGroup;
   String get debtSettleAccount;
   String get debtNoDebts;
   String get debtNoDebtsHint;

@@ -123,7 +123,7 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
       final smtpServer = gmail(targetEmail, appKey);
 
       final message = Message()
-        ..from = Address(targetEmail, 'RichTogether Feedback')
+        ..from = Address(targetEmail, 'Richer Feedback')
         ..recipients.add(targetEmail)
         ..subject = 'App Feedback / Bug Report: ${DateTime.now().toIso8601String()}'
         ..text = 'Feedback:\n\n$body\n\nApp Version: $_appVersion\nUserId: ${PremiumAuthService().email ?? "Not logged in"}';

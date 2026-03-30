@@ -661,7 +661,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Create our message.
       final message = Message()
-        ..from = Address(targetEmail, 'RichTogether Feedback')
+        ..from = Address(targetEmail, 'Richer Feedback')
         ..recipients.add(targetEmail) // send it to ourselves
         ..subject = 'App Feedback / Bug Report: ${DateTime.now().toIso8601String()}'
         ..text = 'Feedback:\n\n$body\n\nApp Version: $_appVersion\nUserId: ${PremiumAuthService().email ?? "Not logged in"}';

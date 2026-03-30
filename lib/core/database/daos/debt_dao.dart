@@ -92,6 +92,47 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     );
   }
 
+  /// Record a group payment (settle oldest debts first)
+  Future<void> recordGroupPayment(
+    int profileId,
+    String personName,
+    DebtType type,
+    double paymentAmount,
+  ) async {
+    return transaction(() async {
+      double remainingPayment = paymentAmount;
+      final unsettledDebts = await (select(debts)
+            ..where((d) =>
+                d.profileId.equals(profileId) &
+                d.personName.equals(personName) &
+                d.type.equals(type.index) &
+                d.isSettled.equals(false))
+            ..orderBy([(d) => OrderingTerm.asc(d.createdAt)])) // oldest first
+          .get();
+
+      for (final debt in unsettledDebts) {
+        if (remainingPayment <= 0) break;
+
+        final debtRemaining = debt.amount - debt.paidAmount;
+        final amountToApply = remainingPayment >= debtRemaining ? debtRemaining : remainingPayment;
+
+        final newPaidAmount = debt.paidAmount + amountToApply;
+        final isFullyPaid = newPaidAmount >= debt.amount;
+
+        await (update(debts)..where((d) => d.id.equals(debt.id))).write(
+          DebtsCompanion(
+            paidAmount: Value(newPaidAmount),
+            isSettled: Value(isFullyPaid),
+            settledDate: isFullyPaid ? Value(DateTime.now()) : const Value.absent(),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+
+        remainingPayment -= amountToApply;
+      }
+    });
+  }
+
   /// Find the debt that corresponds to a creation transaction.
   /// Matches profile + name + type, then narrows by creationAccountId and
   /// creation date (within 2 minutes) for precision when multiple debts share

@@ -43,6 +43,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get commonMax => 'MAKS';
   @override String get commonOthers => 'Lainnya';
   @override String get filterAll => 'Semua';
+  @override String get commonShare => 'Bagikan';
 
   // Transaction Entry
   @override String get entryTitleAdd => 'Tambah Transaksi';
@@ -284,6 +285,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get debtCreatedDate => 'Tanggal Dibuat';
   @override String get debtDueDate => 'Jatuh Tempo';
   @override String get debtSettle => 'Lunaskan';
+  @override String get debtSettleGroup => 'Lunaskan Semua';
   @override String get debtSettleAccount => 'Akun Pelunasan';
   @override String get debtNoDebts => 'Tidak ada hutang';
   @override String get debtNoDebtsHint => 'Tap + untuk menambah catatan hutang';
