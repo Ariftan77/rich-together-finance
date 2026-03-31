@@ -520,6 +520,14 @@ class AppTranslationsEn implements AppTranslations {
   @override String get backupLoadFailed => 'Failed to load backups';
   @override String get backupNoneOnDrive => 'No backups found on Drive';
   @override String get backupGoogleSignInFailed => 'Google Sign-In failed';
+  @override String get backupGoogleDrive => 'Cloud Backup (Google Drive)';
+  @override String get backupConnectDrive => 'Connect Google Drive';
+  @override String get backupToDrive => 'Backup to Drive';
+  @override String get backupToDriveSubtitle => 'Save current data to cloud';
+  @override String get backupRestoreFromDrive => 'Restore from Drive';
+  @override String get backupRestoreFromDriveSubtitle => 'Restore data from cloud backup';
+  @override String get backupDisconnect => 'Disconnect';
+  @override String get backupDailyAutoInfo => 'Connect your Google account to enable automatic daily backup. Your data will be backed up silently each time you open the app (once per day). Up to 14 backup files are kept.';
 
   // Date Range Filter Modal
   @override String get filterByDateRange => 'Filter by Date Range';

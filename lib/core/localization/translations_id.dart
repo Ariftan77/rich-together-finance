@@ -521,6 +521,14 @@ class AppTranslationsId implements AppTranslations {
   @override String get backupLoadFailed => 'Gagal memuat cadangan';
   @override String get backupNoneOnDrive => 'Tidak ada cadangan di Drive';
   @override String get backupGoogleSignInFailed => 'Masuk Google gagal';
+  @override String get backupGoogleDrive => 'Cadangan Cloud (Google Drive)';
+  @override String get backupConnectDrive => 'Hubungkan Google Drive';
+  @override String get backupToDrive => 'Cadangkan ke Drive';
+  @override String get backupToDriveSubtitle => 'Simpan data saat ini ke cloud';
+  @override String get backupRestoreFromDrive => 'Pulihkan dari Drive';
+  @override String get backupRestoreFromDriveSubtitle => 'Pulihkan data dari cadangan cloud';
+  @override String get backupDisconnect => 'Putuskan';
+  @override String get backupDailyAutoInfo => 'Hubungkan akun Google Anda untuk mengaktifkan cadangan otomatis harian. Data Anda akan dicadangkan secara otomatis setiap kali Anda membuka aplikasi (sekali per hari). Hingga 14 file cadangan akan disimpan.';
 
   // Date Range Filter Modal
   @override String get filterByDateRange => 'Filter berdasarkan tanggal';

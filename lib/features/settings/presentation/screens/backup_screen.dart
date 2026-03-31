@@ -342,55 +342,103 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       ),
                     ),
                     
-                    // TODO: Google Drive sync — hidden until auth issue is resolved
-                    // const SizedBox(height: 32),
-                    // _buildSectionHeader('Cloud Backup (Google Drive)'),
-                    // const SizedBox(height: 16),
-                    // GlassCard(
-                    //   child: Column(
-                    //     children: [
-                    //       if (_currentUser == null)
-                    //         ListTile(
-                    //           leading: const Icon(Icons.cloud_off, color: Colors.white54),
-                    //           title: const Text('Connect Google Drive', style: TextStyle(color: Colors.white)),
-                    //           onTap: _handleGoogleSignIn,
-                    //         )
-                    //       else ...[
-                    //         ListTile(
-                    //           leading: CircleAvatar(
-                    //             backgroundImage: (_currentUser!.photoUrl != null && _currentUser!.photoUrl!.isNotEmpty)
-                    //                 ? NetworkImage(_currentUser!.photoUrl!)
-                    //                 : null,
-                    //             backgroundColor: AppColors.primaryGold,
-                    //             child: (_currentUser!.photoUrl == null || _currentUser!.photoUrl!.isEmpty)
-                    //                 ? Text(_currentUser!.displayName?[0] ?? 'U')
-                    //                 : null,
-                    //           ),
-                    //           title: Text(_currentUser!.displayName ?? 'User', style: const TextStyle(color: Colors.white)),
-                    //           subtitle: Text(_currentUser!.email, style: const TextStyle(color: Colors.white54)),
-                    //           trailing: IconButton(
-                    //             icon: const Icon(Icons.logout, color: Colors.white54),
-                    //             onPressed: _handleGoogleSignOut,
-                    //           ),
-                    //         ),
-                    //         Divider(color: Colors.white.withValues(alpha: 0.1)),
-                    //         ListTile(
-                    //           leading: const Icon(Icons.cloud_upload, color: AppColors.primaryGold),
-                    //           title: const Text('Backup to Drive', style: TextStyle(color: Colors.white)),
-                    //           subtitle: const Text('Save current data to cloud', style: TextStyle(color: Colors.white54)),
-                    //           onTap: _handleUploadToDrive,
-                    //         ),
-                    //         Divider(color: Colors.white.withValues(alpha: 0.1)),
-                    //         ListTile(
-                    //           leading: const Icon(Icons.cloud_download, color: AppColors.primaryGold),
-                    //           title: const Text('Restore from Drive', style: TextStyle(color: Colors.white)),
-                    //           subtitle: const Text('Restore data from cloud backup', style: TextStyle(color: Colors.white54)),
-                    //           onTap: _handleRestoreFromDrive,
-                    //         ),
-                    //       ],
-                    //     ],
-                    //   ),
-                    // ),
+                    const SizedBox(height: 32),
+                    _buildSectionHeader(trans.backupGoogleDrive),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline, color: AppColors.primaryGold, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              trans.backupDailyAutoInfo,
+                              style: TextStyle(
+                                color: isLight ? const Color(0xFF374151) : Colors.white70,
+                                fontSize: 12,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GlassCard(
+                      child: Column(
+                        children: [
+                          if (_currentUser == null)
+                            ListTile(
+                              leading: Icon(Icons.cloud_off, color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                              title: Text(trans.backupConnectDrive, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
+                              onTap: _handleGoogleSignIn,
+                            )
+                          else ...[
+                            ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: (_currentUser!.photoUrl != null && _currentUser!.photoUrl!.isNotEmpty)
+                                    ? NetworkImage(_currentUser!.photoUrl!)
+                                    : null,
+                                backgroundColor: AppColors.primaryGold,
+                                child: (_currentUser!.photoUrl == null || _currentUser!.photoUrl!.isEmpty)
+                                    ? Text(_currentUser!.displayName?[0] ?? 'U')
+                                    : null,
+                              ),
+                              title: Text(
+                                _currentUser!.displayName ?? 'User',
+                                style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
+                              ),
+                              subtitle: Text(
+                                _currentUser!.email,
+                                style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                              ),
+                              trailing: Tooltip(
+                                message: trans.backupDisconnect,
+                                child: IconButton(
+                                  icon: Icon(Icons.logout, color: isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                  onPressed: _handleGoogleSignOut,
+                                ),
+                              ),
+                            ),
+                            Divider(color: Colors.white.withValues(alpha: 0.1)),
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.cloud_upload, color: AppColors.primaryGold),
+                              ),
+                              title: Text(trans.backupToDrive, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
+                              subtitle: Text(trans.backupToDriveSubtitle, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54)),
+                              onTap: _handleUploadToDrive,
+                            ),
+                            Divider(color: Colors.white.withValues(alpha: 0.1)),
+                            ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.cloud_download, color: AppColors.primaryGold),
+                              ),
+                              title: Text(trans.backupRestoreFromDrive, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
+                              subtitle: Text(trans.backupRestoreFromDriveSubtitle, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54)),
+                              onTap: _handleRestoreFromDrive,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 );
                   },

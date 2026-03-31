@@ -167,6 +167,22 @@ class BackupService {
         driveFile,
         uploadMedia: drive.Media(file.openRead(), fileSize),
       );
+
+      // Rotate: keep only the latest 14 backups
+      final allFiles = await driveApi.files.list(
+        q: "name contains 'rich_together_backup_' and 'appDataFolder' in parents and trashed = false",
+        spaces: 'appDataFolder',
+        $fields: 'files(id, name, createdTime)',
+        orderBy: 'createdTime desc',
+      );
+      final files = allFiles.files ?? [];
+      if (files.length > 14) {
+        for (final old in files.sublist(14)) {
+          if (old.id != null) {
+            try { await driveApi.files.delete(old.id!); } catch (_) {}
+          }
+        }
+      }
     } finally {
       try {
         await File(tempPath).delete();

@@ -513,6 +513,14 @@ abstract class AppTranslations {
   String get backupLoadFailed;
   String get backupNoneOnDrive;
   String get backupGoogleSignInFailed;
+  String get backupGoogleDrive;
+  String get backupConnectDrive;
+  String get backupToDrive;
+  String get backupToDriveSubtitle;
+  String get backupRestoreFromDrive;
+  String get backupRestoreFromDriveSubtitle;
+  String get backupDisconnect;
+  String get backupDailyAutoInfo;
 
   // Date Range Filter Modal
   String get filterByDateRange;

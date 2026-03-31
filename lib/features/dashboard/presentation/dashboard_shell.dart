@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/backup_service.dart';
 import '../../../shared/widgets/glass_bottom_nav.dart';
 import '../../../shared/theme/colors.dart';
 import '../../accounts/presentation/screens/accounts_screen.dart';
@@ -63,6 +65,31 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // Show App Open ad once per day
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AdService().loadAndShowAppOpen(context);
+    });
+
+    _triggerAutoBackup();
+  }
+
+  Future<void> _triggerAutoBackup() async {
+    // Fire-and-forget: run after first frame so no UI is blocked
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final lastBackupMs = prefs.getInt('last_drive_backup_ms') ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      const oneDayMs = 86400000;
+      if (now - lastBackupMs < oneDayMs) return;
+
+      // Try silent sign-in first; only proceed if already connected
+      final backupService = ref.read(backupServiceProvider);
+      final account = await backupService.signInSilently();
+      if (account == null) return;
+
+      try {
+        await backupService.uploadToDrive();
+        await prefs.setInt('last_drive_backup_ms', DateTime.now().millisecondsSinceEpoch);
+      } catch (_) {
+        // Silent failure — user can manually back up from settings
+      }
     });
   }
 
