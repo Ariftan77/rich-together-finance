@@ -8,6 +8,8 @@ import '../../../../shared/theme/theme_provider_widget.dart';
 
 import '../../../../shared/widgets/glass_card.dart';
 import '../providers/dashboard_providers.dart';
+import '../../../achievements/providers/achievement_provider.dart';
+import '../../../achievements/widgets/share_achievement_card.dart';
 
 class FinancialHealthCard extends ConsumerStatefulWidget {
   const FinancialHealthCard({super.key});
@@ -228,6 +230,12 @@ class _FinancialHealthCardState extends ConsumerState<FinancialHealthCard> {
                               score: health.trendComponent,
                               isLight: isLight,
                             ),
+                            const SizedBox(height: 14),
+                            _ShareAchievementCta(
+                              health: health,
+                              trans: trans,
+                              subtextColor: subtextColor,
+                            ),
                           ],
                         ),
                       )
@@ -332,6 +340,88 @@ class _ComponentRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Share Achievement CTA ─────────────────────────────────────────────────────
+
+class _ShareAchievementCta extends ConsumerWidget {
+  final FinancialHealthScore health;
+  final AppTranslations trans;
+  final Color subtextColor;
+
+  const _ShareAchievementCta({
+    required this.health,
+    required this.trans,
+    required this.subtextColor,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final achievementsAsync = ref.watch(achievementProvider);
+
+    return achievementsAsync.when(
+      data: (achievements) {
+        // Only show if there is at least one shareable achievement.
+        final shareable = achievements.where((a) => a.isShareable).toList();
+        if (shareable.isEmpty) return const SizedBox.shrink();
+
+        final accentColor = Theme.of(context).colorScheme.primary;
+
+        return GestureDetector(
+          onTap: () {
+            final budgetPerfAsync = ref.read(budgetPerformanceProvider);
+            final savingsAsync = ref.read(savingsRateTrendProvider);
+
+            final budgetPerf = budgetPerfAsync.whenOrNull(data: (v) => v) ?? [];
+            final savingsRate = savingsAsync.whenOrNull(data: (v) => v) ?? [];
+
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              builder: (_) => AchievementPickerSheet(
+                shareable: shareable,
+                savingsPoints: savingsRate,
+                budgetPerf: budgetPerf,
+                health: health,
+                ref: ref,
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.share_outlined,
+                  size: 15,
+                  color: accentColor.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  trans.shareAchievement,
+                  style: TextStyle(
+                    color: accentColor.withValues(alpha: 0.85),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (e, st) => const SizedBox.shrink(),
     );
   }
 }

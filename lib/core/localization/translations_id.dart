@@ -721,4 +721,22 @@ class AppTranslationsId implements AppTranslations {
   @override String get healthScoreTrendFormula => '< 90% → 100  •  90–99% → 80  •  100–109% → 60\n110–129% → 35  •  ≥ 130% → 10';
   @override String get healthScoreThresholdLabel => 'Ambang skor';
   @override String get healthScoreCurrentScore => 'Skor kamu';
+
+  // Share Achievement Feature
+  @override String get shareAchievement => 'Bagikan Pencapaian';
+  @override String get achievementsTitle => 'Pencapaian';
+  @override String get shareCaption_savingsStreak =>
+      'Tiga bulan berturut-turut pengeluaran lebih kecil dari pemasukan. Kebiasaan kecil, hasil konsisten. Dipantau lewat Richer. #Richer #KeuanganPribadi #StreakTabungan';
+  @override String get shareCaption_financeChampion =>
+      'Lima bulan berturut-turut — pemasukan selalu lebih besar dari pengeluaran. Konsistensi ini ternyata memuaskan banget. #Richer #FinanceChampion #KebiasaanUang';
+  @override String get shareCaption_budgetChampion =>
+      'Semua anggaran bulan ini berhasil dijaga. Ternyata menentukan batas dan benar-benar mengikutinya adalah dua hal yang sangat berbeda. #Richer #TujuanAnggaran #DisiplinKeuangan';
+  @override String get shareCaption_budgetDisciplined =>
+      'Tiga bulan disiplin dengan anggaran. Membangun kebiasaan keuangan yang lebih baik, satu bulan dalam satu waktu. #Richer #DisiplinAnggaran #KebiasaanUang';
+  @override String get shareCaption_gradeA =>
+      'Skor kesehatan keuanganku baru saja mencapai Nilai A. Tingkat tabungan, beban utang, kepatuhan anggaran, tren pengeluaran — semua hijau. #Richer #KesehatanKeuangan #NilaiA';
+  @override String get shareCaption_gradeB =>
+      'Nilai B untuk cek kesehatan keuanganku. Masih ada satu dua komponen yang perlu ditingkatkan, tapi arahnya sudah benar. Progres lambat tetap progres. #Richer #KesehatanKeuangan #PerjalananUang';
+  @override String get shareCaption_spendingUnderControl =>
+      'Pengeluaranku terus turun 3 bulan berturut-turut. Bukan karena menyiksa diri — hanya lebih disengaja dalam pengeluaran. #Richer #BelanjaCerdas #KebebasanFinansial';
 }

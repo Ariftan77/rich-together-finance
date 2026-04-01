@@ -713,4 +713,15 @@ abstract class AppTranslations {
   String get healthScoreTrendFormula;
   String get healthScoreThresholdLabel;
   String get healthScoreCurrentScore;
+
+  // Share Achievement Feature
+  String get shareAchievement;
+  String get achievementsTitle;
+  String get shareCaption_savingsStreak;
+  String get shareCaption_financeChampion;
+  String get shareCaption_budgetChampion;
+  String get shareCaption_budgetDisciplined;
+  String get shareCaption_gradeA;
+  String get shareCaption_gradeB;
+  String get shareCaption_spendingUnderControl;
 }

@@ -720,4 +720,22 @@ class AppTranslationsEn implements AppTranslations {
   @override String get healthScoreTrendFormula => '< 90% → 100  •  90–99% → 80  •  100–109% → 60\n110–129% → 35  •  ≥ 130% → 10';
   @override String get healthScoreThresholdLabel => 'Score thresholds';
   @override String get healthScoreCurrentScore => 'Your score';
+
+  // Share Achievement Feature
+  @override String get shareAchievement => 'Share Achievement';
+  @override String get achievementsTitle => 'Achievements';
+  @override String get shareCaption_savingsStreak =>
+      'Three months of spending less than I earn. Small habit, consistent results. Tracking it all in Richer. #Richer #PersonalFinance #SavingsStreak';
+  @override String get shareCaption_financeChampion =>
+      'Five months in a row — income beating expenses every single month. Didn\'t expect consistency to feel this good. #Richer #FinanceChampion #MoneyHabits';
+  @override String get shareCaption_budgetChampion =>
+      'Kept every budget this month. Turns out setting limits and actually following them are two very different skills. Getting better at both. #Richer #BudgetGoals #FinancialDiscipline';
+  @override String get shareCaption_budgetDisciplined =>
+      'Three months of staying disciplined with my budget. Building better money habits one month at a time. #Richer #BudgetDiscipline #MoneyHabits';
+  @override String get shareCaption_gradeA =>
+      'My financial health score just hit Grade A. Savings rate, debt load, budget adherence, expense trend — all green. Took a while to get here. #Richer #FinancialHealth #GradeA';
+  @override String get shareCaption_gradeB =>
+      'Grade B on my financial health check. There\'s a component or two still to work on, but the direction is right. Slow progress is still progress. #Richer #FinancialHealth #MoneyJourney';
+  @override String get shareCaption_spendingUnderControl =>
+      'My expenses have been going down for 3 months in a row. Not because I\'m depriving myself — just being more intentional. #Richer #SpendingSmarter #FinancialFreedom';
 }
