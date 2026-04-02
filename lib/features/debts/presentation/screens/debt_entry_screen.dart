@@ -40,6 +40,10 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   int? _selectedAccountId; // For transaction creation
   bool _isLoading = false;
 
+  // Person name suggestions
+  List<String> _frequentNames = [];
+  String _nameFilter = '';
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +59,28 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     } else {
       _selectedCurrency = ref.read(defaultCurrencyProvider);
     }
+    _personController.addListener(_onNameChanged);
+    _loadFrequentNames();
+  }
+
+  void _onNameChanged() {
+    final text = _personController.text.trim();
+    if (text != _nameFilter) {
+      setState(() => _nameFilter = text);
+    }
+  }
+
+  Future<void> _loadFrequentNames() async {
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId == null) return;
+    final names = await ref.read(debtDaoProvider).getFrequentPersonNames(profileId);
+    if (mounted) setState(() => _frequentNames = names);
+  }
+
+  List<String> get _filteredNames {
+    if (_nameFilter.isEmpty) return _frequentNames;
+    final q = _nameFilter.toLowerCase();
+    return _frequentNames.where((n) => n.toLowerCase().contains(q)).toList();
   }
 
   Future<void> _openAmountCalculator() async {
@@ -71,6 +97,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
   @override
   void dispose() {
+    _personController.removeListener(_onNameChanged);
     _personController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -319,6 +346,53 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         return null;
                       },
                     ),
+                    if (_filteredNames.isNotEmpty)
+                      Container(
+                        height: 36,
+                        margin: const EdgeInsets.only(top: 10),
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _filteredNames.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final name = _filteredNames[index];
+                            return GestureDetector(
+                              onTap: () {
+                                _personController.text = name;
+                                _personController.selection =
+                                    TextSelection.fromPosition(
+                                  TextPosition(offset: name.length),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: isLight
+                                      ? Colors.black.withValues(alpha: 0.08)
+                                      : Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: isLight
+                                        ? Colors.black.withValues(alpha: 0.08)
+                                        : Colors.white.withValues(alpha: 0.1),
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  name,
+                                  style: TextStyle(
+                                    color: isLight
+                                        ? AppColors.textPrimaryLight
+                                        : Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     const SizedBox(height: 24),
 
                     // Amount

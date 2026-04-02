@@ -197,6 +197,21 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     );
   }
 
+  /// Get distinct person names ordered by frequency (most used first)
+  Future<List<String>> getFrequentPersonNames(int profileId, {int limit = 30}) async {
+    final all = await (select(debts)
+          ..where((d) => d.profileId.equals(profileId)))
+        .get();
+    final freq = <String, int>{};
+    for (final d in all) {
+      final name = d.personName.trim();
+      if (name.isNotEmpty) freq[name] = (freq[name] ?? 0) + 1;
+    }
+    final sorted = freq.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.take(limit).map((e) => e.key).toList();
+  }
+
   /// Delete a debt
   Future<int> deleteDebt(int id) =>
       (delete(debts)..where((d) => d.id.equals(id))).go();
