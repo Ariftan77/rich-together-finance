@@ -193,7 +193,7 @@ class _AccountTransactionHistoryScreenState
                         label: 'Debt',
                         isSelected: currentType?.contains(TransactionType.debtIn) == true,
                         onTap: () => ref.read(_typeFilterProvider.notifier).state =
-                            [TransactionType.debtIn, TransactionType.debtOut],
+                            [TransactionType.debtIn, TransactionType.debtOut, TransactionType.debtPaymentOut, TransactionType.debtPaymentIn],
                       ),
                       const SizedBox(width: 8),
                       _Chip(
@@ -374,10 +374,12 @@ class _TxItem extends StatelessWidget {
     final isLight = AppThemeProvider.isLightMode(context);
     final isExpense = transaction.type == TransactionType.expense ||
         transaction.type == TransactionType.adjustmentOut ||
-        transaction.type == TransactionType.debtOut;
+        transaction.type == TransactionType.debtOut ||
+        transaction.type == TransactionType.debtPaymentOut;
     final isIncome = transaction.type == TransactionType.income ||
         transaction.type == TransactionType.adjustmentIn ||
-        transaction.type == TransactionType.debtIn;
+        transaction.type == TransactionType.debtIn ||
+        transaction.type == TransactionType.debtPaymentIn;
 
     final color = transaction.type == TransactionType.expense
         ? const Color(0xFFFB7185)
@@ -388,7 +390,11 @@ class _TxItem extends StatelessWidget {
                 ? Colors.amber
                 : transaction.type == TransactionType.debtIn
                     ? Colors.orange
-                    : const Color(0xFF60A5FA);
+                    : transaction.type == TransactionType.debtPaymentOut
+                        ? const Color(0xFFFB7185)
+                        : transaction.type == TransactionType.debtPaymentIn
+                            ? const Color(0xFF34D399)
+                            : const Color(0xFF60A5FA);
 
     final prefix = isExpense ? '-' : (isIncome ? '+' : '');
     final currencySymbol = account.currency.code;
@@ -482,6 +488,9 @@ class _TxItem extends StatelessWidget {
       case TransactionType.debtIn:
       case TransactionType.debtOut:
         return Icons.people_outline;
+      case TransactionType.debtPaymentOut:
+      case TransactionType.debtPaymentIn:
+        return Icons.handshake_outlined;
     }
   }
 }

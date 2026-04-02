@@ -52,6 +52,8 @@ abstract class AppTranslations {
   String get entryTypeAdjustmentOut;
   String get entryTypeDebtIn;
   String get entryTypeDebtOut;
+  String get entryTypeDebtPaymentOut;
+  String get entryTypeDebtPaymentIn;
   String get entryCategoryCreated;
   String get entryCategory;
   String get entryAccount;

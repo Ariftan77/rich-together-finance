@@ -106,6 +106,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                     final isDebtIn = transaction.type == TransactionType.debtIn;
                     final isDebtOut = transaction.type == TransactionType.debtOut;
                     final isDebt = isDebtIn || isDebtOut;
+                    final isDebtPaymentOut = transaction.type == TransactionType.debtPaymentOut;
+                    final isDebtPaymentIn = transaction.type == TransactionType.debtPaymentIn;
+                    final isDebtPayment = isDebtPaymentOut || isDebtPaymentIn;
                     
                     return InkWell(
                       onTap: () {
@@ -145,7 +148,11 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                               ? Colors.orange
                                               : isDebtOut
                                                   ? const Color(0xFF60A5FA)
-                                                  : AppColors.info;
+                                                  : isDebtPaymentOut
+                                                      ? AppColors.error
+                                                      : isDebtPaymentIn
+                                                          ? AppColors.success
+                                                          : AppColors.info;
                               final useCategoryIcon = (isIncome || isExpense) &&
                                   category != null &&
                                   category.icon.isNotEmpty;
@@ -183,7 +190,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                                     ? Icons.tune
                                                     : isDebt
                                                         ? Icons.people_outline
-                                                        : Icons.swap_horiz,
+                                                        : isDebtPayment
+                                                            ? Icons.handshake_outlined
+                                                            : Icons.swap_horiz,
                                         color: typeColor,
                                         size: 20,
                                       ),
@@ -242,7 +251,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                             ),
                             // Amount
                             Text(
-                              '${isIncome || isAdjustmentIn || isDebtIn ? '+' : isExpense || isAdjustmentOut || isDebtOut ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
+                              '${isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn ? '+' : isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
                               style: TextStyle(
                                 color: isIncome
                                     ? AppColors.success
@@ -254,7 +263,11 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                                 ? Colors.orange
                                                 : isDebtOut
                                                     ? const Color(0xFF60A5FA)
-                                                    : Colors.white,
+                                                    : isDebtPaymentOut
+                                                        ? AppColors.error
+                                                        : isDebtPaymentIn
+                                                            ? AppColors.success
+                                                            : Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -56,6 +56,8 @@ class AppTranslationsEn implements AppTranslations {
   @override String get entryTypeAdjustmentOut => 'Adjustment -';
   @override String get entryTypeDebtIn => 'Borrowed';
   @override String get entryTypeDebtOut => 'Lent';
+  @override String get entryTypeDebtPaymentOut => 'Debt Payment';
+  @override String get entryTypeDebtPaymentIn => 'Debt Received';
   @override String get entryCategoryCreated => 'Category created successfully';
   @override String get entryCategory => 'Category';
   @override String get entryAccount => 'Account';

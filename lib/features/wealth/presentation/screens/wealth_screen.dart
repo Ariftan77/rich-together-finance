@@ -1839,8 +1839,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               profileId: drift.Value(profileId),
               accountId: drift.Value(accountId),
               type: drift.Value(debt.type == DebtType.payable
-                  ? TransactionType.expense
-                  : TransactionType.income),
+                  ? TransactionType.debtPaymentOut
+                  : TransactionType.debtPaymentIn),
               amount: drift.Value(amount),
               title: drift.Value('Debt Payment: ${debt.personName}'),
               note: drift.Value(debt.note ?? ''),
@@ -2159,8 +2159,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             profileId: drift.Value(profileId),
             accountId: drift.Value(accountId),
             type: drift.Value(type == DebtType.payable
-                ? TransactionType.expense
-                : TransactionType.income),
+                ? TransactionType.debtPaymentOut
+                : TransactionType.debtPaymentIn),
             amount: drift.Value(amount),
             title: drift.Value('Group Debt Payment: $personName'),
             note: drift.Value('Settled debts for $personName'),

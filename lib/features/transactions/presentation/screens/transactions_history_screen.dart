@@ -600,7 +600,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         _FilterChip(
                           label: trans.txnFilterDebt,
                           isSelected: currentTypeFilter?.contains(TransactionType.debtIn) == true,
-                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.debtIn, TransactionType.debtOut],
+                          onTap: () => ref.read(transactionTypeFilterProvider.notifier).state = [TransactionType.debtIn, TransactionType.debtOut, TransactionType.debtPaymentOut, TransactionType.debtPaymentIn],
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
@@ -902,6 +902,8 @@ class _TransactionItem extends ConsumerWidget {
     final isAdjustmentOut = transaction.type == TransactionType.adjustmentOut;
     final isDebtIn = transaction.type == TransactionType.debtIn;
     final isDebtOut = transaction.type == TransactionType.debtOut;
+    final isDebtPaymentOut = transaction.type == TransactionType.debtPaymentOut;
+    final isDebtPaymentIn = transaction.type == TransactionType.debtPaymentIn;
 
     // Localized transaction type name
     String localizedTypeName(TransactionType type) {
@@ -913,6 +915,8 @@ class _TransactionItem extends ConsumerWidget {
         case TransactionType.adjustmentOut: return trans.entryTypeAdjustmentOut;
         case TransactionType.debtIn: return trans.entryTypeDebtIn;
         case TransactionType.debtOut: return trans.entryTypeDebtOut;
+        case TransactionType.debtPaymentOut: return trans.entryTypeDebtPaymentOut;
+        case TransactionType.debtPaymentIn: return trans.entryTypeDebtPaymentIn;
       }
     }
 
@@ -926,8 +930,12 @@ class _TransactionItem extends ConsumerWidget {
                     ? Colors.orange   // borrowed (I owe) — matches overview orange
                     : isDebtOut
                         ? const Color(0xFF60A5FA) // lent (owed to me) — matches overview blue
-                        : const Color(0xFF60A5FA);
-    final prefix = isExpense || isAdjustmentOut || isDebtOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn ? '+' : '');
+                        : isDebtPaymentOut
+                            ? const Color(0xFFFB7185) // debt payment out — red (money leaving)
+                            : isDebtPaymentIn
+                                ? const Color(0xFF34D399) // debt payment in — green (money returning)
+                                : const Color(0xFF60A5FA);
+    final prefix = isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn ? '+' : '');
     
     // Data is now passed in, no need for Futures
 
@@ -1100,6 +1108,9 @@ class _TransactionItem extends ConsumerWidget {
       case TransactionType.adjustmentOut: return Icons.tune;
       case TransactionType.debtIn: return Icons.people_outline;
       case TransactionType.debtOut: return Icons.people_outline;
+      case TransactionType.debtPaymentOut:
+      case TransactionType.debtPaymentIn:
+        return Icons.handshake_outlined;
     }
   }
 }

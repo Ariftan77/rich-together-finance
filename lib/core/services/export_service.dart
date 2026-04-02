@@ -88,6 +88,8 @@ class ExportService {
         TransactionType.adjustmentOut => trans.entryTypeAdjustmentOut,
         TransactionType.debtIn => trans.entryTypeDebtIn,
         TransactionType.debtOut => trans.entryTypeDebtOut,
+        TransactionType.debtPaymentOut => trans.entryTypeDebtPaymentOut,
+        TransactionType.debtPaymentIn => trans.entryTypeDebtPaymentIn,
       };
 
       final rowData = [

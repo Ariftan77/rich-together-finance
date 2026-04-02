@@ -19,6 +19,8 @@ enum TransactionType {
   adjustmentOut, // 4 - balance adjustment (subtracts from balance)
   debtIn,        // 5 - debt transaction (borrowed money, adds to balance)
   debtOut,       // 6 - debt transaction (lent money, subtracts from balance)
+  debtPaymentOut, // 7 - debt settlement (I pay back what I owe, subtracts from balance)
+  debtPaymentIn,  // 8 - debt settlement (someone pays me back, adds to balance)
 }
 
 /// Category types (income or expense categories)
@@ -180,6 +182,10 @@ extension TransactionTypeX on TransactionType {
         return 'Borrowed';
       case TransactionType.debtOut:
         return 'Lent';
+      case TransactionType.debtPaymentOut:
+        return 'Debt Payment';
+      case TransactionType.debtPaymentIn:
+        return 'Debt Received';
     }
   }
 }

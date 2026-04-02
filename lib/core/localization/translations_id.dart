@@ -56,6 +56,8 @@ class AppTranslationsId implements AppTranslations {
   @override String get entryTypeAdjustmentOut => 'Penyesuaian -';
   @override String get entryTypeDebtIn => 'Dipinjam';
   @override String get entryTypeDebtOut => 'Dipinjamkan';
+  @override String get entryTypeDebtPaymentOut => 'Bayar Hutang';
+  @override String get entryTypeDebtPaymentIn => 'Terima Piutang';
   @override String get entryCategoryCreated => 'Kategori berhasil dibuat';
   @override String get entryCategory => 'Kategori';
   @override String get entryAccount => 'Akun';

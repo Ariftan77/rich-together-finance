@@ -181,6 +181,12 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
           case TransactionType.debtOut:
             balance -= tx.amount;
             break;
+          case TransactionType.debtPaymentOut:
+            balance -= tx.amount;
+            break;
+          case TransactionType.debtPaymentIn:
+            balance += tx.amount;
+            break;
         }
       } else if (tx.toAccountId == accountId) {
         // Transaction is TO this account (transfer)
