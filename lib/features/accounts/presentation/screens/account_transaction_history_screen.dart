@@ -14,6 +14,7 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
+import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Module-private providers — autoDispose so they reset on every navigation
@@ -412,8 +413,10 @@ class _TxItem extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+            builder: (_) => (transaction.type == TransactionType.debtPaymentOut ||
+                    transaction.type == TransactionType.debtPaymentIn)
+                ? DebtPaymentViewScreen(transactionId: transaction.id)
+                : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
           ),
         ),
         child: GlassCard(

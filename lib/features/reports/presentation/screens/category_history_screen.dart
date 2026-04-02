@@ -15,6 +15,7 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
+import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
 
 class CategoryHistoryScreen extends ConsumerStatefulWidget {
   final int categoryId;
@@ -346,8 +347,10 @@ class _TxItem extends StatelessWidget {
           final nav = Navigator.of(context);
           nav.push(
             MaterialPageRoute(
-              builder: (_) =>
-                  TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+              builder: (_) => (transaction.type == TransactionType.debtPaymentOut ||
+                      transaction.type == TransactionType.debtPaymentIn)
+                  ? DebtPaymentViewScreen(transactionId: transaction.id)
+                  : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
             ),
           );
         },

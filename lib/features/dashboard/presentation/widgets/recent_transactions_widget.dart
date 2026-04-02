@@ -13,6 +13,7 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
+import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
 
 /// Widget displaying recent transactions
 class RecentTransactionsWidget extends ConsumerWidget {
@@ -115,10 +116,13 @@ class RecentTransactionsWidget extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TransactionEntryScreen(
-                              transactionId: transaction.id,
-                              transactionType: transaction.type,
-                            ),
+                            builder: (context) => (transaction.type == TransactionType.debtPaymentOut ||
+                                    transaction.type == TransactionType.debtPaymentIn)
+                                ? DebtPaymentViewScreen(transactionId: transaction.id)
+                                : TransactionEntryScreen(
+                                    transactionId: transaction.id,
+                                    transactionType: transaction.type,
+                                  ),
                           ),
                         );
                       },

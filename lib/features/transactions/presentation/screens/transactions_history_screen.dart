@@ -31,6 +31,7 @@ import '../widgets/month_year_picker_modal.dart';
 import 'transaction_entry_screen.dart';
 import 'recurring_list_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
+import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
 
 
 class TransactionsHistoryScreen extends ConsumerStatefulWidget {
@@ -977,7 +978,10 @@ class _TransactionItem extends ConsumerWidget {
             // Fallback: debt record not found — open normal transaction editor.
             navigator.push(
               MaterialPageRoute(
-                builder: (context) => TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+                builder: (context) => (transaction.type == TransactionType.debtPaymentOut ||
+                        transaction.type == TransactionType.debtPaymentIn)
+                    ? DebtPaymentViewScreen(transactionId: transaction.id)
+                    : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
               ),
             );
           } else {
@@ -985,7 +989,10 @@ class _TransactionItem extends ConsumerWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
+                builder: (context) => (transaction.type == TransactionType.debtPaymentOut ||
+                        transaction.type == TransactionType.debtPaymentIn)
+                    ? DebtPaymentViewScreen(transactionId: transaction.id)
+                    : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
               ),
             );
           }
