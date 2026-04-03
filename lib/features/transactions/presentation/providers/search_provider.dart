@@ -49,17 +49,15 @@ final convertedFilteredTransactionsProvider =
   final dao = ref.watch(transactionDaoProvider);
   final accountDao = ref.watch(accountDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
 
   // Use custom range if set, otherwise default to selected month
   final effectiveDateFrom = customDateFrom ?? DateTime(selectedMonth.year, selectedMonth.month, 1);
   final effectiveDateTo = customDateTo ?? DateTime(selectedMonth.year, selectedMonth.month + 1, 0, 23, 59, 59);
 
-  // Pre-load accounts (including inactive, for old transactions) and rates once
+  // Pre-load accounts (including inactive, for old transactions) once
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
-  final rateResult = await exchangeService.getRates();
-  final rates = rateResult.rates;
 
   await for (final transactions in dao.watchFilteredTransactions(
     profileId: profileId,

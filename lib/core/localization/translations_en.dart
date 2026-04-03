@@ -135,6 +135,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsBackupRestore => 'Backup & Restore';
   @override String get settingsBaseCurrency => 'Base Currency';
   @override String get settingsShowDecimals => 'Show Decimals';
+  @override String get settingsCardShadow => 'Card Shadow';
   @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'About Richer';

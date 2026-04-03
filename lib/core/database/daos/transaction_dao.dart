@@ -396,6 +396,108 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return rows.first.read(transactions.categoryId);
   }
 
+  // ---------------------------------------------------------------------------
+  // Batch balance helpers
+  // ---------------------------------------------------------------------------
+
+  /// Returns a stream that emits a map of accountId → net transaction delta
+  /// (i.e. sum of signed amounts) for every account in the given profile.
+  ///
+  /// The SQL aggregates in one round-trip using a CASE expression:
+  ///   • +amount for types that add to the account balance (income, adjustmentIn,
+  ///     debtIn, debtPaymentIn, and transfer-destination rows)
+  ///   • −amount for types that subtract (expense, adjustmentOut, debtOut,
+  ///     debtPaymentOut, and transfer-source rows)
+  ///
+  /// Callers must still add `account.initialBalance` to each value because that
+  /// is stored on the Account row, not in the transactions table.
+  ///
+  /// Transfer destination amounts use `COALESCE(destination_amount, amount)` so
+  /// cross-currency transfers are handled correctly (mirrors calculateAccountBalance).
+  Stream<Map<int, double>> watchAllAccountBalanceDeltas(int profileId) {
+    // Types that ADD to the source account (accountId column):
+    //   income=0, adjustmentIn=3, debtIn=5, debtPaymentIn=8
+    // Types that SUBTRACT from the source account (accountId column):
+    //   expense=1, transfer=2, adjustmentOut=4, debtOut=6, debtPaymentOut=7
+    //
+    // We emit two rows per transfer: one for the source account (negative) via
+    // the accountId GROUP, and one for the destination account (positive) via a
+    // UNION on toAccountId.  Both are then summed by a wrapping GROUP BY.
+    const sql = '''
+      SELECT account_id, SUM(signed_amount) AS delta
+      FROM (
+        -- Source-account legs (all transaction types)
+        SELECT
+          account_id,
+          CASE
+            WHEN "type" IN (0, 3, 5, 8) THEN  amount
+            ELSE                              -amount
+          END AS signed_amount
+        FROM transactions
+        WHERE profile_id = ? AND deleted_at IS NULL
+
+        UNION ALL
+
+        -- Destination-account legs (transfers only, using destinationAmount when present)
+        SELECT
+          to_account_id AS account_id,
+          COALESCE(destination_amount, amount) AS signed_amount
+        FROM transactions
+        WHERE profile_id = ? AND "type" = 2 AND to_account_id IS NOT NULL AND deleted_at IS NULL
+      )
+      GROUP BY account_id
+    ''';
+
+    return customSelect(sql, variables: [
+      Variable.withInt(profileId),
+      Variable.withInt(profileId),
+    ], readsFrom: {transactions}).watch().map((rows) {
+      final map = <int, double>{};
+      for (final row in rows) {
+        map[row.read<int>('account_id')] = row.read<double>('delta');
+      }
+      return map;
+    });
+  }
+
+  /// One-shot (non-streaming) version of [watchAllAccountBalanceDeltas].
+  /// Use this when you need a single fetch rather than a reactive stream.
+  Future<Map<int, double>> getAllAccountBalanceDeltas(int profileId) async {
+    const sql = '''
+      SELECT account_id, SUM(signed_amount) AS delta
+      FROM (
+        SELECT
+          account_id,
+          CASE
+            WHEN "type" IN (0, 3, 5, 8) THEN  amount
+            ELSE                              -amount
+          END AS signed_amount
+        FROM transactions
+        WHERE profile_id = ? AND deleted_at IS NULL
+
+        UNION ALL
+
+        SELECT
+          to_account_id AS account_id,
+          COALESCE(destination_amount, amount) AS signed_amount
+        FROM transactions
+        WHERE profile_id = ? AND "type" = 2 AND to_account_id IS NOT NULL AND deleted_at IS NULL
+      )
+      GROUP BY account_id
+    ''';
+
+    final rows = await customSelect(sql, variables: [
+      Variable.withInt(profileId),
+      Variable.withInt(profileId),
+    ], readsFrom: {transactions}).get();
+
+    final map = <int, double>{};
+    for (final row in rows) {
+      map[row.read<int>('account_id')] = row.read<double>('delta');
+    }
+    return map;
+  }
+
   /// Watch categories with usage count
   Stream<List<CategoryWithUsage>> watchCategoriesWithUsageCount(int profileId) {
     final usageCount = transactions.id.count();

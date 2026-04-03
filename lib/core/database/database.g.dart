@@ -738,6 +738,21 @@ class $UserSettingsTable extends UserSettings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _cardShadowMeta = const VerificationMeta(
+    'cardShadow',
+  );
+  @override
+  late final GeneratedColumn<bool> cardShadow = GeneratedColumn<bool>(
+    'card_shadow',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("card_shadow" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -754,6 +769,7 @@ class $UserSettingsTable extends UserSettings
     updatedAt,
     deletedAt,
     isSynced,
+    cardShadow,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -856,6 +872,12 @@ class $UserSettingsTable extends UserSettings
         isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
       );
     }
+    if (data.containsKey('card_shadow')) {
+      context.handle(
+        _cardShadowMeta,
+        cardShadow.isAcceptableOrUnknown(data['card_shadow']!, _cardShadowMeta),
+      );
+    }
     return context;
   }
 
@@ -923,6 +945,10 @@ class $UserSettingsTable extends UserSettings
         DriftSqlType.bool,
         data['${effectivePrefix}is_synced'],
       )!,
+      cardShadow: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}card_shadow'],
+      )!,
     );
   }
 
@@ -950,6 +976,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   final DateTime? updatedAt;
   final DateTime? deletedAt;
   final bool isSynced;
+  final bool cardShadow;
   const UserSetting({
     required this.id,
     required this.profileId,
@@ -965,6 +992,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     this.updatedAt,
     this.deletedAt,
     required this.isSynced,
+    required this.cardShadow,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -993,6 +1021,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['is_synced'] = Variable<bool>(isSynced);
+    map['card_shadow'] = Variable<bool>(cardShadow);
     return map;
   }
 
@@ -1018,6 +1047,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ? const Value.absent()
           : Value(deletedAt),
       isSynced: Value(isSynced),
+      cardShadow: Value(cardShadow),
     );
   }
 
@@ -1045,6 +1075,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
+      cardShadow: serializer.fromJson<bool>(json['cardShadow']),
     );
   }
   @override
@@ -1067,6 +1098,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'isSynced': serializer.toJson<bool>(isSynced),
+      'cardShadow': serializer.toJson<bool>(cardShadow),
     };
   }
 
@@ -1085,6 +1117,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     bool? isSynced,
+    bool? cardShadow,
   }) => UserSetting(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -1100,6 +1133,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     isSynced: isSynced ?? this.isSynced,
+    cardShadow: cardShadow ?? this.cardShadow,
   );
   UserSetting copyWithCompanion(UserSettingsCompanion data) {
     return UserSetting(
@@ -1129,6 +1163,9 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+      cardShadow: data.cardShadow.present
+          ? data.cardShadow.value
+          : this.cardShadow,
     );
   }
 
@@ -1148,7 +1185,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ..write('remoteId: $remoteId, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('isSynced: $isSynced')
+          ..write('isSynced: $isSynced, ')
+          ..write('cardShadow: $cardShadow')
           ..write(')'))
         .toString();
   }
@@ -1169,6 +1207,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     updatedAt,
     deletedAt,
     isSynced,
+    cardShadow,
   );
   @override
   bool operator ==(Object other) =>
@@ -1187,7 +1226,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           other.remoteId == this.remoteId &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
-          other.isSynced == this.isSynced);
+          other.isSynced == this.isSynced &&
+          other.cardShadow == this.cardShadow);
 }
 
 class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
@@ -1205,6 +1245,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<bool> isSynced;
+  final Value<bool> cardShadow;
   const UserSettingsCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -1220,6 +1261,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
+    this.cardShadow = const Value.absent(),
   });
   UserSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1236,6 +1278,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
+    this.cardShadow = const Value.absent(),
   }) : profileId = Value(profileId);
   static Insertable<UserSetting> custom({
     Expression<int>? id,
@@ -1252,6 +1295,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<bool>? isSynced,
+    Expression<bool>? cardShadow,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1269,6 +1313,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (isSynced != null) 'is_synced': isSynced,
+      if (cardShadow != null) 'card_shadow': cardShadow,
     });
   }
 
@@ -1287,6 +1332,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<bool>? isSynced,
+    Value<bool>? cardShadow,
   }) {
     return UserSettingsCompanion(
       id: id ?? this.id,
@@ -1303,6 +1349,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       isSynced: isSynced ?? this.isSynced,
+      cardShadow: cardShadow ?? this.cardShadow,
     );
   }
 
@@ -1355,6 +1402,9 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     if (isSynced.present) {
       map['is_synced'] = Variable<bool>(isSynced.value);
     }
+    if (cardShadow.present) {
+      map['card_shadow'] = Variable<bool>(cardShadow.value);
+    }
     return map;
   }
 
@@ -1374,7 +1424,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
           ..write('remoteId: $remoteId, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('isSynced: $isSynced')
+          ..write('isSynced: $isSynced, ')
+          ..write('cardShadow: $cardShadow')
           ..write(')'))
         .toString();
   }
@@ -11815,6 +11866,7 @@ typedef $$UserSettingsTableCreateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
+      Value<bool> cardShadow,
     });
 typedef $$UserSettingsTableUpdateCompanionBuilder =
     UserSettingsCompanion Function({
@@ -11832,6 +11884,7 @@ typedef $$UserSettingsTableUpdateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
+      Value<bool> cardShadow,
     });
 
 final class $$UserSettingsTableReferences
@@ -11933,6 +11986,11 @@ class $$UserSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get cardShadow => $composableBuilder(
+    column: $table.cardShadow,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProfilesTableFilterComposer get profileId {
     final $$ProfilesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -12031,6 +12089,11 @@ class $$UserSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get cardShadow => $composableBuilder(
+    column: $table.cardShadow,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -12116,6 +12179,11 @@ class $$UserSettingsTableAnnotationComposer
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
 
+  GeneratedColumn<bool> get cardShadow => $composableBuilder(
+    column: $table.cardShadow,
+    builder: (column) => column,
+  );
+
   $$ProfilesTableAnnotationComposer get profileId {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -12182,6 +12250,7 @@ class $$UserSettingsTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
+                Value<bool> cardShadow = const Value.absent(),
               }) => UserSettingsCompanion(
                 id: id,
                 profileId: profileId,
@@ -12197,6 +12266,7 @@ class $$UserSettingsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 isSynced: isSynced,
+                cardShadow: cardShadow,
               ),
           createCompanionCallback:
               ({
@@ -12214,6 +12284,7 @@ class $$UserSettingsTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
+                Value<bool> cardShadow = const Value.absent(),
               }) => UserSettingsCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -12229,6 +12300,7 @@ class $$UserSettingsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 isSynced: isSynced,
+                cardShadow: cardShadow,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -135,6 +135,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsBackupRestore => 'Cadangan & Pemulihan';
   @override String get settingsBaseCurrency => 'Mata Uang Dasar';
   @override String get settingsShowDecimals => 'Tampilkan Desimal';
+  @override String get settingsCardShadow => 'Bayangan Kartu';
   @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'Tentang Richer';

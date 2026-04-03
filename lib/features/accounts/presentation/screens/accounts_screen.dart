@@ -37,7 +37,7 @@ final _walletFilteredTotalBalanceProvider = StreamProvider.autoDispose<double>((
   final selectedTypes = ref.watch(_walletTypeFilterProvider);
   final searchQuery = ref.watch(_walletSearchProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
 
   var filtered = accounts;
   if (selectedCurrencies.isNotEmpty) {
@@ -56,9 +56,6 @@ final _walletFilteredTotalBalanceProvider = StreamProvider.autoDispose<double>((
           a.currency.symbol.toLowerCase().contains(q);
     }).toList();
   }
-
-  final rateResult = await exchangeService.getRates();
-  final rates = rateResult.rates;
 
   double total = 0;
   for (final account in filtered) {

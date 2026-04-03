@@ -140,12 +140,14 @@ final dashboardTotalBalanceProvider = StreamProvider.autoDispose<double>((ref) a
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-create when transactions change (not just accounts)
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
 
   final accounts = await accountDao.getAllAccounts(profileId);
+  // Single batch query: accountId → net transaction delta (no per-account awaits)
+  final deltas = await transactionDao.getAllAccountBalanceDeltas(profileId);
   double total = 0;
   for (final account in accounts) {
-    final balance = await transactionDao.calculateAccountBalance(account.id);
+    final balance = account.initialBalance + (deltas[account.id] ?? 0.0);
     if (account.currency == baseCurrency) {
       total += balance;
     } else {
@@ -168,12 +170,14 @@ final dashboardBalanceByCurrencyProvider = StreamProvider.autoDispose<Map<Curren
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   // Re-create when transactions change (not just accounts)
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
 
   final accounts = await accountDao.getAllAccounts(profileId);
+  // Single batch query: accountId → net transaction delta (no per-account awaits)
+  final deltas = await transactionDao.getAllAccountBalanceDeltas(profileId);
   final map = <Currency, double>{};
   for (final account in accounts) {
-    final balance = await transactionDao.calculateAccountBalance(account.id);
+    final balance = account.initialBalance + (deltas[account.id] ?? 0.0);
     map[account.currency] = (map[account.currency] ?? 0) + balance;
   }
   yield map;
@@ -194,14 +198,16 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-create when transactions change (not just accounts)
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
 
   final accounts = await accountDao.getAllAccounts(profileId);
+  // Single batch query: accountId → net transaction delta (no per-account awaits)
+  final deltas = await transactionDao.getAllAccountBalanceDeltas(profileId);
 
   // 1. Account balances (cash assets) — currency converted
   double totalAssets = 0;
   for (final account in accounts) {
-    final balance = await transactionDao.calculateAccountBalance(account.id);
+    final balance = account.initialBalance + (deltas[account.id] ?? 0.0);
     if (account.currency == baseCurrency) {
       totalAssets += balance;
     } else {
@@ -748,7 +754,7 @@ final monthOverMonthProvider =
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-create when transactions change
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
@@ -821,7 +827,7 @@ final ytdTopCategoriesProvider =
   final rates = ref.watch(todayRatesProvider);
   final categoriesAsync = ref.watch(categoriesStreamProvider);
   // Re-create when transactions change
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
   final categoryMap = <int, Category>{};
@@ -949,7 +955,7 @@ final dowSpendingProvider =
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-run when transactions change
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
   // Last 91 days = 13 weeks
@@ -1021,7 +1027,7 @@ final recurringVsDiscretionaryProvider =
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-run when transactions change
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
   // 1. Load active recurring expenses
@@ -1115,7 +1121,7 @@ final budgetPerformanceProvider =
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
   // Re-run when transactions change
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
   // 1. Load only monthly budgets
@@ -1226,7 +1232,7 @@ final financialHealthScoreProvider =
   }
 
   // Watch transactions stream so this refreshes on transaction changes
-  ref.watch(transactionsStreamProvider);
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
 
   // ── 1. Savings Rate Score ──────────────────────────────────────────────────
   double savingsScore = 50;

@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration {
@@ -171,13 +171,20 @@ class AppDatabase extends _$AppDatabase {
             // Ignore
           }
           await customStatement('''
-            UPDATE accounts 
+            UPDATE accounts
             SET last_activity_date = (
-              SELECT MAX(date) FROM transactions 
-              WHERE transactions.account_id = accounts.id 
+              SELECT MAX(date) FROM transactions
+              WHERE transactions.account_id = accounts.id
                  OR transactions.to_account_id = accounts.id
             )
           ''');
+        }
+        if (from < 17) {
+          try {
+            await customStatement(
+              'ALTER TABLE user_settings ADD COLUMN card_shadow INTEGER NOT NULL DEFAULT 1',
+            );
+          } catch (_) {}
         }
       },
     );

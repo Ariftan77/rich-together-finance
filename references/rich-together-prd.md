@@ -1,4 +1,4 @@
-# Rich Together — Product Requirements Document (PRD)
+# Richer — Product Requirements Document (PRD)
 
 **Version:** 1.0  
 **Last Updated:** January 31, 2026  
@@ -20,7 +20,7 @@ People who want to build wealth need:
 
 ### 1.2 Solution
 
-**Rich Together** is an offline-first mobile app that consolidates expense tracking, budgeting, and portfolio management into a single, clean interface. It helps users understand their money flow, track net worth across currencies and asset classes, and make informed decisions to grow their wealth.
+**Richer** is an offline-first mobile app that consolidates expense tracking, budgeting, and portfolio management into a single, clean interface. It helps users understand their money flow, track net worth across currencies and asset classes, and make informed decisions to grow their wealth.
 
 ### 1.3 Vision Statement
 
@@ -1252,4 +1252,4 @@ Silver:    ANTAM_SILVER_100G, UBS_SILVER_1KG
 
 **Document End**
 
-*This PRD is the source of truth for Rich Together MVP development. All feature requests should be evaluated against this document. Updates require version increment and changelog entry.*
+*This PRD is the source of truth for Richer MVP development. All feature requests should be evaluated against this document. Updates require version increment and changelog entry.*

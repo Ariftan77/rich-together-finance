@@ -1,43 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/profile_provider.dart';
 
-/// Provider to calculate current balance for each account
-/// Returns a Map<int, double> where key is Account ID and value is Balance
-final accountBalanceProvider = Provider<Map<int, double>>((ref) {
-  final accounts = ref.watch(accountsStreamProvider).valueOrNull ?? [];
-  final transactions = ref.watch(transactionsStreamProvider).valueOrNull ?? [];
+// ---------------------------------------------------------------------------
+// Internal streaming provider
+// ---------------------------------------------------------------------------
 
-  final balances = <int, double>{};
+/// Internal stream that emits accountId → balance (initialBalance + net delta)
+/// using a single SQL GROUP BY round-trip per emission.  Kept private so
+/// callers always go through [accountBalanceProvider].
+final _accountBalanceStreamProvider = StreamProvider.autoDispose<Map<int, double>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value({});
 
-  // Initialize with initial balances
-  for (var account in accounts) {
-    balances[account.id] = account.initialBalance;
-  }
+  final accountDao = ref.watch(accountDaoProvider);
+  final transactionDao = ref.watch(transactionDaoProvider);
 
-  // Apply transactions
-  for (var trans in transactions) {
-    final amount = trans.amount;
-    final type = trans.type;
+  // Re-emit whenever accounts change (initialBalance, additions, removals).
+  final accountsStream = accountDao.watchAllAccounts(profileId);
+  // Per-account transaction delta: one SQL GROUP BY query, reactive.
+  final deltasStream = transactionDao.watchAllAccountBalanceDeltas(profileId);
 
-    // Source Account
-    if (balances.containsKey(trans.accountId)) {
-      if (type == TransactionType.income || type == TransactionType.adjustmentIn || type == TransactionType.debtIn || type == TransactionType.debtPaymentIn) {
-        balances[trans.accountId] = balances[trans.accountId]! + amount;
-      } else if (type == TransactionType.expense || type == TransactionType.adjustmentOut || type == TransactionType.debtOut || type == TransactionType.debtPaymentOut) {
-        balances[trans.accountId] = balances[trans.accountId]! - amount;
-      } else if (type == TransactionType.transfer) {
-        balances[trans.accountId] = balances[trans.accountId]! - amount;
+  return accountsStream.asyncExpand((accounts) {
+    return deltasStream.map((deltas) {
+      final balances = <int, double>{};
+      for (final account in accounts) {
+        final delta = deltas[account.id] ?? 0.0;
+        balances[account.id] = account.initialBalance + delta;
       }
-    }
+      return balances;
+    });
+  });
+});
 
-    // Destination Account (for Transfer)
-    if (type == TransactionType.transfer && trans.toAccountId != null) {
-      if (balances.containsKey(trans.toAccountId!)) {
-        balances[trans.toAccountId!] = balances[trans.toAccountId!]! + (trans.destinationAmount ?? amount);
-      }
-    }
-  }
+// ---------------------------------------------------------------------------
+// Public provider — same type as before (Map<int, double>)
+// ---------------------------------------------------------------------------
 
-  return balances;
+/// Provider to calculate current balance for each account.
+/// Returns a Map<int, double> where key is Account ID and value is the
+/// running balance (initialBalance + net transaction delta).
+///
+/// Return type is intentionally the same as the original Provider<Map<int, double>>
+/// so all existing callers remain unaffected.  The computation now comes from a
+/// SQL GROUP BY query ([TransactionDao.watchAllAccountBalanceDeltas]) rather than
+/// iterating all transactions in Dart.
+final accountBalanceProvider = Provider.autoDispose<Map<int, double>>((ref) {
+  return ref.watch(_accountBalanceStreamProvider).valueOrNull ?? {};
 });

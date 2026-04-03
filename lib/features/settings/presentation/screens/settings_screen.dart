@@ -313,6 +313,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildPreferencesSection(UserSetting? settings) {
     final currency = settings?.defaultCurrency ?? Currency.idr;
     final showDecimal = settings?.showDecimal ?? false;
+    final cardShadow = settings?.cardShadow ?? true;
 
     return GlassCard(
       padding: EdgeInsets.zero,
@@ -392,6 +393,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Theme',
             subtitle: _themeModeName(settings?.themeMode ?? 0),
             onTap: () => _showThemeSelector(settings?.themeMode ?? 0),
+          ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.layers_outlined,
+            title: ref.watch(translationsProvider).settingsCardShadow,
+            trailing: Switch(
+              value: cardShadow,
+              onChanged: (value) => _toggleCardShadow(value),
+              activeColor: AppColors.primaryGold,
+            ),
           ),
         ],
       ),
@@ -893,6 +904,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profileId = ref.read(activeProfileIdProvider);
     if (profileId != null) {
       await ref.read(settingsDaoProvider).setShowDecimal(profileId, show);
+    }
+  }
+
+  Future<void> _toggleCardShadow(bool show) async {
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId != null) {
+      await ref.read(settingsDaoProvider).setCardShadow(profileId, show);
     }
   }
 

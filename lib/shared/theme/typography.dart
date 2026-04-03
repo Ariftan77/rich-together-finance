@@ -3,8 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'colors.dart';
 
 class AppTypography {
-  static TextTheme get textTheme {
-    return GoogleFonts.interTextTheme().copyWith(
+  static final TextTheme textTheme = GoogleFonts.interTextTheme().copyWith(
       displayLarge: GoogleFonts.inter(
         fontSize: 32,
         fontWeight: FontWeight.bold,
@@ -67,10 +66,8 @@ class AppTypography {
         letterSpacing: 0.5,
       ),
     );
-  }
 
-  static TextTheme get lightTextTheme {
-    return GoogleFonts.interTextTheme().copyWith(
+  static final TextTheme lightTextTheme = GoogleFonts.interTextTheme().copyWith(
       displayLarge: GoogleFonts.inter(
         fontSize: 32,
         fontWeight: FontWeight.bold,
@@ -133,5 +130,4 @@ class AppTypography {
         letterSpacing: 0.5,
       ),
     );
-  }
 }

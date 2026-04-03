@@ -131,6 +131,7 @@ abstract class AppTranslations {
   String get settingsBackupRestore;
   String get settingsBaseCurrency;
   String get settingsShowDecimals;
+  String get settingsCardShadow;
   String get settingsPremium;
 
   String get settingsAboutApp;

@@ -347,6 +347,19 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     final trans = ref.watch(translationsProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
     final today = ref.watch(currentDateProvider);
+    final showDecimal = ref.watch(showDecimalProvider);
+    final baseCurrency = ref.watch(defaultCurrencyProvider);
+
+    // Pre-compute grouping once per build (outside Builder) to avoid
+    // repeating O(n) HashMap insertions + sort on every widget subtree rebuild.
+    final _allConvertedTxs = filteredHelper.valueOrNull ?? [];
+    final _grouped = <DateTime, List<ConvertedTransaction>>{};
+    for (var ct in _allConvertedTxs) {
+      final date = DateTime(ct.transaction.date.year, ct.transaction.date.month, ct.transaction.date.day);
+      _grouped.putIfAbsent(date, () => []).add(ct);
+    }
+    final _sortedDates = _grouped.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
     final hasCustomRange = ref.watch(dateFromFilterProvider) != null || ref.watch(dateToFilterProvider) != null;
     final latestTxDate = ref.watch(latestTransactionDateProvider).valueOrNull;
     final latestTxMonth = latestTxDate != null
@@ -683,15 +696,9 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         );
                       }
 
-                      // Group by Date (use ConvertedTransaction)
-                      final grouped = <DateTime, List<ConvertedTransaction>>{};
-                      for (var ct in convertedTxs) {
-                        final date = DateTime(ct.transaction.date.year, ct.transaction.date.month, ct.transaction.date.day);
-                        grouped.putIfAbsent(date, () => []).add(ct);
-                      }
-
-                      final sortedDates = grouped.keys.toList()
-                        ..sort((a, b) => b.compareTo(a));
+                      // Use pre-computed grouping from build() level.
+                      final grouped = _grouped;
+                      final sortedDates = _sortedDates;
 
                       // Pre-fetch maps for efficient lookup
                       final categoryMap = categoriesAsync.valueOrNull != null
@@ -718,8 +725,6 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
                           final date = sortedDates[index];
                           final cts = grouped[date]!;
-                          final showDecimal = ref.watch(showDecimalProvider);
-                          final baseCurrency = ref.watch(defaultCurrencyProvider);
 
                           // Use convertedAmount so cross-currency totals are correct
                           final dayIncome = cts
@@ -777,6 +782,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                 ),
                               ),
                               ...cts.map((ct) => _TransactionItem(
+                                key: ValueKey(ct.transaction.id),
                                 transaction: ct.transaction,
                                 category: categoryMap[ct.transaction.categoryId],
                                 account: accountMap[ct.transaction.accountId],
@@ -887,6 +893,7 @@ class _TransactionItem extends ConsumerWidget {
   final Account? account;
 
   const _TransactionItem({
+    super.key,
     required this.transaction,
     this.category,
     this.account,

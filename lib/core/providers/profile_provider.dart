@@ -87,3 +87,9 @@ final biometricEnabledProvider = Provider<bool>((ref) {
   final settingsAsync = ref.watch(activeProfileSettingsProvider);
   return settingsAsync.whenOrNull(data: (settings) => settings?.biometricEnabled) ?? true;
 });
+
+/// Provider for card shadow setting
+final cardShadowProvider = Provider<bool>((ref) {
+  final settingsAsync = ref.watch(activeProfileSettingsProvider);
+  return settingsAsync.whenOrNull(data: (settings) => settings?.cardShadow) ?? true;
+});

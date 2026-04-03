@@ -18,4 +18,5 @@ class UserSettings extends Table {
   DateTimeColumn get updatedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+  BoolColumn get cardShadow => boolean().withDefault(const Constant(true))();
 }

@@ -37,6 +37,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late final AnimationController _tabAnimController;
+  late final CurvedAnimation _tabCurvedAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
@@ -54,11 +55,15 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
+    _tabCurvedAnimation = CurvedAnimation(
+      parent: _tabAnimController,
+      curve: Curves.easeOut,
+    );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut),
+      _tabCurvedAnimation,
     );
     _slideAnimation = Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut),
+      _tabCurvedAnimation,
     );
     _tabAnimController.value = 1.0; // Start fully visible
 
@@ -95,6 +100,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
 
   @override
   void dispose() {
+    _tabCurvedAnimation.dispose();
     _tabAnimController.dispose();
     super.dispose();
   }
@@ -111,7 +117,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       _slideAnimation = Tween<Offset>(
         begin: Offset(direction * 0.05, 0),
         end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _tabAnimController, curve: Curves.easeOut));
+      ).animate(_tabCurvedAnimation);
     });
     _tabAnimController.forward(from: 0.0);
     // Keep the provider in sync so screens can gate their coach-mark tours.
@@ -168,7 +174,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: _slideAnimation,
-                child: IndexedStack(
+                child: _LazyIndexedStack(
                   index: _currentIndex < _screens.length ? _currentIndex : 0,
                   children: _screens,
                 ),
@@ -312,5 +318,46 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       default:
         return null;
     }
+  }
+}
+
+/// An IndexedStack variant that builds each child only on first activation.
+/// Once built, a child stays alive (same behaviour as IndexedStack thereafter).
+class _LazyIndexedStack extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _LazyIndexedStack({required this.index, required this.children});
+
+  @override
+  State<_LazyIndexedStack> createState() => _LazyIndexedStackState();
+}
+
+class _LazyIndexedStackState extends State<_LazyIndexedStack> {
+  late final List<bool> _activated;
+
+  @override
+  void initState() {
+    super.initState();
+    _activated = List.generate(widget.children.length, (i) => i == widget.index);
+  }
+
+  @override
+  void didUpdateWidget(_LazyIndexedStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_activated[widget.index]) {
+      _activated[widget.index] = true;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IndexedStack(
+      index: widget.index,
+      children: List.generate(widget.children.length, (i) {
+        if (!_activated[i]) return const SizedBox.shrink();
+        return widget.children[i];
+      }),
+    );
   }
 }

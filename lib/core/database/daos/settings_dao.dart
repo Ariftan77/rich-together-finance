@@ -42,6 +42,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
     bool? biometricEnabled,
     bool? notificationsEnabled,
     bool? showDecimal,
+    bool? cardShadow,
   }) async {
     final updated = await (update(userSettings)..where((s) => s.profileId.equals(profileId))).write(
       UserSettingsCompanion(
@@ -53,6 +54,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
         biometricEnabled: biometricEnabled != null ? Value(biometricEnabled) : const Value.absent(),
         notificationsEnabled: notificationsEnabled != null ? Value(notificationsEnabled) : const Value.absent(),
         showDecimal: showDecimal != null ? Value(showDecimal) : const Value.absent(),
+        cardShadow: cardShadow != null ? Value(cardShadow) : const Value.absent(),
       ),
     );
     return updated > 0;
@@ -95,5 +97,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
   /// Update language
   Future<bool> setLanguage(int profileId, String language) {
     return updateSettings(profileId: profileId, language: language);
+  }
+
+  /// Toggle card shadow
+  Future<bool> setCardShadow(int profileId, bool show) {
+    return updateSettings(profileId: profileId, cardShadow: show);
   }
 }

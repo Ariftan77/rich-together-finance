@@ -30,6 +30,8 @@ class MoneyInput extends StatefulWidget {
 }
 
 class _MoneyInputState extends State<MoneyInput> {
+  static final _formatter = NumberFormat('#,###', 'en_US');
+
   late TextEditingController _controller;
   bool _isInternalUpdate = false;
 
@@ -84,9 +86,7 @@ class _MoneyInputState extends State<MoneyInput> {
     if (rawValue.isEmpty) return '';
     final number = int.tryParse(rawValue);
     if (number == null) return rawValue;
-    
-    final formatter = NumberFormat('#,###', 'en_US');
-    return formatter.format(number);
+    return _formatter.format(number);
   }
 
   @override

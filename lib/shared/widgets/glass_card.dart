@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/profile_provider.dart';
 import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
 import '../theme/theme_provider_widget.dart';
 
-class GlassCard extends StatelessWidget {
+class GlassCard extends ConsumerWidget {
   final Widget child;
   final double? width;
   final double? height;
@@ -30,7 +32,7 @@ class GlassCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
@@ -51,6 +53,8 @@ class GlassCard extends StatelessWidget {
             ? Colors.black.withValues(alpha: 0.08)
             : AppColors.cardBorderDark; // Color(0xFF2A2A2A)
 
+    final showShadow = ref.watch(cardShadowProvider);
+
     final container = Container(
       width: width,
       height: height,
@@ -64,13 +68,15 @@ class GlassCard extends StatelessWidget {
           color: borderColor ?? defaultBorder,
           width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: showShadow
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : [],
       ),
       child: child,
     );

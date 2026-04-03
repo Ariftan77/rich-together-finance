@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme_mode.dart';
 import '../theme/colors.dart';
@@ -59,20 +58,15 @@ class GlassBottomNav extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: isLight ? 20 : 16,
-            sigmaY: isLight ? 20 : 16,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: navBgColor,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: navBorderColor,
-                width: 1.0,
-              ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: navBgColor,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: navBorderColor,
+              width: 1.0,
             ),
+          ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: items.map((item) {
@@ -126,10 +120,10 @@ class GlassBottomNav extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
+
 
 class BottomNavItem {
   final IconData icon;
