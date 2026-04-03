@@ -16,6 +16,8 @@ class Accounts extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get lastActivityDate => dateTime().nullable()();
+  IntColumn get billingCycleDay => integer().nullable()(); // day of month billing starts (1-28)
+  IntColumn get paymentDueDay => integer().nullable()();   // day of month payment is due (1-28)
   TextColumn get remoteId => text().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();

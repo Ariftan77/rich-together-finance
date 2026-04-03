@@ -38,6 +38,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
   bool _isAdjusting = false;
   // Null = not yet loaded; true/false = loaded result
   bool? _accountHasTransactions;
+  int? _billingCycleDay;
+  int? _paymentDueDay;
 
   @override
   void initState() {
@@ -47,6 +49,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       _rawBalance = widget.account!.initialBalance;
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
+      _billingCycleDay = widget.account!.billingCycleDay;
+      _paymentDueDay = widget.account!.paymentDueDay;
       _loadTransactionStatus();
     } else {
       _selectedCurrency = ref.read(defaultCurrencyProvider);
@@ -142,7 +146,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
         AccountsCompanion(
           profileId: drift.Value(profileId),
           name: drift.Value(name),
-          type: drift.Value(_selectedType), 
+          type: drift.Value(_selectedType),
           currency: drift.Value(_selectedCurrency),
           initialBalance: drift.Value(balance),
           icon: const drift.Value('wallet'), // Default
@@ -150,6 +154,8 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
           isActive: const drift.Value(true),
           createdAt: drift.Value(DateTime.now()),
           updatedAt: drift.Value(DateTime.now()),
+          billingCycleDay: drift.Value(_billingCycleDay),
+          paymentDueDay: drift.Value(_paymentDueDay),
         ),
       );
     } else {
@@ -157,9 +163,11 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       await dao.updateAccount(
         widget.account!.copyWith(
           name: name,
-          type: _selectedType, 
+          type: _selectedType,
           currency: _selectedCurrency,
           initialBalance: balance,
+          billingCycleDay: drift.Value(_billingCycleDay),
+          paymentDueDay: drift.Value(_paymentDueDay),
         ),
       );
     }
@@ -583,6 +591,10 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                             ? ref.watch(translationsProvider).accountNameHint
                             : null,
                       ),
+                      if (widget.account!.type == AccountType.creditCard) ...[
+                        const SizedBox(height: 24),
+                        _buildBillingCycleSection(isDarkMode),
+                      ],
                       const SizedBox(height: 16),
                       GlassButton(
                         text: ref.watch(translationsProvider).accountSave,
@@ -668,6 +680,10 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
                           );
                         }).toList(),
                       ),
+                      if (_selectedType == AccountType.creditCard) ...[
+                        const SizedBox(height: 24),
+                        _buildBillingCycleSection(isDarkMode),
+                      ],
                       const SizedBox(height: 32),
                       GlassButton(
                         text: ref.watch(translationsProvider).accountSave,
@@ -685,6 +701,216 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
       ],
     );
   }
+  /// Builds the billing cycle section shown for credit card accounts.
+  Widget _buildBillingCycleSection(bool isDarkMode) {
+    final labelColor = isDarkMode ? AppColors.textPrimary : AppColors.textPrimaryLight;
+    final hintColor = isDarkMode ? Colors.white54 : const Color(0xFF94A3B8);
+
+    Widget dayRow({
+      required String label,
+      required int? day,
+      required void Function(int) onSelected,
+    }) {
+      final valueText = day != null ? 'Day $day of each month' : 'Not set';
+      return GestureDetector(
+        onTap: () => _showDayPicker(context, day, onSelected),
+        child: GlassCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          borderRadius: 12,
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today_outlined, color: AppColors.primaryGold, size: 18),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: labelColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      valueText,
+                      style: TextStyle(
+                        color: day != null ? labelColor : hintColor,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: hintColor, size: 20),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Credit Card Billing',
+          style: TextStyle(
+            color: labelColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 10),
+        dayRow(
+          label: 'Billing cycle starts on',
+          day: _billingCycleDay,
+          onSelected: (d) => setState(() => _billingCycleDay = d < 1 ? null : d),
+        ),
+        const SizedBox(height: 8),
+        dayRow(
+          label: 'Payment due on',
+          day: _paymentDueDay,
+          onSelected: (d) => setState(() => _paymentDueDay = d < 1 ? null : d),
+        ),
+      ],
+    );
+  }
+
+  /// Shows a bottom sheet with a 7-column grid of day numbers (1–28).
+  void _showDayPicker(
+    BuildContext context,
+    int? current,
+    void Function(int) onSelected,
+  ) {
+    final isDarkMode = AppThemeProvider.of(context) != AppThemeMode.light &&
+        !(AppThemeProvider.of(context) == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1C1408) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select Day',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : AppColors.textPrimaryLight,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose a day (1–28) valid for every month',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white54 : const Color(0xFF94A3B8),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemCount: 28,
+                itemBuilder: (_, index) {
+                  final day = index + 1;
+                  final isSelected = day == current;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      onSelected(day);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryGold
+                            : isDarkMode
+                                ? AppColors.glassBackground
+                                : AppColors.glassBackgroundLight,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : isDarkMode
+                                  ? AppColors.glassBorder
+                                  : const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.black
+                                : isDarkMode
+                                    ? Colors.white
+                                    : AppColors.textPrimaryLight,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              if (current != null)
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      onSelected(-1); // sentinel to clear
+                    },
+                    child: Text(
+                      'Clear',
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   IconData _getIconForType(AccountType type) {
     switch (type) {
       case AccountType.cash:

@@ -1573,6 +1573,28 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _billingCycleDayMeta = const VerificationMeta(
+    'billingCycleDay',
+  );
+  @override
+  late final GeneratedColumn<int> billingCycleDay = GeneratedColumn<int>(
+    'billing_cycle_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paymentDueDayMeta = const VerificationMeta(
+    'paymentDueDay',
+  );
+  @override
+  late final GeneratedColumn<int> paymentDueDay = GeneratedColumn<int>(
+    'payment_due_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _remoteIdMeta = const VerificationMeta(
     'remoteId',
   );
@@ -1624,6 +1646,8 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     createdAt,
     updatedAt,
     lastActivityDate,
+    billingCycleDay,
+    paymentDueDay,
     remoteId,
     deletedAt,
     isSynced,
@@ -1711,6 +1735,24 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         ),
       );
     }
+    if (data.containsKey('billing_cycle_day')) {
+      context.handle(
+        _billingCycleDayMeta,
+        billingCycleDay.isAcceptableOrUnknown(
+          data['billing_cycle_day']!,
+          _billingCycleDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('payment_due_day')) {
+      context.handle(
+        _paymentDueDayMeta,
+        paymentDueDay.isAcceptableOrUnknown(
+          data['payment_due_day']!,
+          _paymentDueDayMeta,
+        ),
+      );
+    }
     if (data.containsKey('remote_id')) {
       context.handle(
         _remoteIdMeta,
@@ -1790,6 +1832,14 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_activity_date'],
       ),
+      billingCycleDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}billing_cycle_day'],
+      ),
+      paymentDueDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}payment_due_day'],
+      ),
       remoteId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}remote_id'],
@@ -1829,6 +1879,8 @@ class Account extends DataClass implements Insertable<Account> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? lastActivityDate;
+  final int? billingCycleDay;
+  final int? paymentDueDay;
   final String? remoteId;
   final DateTime? deletedAt;
   final bool isSynced;
@@ -1845,6 +1897,8 @@ class Account extends DataClass implements Insertable<Account> {
     required this.createdAt,
     required this.updatedAt,
     this.lastActivityDate,
+    this.billingCycleDay,
+    this.paymentDueDay,
     this.remoteId,
     this.deletedAt,
     required this.isSynced,
@@ -1876,6 +1930,12 @@ class Account extends DataClass implements Insertable<Account> {
     if (!nullToAbsent || lastActivityDate != null) {
       map['last_activity_date'] = Variable<DateTime>(lastActivityDate);
     }
+    if (!nullToAbsent || billingCycleDay != null) {
+      map['billing_cycle_day'] = Variable<int>(billingCycleDay);
+    }
+    if (!nullToAbsent || paymentDueDay != null) {
+      map['payment_due_day'] = Variable<int>(paymentDueDay);
+    }
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -1904,6 +1964,12 @@ class Account extends DataClass implements Insertable<Account> {
       lastActivityDate: lastActivityDate == null && nullToAbsent
           ? const Value.absent()
           : Value(lastActivityDate),
+      billingCycleDay: billingCycleDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(billingCycleDay),
+      paymentDueDay: paymentDueDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentDueDay),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -1938,6 +2004,8 @@ class Account extends DataClass implements Insertable<Account> {
       lastActivityDate: serializer.fromJson<DateTime?>(
         json['lastActivityDate'],
       ),
+      billingCycleDay: serializer.fromJson<int?>(json['billingCycleDay']),
+      paymentDueDay: serializer.fromJson<int?>(json['paymentDueDay']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
@@ -1963,6 +2031,8 @@ class Account extends DataClass implements Insertable<Account> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'lastActivityDate': serializer.toJson<DateTime?>(lastActivityDate),
+      'billingCycleDay': serializer.toJson<int?>(billingCycleDay),
+      'paymentDueDay': serializer.toJson<int?>(paymentDueDay),
       'remoteId': serializer.toJson<String?>(remoteId),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'isSynced': serializer.toJson<bool>(isSynced),
@@ -1982,6 +2052,8 @@ class Account extends DataClass implements Insertable<Account> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> lastActivityDate = const Value.absent(),
+    Value<int?> billingCycleDay = const Value.absent(),
+    Value<int?> paymentDueDay = const Value.absent(),
     Value<String?> remoteId = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
     bool? isSynced,
@@ -2000,6 +2072,12 @@ class Account extends DataClass implements Insertable<Account> {
     lastActivityDate: lastActivityDate.present
         ? lastActivityDate.value
         : this.lastActivityDate,
+    billingCycleDay: billingCycleDay.present
+        ? billingCycleDay.value
+        : this.billingCycleDay,
+    paymentDueDay: paymentDueDay.present
+        ? paymentDueDay.value
+        : this.paymentDueDay,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     isSynced: isSynced ?? this.isSynced,
@@ -2022,6 +2100,12 @@ class Account extends DataClass implements Insertable<Account> {
       lastActivityDate: data.lastActivityDate.present
           ? data.lastActivityDate.value
           : this.lastActivityDate,
+      billingCycleDay: data.billingCycleDay.present
+          ? data.billingCycleDay.value
+          : this.billingCycleDay,
+      paymentDueDay: data.paymentDueDay.present
+          ? data.paymentDueDay.value
+          : this.paymentDueDay,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
@@ -2043,6 +2127,8 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('lastActivityDate: $lastActivityDate, ')
+          ..write('billingCycleDay: $billingCycleDay, ')
+          ..write('paymentDueDay: $paymentDueDay, ')
           ..write('remoteId: $remoteId, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced')
@@ -2064,6 +2150,8 @@ class Account extends DataClass implements Insertable<Account> {
     createdAt,
     updatedAt,
     lastActivityDate,
+    billingCycleDay,
+    paymentDueDay,
     remoteId,
     deletedAt,
     isSynced,
@@ -2084,6 +2172,8 @@ class Account extends DataClass implements Insertable<Account> {
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.lastActivityDate == this.lastActivityDate &&
+          other.billingCycleDay == this.billingCycleDay &&
+          other.paymentDueDay == this.paymentDueDay &&
           other.remoteId == this.remoteId &&
           other.deletedAt == this.deletedAt &&
           other.isSynced == this.isSynced);
@@ -2102,6 +2192,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> lastActivityDate;
+  final Value<int?> billingCycleDay;
+  final Value<int?> paymentDueDay;
   final Value<String?> remoteId;
   final Value<DateTime?> deletedAt;
   final Value<bool> isSynced;
@@ -2118,6 +2210,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.lastActivityDate = const Value.absent(),
+    this.billingCycleDay = const Value.absent(),
+    this.paymentDueDay = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -2135,6 +2229,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.lastActivityDate = const Value.absent(),
+    this.billingCycleDay = const Value.absent(),
+    this.paymentDueDay = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -2157,6 +2253,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? lastActivityDate,
+    Expression<int>? billingCycleDay,
+    Expression<int>? paymentDueDay,
     Expression<String>? remoteId,
     Expression<DateTime>? deletedAt,
     Expression<bool>? isSynced,
@@ -2174,6 +2272,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (lastActivityDate != null) 'last_activity_date': lastActivityDate,
+      if (billingCycleDay != null) 'billing_cycle_day': billingCycleDay,
+      if (paymentDueDay != null) 'payment_due_day': paymentDueDay,
       if (remoteId != null) 'remote_id': remoteId,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (isSynced != null) 'is_synced': isSynced,
@@ -2193,6 +2293,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? lastActivityDate,
+    Value<int?>? billingCycleDay,
+    Value<int?>? paymentDueDay,
     Value<String?>? remoteId,
     Value<DateTime?>? deletedAt,
     Value<bool>? isSynced,
@@ -2210,6 +2312,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastActivityDate: lastActivityDate ?? this.lastActivityDate,
+      billingCycleDay: billingCycleDay ?? this.billingCycleDay,
+      paymentDueDay: paymentDueDay ?? this.paymentDueDay,
       remoteId: remoteId ?? this.remoteId,
       deletedAt: deletedAt ?? this.deletedAt,
       isSynced: isSynced ?? this.isSynced,
@@ -2259,6 +2363,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (lastActivityDate.present) {
       map['last_activity_date'] = Variable<DateTime>(lastActivityDate.value);
     }
+    if (billingCycleDay.present) {
+      map['billing_cycle_day'] = Variable<int>(billingCycleDay.value);
+    }
+    if (paymentDueDay.present) {
+      map['payment_due_day'] = Variable<int>(paymentDueDay.value);
+    }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
     }
@@ -2286,6 +2396,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('lastActivityDate: $lastActivityDate, ')
+          ..write('billingCycleDay: $billingCycleDay, ')
+          ..write('paymentDueDay: $paymentDueDay, ')
           ..write('remoteId: $remoteId, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced')
@@ -12383,6 +12495,8 @@ typedef $$AccountsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> lastActivityDate,
+      Value<int?> billingCycleDay,
+      Value<int?> paymentDueDay,
       Value<String?> remoteId,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
@@ -12401,6 +12515,8 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> lastActivityDate,
+      Value<int?> billingCycleDay,
+      Value<int?> paymentDueDay,
       Value<String?> remoteId,
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
@@ -12556,6 +12672,16 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<DateTime> get lastActivityDate => $composableBuilder(
     column: $table.lastActivityDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get billingCycleDay => $composableBuilder(
+    column: $table.billingCycleDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get paymentDueDay => $composableBuilder(
+    column: $table.paymentDueDay,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12738,6 +12864,16 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get billingCycleDay => $composableBuilder(
+    column: $table.billingCycleDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get paymentDueDay => $composableBuilder(
+    column: $table.paymentDueDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
     column: $table.remoteId,
     builder: (column) => ColumnOrderings(column),
@@ -12820,6 +12956,16 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastActivityDate => $composableBuilder(
     column: $table.lastActivityDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get billingCycleDay => $composableBuilder(
+    column: $table.billingCycleDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get paymentDueDay => $composableBuilder(
+    column: $table.paymentDueDay,
     builder: (column) => column,
   );
 
@@ -12977,6 +13123,8 @@ class $$AccountsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> lastActivityDate = const Value.absent(),
+                Value<int?> billingCycleDay = const Value.absent(),
+                Value<int?> paymentDueDay = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
@@ -12993,6 +13141,8 @@ class $$AccountsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 lastActivityDate: lastActivityDate,
+                billingCycleDay: billingCycleDay,
+                paymentDueDay: paymentDueDay,
                 remoteId: remoteId,
                 deletedAt: deletedAt,
                 isSynced: isSynced,
@@ -13011,6 +13161,8 @@ class $$AccountsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> lastActivityDate = const Value.absent(),
+                Value<int?> billingCycleDay = const Value.absent(),
+                Value<int?> paymentDueDay = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
@@ -13027,6 +13179,8 @@ class $$AccountsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 lastActivityDate: lastActivityDate,
+                billingCycleDay: billingCycleDay,
+                paymentDueDay: paymentDueDay,
                 remoteId: remoteId,
                 deletedAt: deletedAt,
                 isSynced: isSynced,

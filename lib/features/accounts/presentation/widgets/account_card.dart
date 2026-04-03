@@ -65,7 +65,7 @@ class AccountCard extends ConsumerWidget {
                       : AppColors.primaryGoldAccent,
                 ),
               ),
-              if (account.type.isCreditCard && balance < 0)
+              if (account.type.isCreditCard && balance < 0) ...[
                 Text(
                   'Outstanding',
                   style: TextStyle(
@@ -73,6 +73,33 @@ class AccountCard extends ConsumerWidget {
                     fontSize: 10,
                   ),
                 ),
+                if (account.paymentDueDay != null)
+                  Builder(builder: (context) {
+                    final now = DateTime.now();
+                    final dueDay = account.paymentDueDay!;
+                    final DateTime dueDate;
+                    if (now.day <= dueDay) {
+                      dueDate = DateTime(now.year, now.month, dueDay);
+                    } else {
+                      // Roll to next month
+                      final nextMonth = DateTime(now.year, now.month + 1, 1);
+                      dueDate = DateTime(nextMonth.year, nextMonth.month, dueDay);
+                    }
+                    final monthNames = [
+                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+                    ];
+                    final label = 'Due ${monthNames[dueDate.month - 1]} ${dueDate.day}';
+                    return Text(
+                      label,
+                      style: TextStyle(
+                        color: AppColors.primaryGold.withValues(alpha: 0.9),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  }),
+              ],
             ],
           ),
         ],

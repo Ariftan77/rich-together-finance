@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration {
@@ -184,6 +184,14 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'ALTER TABLE user_settings ADD COLUMN card_shadow INTEGER NOT NULL DEFAULT 1',
             );
+          } catch (_) {}
+        }
+        if (from < 18) {
+          try {
+            await customStatement('ALTER TABLE accounts ADD COLUMN billing_cycle_day INTEGER');
+          } catch (_) {}
+          try {
+            await customStatement('ALTER TABLE accounts ADD COLUMN payment_due_day INTEGER');
           } catch (_) {}
         }
       },
