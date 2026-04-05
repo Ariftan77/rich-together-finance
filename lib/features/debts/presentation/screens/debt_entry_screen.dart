@@ -17,7 +17,6 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/account_selector.dart';
-import '../../../accounts/presentation/providers/balance_provider.dart';
 
 
 class DebtEntryScreen extends ConsumerStatefulWidget {
@@ -466,7 +465,6 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                             child: AccountSelector(
                                               accounts: accounts,
                                               selectedAccountId: _selectedAccountId,
-                                              balances: ref.read(accountBalanceProvider),
                                               showDecimal: ref.read(showDecimalProvider),
                                               onAccountSelected: (id) {
                                                 if (id != null) {

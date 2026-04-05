@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../features/accounts/presentation/providers/balance_provider.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/utils/formatters.dart';
 
-/// A searchable account selector with "Add New" option
-class AccountSelector extends StatefulWidget {
+/// A searchable account selector with "Add New" option.
+///
+/// Balances are watched internally via [accountBalanceStreamProvider] so the
+/// widget always shows live data regardless of when it was built.  The
+/// [balances] constructor parameter has been removed — callers no longer need
+/// to pass it.
+class AccountSelector extends ConsumerStatefulWidget {
   final List<Account> accounts;
   final int? selectedAccountId;
   final ValueChanged<int?> onAccountSelected;
-  final Map<int, double>? balances;
   final bool showDecimal;
   final VoidCallback? onAddNew;
 
@@ -20,16 +26,15 @@ class AccountSelector extends StatefulWidget {
     required this.accounts,
     required this.selectedAccountId,
     required this.onAccountSelected,
-    this.balances,
     this.showDecimal = false,
     this.onAddNew,
   });
 
   @override
-  State<AccountSelector> createState() => _AccountSelectorState();
+  ConsumerState<AccountSelector> createState() => _AccountSelectorState();
 }
 
-class _AccountSelectorState extends State<AccountSelector> {
+class _AccountSelectorState extends ConsumerState<AccountSelector> {
   final TextEditingController _searchController = TextEditingController();
   List<Account> _filteredAccounts = [];
 
@@ -62,6 +67,10 @@ class _AccountSelectorState extends State<AccountSelector> {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    // Watch balances reactively — never stale, shows loading state correctly.
+    final balancesAsync = ref.watch(accountBalanceStreamProvider);
+    final balances = balancesAsync.valueOrNull;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.6,
@@ -212,6 +221,17 @@ class _AccountSelectorState extends State<AccountSelector> {
                       final account = _filteredAccounts[index];
                       final isSelected = account.id == widget.selectedAccountId;
 
+                      // Determine balance display text.
+                      // null balances = still loading → show placeholder dash.
+                      // non-null but missing key = account not yet in map → show dash.
+                      final balanceText = balances == null
+                          ? '-'
+                          : '${account.currency.code} ${Formatters.formatCurrency(
+                              balances[account.id] ?? 0,
+                              currency: account.currency,
+                              showDecimal: widget.showDecimal,
+                            )}';
+
                       return GestureDetector(
                         onTap: () {
                           widget.onAccountSelected(account.id);
@@ -262,22 +282,17 @@ class _AccountSelectorState extends State<AccountSelector> {
                                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                       ),
                                     ),
-                                    if (widget.balances != null)
-                                      Text(
-                                        '${account.currency.code} ${Formatters.formatCurrency(
-                                          widget.balances![account.id] ?? 0,
-                                          currency: account.currency,
-                                          showDecimal: widget.showDecimal,
-                                        )}',
-                                        style: TextStyle(
-                                          color: isSelected
-                                              ? AppColors.primaryGold.withValues(alpha: 0.75)
-                                              : isLight
-                                                  ? const Color(0xFF94A3B8)
-                                                  : Colors.white.withValues(alpha: 0.5),
-                                          fontSize: 12,
-                                        ),
+                                    Text(
+                                      balanceText,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? AppColors.primaryGold.withValues(alpha: 0.75)
+                                            : isLight
+                                                ? const Color(0xFF94A3B8)
+                                                : Colors.white.withValues(alpha: 0.5),
+                                        fontSize: 12,
                                       ),
+                                    ),
                                   ],
                                 ),
                               ),

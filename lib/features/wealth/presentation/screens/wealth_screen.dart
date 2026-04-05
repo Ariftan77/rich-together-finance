@@ -29,7 +29,6 @@ import '../../../../shared/utils/indonesian_currency_formatter.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/account_selector.dart';
-import '../../../accounts/presentation/providers/balance_provider.dart';
 import '../widgets/debt_payoff_card.dart';
 
 
@@ -1536,7 +1535,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
     final remaining = debt.amount - debt.paidAmount;
     final showDecimal = ref.read(showDecimalProvider);
-    final balances = ref.read(accountBalanceProvider);
 
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -1743,7 +1741,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           child: AccountSelector(
                             accounts: accounts,
                             selectedAccountId: selectedAccountId,
-                            balances: balances,
                             showDecimal: showDecimal,
                             onAccountSelected: (id) {
                               if (id != null) {
@@ -1889,7 +1886,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     }
 
     final showDecimal = ref.read(showDecimalProvider);
-    final balances = ref.read(accountBalanceProvider);
 
     double totalRemaining = 0.0;
     for (final d in groupDebts) {
@@ -2062,7 +2058,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                           child: AccountSelector(
                             accounts: accounts,
                             selectedAccountId: selectedAccountId,
-                            balances: balances,
                             showDecimal: showDecimal,
                             onAccountSelected: (id) {
                               if (id != null) {

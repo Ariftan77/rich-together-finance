@@ -21,7 +21,6 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/recurring_service.dart';
 import '../widgets/account_selector.dart';
 import '../widgets/add_account_dialog.dart';
-import '../../../accounts/presentation/providers/balance_provider.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 
 class TransactionEntryScreen extends ConsumerStatefulWidget {
@@ -853,7 +852,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 child: AccountSelector(
                   accounts: accounts,
                   selectedAccountId: selectedId,
-                  balances: ref.read(accountBalanceProvider),
                   showDecimal: ref.read(showDecimalProvider),
                   onAccountSelected: (id) {
                     setState(() {
