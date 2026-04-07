@@ -42,8 +42,14 @@ class GlassBottomNav extends StatelessWidget {
         ? const Color(0xFF64748B)
         : AppColors.textSecondary;
 
+    // On edge-to-edge devices the system nav bar extends behind our UI.
+    // Use viewPadding.bottom so the pill sits above the gesture area on all
+    // devices (typically 24–48 dp depending on nav mode and display cutout).
+    final double bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final double bottomMargin = bottomInset > 0 ? bottomInset : 16;
+
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+      margin: EdgeInsets.only(left: 16, right: 16, bottom: bottomMargin),
       height: 80,
       decoration: BoxDecoration(
         color: Colors.transparent,

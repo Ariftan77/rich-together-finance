@@ -110,10 +110,20 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       }
     });
 
-    // Load transaction data if editing
+    // Load transaction data if editing — wait for the route animation to finish
+    // so the setState inside _loadTransaction doesn't compete with the slide-in.
     if (widget.transactionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadTransaction();
+        final route = ModalRoute.of(context);
+        if (route?.animation?.isCompleted == true || route?.animation == null) {
+          _loadTransaction();
+        } else {
+          route?.animation?.addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _loadTransaction();
+            }
+          });
+        }
       });
     } else {
       // Auto-open calculator for new transactions — wait for transition to finish

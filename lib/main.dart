@@ -24,6 +24,11 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Enable edge-to-edge on Android 15+ (SDK 35). This prevents Flutter from
+  // calling the deprecated setStatusBarColor / setNavigationBarColor APIs and
+  // opts into the modern WindowInsetsController approach instead.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   if (Platform.isAndroid) {
     // Tell sqlite3 to load libsqlcipher.so instead of libsqlite3.so.
     // Do NOT call applyWorkaroundToOpenSqlCipherOnOldAndroidVersions() here —

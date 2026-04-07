@@ -158,9 +158,10 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   Widget build(BuildContext context) {
     // Trigger initialization (e.g. recurring transactions check)
     ref.watch(appInitProvider);
-    // Pre-warm categories stream so TransactionEntryScreen gets an immediate
-    // value instead of waiting for the first DB emission after navigation.
+    // Pre-warm categories and accounts streams so TransactionEntryScreen gets
+    // immediate values instead of waiting for the first DB emission after navigation.
     ref.watch(categoriesStreamProvider);
+    ref.watch(accountsStreamProvider);
 
     return Scaffold(
       extendBody: true, // Important for glass bottom nav

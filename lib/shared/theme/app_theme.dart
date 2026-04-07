@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'typography.dart';
@@ -33,10 +34,11 @@ class AppTheme {
   static const _pageTransitionsTheme = PageTransitionsTheme(
     builders: {
       TargetPlatform.android: _SlidePageTransitionsBuilder(),
-      TargetPlatform.iOS: _SlidePageTransitionsBuilder(),
+      TargetPlatform.fuchsia: _SlidePageTransitionsBuilder(),
       TargetPlatform.linux: _SlidePageTransitionsBuilder(),
       TargetPlatform.windows: _SlidePageTransitionsBuilder(),
-      TargetPlatform.macOS: _SlidePageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
     },
   );
   static ThemeData get darkTheme {
