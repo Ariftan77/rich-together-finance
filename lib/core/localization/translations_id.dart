@@ -386,6 +386,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsChangePin => 'Ubah PIN';
   @override String get settingsAboutTitle => 'Tentang Richer';
   @override String get settingsRateUs => 'Beri Penilaian';
+  @override String get settingsJoinCommunity => 'Gabung Komunitas';
   @override String get settingsWhatsNew => 'Yang Baru';
   @override String get settingsNoAnnouncements => 'Tidak ada pengumuman baru';
   @override String get settingsHelp => 'Bantuan & FAQ';

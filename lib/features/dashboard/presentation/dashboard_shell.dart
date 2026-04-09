@@ -12,6 +12,7 @@ import '../../accounts/presentation/screens/account_entry_screen.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
 import '../../../shared/widgets/fab_button.dart';
 import '../../../shared/widgets/transaction_speed_dial_fab.dart';
+import '../../../shared/widgets/debt_speed_dial_fab.dart';
 import '../../../core/providers/app_init_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
@@ -47,6 +48,9 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   /// Typed key for [TransactionSpeedDialFab] — allows the tour to call toggle().
   /// Separate from [TourKeys.fab] which is on the [KeyedSubtree] for spotlight positioning.
   final GlobalKey<TransactionSpeedDialFabState> _speedDialKey = TourKeys.speedDial;
+
+  bool _debtDialOpen = false;
+  final GlobalKey<DebtSpeedDialFabState> _debtDialKey = GlobalKey();
 
   @override
   void initState() {
@@ -106,9 +110,12 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   }
 
   void _onTabTap(int index) {
-    // Close speed-dial if open when switching tabs.
+    // Close speed-dials if open when switching tabs.
     if (_speedDialOpen) {
       _speedDialKey.currentState?.close();
+    }
+    if (_debtDialOpen) {
+      _debtDialKey.currentState?.close();
     }
     if (index == _currentIndex) return;
     final direction = index > _currentIndex ? 1.0 : -1.0;
@@ -131,6 +138,18 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     WealthScreen(), // 3: Wealth (Budget, Goals, Investment)
     SettingsScreen(), // 4: Settings
   ];
+
+  void _onDebtDialSelected(int optionIndex) {
+    // 0 = payable (I Owe), 1 = receivable (Owed to Me)
+    const typeMap = [DebtType.payable, DebtType.receivable];
+    final selectedType = typeMap[optionIndex];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DebtEntryScreen(initialType: selectedType),
+      ),
+    );
+  }
 
   void _onSpeedDialSelected(int optionIndex) {
     // Map option index to TransactionType:
@@ -182,12 +201,15 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
               ),
             ),
           ),
-          // Transparent barrier — only present when the speed-dial is open.
+          // Transparent barrier — only present when a speed-dial is open.
           // Tapping it closes the dial without navigating anywhere.
-          if (_speedDialOpen)
+          if (_speedDialOpen || _debtDialOpen)
             Positioned.fill(
               child: GestureDetector(
-                onTap: () => _speedDialKey.currentState?.close(),
+                onTap: () {
+                  _speedDialKey.currentState?.close();
+                  _debtDialKey.currentState?.close();
+                },
                 behavior: HitTestBehavior.opaque,
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.25),
@@ -301,15 +323,11 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
           );
         }
         if (wealthTab == 2) {
-          return FabButton(
-            icon: Icons.add,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DebtEntryScreen(),
-                ),
-              );
+          return DebtSpeedDialFab(
+            key: _debtDialKey,
+            onSelected: _onDebtDialSelected,
+            onOpenChanged: (isOpen) {
+              setState(() => _debtDialOpen = isOpen);
             },
           );
         }

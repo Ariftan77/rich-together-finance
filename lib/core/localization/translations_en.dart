@@ -385,6 +385,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsChangePin => 'Change PIN';
   @override String get settingsAboutTitle => 'About Richer';
   @override String get settingsRateUs => 'Rate Us';
+  @override String get settingsJoinCommunity => 'Join Community';
   @override String get settingsWhatsNew => "What's New";
   @override String get settingsNoAnnouncements => "You're all caught up!";
   @override String get settingsHelp => 'Help & FAQ';

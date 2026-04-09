@@ -382,6 +382,7 @@ abstract class AppTranslations {
   String get settingsChangePin;
   String get settingsAboutTitle;
   String get settingsRateUs;
+  String get settingsJoinCommunity;
   String get settingsWhatsNew;
   String get settingsNoAnnouncements;
   String get settingsHelp;

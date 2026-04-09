@@ -539,6 +539,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           _buildDivider(),
           SettingsTile(
+            icon: Icons.groups_outlined,
+            title: ref.watch(translationsProvider).settingsJoinCommunity,
+            onTap: () async {
+              final url = Uri.parse('https://t.me/richercommunity');
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            },
+          ),
+          _buildDivider(),
+          SettingsTile(
             icon: Icons.star_outline,
             title: ref.watch(translationsProvider).settingsRateUs,
             onTap: () async {

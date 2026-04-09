@@ -21,8 +21,9 @@ import '../../../transactions/presentation/widgets/account_selector.dart';
 
 class DebtEntryScreen extends ConsumerStatefulWidget {
   final Debt? debt;
+  final DebtType? initialType;
 
-  const DebtEntryScreen({super.key, this.debt});
+  const DebtEntryScreen({super.key, this.debt, this.initialType});
 
   @override
   ConsumerState<DebtEntryScreen> createState() => _DebtEntryScreenState();
@@ -57,6 +58,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
       _selectedAccountId = widget.debt!.creationAccountId;
     } else {
       _selectedCurrency = ref.read(defaultCurrencyProvider);
+      if (widget.initialType != null) _selectedType = widget.initialType!;
     }
     _personController.addListener(_onNameChanged);
     _loadFrequentNames();
