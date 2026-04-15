@@ -174,11 +174,16 @@ class _ChartTab extends ConsumerStatefulWidget {
   ConsumerState<_ChartTab> createState() => _ChartTabState();
 }
 
-class _ChartTabState extends ConsumerState<_ChartTab> {
+class _ChartTabState extends ConsumerState<_ChartTab>
+    with AutomaticKeepAliveClientMixin {
   int _selectedIndex = 0; // 0 = Expense, 1 = Income
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
@@ -679,12 +684,30 @@ class _ChartLoading extends StatelessWidget {
 // Tab 2: Category
 // ===========================================================================
 
-class _CategoryTab extends ConsumerWidget {
+class _CategoryTab extends ConsumerStatefulWidget {
   final DateTime month;
   const _CategoryTab({required this.month});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_CategoryTab> createState() => _CategoryTabState();
+}
+
+class _CategoryTabState extends ConsumerState<_CategoryTab>
+    with AutomaticKeepAliveClientMixin {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
@@ -692,11 +715,12 @@ class _CategoryTab extends ConsumerWidget {
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
-    final summaryAsync = ref.watch(reportMonthlySummaryProvider(month));
-    final expenseCatAsync = ref.watch(reportExpenseByCategoryProvider(month));
-    final incomeCatAsync = ref.watch(reportIncomeByCategoryProvider(month));
+    final summaryAsync = ref.watch(reportMonthlySummaryProvider(widget.month));
+    final expenseCatAsync = ref.watch(reportExpenseByCategoryProvider(widget.month));
+    final incomeCatAsync = ref.watch(reportIncomeByCategoryProvider(widget.month));
 
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,7 +751,7 @@ class _CategoryTab extends ConsumerWidget {
           expenseCatAsync.when(
             data: (data) => _CategoryList(
               data: data,
-              month: month,
+              month: widget.month,
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
               emptyLabel: trans.reportNoData,
@@ -751,7 +775,7 @@ class _CategoryTab extends ConsumerWidget {
           incomeCatAsync.when(
             data: (data) => _CategoryList(
               data: data,
-              month: month,
+              month: widget.month,
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
               emptyLabel: trans.reportNoData,
@@ -1055,12 +1079,30 @@ class _CategoryList extends StatelessWidget {
 // Tab 3: Title
 // ===========================================================================
 
-class _TitleTab extends ConsumerWidget {
+class _TitleTab extends ConsumerStatefulWidget {
   final DateTime month;
   const _TitleTab({required this.month});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TitleTab> createState() => _TitleTabState();
+}
+
+class _TitleTabState extends ConsumerState<_TitleTab>
+    with AutomaticKeepAliveClientMixin {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
@@ -1068,11 +1110,12 @@ class _TitleTab extends ConsumerWidget {
     final trans = ref.watch(translationsProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final showDecimal = ref.watch(showDecimalProvider);
-    final summaryAsync = ref.watch(reportMonthlySummaryProvider(month));
-    final expenseTitleAsync = ref.watch(reportExpenseByTitleProvider(month));
-    final incomeTitleAsync = ref.watch(reportIncomeByTitleProvider(month));
+    final summaryAsync = ref.watch(reportMonthlySummaryProvider(widget.month));
+    final expenseTitleAsync = ref.watch(reportExpenseByTitleProvider(widget.month));
+    final incomeTitleAsync = ref.watch(reportIncomeByTitleProvider(widget.month));
 
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1103,7 +1146,7 @@ class _TitleTab extends ConsumerWidget {
           expenseTitleAsync.when(
             data: (data) => _TitleList(
               data: data,
-              month: month,
+              month: widget.month,
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
               emptyLabel: trans.reportNoData,
@@ -1127,7 +1170,7 @@ class _TitleTab extends ConsumerWidget {
           incomeTitleAsync.when(
             data: (data) => _TitleList(
               data: data,
-              month: month,
+              month: widget.month,
               currencySymbol: baseCurrency.symbol,
               showDecimal: showDecimal,
               emptyLabel: trans.reportNoData,

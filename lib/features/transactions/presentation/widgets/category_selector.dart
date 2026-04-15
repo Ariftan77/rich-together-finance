@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/database/database.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
@@ -27,11 +28,29 @@ class CategorySelector extends StatefulWidget {
 class _CategorySelectorState extends State<CategorySelector> {
   final TextEditingController _searchController = TextEditingController();
   List<Category> _filteredCategories = [];
+  bool _isGridView = false;
+
+  static const _prefKey = 'category_selector_grid_view';
 
   @override
   void initState() {
     super.initState();
     _filteredCategories = widget.categories;
+    _loadLayoutPref();
+  }
+
+  Future<void> _loadLayoutPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _isGridView = prefs.getBool(_prefKey) ?? false);
+    }
+  }
+
+  Future<void> _toggleLayout() async {
+    final next = !_isGridView;
+    setState(() => _isGridView = next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, next);
   }
 
   @override
@@ -45,6 +64,9 @@ class _CategorySelectorState extends State<CategorySelector> {
     final cleaned = hex.replaceFirst('#', '0xFF');
     return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
   }
+
+  String _truncate(String name) =>
+      name.length > 15 ? '${name.substring(0, 15)}...' : name;
 
   void _filterCategories(String query) {
     setState(() {
@@ -123,6 +145,18 @@ class _CategorySelectorState extends State<CategorySelector> {
                 const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(
+                    _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                    color: isLight
+                        ? const Color(0xFF64748B)
+                        : Colors.white.withValues(alpha: 0.6),
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: _toggleLayout,
+                ),
+                IconButton(
+                  icon: Icon(
                     Icons.close,
                     color: isLight
                         ? const Color(0xFF64748B)
@@ -178,7 +212,7 @@ class _CategorySelectorState extends State<CategorySelector> {
 
           const SizedBox(height: 16),
 
-          // Category List
+          // Category List / Grid
           Expanded(
             child: _filteredCategories.isEmpty
                 ? Center(
@@ -205,84 +239,172 @@ class _CategorySelectorState extends State<CategorySelector> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _filteredCategories.length,
-                    itemBuilder: (context, index) {
-                      final category = _filteredCategories[index];
-                      final isSelected = category.id == widget.selectedCategoryId;
-
-                      return GestureDetector(
-                        onTap: () {
-                          widget.onCategorySelected(category.id);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 5),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold.withValues(alpha: 0.15)
-                                : isLight
-                                    ? Colors.black.withValues(alpha: 0.04)
-                                    : Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : isLight
-                                      ? Colors.black.withValues(alpha: 0.12)
-                                      : Colors.white.withValues(alpha: 0.15),
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: _parseColor(category.color),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: CategoryIconWidget(
-                                  iconString: category.icon,
-                                  size: 11,
-                                  color: isSelected
-                                      ? AppColors.primaryGold
-                                      : isLight ? AppColors.textPrimaryLight : Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  category.name,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? AppColors.primaryGold
-                                        : isLight ? AppColors.textPrimaryLight : Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.primaryGold,
-                                  size: 16,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                : _isGridView
+                    ? _buildGrid(context, isLight, isDefault)
+                    : _buildList(context, isLight, isDefault),
           ),
-
         ],
       ),
+    );
+  }
+
+  Widget _buildList(BuildContext context, bool isLight, bool isDefault) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: _filteredCategories.length,
+      itemBuilder: (context, index) {
+        final category = _filteredCategories[index];
+        final isSelected = category.id == widget.selectedCategoryId;
+
+        return GestureDetector(
+          onTap: () {
+            widget.onCategorySelected(category.id);
+            Navigator.pop(context);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primaryGold.withValues(alpha: 0.15)
+                  : isLight
+                      ? Colors.black.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryGold
+                    : isLight
+                        ? Colors.black.withValues(alpha: 0.12)
+                        : Colors.white.withValues(alpha: 0.15),
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: _parseColor(category.color),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: CategoryIconWidget(
+                    iconString: category.icon,
+                    size: 11,
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : isLight ? AppColors.textPrimaryLight : Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    category.name,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primaryGold
+                          : isLight ? AppColors.textPrimaryLight : Colors.white,
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: AppColors.primaryGold,
+                    size: 16,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGrid(BuildContext context, bool isLight, bool isDefault) {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.9,
+      ),
+      itemCount: _filteredCategories.length,
+      itemBuilder: (context, index) {
+        final category = _filteredCategories[index];
+        final isSelected = category.id == widget.selectedCategoryId;
+
+        return Tooltip(
+          message: category.name,
+          triggerMode: TooltipTriggerMode.longPress,
+          preferBelow: false,
+          child: GestureDetector(
+            onTap: () {
+              widget.onCategorySelected(category.id);
+              Navigator.pop(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGold.withValues(alpha: 0.15)
+                    : isLight
+                        ? Colors.black.withValues(alpha: 0.04)
+                        : Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : isLight
+                          ? Colors.black.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.15),
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: _parseColor(category.color),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: CategoryIconWidget(
+                      iconString: category.icon,
+                      size: 16,
+                      color: isSelected
+                          ? AppColors.primaryGold
+                          : isLight ? AppColors.textPrimaryLight : Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _truncate(category.name),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primaryGold
+                          : isLight ? AppColors.textPrimaryLight : Colors.white,
+                      fontSize: 10,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

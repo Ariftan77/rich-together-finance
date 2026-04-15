@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../features/accounts/presentation/providers/balance_provider.dart';
@@ -37,6 +38,9 @@ class AccountSelector extends ConsumerStatefulWidget {
 class _AccountSelectorState extends ConsumerState<AccountSelector> {
   final TextEditingController _searchController = TextEditingController();
   List<Account> _filteredAccounts = [];
+  bool _isGridView = false;
+
+  static const _prefKey = 'account_selector_grid_view';
 
   List<Account> _sortedByRecentUse(List<Account> accounts) {
     final sorted = List<Account>.from(accounts);
@@ -51,10 +55,28 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
     return sorted;
   }
 
+  String _truncate(String name) =>
+      name.length > 15 ? '${name.substring(0, 15)}...' : name;
+
   @override
   void initState() {
     super.initState();
     _filteredAccounts = _sortedByRecentUse(widget.accounts);
+    _loadLayoutPref();
+  }
+
+  Future<void> _loadLayoutPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _isGridView = prefs.getBool(_prefKey) ?? false);
+    }
+  }
+
+  Future<void> _toggleLayout() async {
+    final next = !_isGridView;
+    setState(() => _isGridView = next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, next);
   }
 
   @override
@@ -147,6 +169,18 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                 const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(
+                    _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                    color: isLight
+                        ? const Color(0xFF64748B)
+                        : Colors.white.withValues(alpha: 0.6),
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: _toggleLayout,
+                ),
+                IconButton(
+                  icon: Icon(
                     Icons.close,
                     color: isLight
                         ? const Color(0xFF64748B)
@@ -202,7 +236,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
 
           const SizedBox(height: 16),
 
-          // Account List
+          // Account List / Grid
           Expanded(
             child: _filteredAccounts.isEmpty
                 ? Center(
@@ -229,103 +263,203 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _filteredAccounts.length,
-                    itemBuilder: (context, index) {
-                      final account = _filteredAccounts[index];
-                      final isSelected = account.id == widget.selectedAccountId;
-
-                      // Determine balance display text.
-                      // null balances = still loading → show placeholder dash.
-                      // non-null but missing key = account not yet in map → show dash.
-                      final balanceText = balances == null
-                          ? '-'
-                          : '${account.currency.code} ${Formatters.formatCurrency(
-                              balances[account.id] ?? 0,
-                              currency: account.currency,
-                              showDecimal: widget.showDecimal,
-                            )}';
-
-                      return GestureDetector(
-                        onTap: () {
-                          widget.onAccountSelected(account.id);
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 5),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold.withValues(alpha: 0.15)
-                                : isLight
-                                    ? Colors.black.withValues(alpha: 0.04)
-                                    : Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : isLight
-                                      ? Colors.black.withValues(alpha: 0.12)
-                                      : Colors.white.withValues(alpha: 0.15),
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.account_balance_wallet_outlined,
-                                color: isSelected
-                                    ? AppColors.primaryGold
-                                    : isLight
-                                        ? const Color(0xFF64748B)
-                                        : Colors.white.withValues(alpha: 0.6),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      account.name,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? AppColors.primaryGold
-                                            : isLight ? AppColors.textPrimaryLight : Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                    ),
-                                    Text(
-                                      balanceText,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? AppColors.primaryGold.withValues(alpha: 0.75)
-                                            : isLight
-                                                ? const Color(0xFF94A3B8)
-                                                : Colors.white.withValues(alpha: 0.5),
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.primaryGold,
-                                  size: 16,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                : _isGridView
+                    ? _buildGrid(context, isLight, isDefault, balances)
+                    : _buildList(context, isLight, isDefault, balances),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildList(BuildContext context, bool isLight, bool isDefault, Map<int, double>? balances) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: _filteredAccounts.length,
+      itemBuilder: (context, index) {
+        final account = _filteredAccounts[index];
+        final isSelected = account.id == widget.selectedAccountId;
+        final balanceText = balances == null
+            ? '-'
+            : '${account.currency.code} ${Formatters.formatCurrency(
+                balances[account.id] ?? 0,
+                currency: account.currency,
+                showDecimal: widget.showDecimal,
+              )}';
+
+        return GestureDetector(
+          onTap: () {
+            widget.onAccountSelected(account.id);
+            Navigator.pop(context);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primaryGold.withValues(alpha: 0.15)
+                  : isLight
+                      ? Colors.black.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryGold
+                    : isLight
+                        ? Colors.black.withValues(alpha: 0.12)
+                        : Colors.white.withValues(alpha: 0.15),
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.6),
+                  size: 16,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        account.name,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : isLight ? AppColors.textPrimaryLight : Colors.white,
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                      Text(
+                        balanceText,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryGold.withValues(alpha: 0.75)
+                              : isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white.withValues(alpha: 0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: AppColors.primaryGold,
+                    size: 16,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGrid(BuildContext context, bool isLight, bool isDefault, Map<int, double>? balances) {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: _filteredAccounts.length,
+      itemBuilder: (context, index) {
+        final account = _filteredAccounts[index];
+        final isSelected = account.id == widget.selectedAccountId;
+        final balanceText = balances == null
+            ? '-'
+            : '${account.currency.code} ${Formatters.formatCurrency(
+                balances[account.id] ?? 0,
+                currency: account.currency,
+                showDecimal: widget.showDecimal,
+              )}';
+
+        return Tooltip(
+          message: account.name,
+          triggerMode: TooltipTriggerMode.longPress,
+          preferBelow: false,
+          child: GestureDetector(
+            onTap: () {
+              widget.onAccountSelected(account.id);
+              Navigator.pop(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGold.withValues(alpha: 0.15)
+                    : isLight
+                        ? Colors.black.withValues(alpha: 0.04)
+                        : Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : isLight
+                          ? Colors.black.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.15),
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : isLight
+                            ? const Color(0xFF64748B)
+                            : Colors.white.withValues(alpha: 0.6),
+                    size: 22,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _truncate(account.name),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primaryGold
+                          : isLight ? AppColors.textPrimaryLight : Colors.white,
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    balanceText,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primaryGold.withValues(alpha: 0.75)
+                          : isLight
+                              ? const Color(0xFF94A3B8)
+                              : Colors.white.withValues(alpha: 0.5),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

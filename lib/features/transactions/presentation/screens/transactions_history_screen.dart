@@ -32,6 +32,7 @@ import 'transaction_entry_screen.dart';
 import 'recurring_list_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
+import '../../../reports/presentation/providers/report_details_providers.dart';
 
 
 class TransactionsHistoryScreen extends ConsumerStatefulWidget {
@@ -45,6 +46,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
   late TextEditingController _searchController;
   final ScrollController _scrollController = ScrollController();
   bool _filterExpanded = false;
+  bool _hasSearchText = false;
 
   // --- Coach-mark tour keys (widgets owned by this screen) ---
   final GlobalKey _tourKeyRecurring  = GlobalKey(debugLabel: 'tour_recurring');
@@ -60,6 +62,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     _searchController = TextEditingController();
     _searchController.addListener(() {
       ref.read(transactionSearchQueryProvider.notifier).state = _searchController.text;
+      setState(() => _hasSearchText = _searchController.text.isNotEmpty);
     });
     _scrollController.addListener(_onScroll);
 
@@ -527,6 +530,43 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                   ),
                 ),
 
+                // Monthly income / expense summary (full month, not paginated)
+                Consumer(builder: (context, ref, _) {
+                  final summaryAsync = ref.watch(reportMonthlySummaryProvider(selectedMonth));
+                  final income = summaryAsync.valueOrNull?.income ?? 0;
+                  final expense = summaryAsync.valueOrNull?.expense ?? 0;
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, size: 16,
+                            color: isLight ? AppColors.successLight : AppColors.success),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${baseCurrency.symbol} ${Formatters.formatCurrency(income, currency: baseCurrency, showDecimal: showDecimal)}',
+                          style: TextStyle(
+                            color: isLight ? AppColors.successLight : AppColors.success,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${baseCurrency.symbol} ${Formatters.formatCurrency(expense, currency: baseCurrency, showDecimal: showDecimal)}',
+                          style: TextStyle(
+                            color: isLight ? AppColors.errorLight : AppColors.error,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.arrow_downward_rounded, size: 16,
+                            color: isLight ? AppColors.errorLight : AppColors.error),
+                      ],
+                    ),
+                  );
+                }),
+
                 // Filter toggle row — key on the outer SizedBox so the coach
                 // mark gets a reliable full-width render object to spotlight.
                 SizedBox(
@@ -573,6 +613,12 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       controller: _searchController,
                       hintText: trans.commonSearch,
                       prefixIcon: Icons.search,
+                      suffixIcon: _hasSearchText
+                          ? GestureDetector(
+                              onTap: () => _searchController.clear(),
+                              child: const Icon(Icons.close, size: 18),
+                            )
+                          : null,
                     ),
                   ),
                   // Type filter chips

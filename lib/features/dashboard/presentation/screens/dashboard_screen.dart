@@ -60,6 +60,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void _onReportScroll() {
     if (_reportScrollController.position.pixels >=
         _reportScrollController.position.maxScrollExtent - 200) {
+      // Don't increment while already loading to prevent double-trigger
+      if (ref.read(monthlySummaryProvider).isLoading) return;
       final current = ref.read(reportMonthCountProvider);
       ref.read(reportMonthCountProvider.notifier).state = current + 6;
     }
@@ -1091,6 +1093,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         ref.invalidate(monthlySummaryProvider);
       },
       child: summaryAsync.when(
+        skipLoadingOnReload: true,
         data: (summaries) {
           if (summaries.isEmpty) {
             return Center(

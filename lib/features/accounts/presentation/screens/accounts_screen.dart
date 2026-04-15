@@ -83,11 +83,22 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   final GlobalKey _tourKeyBalance = GlobalKey(debugLabel: 'tour_wallet_balance');
   final GlobalKey _tourKeyAccountCard = GlobalKey(debugLabel: 'tour_wallet_card');
   static const String _tourPrefsKey = 'tour_seen_wallet';
+  final TextEditingController _walletSearchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _walletSearchController.addListener(() {
+      ref.read(_walletSearchProvider.notifier).state = _walletSearchController.text;
+      setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
+  }
+
+  @override
+  void dispose() {
+    _walletSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> _maybeLaunchTour({bool delayed = false}) async {
@@ -317,8 +328,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                 const SizedBox(height: 12),
                 // Search bar
                 TextField(
-                  onChanged: (value) =>
-                      ref.read(_walletSearchProvider.notifier).state = value,
+                  controller: _walletSearchController,
                   style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white),
                   decoration: InputDecoration(
                     hintText: trans.walletSearch,
@@ -329,6 +339,16 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                       Icons.search,
                       color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
                     ),
+                    suffixIcon: _walletSearchController.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () => _walletSearchController.clear(),
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
+                            ),
+                          )
+                        : null,
                     filled: true,
                     fillColor: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08),
                     contentPadding: const EdgeInsets.symmetric(

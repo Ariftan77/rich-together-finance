@@ -931,7 +931,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.pop(context);
+      },
+      child: Scaffold(
       backgroundColor: Colors.transparent, // const Color(0xFF221D10),
       body: Container(
         decoration: BoxDecoration(
@@ -1650,6 +1655,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         ),
       ),
       ),
+    ),
     );
   }
 

@@ -135,14 +135,40 @@ class _YtdTopCategoriesContent extends ConsumerStatefulWidget {
 
 class _YtdTopCategoriesContentState
     extends ConsumerState<_YtdTopCategoriesContent> {
-  // Track the max amount (first item after sort, which provider already sorts)
+  final TextEditingController _searchController = TextEditingController();
+  bool _showAll = false;
+
+  static const _initialLimit = 5;
+
+  // Max amount is always relative to the full sorted list (index 0)
   double get _maxAmount =>
       widget.categories.isNotEmpty ? widget.categories.first.amount : 1.0;
+
+  List<YtdCategoryItem> get _filteredCategories {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query.isEmpty) return widget.categories;
+    return widget.categories
+        .where((c) => c.categoryName.toLowerCase().contains(query))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final trans = ref.watch(translationsProvider);
     final selectedId = ref.watch(selectedCategoryIdProvider);
+
+    final filtered = _filteredCategories;
+    final isSearching = _searchController.text.isNotEmpty;
+    // While searching always show all matches; otherwise respect _showAll
+    final showAll = _showAll || isSearching;
+    final visible = showAll ? filtered : filtered.take(_initialLimit).toList();
+    final hasMore = !showAll && filtered.length > _initialLimit;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -158,49 +184,146 @@ class _YtdTopCategoriesContentState
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+
+          // ── Search bar ────────────────────────────────────────────────
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: widget.isLight
+                  ? Colors.black.withValues(alpha: 0.04)
+                  : Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: widget.isLight
+                    ? Colors.black.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.12),
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() => _showAll = false),
+              style: TextStyle(
+                color: widget.isLight ? AppColors.textPrimaryLight : Colors.white,
+                fontSize: 13,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search category...',
+                hintStyle: TextStyle(
+                  color: widget.isLight
+                      ? const Color(0xFF94A3B8)
+                      : Colors.white.withValues(alpha: 0.35),
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: widget.accentColor.withValues(alpha: 0.7),
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () => setState(() {
+                          _searchController.clear();
+                          _showAll = false;
+                        }),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: widget.isLight
+                              ? const Color(0xFF94A3B8)
+                              : Colors.white.withValues(alpha: 0.4),
+                        ),
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // ── Category list with inline trend ─────────────────────────
-          ...widget.categories.expand((item) {
-            final isSelected = selectedId == item.categoryId;
-            return [
-              _CategoryRow(
-                item: item,
-                maxAmount: _maxAmount,
-                isSelected: isSelected,
-                isLight: widget.isLight,
-                accentColor: widget.accentColor,
-                currencySymbol: widget.currencySymbol,
-                showDecimal: widget.showDecimal,
-                onTap: () {
-                  final notifier =
-                      ref.read(selectedCategoryIdProvider.notifier);
-                  notifier.state =
-                      isSelected ? null : item.categoryId;
-                },
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'No categories found',
+                  style: TextStyle(
+                    color: widget.isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13,
+                  ),
+                ),
               ),
-              // Trend chart appears right below the selected row
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: isSelected
-                    ? _TrendSection(
-                        selectedId: item.categoryId,
-                        categories: widget.categories,
-                        currencySymbol: widget.currencySymbol,
-                        showDecimal: widget.showDecimal,
-                        isLight: widget.isLight,
-                        accentColor: widget.accentColor,
-                        trans: trans,
-                        onClose: () {
-                          ref.read(selectedCategoryIdProvider.notifier).state =
-                              null;
-                        },
-                      )
-                    : const SizedBox.shrink(),
+            )
+          else
+            ...visible.expand((item) {
+              final isSelected = selectedId == item.categoryId;
+              return [
+                _CategoryRow(
+                  item: item,
+                  maxAmount: _maxAmount,
+                  isSelected: isSelected,
+                  isLight: widget.isLight,
+                  accentColor: widget.accentColor,
+                  currencySymbol: widget.currencySymbol,
+                  showDecimal: widget.showDecimal,
+                  onTap: () {
+                    final notifier =
+                        ref.read(selectedCategoryIdProvider.notifier);
+                    notifier.state = isSelected ? null : item.categoryId;
+                  },
+                ),
+                // Trend chart appears right below the selected row
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: isSelected
+                      ? _TrendSection(
+                          selectedId: item.categoryId,
+                          categories: widget.categories,
+                          currencySymbol: widget.currencySymbol,
+                          showDecimal: widget.showDecimal,
+                          isLight: widget.isLight,
+                          accentColor: widget.accentColor,
+                          trans: trans,
+                          onClose: () {
+                            ref
+                                .read(selectedCategoryIdProvider.notifier)
+                                .state = null;
+                          },
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ];
+            }),
+
+          // ── Show more button ──────────────────────────────────────────
+          if (hasMore)
+            GestureDetector(
+              onTap: () => setState(() => _showAll = true),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Show all ${filtered.length} categories',
+                      style: TextStyle(
+                        color: widget.accentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down_rounded,
+                        color: widget.accentColor, size: 18),
+                  ],
+                ),
               ),
-            ];
-          }),
+            ),
         ],
       ),
     );
