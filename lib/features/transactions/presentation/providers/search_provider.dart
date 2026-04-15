@@ -118,3 +118,27 @@ final filteredTransactionsProvider = StreamProvider.autoDispose<List<Transaction
   transactionLimitProvider,
   transactionDaoProvider,
 ]);
+
+/// Transactions grouped by calendar day. Recomputes only when the stream
+/// emits new data — never during animation frames.
+final groupedTransactionsProvider =
+    Provider.autoDispose<Map<DateTime, List<ConvertedTransaction>>>((ref) {
+  final txs = ref.watch(convertedFilteredTransactionsProvider).valueOrNull ?? [];
+  final grouped = <DateTime, List<ConvertedTransaction>>{};
+  for (final ct in txs) {
+    final date = DateTime(
+      ct.transaction.date.year,
+      ct.transaction.date.month,
+      ct.transaction.date.day,
+    );
+    grouped.putIfAbsent(date, () => []).add(ct);
+  }
+  return grouped;
+});
+
+/// Sorted date keys from [groupedTransactionsProvider] (newest first).
+final sortedTransactionDatesProvider =
+    Provider.autoDispose<List<DateTime>>((ref) {
+  final grouped = ref.watch(groupedTransactionsProvider);
+  return grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+});

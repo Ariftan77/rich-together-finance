@@ -350,16 +350,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
 
-    // Pre-compute grouping once per build (outside Builder) to avoid
-    // repeating O(n) HashMap insertions + sort on every widget subtree rebuild.
-    final _allConvertedTxs = filteredHelper.valueOrNull ?? [];
-    final _grouped = <DateTime, List<ConvertedTransaction>>{};
-    for (var ct in _allConvertedTxs) {
-      final date = DateTime(ct.transaction.date.year, ct.transaction.date.month, ct.transaction.date.day);
-      _grouped.putIfAbsent(date, () => []).add(ct);
-    }
-    final _sortedDates = _grouped.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    // Grouping and sorting are computed in derived providers so they only
+    // recompute when stream data changes — not on every animation frame.
+    final _grouped = ref.watch(groupedTransactionsProvider);
+    final _sortedDates = ref.watch(sortedTransactionDatesProvider);
     final hasCustomRange = ref.watch(dateFromFilterProvider) != null || ref.watch(dateToFilterProvider) != null;
     final latestTxDate = ref.watch(latestTransactionDateProvider).valueOrNull;
     final latestTxMonth = latestTxDate != null

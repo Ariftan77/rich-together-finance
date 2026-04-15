@@ -91,6 +91,36 @@ class _CategorySelectorState extends State<CategorySelector> {
                     ),
                   ),
                 ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onAddNew(_searchController.text.trim());
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, color: AppColors.primaryGold, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          'New',
+                          style: TextStyle(
+                            color: AppColors.primaryGold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: Icon(
                     Icons.close,
@@ -188,8 +218,8 @@ class _CategorySelectorState extends State<CategorySelector> {
                           Navigator.pop(context);
                         },
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold.withValues(alpha: 0.15)
@@ -209,8 +239,8 @@ class _CategorySelectorState extends State<CategorySelector> {
                           child: Row(
                             children: [
                               Container(
-                                width: 36,
-                                height: 36,
+                                width: 22,
+                                height: 22,
                                 decoration: BoxDecoration(
                                   color: _parseColor(category.color),
                                   shape: BoxShape.circle,
@@ -218,13 +248,13 @@ class _CategorySelectorState extends State<CategorySelector> {
                                 alignment: Alignment.center,
                                 child: CategoryIconWidget(
                                   iconString: category.icon,
-                                  size: 18,
+                                  size: 11,
                                   color: isSelected
                                       ? AppColors.primaryGold
                                       : isLight ? AppColors.textPrimaryLight : Colors.white,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   category.name,
@@ -232,7 +262,7 @@ class _CategorySelectorState extends State<CategorySelector> {
                                     color: isSelected
                                         ? AppColors.primaryGold
                                         : isLight ? AppColors.textPrimaryLight : Colors.white,
-                                    fontSize: 15,
+                                    fontSize: 13,
                                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                   ),
                                 ),
@@ -241,7 +271,7 @@ class _CategorySelectorState extends State<CategorySelector> {
                                 Icon(
                                   Icons.check_circle,
                                   color: AppColors.primaryGold,
-                                  size: 20,
+                                  size: 16,
                                 ),
                             ],
                           ),
@@ -251,48 +281,6 @@ class _CategorySelectorState extends State<CategorySelector> {
                   ),
           ),
 
-          // Add New Button
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-                widget.onAddNew(_searchController.text.trim());
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD4AF37), Color(0xFFF4E5A1)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGold.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_circle_outline, color: Color(0xFF1A1410)),
-                    SizedBox(width: 8),
-                    Text(
-                      'Add New Category',
-                      style: TextStyle(
-                        color: Color(0xFF1A1410),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -38,10 +38,23 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
   final TextEditingController _searchController = TextEditingController();
   List<Account> _filteredAccounts = [];
 
+  List<Account> _sortedByRecentUse(List<Account> accounts) {
+    final sorted = List<Account>.from(accounts);
+    sorted.sort((a, b) {
+      final aDate = a.lastActivityDate;
+      final bDate = b.lastActivityDate;
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    return sorted;
+  }
+
   @override
   void initState() {
     super.initState();
-    _filteredAccounts = widget.accounts;
+    _filteredAccounts = _sortedByRecentUse(widget.accounts);
   }
 
   @override
@@ -53,11 +66,13 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
   void _filterAccounts(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredAccounts = widget.accounts;
+        _filteredAccounts = _sortedByRecentUse(widget.accounts);
       } else {
-        _filteredAccounts = widget.accounts
-            .where((acc) => acc.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        _filteredAccounts = _sortedByRecentUse(
+          widget.accounts
+              .where((acc) => acc.name.toLowerCase().contains(query.toLowerCase()))
+              .toList(),
+        );
       }
     });
   }
@@ -238,8 +253,8 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                           Navigator.pop(context);
                         },
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold.withValues(alpha: 0.15)
@@ -265,9 +280,9 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                                     : isLight
                                         ? const Color(0xFF64748B)
                                         : Colors.white.withValues(alpha: 0.6),
-                                size: 20,
+                                size: 16,
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +293,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                                         color: isSelected
                                             ? AppColors.primaryGold
                                             : isLight ? AppColors.textPrimaryLight : Colors.white,
-                                        fontSize: 15,
+                                        fontSize: 13,
                                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                       ),
                                     ),
@@ -290,7 +305,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                                             : isLight
                                                 ? const Color(0xFF94A3B8)
                                                 : Colors.white.withValues(alpha: 0.5),
-                                        fontSize: 12,
+                                        fontSize: 11,
                                       ),
                                     ),
                                   ],
@@ -300,7 +315,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
                                 Icon(
                                   Icons.check_circle,
                                   color: AppColors.primaryGold,
-                                  size: 20,
+                                  size: 16,
                                 ),
                             ],
                           ),

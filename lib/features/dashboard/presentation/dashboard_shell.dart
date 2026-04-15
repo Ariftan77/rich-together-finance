@@ -26,6 +26,7 @@ import '../../wealth/presentation/screens/wealth_screen.dart';
 import '../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../shared/tour/tour_keys.dart';
 import '../../../core/providers/nav_providers.dart';
+import '../../transactions/presentation/providers/search_provider.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -181,6 +182,10 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // immediate values instead of waiting for the first DB emission after navigation.
     ref.watch(categoriesStreamProvider);
     ref.watch(accountsStreamProvider);
+    // Pre-warm transactions provider so data is ready before the user taps
+    // the Transactions tab — avoids DB query + currency conversion competing
+    // with the slide-in animation on first open.
+    ref.watch(convertedFilteredTransactionsProvider);
 
     return Scaffold(
       extendBody: true, // Important for glass bottom nav
@@ -190,6 +195,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
             decoration: BoxDecoration(
               gradient: AppColors.backgroundGradient(context),
             ),
+          ),
+          RepaintBoundary(
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(

@@ -77,14 +77,11 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   /// Create a new transaction
   Future<int> insertTransaction(TransactionsCompanion transaction) async {
     final id = await into(transactions).insert(transaction);
-    if (transaction.date.present) {
-      final date = transaction.date.value;
-      if (transaction.accountId.present) {
-        await _updateAccountActivity(transaction.accountId.value, date);
-      }
-      if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
-        await _updateAccountActivity(transaction.toAccountId.value!, date);
-      }
+    if (transaction.accountId.present) {
+      await _updateAccountActivity(transaction.accountId.value);
+    }
+    if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
+      await _updateAccountActivity(transaction.toAccountId.value!);
     }
     return id;
   }
@@ -96,14 +93,11 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   /// Update a transaction by ID with companion
   Future<int> updateTransaction(int id, TransactionsCompanion transaction) async {
     final result = await (update(transactions)..where((t) => t.id.equals(id))).write(transaction);
-    if (transaction.date.present) {
-      final date = transaction.date.value;
-      if (transaction.accountId.present) {
-        await _updateAccountActivity(transaction.accountId.value, date);
-      }
-      if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
-        await _updateAccountActivity(transaction.toAccountId.value!, date);
-      }
+    if (transaction.accountId.present) {
+      await _updateAccountActivity(transaction.accountId.value);
+    }
+    if (transaction.toAccountId.present && transaction.toAccountId.value != null) {
+      await _updateAccountActivity(transaction.toAccountId.value!);
     }
     return result;
   }
@@ -112,15 +106,9 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   Future<int> deleteTransaction(int id) =>
       (delete(transactions)..where((t) => t.id.equals(id))).go();
 
-  Future<void> _updateAccountActivity(int accountId, DateTime date) async {
-    final account = await (select(accounts)..where((a) => a.id.equals(accountId))).getSingleOrNull();
-    if (account != null) {
-      // Only update if new date is newer than current, or if current is null
-      if (account.lastActivityDate == null || date.isAfter(account.lastActivityDate!)) {
-        await (update(accounts)..where((a) => a.id.equals(accountId)))
-            .write(AccountsCompanion(lastActivityDate: Value(date)));
-      }
-    }
+  Future<void> _updateAccountActivity(int accountId) async {
+    await (update(accounts)..where((a) => a.id.equals(accountId)))
+        .write(AccountsCompanion(lastActivityDate: Value(DateTime.now())));
   }
 
   /// Find a transaction that likely matches a debt creation
