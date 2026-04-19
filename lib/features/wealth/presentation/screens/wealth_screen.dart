@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import '../../../../core/services/analytics_service.dart';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -58,6 +59,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsService.trackFirstWealthVisit();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {

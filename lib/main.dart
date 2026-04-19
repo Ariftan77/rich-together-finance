@@ -6,6 +6,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 import 'package:sqlite3/open.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'features/auth/presentation/widgets/app_lock_overlay.dart';
@@ -49,9 +51,17 @@ void main() async {
   // Initialize Firebase first — everything depends on it.
   try {
     var sw = Stopwatch()..start();
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('⏱️ [main] Firebase: ${sw.elapsedMilliseconds}ms');
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Enable analytics collection first — must be committed to the native layer
+    // before any logEvent call is made. Running this inside Future.wait created
+    // a race where the native "collection enabled" flag was not yet applied when
+    // logEvent calls arrived from the parallel group.
+    sw = Stopwatch()..start();
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+    debugPrint('⏱️ [main] Analytics collection enabled: ${sw.elapsedMilliseconds}ms');
 
     // Parallel — all independent. Network-heavy parts of Notifications and
     // PremiumAuth are fire-and-forget internally, so they resolve fast.

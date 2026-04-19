@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
@@ -43,6 +44,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsService.trackFirstOverviewVisit();
     _tabController = TabController(length: 2, vsync: this);
     _reportSubTabController = TabController(length: 2, vsync: this);
     _reportScrollController.addListener(_onReportScroll);

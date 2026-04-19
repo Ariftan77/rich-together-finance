@@ -8,6 +8,7 @@ import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
@@ -27,6 +28,12 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
   Currency _selectedCurrency = Currency.idr;
   OnboardingCountry _selectedCountry = OnboardingCountry.indonesia;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.trackOnboardingStarted();
+  }
 
   // ---------------------------------------------------------------------------
   // Locale helpers
@@ -131,6 +138,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
       await prefs.setBool(AppConstants.onboardingCompletedKey, true);
 
       if (!mounted) return;
+      AnalyticsService.trackOnboardingStepCompleted('getting_started');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const OnboardingStoriesScreen()),

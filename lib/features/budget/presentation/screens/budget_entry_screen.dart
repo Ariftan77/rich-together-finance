@@ -5,6 +5,7 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
@@ -109,6 +110,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
             createdAt: drift.Value(DateTime.now()),
           ),
         );
+        AnalyticsService.trackFirstBudgetCreated();
       } else {
         // Update
         await dao.updateBudget(

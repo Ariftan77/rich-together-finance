@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 
@@ -79,12 +80,15 @@ class _OnboardingStoriesScreenState
 
   void _advanceSlide() {
     if (_currentIndex < _slideCount - 1) {
+      AnalyticsService.trackOnboardingStepCompleted('stories_slide_${_currentIndex + 1}');
       setState(() => _currentIndex++);
       _controller
         ..reset()
         ..forward();
     } else {
-      _navigateToDashboard();
+      // Last slide auto-advanced or tapped through — fire its completion
+      AnalyticsService.trackOnboardingStepCompleted('stories_slide_${_currentIndex + 1}');
+      _navigateToDashboard(skipped: false);
     }
   }
 
@@ -124,8 +128,16 @@ class _OnboardingStoriesScreenState
   // Navigation
   // ---------------------------------------------------------------------------
 
-  void _navigateToDashboard() {
+  void _navigateToDashboard({bool skipped = false}) {
     if (!mounted) return;
+    if (skipped) {
+      // Fire the current slide as skipped so we know where user dropped off
+      AnalyticsService.trackOnboardingStepCompleted(
+        'stories_slide_${_currentIndex + 1}',
+        skipped: true,
+      );
+    }
+    AnalyticsService.trackOnboardingCompleted();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const DashboardShell()),
@@ -193,8 +205,8 @@ class _OnboardingStoriesScreenState
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: _BottomActions(
                     currentIndex: _currentIndex,
-                    onSkip: _navigateToDashboard,
-                    onGetStarted: _navigateToDashboard,
+                    onSkip: () => _navigateToDashboard(skipped: true),
+                    onGetStarted: () => _navigateToDashboard(skipped: false),
                   ),
                 ),
               ),

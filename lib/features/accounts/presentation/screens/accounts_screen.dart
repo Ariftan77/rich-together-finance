@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/analytics_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
@@ -88,6 +89,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.trackFirstWalletVisit();
     _walletSearchController.addListener(() {
       ref.read(_walletSearchProvider.notifier).state = _walletSearchController.text;
       setState(() {});
