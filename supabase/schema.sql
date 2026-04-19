@@ -139,3 +139,24 @@ ALTER TABLE app_announcements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "announcements_read" ON app_announcements
   FOR SELECT TO anon
   USING (is_active = true);
+
+-- =============================================================================
+-- Founder Feedback (user contact collection)
+-- =============================================================================
+-- App inserts anonymously. No SELECT policy for anon — only readable via
+-- Supabase dashboard (service key). Triggered on 3rd app open as a modal.
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS founder_feedback (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact    TEXT NOT NULL,
+  message    TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE founder_feedback ENABLE ROW LEVEL SECURITY;
+
+-- Anon can insert only — no read access for app clients
+CREATE POLICY "founder_feedback_insert" ON founder_feedback
+  FOR INSERT TO anon
+  WITH CHECK (true);

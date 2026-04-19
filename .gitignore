@@ -65,4 +65,4 @@ lib/core/constants/secrets.dart
 # Android keystore
 android/key.properties
 android/app/upload-keystore.jks
-android/app/debug.jks
+android/app/debug.jks"lib/firebase_options.dart"        

@@ -27,6 +27,8 @@ import '../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../shared/tour/tour_keys.dart';
 import '../../../core/providers/nav_providers.dart';
 import '../../transactions/presentation/providers/search_provider.dart';
+import '../../feedback/presentation/founder_feedback_modal.dart';
+import '../../feedback/services/founder_feedback_service.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -75,6 +77,15 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // Show App Open ad once per day
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AdService().loadAndShowAppOpen(context);
+    });
+
+    // Show "Feedback from the Founder" modal on the 3rd app open — once ever.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final show = await FounderFeedbackService.shouldShowModal();
+      if (!show) return;
+      if (!mounted) return;
+      final locale = ref.read(localeProvider);
+      showFounderFeedbackModal(context, isIndonesian: locale.languageCode == 'id');
     });
 
     _triggerAutoBackup();
