@@ -206,7 +206,12 @@ class _ChartTabState extends ConsumerState<_ChartTab>
 
     final activeAsync = _selectedIndex == 0 ? expenseAsync : incomeAsync;
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      color: AppColors.primaryGold,
+      onRefresh: () async {
+        ref.invalidate(reportMonthTransactionsProvider(widget.month));
+      },
+      child: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,6 +253,7 @@ class _ChartTabState extends ConsumerState<_ChartTab>
                 Text('$e', style: const TextStyle(color: Colors.red)),
           ),
         ],
+      ),
       ),
     );
   }
@@ -719,7 +725,12 @@ class _CategoryTabState extends ConsumerState<_CategoryTab>
     final expenseCatAsync = ref.watch(reportExpenseByCategoryProvider(widget.month));
     final incomeCatAsync = ref.watch(reportIncomeByCategoryProvider(widget.month));
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      color: AppColors.primaryGold,
+      onRefresh: () async {
+        ref.invalidate(reportMonthTransactionsProvider(widget.month));
+      },
+      child: SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -784,6 +795,7 @@ class _CategoryTabState extends ConsumerState<_CategoryTab>
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1114,7 +1126,12 @@ class _TitleTabState extends ConsumerState<_TitleTab>
     final expenseTitleAsync = ref.watch(reportExpenseByTitleProvider(widget.month));
     final incomeTitleAsync = ref.watch(reportIncomeByTitleProvider(widget.month));
 
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      color: AppColors.primaryGold,
+      onRefresh: () async {
+        ref.invalidate(reportMonthTransactionsProvider(widget.month));
+      },
+      child: SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1179,6 +1196,7 @@ class _TitleTabState extends ConsumerState<_TitleTab>
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
         ],
+      ),
       ),
     );
   }

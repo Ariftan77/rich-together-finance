@@ -632,6 +632,8 @@ final monthlySummaryProvider =
   final profileId = ref.watch(activeProfileIdProvider);
   if (profileId == null) return [];
 
+  ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
+
   final monthCount = ref.watch(reportMonthCountProvider);
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);

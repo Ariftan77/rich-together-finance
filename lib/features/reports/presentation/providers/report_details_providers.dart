@@ -74,10 +74,13 @@ Future<Map<String, double>> _preloadRates(
 // ---------------------------------------------------------------------------
 
 final reportMonthTransactionsProvider =
-    FutureProvider.autoDispose.family<List<ConvertedTransaction>, DateTime>(
-        (ref, month) async {
+    StreamProvider.autoDispose.family<List<ConvertedTransaction>, DateTime>(
+        (ref, month) async* {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) return [];
+  if (profileId == null) {
+    yield [];
+    return;
+  }
 
   final accountDao = ref.watch(accountDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
@@ -92,29 +95,29 @@ final reportMonthTransactionsProvider =
   final accountMap = {for (final a in accounts) a.id: a};
   final rates = await _preloadRates(exchangeService);
 
-  final transactions = await transactionDao.getTransactionsInRange(
-      profileId, startOfMonth, endOfMonth);
-
-  return transactions.map((tx) {
-    final account = accountMap[tx.accountId];
-    final currency = account?.currency ?? baseCurrency;
-    double convertedAmount;
-    if (currency == baseCurrency) {
-      convertedAmount = tx.amount;
-    } else {
-      convertedAmount = CurrencyExchangeService.convertCurrency(
-        tx.amount,
-        currency.code,
-        baseCurrency.code,
-        rates,
+  await for (final transactions in transactionDao.watchTransactionsInRange(
+      profileId, startOfMonth, endOfMonth)) {
+    yield transactions.map((tx) {
+      final account = accountMap[tx.accountId];
+      final currency = account?.currency ?? baseCurrency;
+      double convertedAmount;
+      if (currency == baseCurrency) {
+        convertedAmount = tx.amount;
+      } else {
+        convertedAmount = CurrencyExchangeService.convertCurrency(
+          tx.amount,
+          currency.code,
+          baseCurrency.code,
+          rates,
+        );
+      }
+      return ConvertedTransaction(
+        transaction: tx,
+        convertedAmount: convertedAmount,
+        originalCurrency: currency,
       );
-    }
-    return ConvertedTransaction(
-      transaction: tx,
-      convertedAmount: convertedAmount,
-      originalCurrency: currency,
-    );
-  }).toList();
+    }).toList();
+  }
 });
 
 // ---------------------------------------------------------------------------

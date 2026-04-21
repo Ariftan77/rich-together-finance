@@ -30,7 +30,25 @@ class TransactionEntryScreen extends ConsumerStatefulWidget {
   /// preventing an AnimatedSwitcher mid-animation setState during edit loads.
   final TransactionType? transactionType;
 
-  const TransactionEntryScreen({super.key, this.transactionId, this.transactionType});
+  // Pre-fill parameters used when duplicating a transaction
+  final TransactionType? initialType;
+  final int? initialAccountId;
+  final int? initialCategoryId;
+  final String? initialAmount;
+  final String? initialNote;
+  final String? initialTitle;
+
+  const TransactionEntryScreen({
+    super.key,
+    this.transactionId,
+    this.transactionType,
+    this.initialType,
+    this.initialAccountId,
+    this.initialCategoryId,
+    this.initialAmount,
+    this.initialNote,
+    this.initialTitle,
+  });
 
   @override
   ConsumerState<TransactionEntryScreen> createState() => _TransactionEntryScreenState();
@@ -86,6 +104,29 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     // edit mode never triggers AnimatedSwitcher mid-animation via setState.
     if (widget.transactionType != null) {
       _selectedType = widget.transactionType!;
+    }
+
+    // Apply pre-fill values from duplication (add mode only)
+    if (widget.transactionId == null) {
+      if (widget.initialType != null) {
+        _selectedType = widget.initialType!;
+      }
+      if (widget.initialAccountId != null) {
+        _selectedAccountId = widget.initialAccountId;
+      }
+      if (widget.initialCategoryId != null) {
+        _selectedCategoryId = widget.initialCategoryId;
+      }
+      if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
+        _rawAmount = widget.initialAmount!;
+        // Amount display text will be set after accounts load, handled below
+      }
+      if (widget.initialNote != null) {
+        _noteController.text = widget.initialNote!;
+      }
+      if (widget.initialTitle != null) {
+        _titleController.text = widget.initialTitle!;
+      }
     }
 
     // Filter bubbles as user types
@@ -206,6 +247,20 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final currency = accounts != null ? _getCurrency(accounts) : ref.read(defaultCurrencyProvider);
     final showDecimal = ref.read(showDecimalProvider);
 
+    // If a pre-filled amount exists (e.g. from duplication), just format and display it
+    // without opening the calculator automatically.
+    final preFilledAmount = double.tryParse(_rawAmount) ?? 0.0;
+    if (preFilledAmount > 0) {
+      setState(() {
+        _amountController.text = Formatters.formatCurrency(
+          preFilledAmount,
+          currency: currency,
+          showDecimal: showDecimal,
+        );
+      });
+      return;
+    }
+
     final result = await CalculatorBottomSheet.show(
       context,
       initialValue: 0,
@@ -325,35 +380,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     setState(() => _isSaving = true);
 
     try {
-      // Check if selected account is a credit card (no balance limit)
-      final selectedAccount = await ref.read(accountDaoProvider).getAccountById(_selectedAccountId!);
-      final isCreditCard = selectedAccount?.type.isCreditCard ?? false;
-
-      // Validate sufficient balance for expenses and transfers
-      final isEditing = widget.transactionId != null;
-      final sameAccount = _selectedAccountId == _originalAccountId;
-      // Skip only when editing the same account with the same amount (net effect on balance is zero)
-      final skipBalanceCheck = isEditing && _originalAmount != null && sameAccount && amount == _originalAmount;
-
-      if ((_selectedType == TransactionType.expense || _selectedType == TransactionType.transfer) &&
-          !isCreditCard && !skipBalanceCheck) {
-        final accountBalance = await ref.read(transactionDaoProvider).calculateAccountBalance(_selectedAccountId!);
-        // When editing the same account, add back the original amount since it's already deducted
-        // in the stored balance. This gives the true available balance before this transaction.
-        final effectiveBalance = (isEditing && sameAccount && _originalAmount != null)
-            ? accountBalance + _originalAmount!
-            : accountBalance;
-        if (amount > effectiveBalance) {
-          if (mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text('Insufficient balance. Available: ${Formatters.formatNumber(effectiveBalance)}')),
-            );
-            setState(() => _isSaving = false);
-          }
-          return;
-        }
-      }
-      
       final dao = ref.read(transactionDaoProvider);
 
       double? finalDestinationAmount;
@@ -975,6 +1001,12 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                           icon: const Icon(Icons.delete_outline, color: Colors.red),
                           onPressed: _deleteTransaction,
                           tooltip: trans.delete,
+                        ),
+                      if (_selectedType == TransactionType.income || _selectedType == TransactionType.expense)
+                        IconButton(
+                          icon: Icon(Icons.content_copy, color: isLight ? AppColors.textPrimaryLight : Colors.white),
+                          onPressed: _duplicateTransaction,
+                          tooltip: ref.read(localeProvider).languageCode == 'id' ? 'Duplikat Transaksi' : 'Duplicate Transaction',
                         ),
                       if (_selectedType != TransactionType.transfer)
                         IconButton(
@@ -1661,6 +1693,197 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       ),
     ),
     );
+  }
+
+  Future<void> _duplicateTransaction() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final isId = ref.read(localeProvider).languageCode == 'id';
+
+    // Pre-flight validation
+    if (_selectedAccountId == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(isId ? 'Pilih akun terlebih dahulu' : 'Please select an account')),
+      );
+      return;
+    }
+
+    if (_selectedType != TransactionType.transfer && _selectedCategoryId == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(isId ? 'Pilih kategori terlebih dahulu' : 'Please select a category')),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(_rawAmount) ?? 0.0;
+    if (amount <= 0) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(isId ? 'Masukkan jumlah yang valid' : 'Please enter a valid amount')),
+      );
+      return;
+    }
+
+    // Confirmation dialog
+    final themeModeDup = AppThemeProvider.of(context);
+    final isLightDup = themeModeDup == AppThemeMode.light || (themeModeDup == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefaultDup = themeModeDup == AppThemeMode.defaultTheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDefaultDup ? const Color(0xFF2D2416) : isLightDup ? Colors.white : const Color(0xFF0A0A0A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.content_copy, color: AppColors.primaryGold, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isId ? 'Duplikat Transaksi' : 'Duplicate Transaction',
+                style: TextStyle(
+                  color: isLightDup ? AppColors.textPrimaryLight : Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isId
+              ? 'Transaksi saat ini akan disimpan, lalu salinannya akan dibuka untuk Anda tinjau.'
+              : 'Current transaction will be saved, then a copy will be opened for you to review.',
+          style: TextStyle(
+            color: isLightDup ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              isId ? 'Batal' : 'Cancel',
+              style: TextStyle(
+                color: isLightDup ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: const Color(0xFF1A1410),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              isId ? 'Duplikat' : 'Duplicate',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final dao = ref.read(transactionDaoProvider);
+      final profileId = ref.read(activeProfileIdProvider);
+
+      if (profileId == null) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          messenger.showSnackBar(
+            SnackBar(content: Text(isId ? 'Tidak ada profil aktif.' : 'No active profile. Please set up a profile first.')),
+          );
+        }
+        return;
+      }
+
+      double? finalDestinationAmount;
+      double? finalExchangeRate;
+
+      // Handle cross-currency transfer destination amount
+      if (_selectedType == TransactionType.transfer && _selectedToAccountId != null) {
+        final accountDao = ref.read(accountDaoProvider);
+        final fromAccount = await accountDao.getAccountById(_selectedAccountId!);
+        final toAccount = await accountDao.getAccountById(_selectedToAccountId!);
+
+        if (fromAccount != null && toAccount != null) {
+          if (fromAccount.currency != toAccount.currency) {
+            if (!mounted) return;
+            final destinationAmount = await _showConversionDialog(
+              context,
+              amount,
+              fromAccount.currency,
+              toAccount.currency,
+            );
+            if (destinationAmount == null) {
+              if (mounted) setState(() => _isSaving = false);
+              return;
+            }
+            finalDestinationAmount = destinationAmount;
+            if (destinationAmount > 0) {
+              finalExchangeRate = amount / destinationAmount;
+            }
+          } else {
+            finalDestinationAmount = amount;
+            finalExchangeRate = 1.0;
+          }
+        }
+      }
+
+      if (_selectedType == TransactionType.transfer && finalDestinationAmount == null) {
+        finalDestinationAmount = amount;
+        finalExchangeRate = 1.0;
+      }
+
+      // Save current transaction to DB
+      final transactionCompanion = TransactionsCompanion(
+        profileId: drift.Value(profileId),
+        accountId: drift.Value(_selectedAccountId!),
+        categoryId: _selectedCategoryId != null ? drift.Value(_selectedCategoryId!) : const drift.Value.absent(),
+        toAccountId: _selectedToAccountId != null ? drift.Value(_selectedToAccountId!) : const drift.Value.absent(),
+        destinationAmount: finalDestinationAmount != null ? drift.Value(finalDestinationAmount) : const drift.Value.absent(),
+        exchangeRate: finalExchangeRate != null ? drift.Value(finalExchangeRate) : const drift.Value.absent(),
+        type: drift.Value(_selectedType),
+        amount: drift.Value(amount),
+        date: drift.Value(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute)),
+        title: drift.Value(_titleController.text),
+        note: drift.Value(_noteController.text),
+        createdAt: widget.transactionId == null ? drift.Value(DateTime.now()) : const drift.Value.absent(),
+      );
+
+      if (widget.transactionId != null) {
+        await dao.updateTransaction(widget.transactionId!, transactionCompanion);
+      } else {
+        await dao.insertTransaction(transactionCompanion);
+        AnalyticsService.trackFirstTransactionAdded();
+      }
+
+      if (!mounted) return;
+
+      // Push new entry screen pre-filled with current data, date reset to today
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => TransactionEntryScreen(
+            initialType: _selectedType,
+            initialAccountId: _selectedAccountId,
+            initialCategoryId: _selectedCategoryId,
+            initialAmount: _rawAmount,
+            initialNote: _noteController.text,
+            initialTitle: _titleController.text,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        messenger.showSnackBar(
+          SnackBar(content: Text(isId ? 'Gagal menduplikat transaksi: $e' : 'Error duplicating transaction: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _showRecurringDialog() async {
