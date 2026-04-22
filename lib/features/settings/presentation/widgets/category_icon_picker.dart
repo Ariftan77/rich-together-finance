@@ -181,11 +181,17 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
         (themeMode == AppThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
+    // Capture the modal route context BEFORE entering the DraggableScrollableSheet
+    // builder, which shadows `context` with its own inner context. Using the inner
+    // builder context for Navigator.pop would target the sheet's internal route
+    // instead of the modal bottom sheet route, causing the result value to be lost.
+    final modalContext = context;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.65,
       maxChildSize: 0.95,
-      builder: (context, _) {
+      builder: (sheetContext, scrollController) {
         return Container(
           decoration: BoxDecoration(
             color: isLight ? const Color(0xFFF8FAFC) : const Color(0xFF2D2416),
@@ -215,7 +221,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                       style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context, {
+                      onPressed: () => Navigator.pop(modalContext, {
                         'icon': _selectedIcon,
                         'color': _selectedColorHex,
                       }),

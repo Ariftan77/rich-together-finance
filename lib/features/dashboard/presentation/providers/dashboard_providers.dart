@@ -1126,11 +1126,17 @@ final budgetPerformanceProvider =
   ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
   final now = DateTime.now();
 
-  // 1. Load only monthly budgets
+  // 1. Load only monthly budgets with their linked categories
   final allBudgets = await budgetDao.getAllBudgets(profileId);
   final monthlyBudgets =
       allBudgets.where((b) => b.period == BudgetPeriod.monthly).toList();
   if (monthlyBudgets.isEmpty) return [];
+
+  // Pre-fetch linked category IDs for all monthly budgets.
+  final budgetCatIds = <int, List<int>>{};
+  for (final b in monthlyBudgets) {
+    budgetCatIds[b.id] = await budgetDao.getLinkedCategoryIds(b.id);
+  }
 
   final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
   final accountMap = {for (final a in accounts) a.id: a};
@@ -1169,7 +1175,9 @@ final budgetPerformanceProvider =
 
     int exceededCount = 0;
     for (final budget in monthlyBudgets) {
-      final actual = actualByCat[budget.categoryId] ?? 0;
+      final linkedCats = budgetCatIds[budget.id] ?? [];
+      final actual =
+          linkedCats.fold<double>(0, (sum, cId) => sum + (actualByCat[cId] ?? 0));
       if (actual > budget.amount) exceededCount++;
     }
 

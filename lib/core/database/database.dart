@@ -22,6 +22,7 @@ import 'tables/price_cache.dart';
 import 'tables/budgets.dart';
 import 'tables/goals.dart';
 import 'tables/goal_accounts.dart';
+import 'tables/budget_categories.dart';
 import 'tables/debts.dart';
 import 'tables/recurring.dart';
 import 'tables/daily_exchange_rates.dart';
@@ -39,6 +40,7 @@ part 'database.g.dart';
   InvestmentTransactions,
   PriceCache,
   Budgets,
+  BudgetCategories,
   Goals,
   GoalAccounts,
   Debts,
@@ -53,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -192,6 +194,48 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {}
           try {
             await customStatement('ALTER TABLE accounts ADD COLUMN payment_due_day INTEGER');
+          } catch (_) {}
+        }
+        if (from < 19) {
+          // 1. Create the new budget_categories junction table
+          await m.createTable(budgetCategories);
+
+          // 2. Migrate existing single categoryId links into the junction table
+          await customStatement(
+            'INSERT INTO budget_categories (budget_id, category_id) '
+            'SELECT id, category_id FROM budgets WHERE category_id IS NOT NULL',
+          );
+
+          // 3. Recreate budgets table: add name column (seeded from old category name),
+          //    and drop the categoryId column + unique constraint in one step.
+          await m.alterTable(
+            TableMigration(
+              budgets,
+              columnTransformer: {
+                budgets.name: const CustomExpression(
+                  '(SELECT name FROM categories WHERE categories.id = budgets.category_id)',
+                ),
+              },
+            ),
+          );
+        }
+        if (from < 20) {
+          try {
+            await m.addColumn(budgets, budgets.icon);
+          } catch (_) {}
+          // Seed icon from first linked category for existing budgets
+          await customStatement(
+            'UPDATE budgets SET icon = ('
+            '  SELECT c.icon FROM budget_categories bc '
+            '  JOIN categories c ON c.id = bc.category_id '
+            '  WHERE bc.budget_id = budgets.id '
+            '  LIMIT 1'
+            ')',
+          );
+        }
+        if (from < 21) {
+          try {
+            await m.addColumn(budgets, budgets.iconColor);
           } catch (_) {}
         }
       },
@@ -455,6 +499,12 @@ class AppDatabase extends _$AppDatabase {
         await (delete(goalAccounts)..where((ga) => ga.goalId.equals(g.id))).go();
       }
 
+      // Delete budget category links before budgets
+      final profileBudgets = await (select(budgets)..where((b) => b.profileId.equals(profileId))).get();
+      for (final b in profileBudgets) {
+        await (delete(budgetCategories)..where((bc) => bc.budgetId.equals(b.id))).go();
+      }
+
       await (delete(transactions)..where((t) => t.profileId.equals(profileId))).go();
       await (delete(recurring)..where((r) => r.profileId.equals(profileId))).go();
       await (delete(budgets)..where((b) => b.profileId.equals(profileId))).go();
@@ -478,6 +528,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(recurring).go();
       await delete(priceCache).go();
       await delete(dailyExchangeRates).go();
+      await delete(budgetCategories).go();
       await delete(budgets).go();
       await delete(goals).go();
       await delete(goalAccounts).go();

@@ -568,6 +568,42 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         ? Colors.red
         : (item.progress > 0.5 ? Colors.orange : AppColors.success);
 
+    // Determine whether this budget has its own custom icon.
+    final hasBudgetIcon = item.budget.icon != null && item.budget.icon!.isNotEmpty;
+
+    // Resolve avatar background color and icon according to priority rules.
+    Color avatarBgColor;
+    Widget avatarChild;
+
+    if (hasBudgetIcon) {
+      // Use the saved iconColor if present; fall back to primaryGold.
+      final colorHex = item.budgetIconColor;
+      if (colorHex != null &&
+          colorHex.isNotEmpty &&
+          colorHex != 'transparent') {
+        avatarBgColor =
+            Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+      } else {
+        avatarBgColor = Colors.transparent;
+      }
+      avatarChild = CategoryIconWidget(
+        iconString: item.budget.icon!,
+        size: 20,
+        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+      );
+    } else {
+      // Fallback: use first category icon and color (original pattern).
+      final catColorHex = item.categoryColor;
+      avatarBgColor = catColorHex == 'transparent' || catColorHex.isEmpty
+          ? Colors.transparent
+          : Color(int.parse(catColorHex.replaceFirst('#', '0xFF')));
+      avatarChild = CategoryIconWidget(
+        iconString: item.categoryIcon,
+        size: 20,
+        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: GestureDetector(
@@ -575,10 +611,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BudgetEntryScreen(budget: item.budget),
+              builder: (context) =>
+                  BudgetEntryScreen(budgetWithSpending: item),
             ),
           );
         },
+        onLongPress: item.linkedCategoryCount > 1
+            ? () => _showBudgetCategoryBreakdownDialog(item, trans, showDecimal)
+            : null,
         child: GlassCard(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -589,16 +629,10 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.categoryColor == 'transparent' || item.categoryColor.isEmpty
-                          ? Colors.transparent
-                          : Color(int.parse(item.categoryColor.replaceFirst('#', '0xFF'))),
+                      color: avatarBgColor,
                       shape: BoxShape.circle,
                     ),
-                    child: CategoryIconWidget(
-                      iconString: item.categoryIcon,
-                      size: 20,
-                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                    ),
+                    child: avatarChild,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -680,6 +714,187 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color? _parseCatColor(String? raw) {
+    if (raw == null || raw == 'transparent') return null;
+    final hex = raw.startsWith('#') ? raw.substring(1) : raw;
+    final val = int.tryParse(hex.length == 6 ? 'FF$hex' : hex, radix: 16);
+    return val != null ? Color(val) : null;
+  }
+
+  void _showBudgetCategoryBreakdownDialog(
+    BudgetWithSpending item,
+    dynamic trans,
+    bool showDecimal,
+  ) {
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: isDefault
+            ? const Color(0xFF2D2416)
+            : isLight
+                ? const Color(0xFFF8FAFC)
+                : const Color(0xFF0A0A0A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: budget icon + name
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: item.displayIcon != null
+                        ? CategoryIconWidget(
+                            iconString: item.displayIcon!,
+                            size: 20,
+                            color: AppColors.primaryGold,
+                          )
+                        : const Icon(
+                            Icons.category_outlined,
+                            color: AppColors.primaryGold,
+                            size: 20,
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.categoryName,
+                      style: TextStyle(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Spent per category',
+                style: TextStyle(
+                  color: isLight
+                      ? const Color(0xFF94A3B8)
+                      : Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Divider(
+                color: isLight
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.1),
+                height: 1,
+              ),
+              const SizedBox(height: 16),
+              // Per-category rows
+              ...item.categories.map((cat) {
+                final catSpent = item.spentByCategory[cat.id] ?? 0.0;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: (_parseCatColor(cat.color) ?? AppColors.primaryGold)
+                              .withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: CategoryIconWidget(
+                          iconString: cat.icon,
+                          size: 16,
+                          color: _parseCatColor(cat.color) ?? AppColors.primaryGold,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          cat.name,
+                          style: TextStyle(
+                            color: isLight
+                                ? AppColors.textPrimaryLight
+                                : Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            Formatters.formatCurrency(
+                              catSpent,
+                              currency: item.budget.currency,
+                              showDecimal: showDecimal,
+                            ),
+                            style: TextStyle(
+                              color: catSpent > 0
+                                  ? (isLight
+                                      ? AppColors.textPrimaryLight
+                                      : Colors.white)
+                                  : (isLight
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white38),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'of ${Formatters.formatCurrency(item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}',
+                            style: TextStyle(
+                              color: isLight
+                                  ? const Color(0xFF94A3B8)
+                                  : Colors.white.withValues(alpha: 0.4),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(
+                    trans.close as String,
+                    style: TextStyle(
+                      color: isLight
+                          ? const Color(0xFF64748B)
+                          : Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
@@ -8,7 +7,6 @@ import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
-
 
 /// Summary of all budgets for a given period, converted to the user's default currency
 class BudgetPeriodSummary {
@@ -28,25 +26,61 @@ class BudgetPeriodSummary {
   }) : progress = totalBudget > 0 ? totalSpent / totalBudget : 0.0;
 }
 
-/// Model to hold budget data combined with spending info
+/// Model to hold budget data combined with spending info and multi-category details
 class BudgetWithSpending {
   final Budget budget;
-  final String categoryName;
-  final String categoryIcon;
-  final String categoryColor;
+  final List<Category> categories;
+
+  /// The raw count of category IDs linked to this budget in the junction table.
+  /// This may differ from [categories].length when linked categories have been
+  /// deleted from the DB.  Use this for "has multiple categories" checks so
+  /// that the breakdown long-press is not silently disabled by stale deletes.
+  final int linkedCategoryCount;
+
   final double spentAmount;
   final double remainingAmount;
   final double progress; // 0.0 to 1.0 (or > 1.0 if over budget)
 
+  /// Per-category spending breakdown: categoryId → converted spent amount.
+  final Map<int, double> spentByCategory;
+
+  // Convenience accessors kept for backward compatibility with display widgets.
+  String get categoryName => _derivedName;
+  String get categoryIcon => categories.isNotEmpty ? categories.first.icon : '';
+  String get categoryColor =>
+      categories.isNotEmpty ? (categories.first.color ?? '#808080') : '#808080';
+
+  /// The color hex string saved alongside the budget's own icon (may be null).
+  String? get budgetIconColor => budget.iconColor;
+
+  /// The icon to display for this budget.
+  /// Priority: budget's own icon → single-category icon → null (use generic).
+  String? get displayIcon {
+    if (budget.icon != null && budget.icon!.isNotEmpty) return budget.icon;
+    if (categories.isNotEmpty) return categories.first.icon;
+    return null;
+  }
+
+  String get _derivedName {
+    if (budget.name != null && budget.name!.trim().isNotEmpty) {
+      return budget.name!.trim();
+    }
+    if (categories.isEmpty) return 'Unnamed Budget';
+    if (categories.length == 1) return categories.first.name;
+    if (categories.length == 2) {
+      return '${categories[0].name} & ${categories[1].name}';
+    }
+    return '${categories[0].name} + ${categories.length - 1} more';
+  }
+
   BudgetWithSpending({
     required this.budget,
-    required this.categoryName,
-    required this.categoryIcon,
-    required this.categoryColor,
+    required this.categories,
+    required this.linkedCategoryCount,
     required this.spentAmount,
-  }) :
-    remainingAmount = budget.amount - spentAmount,
-    progress = (budget.amount > 0) ? (spentAmount / budget.amount) : 0.0;
+    this.spentByCategory = const {},
+  })  : remainingAmount = budget.amount - spentAmount,
+        progress = (budget.amount > 0) ? (spentAmount / budget.amount) : 0.0;
 }
 
 /// Provider to get all budgets with spending calculations
@@ -54,25 +88,19 @@ final budgetsWithSpendingProvider =
     StreamProvider.autoDispose<List<BudgetWithSpending>>((ref) {
   final budgetDao = ref.watch(budgetDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
-  final categoryDao = ref.watch(categoryDaoProvider);
   final accountDao = ref.watch(accountDaoProvider);
   final exchangeService = ref.watch(currencyExchangeServiceProvider);
   final profileId = ref.watch(activeProfileIdProvider);
 
-
-
   if (profileId == null) return Stream.value([]);
 
   // Merge budget and transaction change events into a single trigger.
-  // Both Drift streams emit their current value immediately on subscription,
-  // so the first trigger fires right away to produce an initial result.
   final controller = StreamController<void>();
   void trigger() {
-
     if (!controller.isClosed) controller.add(null);
   }
-  void propagateError(Object e, StackTrace s) {
 
+  void propagateError(Object e, StackTrace s) {
     if (!controller.isClosed) controller.addError(e, s);
   }
 
@@ -83,7 +111,6 @@ final budgetsWithSpendingProvider =
       .watchAllTransactions(profileId)
       .listen((_) => trigger(), onError: propagateError);
 
-  // Trigger an immediate first computation without waiting for Drift to emit.
   Future.microtask(trigger);
 
   ref.onDispose(() {
@@ -93,26 +120,30 @@ final budgetsWithSpendingProvider =
   });
 
   return controller.stream.asyncMap((_) async {
-
     final rateResult = await exchangeService.getRates();
 
     final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
     final accountMap = {for (final a in accounts) a.id: a};
 
-    final budgets = await budgetDao.getAllBudgets(profileId);
+    final budgetList = await budgetDao.getAllBudgets(profileId);
+    if (budgetList.isEmpty) return <BudgetWithSpending>[];
 
-    if (budgets.isEmpty) return <BudgetWithSpending>[];
-
-    final categories = await categoryDao.getAllCategories();
-    final categoriesMap = {for (var c in categories) c.id: c};
+    // Load categories and budget-category links once.
+    final categoryDao = ref.read(categoryDaoProvider);
+    final allCategories = await categoryDao.getAllCategories();
+    final categoryById = {for (final c in allCategories) c.id: c};
 
     final List<BudgetWithSpending> result = [];
 
-    for (final budget in budgets) {
-      final category = categoriesMap[budget.categoryId];
-      if (category == null) continue;
+    for (final budget in budgetList) {
+      // Fetch linked category IDs for this budget.
+      final linkedCatIds = await budgetDao.getLinkedCategoryIds(budget.id);
+      final linkedCats = linkedCatIds
+          .map((id) => categoryById[id])
+          .whereType<Category>()
+          .toList();
 
-      // Determine date range for the budget period
+      // Determine date range for the budget period.
       final now = DateTime.now();
       DateTime startDate;
       DateTime endDate;
@@ -130,41 +161,47 @@ final budgetsWithSpendingProvider =
         endDate = DateTime(now.year, 12, 31, 23, 59, 59);
       }
 
-      final transactions = await transactionDao.getTransactionsByCategoryAndDate(
-        budget.categoryId,
-        startDate,
-        endDate,
-        profileId: profileId,
-      );
-
-      // Sum expenses, converting each to the budget's own currency
+      // Sum expenses across all linked categories.
       double totalSpent = 0;
-      for (final tx in transactions) {
-        if (tx.type != TransactionType.expense) continue;
-        final account = accountMap[tx.accountId];
-        if (account == null || account.currency == budget.currency) {
-          totalSpent += tx.amount;
-        } else {
-          totalSpent += CurrencyExchangeService.convertCurrency(
-            tx.amount,
-            account.currency.code,
-            budget.currency.code,
-            rateResult.rates,
-          );
+      final Map<int, double> spentByCategory = {};
+      for (final catId in linkedCatIds) {
+        final txs = await transactionDao.getTransactionsByCategoryAndDate(
+          catId,
+          startDate,
+          endDate,
+          profileId: profileId,
+        );
+        double catSpent = 0;
+        for (final tx in txs) {
+          if (tx.type != TransactionType.expense) continue;
+          final account = accountMap[tx.accountId];
+          double converted;
+          if (account == null || account.currency == budget.currency) {
+            converted = tx.amount;
+          } else {
+            converted = CurrencyExchangeService.convertCurrency(
+              tx.amount,
+              account.currency.code,
+              budget.currency.code,
+              rateResult.rates,
+            );
+          }
+          catSpent += converted;
+          totalSpent += converted;
         }
+        spentByCategory[catId] = catSpent;
       }
 
       result.add(BudgetWithSpending(
         budget: budget,
-        categoryName: category.name,
-        categoryIcon: category.icon,
-        categoryColor: category.color ?? '#808080',
+        categories: linkedCats,
+        linkedCategoryCount: linkedCatIds.length,
         spentAmount: totalSpent,
+        spentByCategory: spentByCategory,
       ));
     }
 
     result.sort((a, b) => b.progress.compareTo(a.progress));
-
     return result;
   });
 });
@@ -212,7 +249,6 @@ final budgetPeriodSummariesProvider =
     );
   }).toList();
 
-  // Sort by period order: weekly → monthly → yearly
   result.sort((a, b) => a.period.index.compareTo(b.period.index));
   return result;
 });
