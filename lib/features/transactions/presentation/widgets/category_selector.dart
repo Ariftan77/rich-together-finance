@@ -5,6 +5,7 @@ import '../../../../core/database/database.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 
 /// A searchable category selector with "Add New" option
@@ -60,11 +61,8 @@ class _CategorySelectorState extends State<CategorySelector> {
     super.dispose();
   }
 
-  Color _parseColor(String? hex) {
-    if (hex == null || hex == 'transparent') return Colors.white.withValues(alpha: 0.1);
-    final cleaned = hex.replaceFirst('#', '0xFF');
-    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
-  }
+  Color _parseColor(String? hex) =>
+      parseHexColor(hex).withValues(alpha: 0.2);
 
   String _truncate(String name) =>
       name.length > 15 ? '${name.substring(0, 15)}...' : name;

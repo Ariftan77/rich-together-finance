@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/database.dart';
 import '../../../../core/database/daos/transaction_dao.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -350,11 +351,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     );
   }
 
-  Color _parseColor(String? hex) {
-    if (hex == null || hex == 'transparent') return Colors.transparent;
-    final cleaned = hex.replaceFirst('#', '0xFF');
-    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
-  }
+  Color _parseColor(String? hex) =>
+      parseHexColor(hex).withValues(alpha: 0.2);
 
   void _startEdit(Category category) {
     setState(() {

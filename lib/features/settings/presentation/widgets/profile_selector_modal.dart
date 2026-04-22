@@ -4,8 +4,6 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
-import '../../../../core/services/ad_service.dart';
-import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
@@ -369,71 +367,8 @@ class ProfileSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
-    final trans = ref.read(translationsProvider);
-    final themeMode = AppThemeProvider.of(context);
-    final isLight = themeMode == AppThemeMode.light ||
-        (themeMode == AppThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
-
-    if (RemoteConfigService().rewardedEnabled && profiles.length >= 1) {
-      // Show confirmation BEFORE popping — context must still be attached
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: isDefault
-              ? AppColors.bgDarkEnd
-              : isLight
-                  ? Colors.white
-                  : const Color(0xFF111111),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            trans.profileAddNewAdTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: isLight ? AppColors.textPrimaryLight : Colors.white,
-            ),
-          ),
-          content: Text(
-            trans.profileAddNewAdContent,
-            style: TextStyle(
-              color: isLight ? const Color(0xFF374151) : Colors.white70,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(
-                trans.cancel,
-                style: TextStyle(
-                  color: isLight ? const Color(0xFF374151) : Colors.white70,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(trans.profileAddNewAdWatch, style: const TextStyle(color: AppColors.primaryGold)),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed != true) return;
-      if (!context.mounted) return;
-
-
-      final rewarded = await AdService().showRewarded();
-      if (!rewarded) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(trans.profileAdNotCompleted)),
-          );
-        }
-        return;
-      }
-    }
-
     if (!context.mounted) return;
-    Navigator.pop(context); // close modal after ad or if gate not needed
+    Navigator.pop(context);
     showDialog(
       context: context,
       builder: (context) => const AddProfileDialog(),

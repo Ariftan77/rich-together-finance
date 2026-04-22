@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../../../shared/utils/color_utils.dart';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -187,11 +188,8 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     }
   }
 
-  Color _parseCategoryColor(String? hex) {
-    if (hex == null || hex == 'transparent') return Colors.white.withValues(alpha: 0.1);
-    final cleaned = hex.replaceFirst('#', '0xFF');
-    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.2);
-  }
+  Color _parseCategoryColor(String? hex) =>
+      parseHexColor(hex).withValues(alpha: 0.2);
 
   Future<void> _loadTransaction() async {
     final dao = ref.read(transactionDaoProvider);

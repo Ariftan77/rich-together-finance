@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/theme/colors.dart';
 
@@ -80,12 +81,10 @@ class BudgetScreen extends ConsumerWidget {
                       final displayIcon = item.displayIcon;
 
                       // Avatar background color: use first category color when available.
-                      final avatarBgColor = item.categories.isNotEmpty &&
-                              item.categories.first.color != null
-                          ? Color(int.parse(
-                              item.categories.first.color!
-                                  .replaceFirst('#', '0xFF')))
-                          : AppColors.primaryGold;
+                      // final avatarBgColor = item.categories.isNotEmpty // icon background color disabled
+                      //     ? parseHexColor(item.categories.first.color)
+                      //     : Colors.transparent;
+                      const avatarBgColor = Colors.transparent;
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
@@ -315,20 +314,15 @@ class BudgetScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: cat.color != null
-                              ? Color(int.parse(
-                                      cat.color!.replaceFirst('#', '0xFF')))
-                                  .withValues(alpha: 0.2)
-                              : AppColors.primaryGold.withValues(alpha: 0.15),
+                          // color: parseHexColor(cat.color).withValues(alpha: 0.2), // icon background color disabled
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: CategoryIconWidget(
                           iconString: cat.icon,
                           size: 16,
-                          color: cat.color != null
-                              ? Color(int.parse(
-                                  cat.color!.replaceFirst('#', '0xFF')))
-                              : AppColors.primaryGold,
+                          // color: parseHexColor(cat.color), // icon foreground color disabled
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(width: 12),

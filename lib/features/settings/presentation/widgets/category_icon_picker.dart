@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../shared/utils/phosphor_icon_registry.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
 
@@ -153,12 +154,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     });
   }
 
-  Color _hexToColor(String hex) {
-    if (hex == 'transparent') return Colors.transparent;
-    hex = hex.replaceFirst('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse('0x$hex'));
-  }
+  Color _hexToColor(String hex) => parseHexColor(hex);
 
   Color _previewIconColor() {
     if (!CategoryIconWidget.isPhosphorIcon(_selectedIcon)) return Colors.white;
@@ -180,6 +176,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     // Capture the modal route context BEFORE entering the DraggableScrollableSheet
     // builder, which shadows `context` with its own inner context. Using the inner
@@ -223,7 +220,8 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                     TextButton(
                       onPressed: () => Navigator.pop(modalContext, {
                         'icon': _selectedIcon,
-                        'color': _selectedColorHex,
+                        // 'color': _selectedColorHex, // icon background color disabled — always transparent
+                        'color': 'transparent',
                       }),
                       style: TextButton.styleFrom(foregroundColor: AppColors.primaryGold),
                       child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -248,8 +246,8 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
                     ),
                     child: CategoryIconWidget(
                       iconString: _selectedIcon,
-                      size: 40,
-                      color: _previewIconColor(),
+                      size: 50,
+                      color: isDefault ? AppColors.primaryGold : (isLight ? AppColors.textPrimaryLight : Colors.white),
                     ),
                   ),
                 ),
@@ -263,60 +261,60 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
               ),
               const SizedBox(height: 12),
 
-              // Colors
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Colors',
-                      style: TextStyle(
-                        color: isLight ? AppColors.textPrimaryLight.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 44,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _colors.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
-                        itemBuilder: (context, index) {
-                          final hex = _colors[index];
-                          final isSelected = hex == _selectedColorHex;
-                          final isTransparent = hex == 'transparent';
-                          final color = _hexToColor(hex);
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedColorHex = hex),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isTransparent ? Colors.transparent : color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? (isLight ? Colors.black : Colors.white)
-                                      : isTransparent ? (isLight ? Colors.black38 : Colors.white38) : Colors.transparent,
-                                  width: isSelected ? 3 : 1.5,
-                                ),
-                                boxShadow: isSelected && !isTransparent
-                                    ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)]
-                                    : null,
-                              ),
-                              child: isTransparent ? CustomPaint(painter: _CrossPainter(isLight: isLight)) : null,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
+              // Colors — color swatch row disabled; icon backgrounds always transparent
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Text(
+              //         'Colors',
+              //         style: TextStyle(
+              //           color: isLight ? AppColors.textPrimaryLight.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.7),
+              //           fontSize: 13,
+              //           fontWeight: FontWeight.w600,
+              //         ),
+              //       ),
+              //       const SizedBox(height: 10),
+              //       SizedBox(
+              //         height: 44,
+              //         child: ListView.separated(
+              //           scrollDirection: Axis.horizontal,
+              //           itemCount: _colors.length,
+              //           separatorBuilder: (_, __) => const SizedBox(width: 10),
+              //           itemBuilder: (context, index) {
+              //             final hex = _colors[index];
+              //             final isSelected = hex == _selectedColorHex;
+              //             final isTransparent = hex == 'transparent';
+              //             final color = _hexToColor(hex);
+              //             return GestureDetector(
+              //               onTap: () => setState(() => _selectedColorHex = hex),
+              //               child: Container(
+              //                 width: 40,
+              //                 height: 40,
+              //                 decoration: BoxDecoration(
+              //                   color: isTransparent ? Colors.transparent : color,
+              //                   shape: BoxShape.circle,
+              //                   border: Border.all(
+              //                     color: isSelected
+              //                         ? (isLight ? Colors.black : Colors.white)
+              //                         : isTransparent ? (isLight ? Colors.black38 : Colors.white38) : Colors.transparent,
+              //                     width: isSelected ? 3 : 1.5,
+              //                   ),
+              //                   boxShadow: isSelected && !isTransparent
+              //                       ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)]
+              //                       : null,
+              //                 ),
+              //                 child: isTransparent ? CustomPaint(painter: _CrossPainter(isLight: isLight)) : null,
+              //               ),
+              //             );
+              //           },
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 12),
 
               // Search bar (Phosphor modes only)
               if (isPhosphor) ...[

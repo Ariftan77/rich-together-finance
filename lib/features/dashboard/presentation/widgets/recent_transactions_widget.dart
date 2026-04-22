@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
@@ -163,12 +164,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                               Color bgColor;
                               if (useCategoryIcon) {
                                 final hex = category!.color;
-                                if (hex == null || hex == 'transparent' || hex.isEmpty) {
-                                  bgColor = Colors.transparent;
-                                } else {
-                                  final cleaned = hex.replaceFirst('#', '0xFF');
-                                  bgColor = Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.25);
-                                }
+                                bgColor = parseHexColor(hex).withValues(alpha: 0.25);
                               } else {
                                 bgColor = typeColor.withValues(alpha: 0.2);
                               }

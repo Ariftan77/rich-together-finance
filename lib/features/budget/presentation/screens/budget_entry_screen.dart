@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
@@ -203,6 +204,7 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final trans = ref.watch(translationsProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -284,31 +286,21 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: () {
-                                  if (_selectedIconColor == null ||
-                                      _selectedIconColor!.isEmpty ||
-                                      _selectedIconColor == 'transparent') {
-                                    return AppColors.primaryGold.withValues(alpha: 0.15);
-                                  }
-                                  final hex = _selectedIconColor!.replaceFirst('#', '0xFF');
-                                  return Color(int.parse(hex));
-                                }(),
+                                // color: parseHexColor(_selectedIconColor), // icon background color disabled
+                                color: Colors.transparent,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.primaryGold.withValues(alpha: 0.4),
-                                ),
                               ),
                               alignment: Alignment.center,
                               child: _selectedIcon != null
                                   ? CategoryIconWidget(
                                       iconString: _selectedIcon!,
-                                      size: 18,
-                                      color: AppColors.primaryGold,
+                                      size: 20,
+                                      color: isDefault ? AppColors.primaryGold : (isLight ? AppColors.textPrimaryLight : Colors.white),
                                     )
                                   : Icon(
                                       Icons.add_photo_alternate_outlined,
-                                      color: AppColors.primaryGold.withValues(alpha: 0.8),
-                                      size: 18,
+                                      color: (isDefault ? AppColors.primaryGold : (isLight ? AppColors.textPrimaryLight : Colors.white)).withValues(alpha: 0.8),
+                                      size: 20,
                                     ),
                             ),
                             const SizedBox(width: 12),

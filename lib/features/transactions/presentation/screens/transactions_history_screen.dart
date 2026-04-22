@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -1147,11 +1148,8 @@ class _TransactionItem extends ConsumerWidget {
     return '$hour:$minute $period';
   }
 
-  Color _categoryBgColor(String? hex) {
-    if (hex == null || hex == 'transparent' || hex.isEmpty) return Colors.transparent;
-    final cleaned = hex.replaceFirst('#', '0xFF');
-    return Color(int.tryParse(cleaned) ?? 0xFF808080).withValues(alpha: 0.25);
-  }
+  Color _categoryBgColor(String? hex) =>
+      parseHexColor(hex).withValues(alpha: 0.25);
 
   IconData _getIcon(TransactionType type) {
     switch (type) {

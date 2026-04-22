@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import '../../../../core/services/analytics_service.dart';
+import '../../../../shared/utils/color_utils.dart';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -577,30 +578,23 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
     if (hasBudgetIcon) {
       // Use the saved iconColor if present; fall back to primaryGold.
-      final colorHex = item.budgetIconColor;
-      if (colorHex != null &&
-          colorHex.isNotEmpty &&
-          colorHex != 'transparent') {
-        avatarBgColor =
-            Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
-      } else {
-        avatarBgColor = Colors.transparent;
-      }
+      // final colorHex = item.budgetIconColor; // icon background color disabled
+      // avatarBgColor = parseHexColor(colorHex) ?? Colors.transparent;
+      avatarBgColor = Colors.transparent;
       avatarChild = CategoryIconWidget(
         iconString: item.budget.icon!,
         size: 20,
-        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+        color: isDefault ? AppColors.primaryGold : (isLight ? AppColors.textPrimaryLight : Colors.white),
       );
     } else {
       // Fallback: use first category icon and color (original pattern).
-      final catColorHex = item.categoryColor;
-      avatarBgColor = catColorHex == 'transparent' || catColorHex.isEmpty
-          ? Colors.transparent
-          : Color(int.parse(catColorHex.replaceFirst('#', '0xFF')));
+      // final catColorHex = item.categoryColor; // icon background color disabled
+      // avatarBgColor = parseHexColor(catColorHex) ?? Colors.transparent;
+      avatarBgColor = Colors.transparent;
       avatarChild = CategoryIconWidget(
         iconString: item.categoryIcon,
         size: 20,
-        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+        color: isDefault ? AppColors.primaryGold : (isLight ? AppColors.textPrimaryLight : Colors.white),
       );
     }
 
@@ -722,12 +716,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     );
   }
 
-  Color? _parseCatColor(String? raw) {
-    if (raw == null || raw == 'transparent') return null;
-    final hex = raw.startsWith('#') ? raw.substring(1) : raw;
-    final val = int.tryParse(hex.length == 6 ? 'FF$hex' : hex, radix: 16);
-    return val != null ? Color(val) : null;
-  }
 
   void _showBudgetCategoryBreakdownDialog(
     BudgetWithSpending item,
@@ -757,7 +745,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: budget icon + name
+              // Header: budget icon + name + total budget + percentage
               Row(
                 children: [
                   Container(
@@ -780,13 +768,39 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      item.categoryName,
-                      style: TextStyle(
-                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.categoryName,
+                          style: TextStyle(
+                            color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Text(
+                              Formatters.formatCurrency(item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal),
+                              style: TextStyle(
+                                color: isLight ? const Color(0xFF64748B) : Colors.white.withValues(alpha: 0.6),
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${(item.progress * 100).toStringAsFixed(1)}%',
+                              style: TextStyle(
+                                color: item.progress > 0.9 ? Colors.red : (item.progress > 0.5 ? Colors.orange : AppColors.success),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -813,6 +827,12 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               // Per-category rows
               ...item.categories.map((cat) {
                 final catSpent = item.spentByCategory[cat.id] ?? 0.0;
+                final catColor = (cat.color != null && cat.color!.isNotEmpty)
+                    ? parseHexColor(cat.color)
+                    : AppColors.primaryGold;
+                final iconColor = isDefault
+                    ? AppColors.primaryGold
+                    : (isLight ? AppColors.textPrimaryLight : Colors.white);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 14),
                   child: Row(
@@ -820,14 +840,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: (_parseCatColor(cat.color) ?? AppColors.primaryGold)
-                              .withValues(alpha: 0.2),
+                          color: catColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: CategoryIconWidget(
                           iconString: cat.icon,
-                          size: 16,
-                          color: _parseCatColor(cat.color) ?? AppColors.primaryGold,
+                          size: 20,
+                          color: iconColor,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -864,15 +883,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                                       : Colors.white38),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            'of ${Formatters.formatCurrency(item.budget.amount, currency: item.budget.currency, showDecimal: showDecimal)}',
-                            style: TextStyle(
-                              color: isLight
-                                  ? const Color(0xFF94A3B8)
-                                  : Colors.white.withValues(alpha: 0.4),
-                              fontSize: 11,
                             ),
                           ),
                         ],

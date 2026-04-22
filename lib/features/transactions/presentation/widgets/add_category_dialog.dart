@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
+import '../../../../shared/utils/color_utils.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/category_icon_widget.dart';
@@ -214,9 +215,7 @@ class _AddCategoryDialogState extends ConsumerState<AddCategoryDialog> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: _colorHex == 'transparent'
-                          ? Colors.transparent
-                          : Color(int.parse(_colorHex.replaceFirst('#', '0xFF'))),
+                      color: parseHexColor(_colorHex),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,

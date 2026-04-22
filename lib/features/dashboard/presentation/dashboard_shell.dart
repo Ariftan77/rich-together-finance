@@ -16,8 +16,6 @@ import '../../../shared/widgets/debt_speed_dial_fab.dart';
 import '../../../core/providers/app_init_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
-import '../../../core/services/ad_service.dart';
-import '../../../shared/widgets/ad_banner_widget.dart';
 import '../../../core/models/enums.dart';
 
 import '../../budget/presentation/screens/budget_entry_screen.dart';
@@ -73,11 +71,6 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       _tabCurvedAnimation,
     );
     _tabAnimController.value = 1.0; // Start fully visible
-
-    // Show App Open ad once per day
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AdService().loadAndShowAppOpen(context);
-    });
 
     // Show "Feedback from the Founder" modal on the 3rd app open — once ever.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -239,11 +232,6 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AdBannerWidget(),
-          // TourKeys.bottomNav is placed directly on GlassBottomNav so the
-          // coach-mark always gets a fully-sized, stable RenderBox.  The outer
-          // Column can have zero height when the ad hasn't loaded yet, which
-          // caused the tour to skip step 6.
           GlassBottomNav(
             key: TourKeys.bottomNav,
             currentIndex: _currentIndex,

@@ -9,7 +9,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'features/auth/presentation/widgets/app_lock_overlay.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'shared/theme/app_theme.dart';
@@ -65,7 +64,6 @@ void main() async {
 
     // Parallel — all independent. Network-heavy parts of Notifications and
     // PremiumAuth are fire-and-forget internally, so they resolve fast.
-    // MobileAds moved out (conditional on RemoteConfig).
     int rcMs = 0, notifMs = 0, iapMs = 0, supaMs = 0, premMs = 0;
     sw = Stopwatch()..start();
     await Future.wait([
@@ -82,14 +80,6 @@ void main() async {
     debugPrint('⏱️   ├─ Supabase: ${supaMs}ms');
     debugPrint('⏱️   └─ PremiumAuth: ${premMs}ms');
 
-    // Phase 3: Conditional — only init MobileAds if ads are enabled via RemoteConfig.
-    if (RemoteConfigService().adsEnabled) {
-      sw = Stopwatch()..start();
-      await MobileAds.instance.initialize();
-      debugPrint('⏱️ [main] MobileAds: ${sw.elapsedMilliseconds}ms');
-    } else {
-      debugPrint('⏱️ [main] MobileAds: SKIPPED (ads disabled)');
-    }
   } catch (e) {
     debugPrint('⚠️ Init error: $e');
   }
