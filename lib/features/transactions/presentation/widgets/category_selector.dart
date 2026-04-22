@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/database/database.dart';
@@ -87,7 +88,7 @@ class _CategorySelectorState extends State<CategorySelector> {
     final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
+      height: MediaQuery.of(context).size.height * 0.6 - MediaQuery.of(context).viewPadding.bottom,
       decoration: BoxDecoration(
         color: isDefault
             ? const Color(0xFF1A1A2E)
@@ -250,7 +251,7 @@ class _CategorySelectorState extends State<CategorySelector> {
 
   Widget _buildList(BuildContext context, bool isLight, bool isDefault) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewPadding.bottom + 8),
       itemCount: _filteredCategories.length,
       itemBuilder: (context, index) {
         final category = _filteredCategories[index];
@@ -327,7 +328,7 @@ class _CategorySelectorState extends State<CategorySelector> {
 
   Widget _buildGrid(BuildContext context, bool isLight, bool isDefault) {
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewPadding.bottom + 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
         crossAxisSpacing: 8,

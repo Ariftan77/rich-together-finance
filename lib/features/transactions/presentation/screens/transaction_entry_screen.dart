@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -887,7 +889,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
               backgroundColor: Colors.transparent,
               builder: (modalContext) => Padding(
                 padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                  bottom: math.max(
+                    MediaQuery.of(modalContext).viewInsets.bottom,
+                    MediaQuery.of(modalContext).viewPadding.bottom,
+                  ),
                 ),
                 child: AccountSelector(
                   accounts: accounts,
@@ -1377,7 +1382,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                           backgroundColor: Colors.transparent,
                                           builder: (modalContext) => Padding(
                                             padding: EdgeInsets.only(
-                                              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                                              bottom: math.max(
+                                                MediaQuery.of(modalContext).viewInsets.bottom,
+                                                MediaQuery.of(modalContext).viewPadding.bottom,
+                                              ),
                                             ),
                                             child: CategorySelector(
                                               categories: filteredCategories,
@@ -1679,7 +1687,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          SizedBox(height: math.max(24, MediaQuery.of(context).viewPadding.bottom)),
                         ],
                       ),
                     ),

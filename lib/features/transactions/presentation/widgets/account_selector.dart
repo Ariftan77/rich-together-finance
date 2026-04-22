@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,7 +111,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
     final balances = balancesAsync.valueOrNull;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
+      height: MediaQuery.of(context).size.height * 0.6 - MediaQuery.of(context).viewPadding.bottom,
       decoration: BoxDecoration(
         color: isDefault
             ? const Color(0xFF1A1A2E)
@@ -274,7 +275,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
 
   Widget _buildList(BuildContext context, bool isLight, bool isDefault, Map<int, double>? balances) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewPadding.bottom + 8),
       itemCount: _filteredAccounts.length,
       itemBuilder: (context, index) {
         final account = _filteredAccounts[index];
@@ -367,7 +368,7 @@ class _AccountSelectorState extends ConsumerState<AccountSelector> {
 
   Widget _buildGrid(BuildContext context, bool isLight, bool isDefault, Map<int, double>? balances) {
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewPadding.bottom + 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 8,

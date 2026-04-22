@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
@@ -951,6 +953,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         ),
                       ),
                     ],
+                    SizedBox(height: math.max(24, MediaQuery.of(context).viewPadding.bottom)),
                   ],
                 ),
               ),

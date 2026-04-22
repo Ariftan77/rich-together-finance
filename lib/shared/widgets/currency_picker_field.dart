@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../core/models/enums.dart';
 import '../theme/app_theme_mode.dart';
@@ -231,7 +233,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
     // Keyboard-aware height: shrink the sheet so it is not hidden behind the
     // software keyboard when the search field is focused.
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    final availableHeight = MediaQuery.of(context).size.height * 0.75;
+    final availableHeight = MediaQuery.of(context).size.height * 0.75 - MediaQuery.of(context).viewPadding.bottom;
 
     // Text colors
     final Color primaryTextColor = isLight ? AppColors.textPrimaryLight : AppColors.textPrimary;
@@ -249,7 +251,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
 
     return Container(
       height: availableHeight,
-      padding: EdgeInsets.only(bottom: keyboardInset),
+      padding: EdgeInsets.only(bottom: math.max(keyboardInset, MediaQuery.of(context).viewPadding.bottom)),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -337,7 +339,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: EdgeInsets.fromLTRB(0, 4, 0, MediaQuery.of(context).viewPadding.bottom + 8),
                     itemCount: _filtered.length,
                     itemBuilder: (context, index) {
                       final currency = _filtered[index];
