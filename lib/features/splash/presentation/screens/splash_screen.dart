@@ -6,6 +6,7 @@ import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/premium_auth_service.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../onboarding/presentation/screens/getting_started_screen.dart';
@@ -25,16 +26,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _navigateToHome() async {
+    final totalSw = Stopwatch()..start();
+    debugPrint('⏱️ [splash] _navigateToHome() started');
+
     // Wait minimum 1 second for splash animation
     final splashDelay = Future.delayed(const Duration(seconds: 1));
 
     // Wait for auth status and onboarding flag in parallel
     final authService = ref.read(authServiceProvider);
+    final authSw = Stopwatch()..start();
     final results = await Future.wait([
       authService.hasPin(),
       authService.isAuthEnabled(),
       SharedPreferences.getInstance(),
     ]);
+    debugPrint('⏱️ [splash] Future.wait(hasPin + isAuthEnabled + SharedPrefs): ${authSw.elapsedMilliseconds}ms');
 
     final hasPin = results[0] as bool;
     final isEnabled = results[1] as bool;
@@ -43,23 +49,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     // Ensure splash shows for at least 1 second
     await splashDelay;
+    debugPrint('⏱️ [splash] splashDelay elapsed (total so far): ${totalSw.elapsedMilliseconds}ms');
 
     if (!mounted) return;
 
     // Show onboarding on first launch
     Widget destination;
+    String destName;
     if (!onboardingDone) {
       destination = const GettingStartedScreen();
+      destName = 'GettingStartedScreen';
     } else if (!hasPin || !isEnabled) {
       destination = const DashboardShell();
+      destName = 'DashboardShell';
     } else {
       destination = const AuthScreen(isSetup: false);
+      destName = 'AuthScreen';
     }
+
+    debugPrint('⏱️ [splash] navigating to $destName — total splash wait: ${totalSw.elapsedMilliseconds}ms');
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => destination),
     );
+
+    // Fire-and-forget: restore Google session in background after navigation.
+    // Uses cached isPremium until restore completes. On failure, keeps cache.
+    PremiumAuthService().triggerSessionRestore();
   }
 
   @override

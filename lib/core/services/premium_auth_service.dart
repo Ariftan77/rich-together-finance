@@ -20,6 +20,15 @@ class PremiumAuthService {
   String? _premiumType;
   DateTime? _expiresAt;
 
+  /// Guards against duplicate restore attempts.
+  /// Resets to false on failure so the next [triggerSessionRestore] call retries.
+  bool _hasStartedRestore = false;
+
+  /// True when the last restore attempt failed — callers may use this to
+  /// know a retry is warranted, but the guard in [triggerSessionRestore]
+  /// handles that automatically.
+  bool _needsRefresh = false;
+
   bool get isSignedIn => _currentUser != null;
   String? get googleId => _currentUser?.id;
   String? get displayName => _currentUser?.displayName;
@@ -36,18 +45,27 @@ class PremiumAuthService {
   }
 
   /// Called at app startup — loads cached premium status immediately so premium
-  /// features are available on cold start, then restores session + refreshes
-  /// from Supabase in background. Stale cache is trusted indefinitely if offline.
+  /// features are available on cold start without any network call.
+  /// Session restore is deferred — call [triggerSessionRestore] after splash
+  /// navigation to restore the Google session in the background.
   Future<void> init() async {
-    // 1. Load cache immediately — user sees premium features right away
     await _loadCachedPremium();
-
-    // 2. Fire-and-forget: restore Google session + conditionally refresh.
-    //    signInSilently() is a slow network call (~2-4s) — don't block startup.
-    _restoreSessionAsync();
+    // Session restore is deferred — called lazily after splash via triggerSessionRestore()
   }
 
-  void _restoreSessionAsync() async {
+  /// Triggers a background Google session restore. Safe to call from any
+  /// screen (Wealth, Settings, etc.) — the guard makes it a no-op once
+  /// a restore is already running or has already succeeded.
+  ///
+  /// On failure the guard resets so the next call will retry automatically.
+  void triggerSessionRestore() {
+    if (_hasStartedRestore) return; // already running or done — no-op
+    _hasStartedRestore = true;
+    debugPrint('🔄 [PremiumAuth] triggerSessionRestore() — starting background restore');
+    _doRestoreAsync();
+  }
+
+  void _doRestoreAsync() async {
     try {
       _currentUser = await _googleSignIn.signInSilently();
       if (_currentUser != null) {
@@ -57,10 +75,20 @@ class PremiumAuthService {
         if (isStale) {
           await _refreshPremiumCache();
         }
+        _needsRefresh = false;
         debugPrint('✅ [PremiumAuth] Session restored: ${_currentUser!.email}');
+      } else {
+        // Not signed in with Google — not a failure, just no premium via Google
+        _needsRefresh = false;
+        debugPrint('ℹ️ [PremiumAuth] No Google account — skipping premium refresh');
       }
     } catch (e) {
-      debugPrint('⚠️ [PremiumAuth] Session restore failed: $e');
+      // FALLBACK: keep existing cache as-is, never clear on network failure.
+      // Only downgrade to free when server explicitly confirms expiry (inside
+      // _refreshPremiumCache success path). Allow retry on next call.
+      _needsRefresh = true;
+      _hasStartedRestore = false; // allow retry on next triggerSessionRestore() call
+      debugPrint('⚠️ [PremiumAuth] Session restore failed, keeping cache: $e');
     }
   }
 

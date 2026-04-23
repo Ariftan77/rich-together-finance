@@ -14,11 +14,8 @@ import 'features/splash/presentation/screens/splash_screen.dart';
 import 'shared/theme/app_theme.dart';
 import 'shared/theme/theme_provider_widget.dart';
 import 'core/providers/profile_provider.dart';
-import 'core/services/sync_service.dart';
-import 'core/services/remote_config_service.dart';
 import 'core/services/notification_service.dart';
-import 'core/services/iap_service.dart';
-import 'core/services/premium_auth_service.dart';
+import 'core/services/sync_service.dart';
 
 void main() async {
   final totalSw = Stopwatch()..start();
@@ -62,23 +59,9 @@ void main() async {
     await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
     debugPrint('⏱️ [main] Analytics collection enabled: ${sw.elapsedMilliseconds}ms');
 
-    // Parallel — all independent. Network-heavy parts of Notifications and
-    // PremiumAuth are fire-and-forget internally, so they resolve fast.
-    int rcMs = 0, notifMs = 0, iapMs = 0, supaMs = 0, premMs = 0;
-    sw = Stopwatch()..start();
-    await Future.wait([
-      () async { final s = Stopwatch()..start(); await RemoteConfigService().init(); rcMs = s.elapsedMilliseconds; }(),
-      () async { final s = Stopwatch()..start(); await NotificationService().init(); notifMs = s.elapsedMilliseconds; }(),
-      () async { final s = Stopwatch()..start(); await IapService().init(); iapMs = s.elapsedMilliseconds; }(),
-      () async { final s = Stopwatch()..start(); await SyncService.initialize(); supaMs = s.elapsedMilliseconds; }(),
-      () async { final s = Stopwatch()..start(); await PremiumAuthService().init(); premMs = s.elapsedMilliseconds; }(),
-    ]);
-    debugPrint('⏱️ [main] Parallel group done: ${sw.elapsedMilliseconds}ms');
-    debugPrint('⏱️   ├─ RemoteConfig: ${rcMs}ms');
-    debugPrint('⏱️   ├─ Notifications: ${notifMs}ms');
-    debugPrint('⏱️   ├─ IAP: ${iapMs}ms');
-    debugPrint('⏱️   ├─ Supabase: ${supaMs}ms');
-    debugPrint('⏱️   └─ PremiumAuth: ${premMs}ms');
+    var sw2 = Stopwatch()..start();
+    await SyncService.initialize();
+    debugPrint('⏱️ [main] Supabase: ${sw2.elapsedMilliseconds}ms');
 
   } catch (e) {
     debugPrint('⚠️ Init error: $e');
