@@ -44,6 +44,8 @@ class VoucherService {
       'google_id': googleId,
     });
 
+    await _db.from('vouchers').update({'used': true}).eq('code', code);
+
     return VoucherResult.success;
   }
 }

@@ -97,8 +97,17 @@ class IapService {
         return IapResult.purchaseFailed;
       }
 
-      // Blocks until _onPurchaseUpdate completes the purchase
-      return _pendingCompleter!.future;
+      // Blocks until _onPurchaseUpdate completes the purchase.
+      // The 30-second timeout is a safety net for cases where the purchase
+      // stream never fires (e.g. "already owned" dialog, network drop).
+      return _pendingCompleter!.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          _pendingCompleter = null;
+          _pendingProductId = null;
+          return IapResult.purchaseFailed;
+        },
+      );
     } catch (e) {
 
       _pendingCompleter = null;
@@ -129,8 +138,17 @@ class IapService {
         return IapResult.purchaseFailed;
       }
 
-      // Blocks until _onPurchaseUpdate completes the purchase
-      return _pendingCompleter!.future;
+      // Blocks until _onPurchaseUpdate completes the purchase.
+      // The 30-second timeout is a safety net for cases where the purchase
+      // stream never fires (e.g. "already owned" dialog, network drop).
+      return _pendingCompleter!.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          _pendingCompleter = null;
+          _pendingProductId = null;
+          return IapResult.purchaseFailed;
+        },
+      );
     } catch (e) {
 
       _pendingCompleter = null;
@@ -163,8 +181,12 @@ class IapService {
         await _iap.completePurchase(p);
         _completeIfPending(p.productID, IapResult.purchaseFailed);
       } else if (p.status == PurchaseStatus.error) {
-
-        await _iap.completePurchase(p);
+        // completePurchase() throws for already-owned errors on some Play Store
+        // versions. Swallow the exception so _completeIfPending always runs and
+        // the pending Completer is never left dangling.
+        try {
+          await _iap.completePurchase(p);
+        } catch (_) {}
         _completeIfPending(p.productID, IapResult.purchaseFailed);
       }
       // PurchaseStatus.pending: waiting for external action (e.g. parental approval)

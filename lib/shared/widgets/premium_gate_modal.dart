@@ -118,7 +118,24 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
       setState(() => _isLoading = true);
     }
 
-    // Step 3: Proceed with the purchase.
+    // Step 3: If the user already has premium (revealed after sign-in or was
+    // already signed in), restore directly instead of triggering a new purchase
+    // which would result in a Play Store "already owned" error.
+    if (PremiumAuthService().isPremium) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.of(context).pop(true);
+      ref.invalidate(premiumStatusProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ref.read(translationsProvider).premiumActivated),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      return;
+    }
+
+    // Step 4: Proceed with the purchase.
     final result = await IapService().buyPremium();
     if (!mounted) return;
     setState(() => _isLoading = false);

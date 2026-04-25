@@ -419,6 +419,7 @@ abstract class AppTranslations {
   String get premiumRedeemVoucher;
   String get premiumGetPremium;
   String get premiumLifetimeSubtitle;
+  String get premiumGetPremiumSubtitle;
   String get premiumSyncSubscription;
   String get premiumSyncSubtitle;
   String get premiumRestorePurchase;
@@ -433,8 +434,12 @@ abstract class AppTranslations {
   String get premiumCheckingPlayStore;
   String get premiumSignInGoogle;
   String get premiumRestartAppToHideAds;
+  String get premiumVoucherSuccessTitle;
+  String get premiumVoucherSuccessBody;
   String get premiumSignInRequired;
   String get premiumSignInFailed;
+  String get premiumSignInSuccess;
+  String get premiumSignOutSuccess;
   String get premiumSignedInTryAgain;
   String get categoryTapToEditIcon;
 

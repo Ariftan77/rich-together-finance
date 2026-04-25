@@ -1277,7 +1277,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       SettingsTile(
                         icon: Icons.star,
                         title: trans.premiumGetPremium,
-                        subtitle: trans.premiumLifetimeSubtitle,
+                        subtitle: trans.premiumGetPremiumSubtitle,
                         onTap: () => _handleBuyPremium(),
                       ),
                     ],
@@ -1288,7 +1288,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         SettingsTile(
                           icon: Icons.star,
                           title: trans.premiumGetPremium,
-                          subtitle: trans.premiumLifetimeSubtitle,
+                          subtitle: trans.premiumGetPremiumSubtitle,
                           onTap: () => _handleBuyPremium(),
                         ),
                         _buildDivider(),
@@ -1399,64 +1399,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
     // Refresh badge/section now that we're signed in
     _refreshPremiumStatus();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ref.read(translationsProvider).premiumSignInSuccess)),
+    );
     // Show reopen-app dialog if the signed-in account already has premium
     final premiumStatus = await PremiumAuthService().getPremiumStatus();
     if (!mounted) return;
     if (premiumStatus != null) {
-      await showDialog<void>(
-        context: context,
-        builder: (context) {
-          final themeMode = AppThemeProvider.of(context);
-          final isLight = themeMode == AppThemeMode.light ||
-              (themeMode == AppThemeMode.system &&
-                  MediaQuery.platformBrightnessOf(context) == Brightness.light);
-          final isDefault = themeMode == AppThemeMode.defaultTheme;
-          return AlertDialog(
-          backgroundColor: isDefault
-              ? const Color(0xFF2D2416)
-              : isLight
-                  ? Colors.white
-                  : const Color(0xFF111111),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              const Icon(Icons.workspace_premium, color: AppColors.primaryGold, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                'PREMIUM',
-                style: TextStyle(
-                  color: AppColors.primaryGold,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'Please reopen the app to completely remove ads.',
-            style: TextStyle(
-              color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: AppColors.primaryGold)),
-            ),
-          ],
-          );
-        },
-      );
+      _showSuccessDialog();
     }
   }
 
   Future<void> _handleGoogleSignOut() async {
     await PremiumAuthService().signOut();
-    if (mounted) _refreshPremiumStatus();
+    if (!mounted) return;
+    _refreshPremiumStatus();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ref.read(translationsProvider).premiumSignOutSuccess)),
+    );
   }
 
   Future<void> _showVoucherDialog() async {
     final trans = ref.read(translationsProvider);
+    final auth = PremiumAuthService();
+
+    // Check if signed in
+    if (!auth.isSignedIn) {
+      final shouldSignIn = await _showSignInRequiredDialog();
+      if (!shouldSignIn) return;
+
+      setState(() => _premiumSignInLoading = true);
+      final ok = await auth.signIn();
+      if (!mounted) return;
+      setState(() => _premiumSignInLoading = false);
+
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(trans.premiumSignInFailed), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
     final codeController = TextEditingController();
     final result = await showDialog<String>(
       context: context,
@@ -1523,15 +1508,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return;
       }
 
-      final message = switch (voucherResult) {
-        VoucherResult.success => trans.premiumActivated,
-        VoucherResult.invalid => trans.premiumInvalidVoucher,
-        VoucherResult.alreadyUsed => trans.premiumVoucherUsed,
-        VoucherResult.notSignedIn => trans.premiumNotSignedIn,
-        VoucherResult.disabled => trans.premiumVoucherDisabled,
-      };
       if (voucherResult == VoucherResult.success) {
-        _showRestartAppDialog();
+        _showSuccessDialog();
+      } else {
+        final message = switch (voucherResult) {
+          VoucherResult.invalid => trans.premiumInvalidVoucher,
+          VoucherResult.alreadyUsed => trans.premiumVoucherUsed,
+          VoucherResult.notSignedIn => trans.premiumNotSignedIn,
+          VoucherResult.disabled => trans.premiumVoucherDisabled,
+          VoucherResult.success => '',
+        };
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: AppColors.error),
+        );
       }
     }
   }
@@ -1557,6 +1546,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
         return;
       }
+    }
+
+    // If the user already has premium (revealed after sign-in or was already
+    // signed in), restore directly — calling buyPremium() would trigger a
+    // Play Store "already owned" error and leave the spinner stuck.
+    if (auth.isPremium) {
+      _refreshPremiumStatus();
+      _showSuccessDialog();
+      return;
     }
 
     // Show loading
@@ -1588,7 +1586,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (isSuccess) {
       if (mounted) {
         _refreshPremiumStatus();
-        _showRestartAppDialog();
+        _showSuccessDialog();
       }
     } else {
       if (mounted) {
@@ -1654,7 +1652,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (isSuccess) {
       if (mounted) {
         _refreshPremiumStatus();
-        _showRestartAppDialog();
+        _showSuccessDialog();
       }
     } else {
       if (mounted) {
@@ -1766,7 +1764,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
       );
       _refreshPremiumStatus();
-      _showRestartAppDialog();
+      _showSuccessDialog();
       return;
     }
 
@@ -1779,7 +1777,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _showRestartAppDialog() {
+  void _showSuccessDialog() {
     final trans = ref.read(translationsProvider);
     showDialog(
       context: context,
@@ -1788,39 +1786,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
         final isDefault = themeMode == AppThemeMode.defaultTheme;
         return AlertDialog(
-        backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.primaryGold),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Premium Activated',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+          backgroundColor: isDefault ? AppColors.bgDarkEnd : isLight ? Colors.white : const Color(0xFF111111),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.star, color: AppColors.primaryGold),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  trans.premiumVoucherSuccessTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+                ),
               ),
+            ],
+          ),
+          content: Text(
+            trans.premiumVoucherSuccessBody,
+            style: TextStyle(
+              color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.9),
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {});
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGold,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('OK'),
             ),
           ],
-        ),
-        content: Text(
-          trans.premiumRestartAppToHideAds,
-          style: TextStyle(
-            color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.9),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGold,
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('OK'),
-          ),
-        ],
         );
       },
     );
   }
+
 }
 

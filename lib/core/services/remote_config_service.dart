@@ -28,7 +28,6 @@ class RemoteConfigService {
       debugPrint("   premium_enabled:   ${_rc!.getBool('premium_enabled')}");
       debugPrint("   voucher_enabled:   ${_rc!.getBool('voucher_enabled')}");
       debugPrint("   iap_enabled:       ${_rc!.getBool('iap_enabled')}");
-      debugPrint("   email_app_key:     ${_rc!.getString('email_app_key')}");
     } catch (e) {
       debugPrint("RemoteConfig init failed: $e");
       _rc = null;

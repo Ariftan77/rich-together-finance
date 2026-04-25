@@ -419,9 +419,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsNoProfile => 'No Profile';
 
   // Premium
-  @override String get premiumRedeemVoucher => 'Redeem Voucher';
-  @override String get premiumGetPremium => 'Get Premium';
-  @override String get premiumLifetimeSubtitle => 'Lifetime — no ads, multi profile';
+  @override String get premiumRedeemVoucher => 'Redeem Voucher (Lifetime Premium)';
+  @override String get premiumGetPremium => 'Get Premium (Lifetime)';
+  @override String get premiumLifetimeSubtitle => 'Unlock everything.';
+  @override String get premiumGetPremiumSubtitle => 'Unlock everything. Support Richer.';
   @override String get premiumSyncSubscription => 'Sync Subscription';
   @override String get premiumSyncSubtitle => 'Premium Feature + Cross-device sync — yearly';
   @override String get premiumRestorePurchase => 'Restore Purchase';
@@ -436,8 +437,12 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumCheckingPlayStore => 'Checking Play Store for purchases...';
   @override String get premiumSignInGoogle => 'Sign in with Google to sync premium purchase forever.';
   @override String get premiumRestartAppToHideAds => 'Restart app to completely remove ads';
+  @override String get premiumVoucherSuccessTitle => 'Lifetime Premium Activated';
+  @override String get premiumVoucherSuccessBody => 'You\'re all set. Thank you so much — this truly means a lot. Enjoy every feature, and may good things always find their way to you.';
   @override String get premiumSignInRequired => 'Google Sign-In Required';
   @override String get premiumSignInFailed => 'Sign-In Failed';
+  @override String get premiumSignInSuccess => 'Signed in successfully.';
+  @override String get premiumSignOutSuccess => 'Signed out successfully.';
   @override String get premiumSignedInTryAgain => 'Signed in. Please tap the button again.';
   @override String get categoryTapToEditIcon => 'Tap to edit icon';
 

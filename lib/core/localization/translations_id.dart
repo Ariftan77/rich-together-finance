@@ -420,9 +420,10 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsNoProfile => 'Tidak Ada Profil';
 
   // Premium
-  @override String get premiumRedeemVoucher => 'Tukar Voucher';
-  @override String get premiumGetPremium => 'Dapatkan Premium';
-  @override String get premiumLifetimeSubtitle => 'Seumur hidup — tanpa iklan, multi profil';
+  @override String get premiumRedeemVoucher => 'Tukar Voucher (Premium Seumur Hidup)';
+  @override String get premiumGetPremium => 'Dapatkan Premium (Seumur Hidup)';
+  @override String get premiumLifetimeSubtitle => 'Buka semua fitur.';
+  @override String get premiumGetPremiumSubtitle => 'Buka semua fitur. Dukung Richer.';
   @override String get premiumSyncSubscription => 'Langganan Sinkronisasi';
   @override String get premiumSyncSubtitle => 'Fitur Premium + Sinkronisasi antar perangkat — tahunan';
   @override String get premiumRestorePurchase => 'Pulihkan Pembelian';
@@ -437,8 +438,12 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumCheckingPlayStore => 'Memeriksa pembelian Play Store...';
   @override String get premiumSignInGoogle => 'Masuk dengan Google';
   @override String get premiumRestartAppToHideAds => 'Muat ulang aplikasi agar iklan hilang sepenuhnya';
+  @override String get premiumVoucherSuccessTitle => 'Premium Seumur Hidup Aktif';
+  @override String get premiumVoucherSuccessBody => 'Semua sudah siap. Terima kasih banyak — ini sungguh berarti. Nikmati semua fiturnya, dan semoga rezeki selalu hadir untukmu.';
   @override String get premiumSignInRequired => 'Diperlukan untuk tukar voucher & pulihkan pembelian';
   @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
+  @override String get premiumSignInSuccess => 'Berhasil masuk.';
+  @override String get premiumSignOutSuccess => 'Berhasil keluar.';
   @override String get premiumSignedInTryAgain => 'Berhasil masuk! Silakan coba lagi untuk menukar voucher Anda.';
   @override String get categoryTapToEditIcon => 'Ketuk untuk ganti ikon';
 
