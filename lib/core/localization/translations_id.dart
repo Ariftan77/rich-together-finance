@@ -743,4 +743,23 @@ class AppTranslationsId implements AppTranslations {
       'Nilai B untuk cek kesehatan keuanganku. Masih ada satu dua komponen yang perlu ditingkatkan, tapi arahnya sudah benar. Progres lambat tetap progres. #Richer #KesehatanKeuangan #PerjalananUang';
   @override String get shareCaption_spendingUnderControl =>
       'Pengeluaranku terus turun 3 bulan berturut-turut. Bukan karena menyiksa diri — hanya lebih disengaja dalam pengeluaran. #Richer #BelanjaCerdas #KebebasanFinansial';
+
+  // Premium Gate Modal
+  @override String get premiumGateButtonBuyLifetime => 'Beli Premium Seumur Hidup';
+  @override String get premiumGateButtonMaybeLater => 'Nanti Saja';
+  @override String get premiumGateTagline => 'Bayar sekali. Tanpa langganan.';
+  @override String get premiumGateRestorePurchase => 'Pulihkan Pembelian';
+  @override String get premiumGateBudgetTitle => 'Batas Anggaran Tercapai';
+  @override String get premiumGateBudgetDesc => 'Tier gratis hanya mendukung 3 anggaran. Upgrade untuk anggaran tak terbatas.';
+  @override String get premiumGateGoalTitle => 'Batas Target Tercapai';
+  @override String get premiumGateGoalDesc => 'Tier gratis hanya mendukung 3 target. Upgrade untuk target tak terbatas.';
+  @override String get premiumGateAccountTitle => 'Batas Akun Tercapai';
+  @override String get premiumGateAccountDesc => 'Tier gratis hanya mendukung 5 akun. Upgrade untuk akun tak terbatas.';
+  @override String get premiumGateExportTitle => 'Fitur Premium';
+  @override String get premiumGateExportDesc => 'Ekspor CSV hanya tersedia untuk pengguna premium.';
+  @override String get premiumGateDeepAnalyticsTitle => 'Analitik Mendalam';
+  @override String get premiumGateDeepAnalyticsDesc => 'Buka wawasan keuangan mendalam dan analisis tren dengan premium.';
+  @override String get premiumGateProfileTitle => 'Batas Profil Tercapai';
+  @override String get premiumGateProfileDesc => 'Tier gratis hanya mendukung 1 profil. Upgrade untuk mengelola banyak profil.';
+  @override String get premiumGateCloudBackupDesc => 'Backup cloud ke Google Drive adalah fitur premium.';
 }

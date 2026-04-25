@@ -19,14 +19,18 @@ import 'screens/dashboard_screen.dart';
 import '../../../core/models/enums.dart';
 
 import '../../budget/presentation/screens/budget_entry_screen.dart';
+import '../../budget/presentation/providers/budget_provider.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
+import '../../goals/presentation/providers/goal_provider.dart';
 import '../../wealth/presentation/screens/wealth_screen.dart';
 import '../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../shared/tour/tour_keys.dart';
 import '../../../core/providers/nav_providers.dart';
+import '../../../core/providers/service_providers.dart';
 import '../../transactions/presentation/providers/search_provider.dart';
 import '../../feedback/presentation/founder_feedback_modal.dart';
 import '../../feedback/services/founder_feedback_service.dart';
+import '../../../shared/widgets/premium_gate_modal.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -288,7 +292,20 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
           key: TourKeys.walletFab,
           child: FabButton(
             icon: Icons.add_card,
-            onPressed: () {
+            onPressed: () async {
+              final isPremium = ref.read(premiumStatusProvider);
+              final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
+              if (!isPremium && accounts.length >= 5) {
+                final trans = ref.read(translationsProvider);
+                await showPremiumGateModal(
+                  context,
+                  ref,
+                  title: trans.premiumGateAccountTitle,
+                  description: trans.premiumGateAccountDesc,
+                );
+                return;
+              }
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -305,7 +322,20 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
         if (wealthTab == 0) {
           return FabButton(
             icon: Icons.add,
-            onPressed: () {
+            onPressed: () async {
+              final isPremium = ref.read(premiumStatusProvider);
+              final budgets = ref.read(budgetsWithSpendingProvider).valueOrNull ?? [];
+              if (!isPremium && budgets.length >= 3) {
+                final trans = ref.read(translationsProvider);
+                await showPremiumGateModal(
+                  context,
+                  ref,
+                  title: trans.premiumGateBudgetTitle,
+                  description: trans.premiumGateBudgetDesc,
+                );
+                return;
+              }
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -318,7 +348,20 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
         if (wealthTab == 1) {
           return FabButton(
             icon: Icons.add,
-            onPressed: () {
+            onPressed: () async {
+              final isPremium = ref.read(premiumStatusProvider);
+              final goals = ref.read(goalsWithProgressProvider).valueOrNull ?? [];
+              if (!isPremium && goals.length >= 3) {
+                final trans = ref.read(translationsProvider);
+                await showPremiumGateModal(
+                  context,
+                  ref,
+                  title: trans.premiumGateGoalTitle,
+                  description: trans.premiumGateGoalDesc,
+                );
+                return;
+              }
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(

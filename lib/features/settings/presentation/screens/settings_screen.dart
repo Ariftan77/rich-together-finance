@@ -1293,12 +1293,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(),
                       ],
-                      SettingsTile(
-                        icon: Icons.cloud_sync,
-                        title: trans.premiumSyncSubscription,
-                        subtitle: trans.premiumSyncSubtitle,
-                        onTap: () => _handleBuySync(),
-                      ),
+                      // TODO: Upcoming feature — Sync Subscription (yearly)
+                      // SettingsTile(
+                      //   icon: Icons.cloud_sync,
+                      //   title: trans.premiumSyncSubscription,
+                      //   subtitle: trans.premiumSyncSubtitle,
+                      //   onTap: () => _handleBuySync(),
+                      // ),
                     ],
                   ],
                   _buildDivider(),

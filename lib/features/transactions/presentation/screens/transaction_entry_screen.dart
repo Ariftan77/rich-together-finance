@@ -468,6 +468,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
            // TODO: Ideally only fire on the first ever transaction (count == 0
            // before insert). For now fires on every new transaction save.
            AnalyticsService.trackFirstTransactionAdded();
+           final _insertedProfileId = transactionCompanion.profileId.value;
+           final _txCount = await dao.countAllTransactions(_insertedProfileId);
+           if (_txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
         } else {
            if (mounted) {
             messenger.showSnackBar(
@@ -1865,6 +1868,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       } else {
         await dao.insertTransaction(transactionCompanion);
         AnalyticsService.trackFirstTransactionAdded();
+        if (profileId != null) {
+          final _txCount = await dao.countAllTransactions(profileId);
+          if (_txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
+        }
       }
 
       if (!mounted) return;

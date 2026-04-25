@@ -486,6 +486,26 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
     return map;
   }
 
+  /// Count all transactions for a profile (used for milestone analytics)
+  Future<int> countAllTransactions(int profileId) async {
+    final count = transactions.id.count();
+    final query = selectOnly(transactions)
+      ..addColumns([count])
+      ..where(transactions.profileId.equals(profileId));
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
+  /// Count transactions created on or after [since] for a profile (used for churn analytics)
+  Future<int> countTransactionsSince(int profileId, DateTime since) async {
+    final count = transactions.id.count();
+    final query = selectOnly(transactions)
+      ..addColumns([count])
+      ..where(transactions.profileId.equals(profileId) & transactions.date.isBiggerOrEqualValue(since));
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
   /// Watch categories with usage count
   Stream<List<CategoryWithUsage>> watchCategoriesWithUsageCount(int profileId) {
     final usageCount = transactions.id.count();

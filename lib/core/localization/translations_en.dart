@@ -742,4 +742,23 @@ class AppTranslationsEn implements AppTranslations {
       'Grade B on my financial health check. There\'s a component or two still to work on, but the direction is right. Slow progress is still progress. #Richer #FinancialHealth #MoneyJourney';
   @override String get shareCaption_spendingUnderControl =>
       'My expenses have been going down for 3 months in a row. Not because I\'m depriving myself — just being more intentional. #Richer #SpendingSmarter #FinancialFreedom';
+
+  // Premium Gate Modal
+  @override String get premiumGateButtonBuyLifetime => 'Unlock Lifetime Premium';
+  @override String get premiumGateButtonMaybeLater => 'Maybe Later';
+  @override String get premiumGateTagline => 'One-time purchase. No subscriptions.';
+  @override String get premiumGateRestorePurchase => 'Restore Purchase';
+  @override String get premiumGateBudgetTitle => 'Budget Limit Reached';
+  @override String get premiumGateBudgetDesc => 'Free tier allows up to 3 budgets. Upgrade to add unlimited budgets.';
+  @override String get premiumGateGoalTitle => 'Goal Limit Reached';
+  @override String get premiumGateGoalDesc => 'Free tier allows up to 3 goals. Upgrade to add unlimited goals.';
+  @override String get premiumGateAccountTitle => 'Account Limit Reached';
+  @override String get premiumGateAccountDesc => 'Free tier allows up to 5 accounts. Upgrade for unlimited accounts.';
+  @override String get premiumGateExportTitle => 'Premium Feature';
+  @override String get premiumGateExportDesc => 'CSV export is available for premium users only.';
+  @override String get premiumGateDeepAnalyticsTitle => 'Deep Analytics';
+  @override String get premiumGateDeepAnalyticsDesc => 'Unlock detailed financial insights and trend analysis with premium.';
+  @override String get premiumGateProfileTitle => 'Profile Limit Reached';
+  @override String get premiumGateProfileDesc => 'Free tier supports 1 profile. Upgrade to manage multiple profiles.';
+  @override String get premiumGateCloudBackupDesc => 'Cloud backup to Google Drive is a premium feature.';
 }

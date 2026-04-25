@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../database/daos/transaction_dao.dart';
 
 /// Thin static wrapper around Firebase Analytics.
 ///
@@ -83,6 +84,55 @@ class AnalyticsService {
       key: 'analytics_first_transaction_added',
       eventName: 'first_transaction_added',
     ).catchError((_) {}));
+  }
+
+  /// Fired once-ever when the user has saved at least 10 transactions.
+  static void trackTenTransactionsAdded() {
+    unawaited(_fireOnce(
+      key: 'analytics_ten_transactions_added',
+      eventName: 'ten_transactions_added',
+    ).catchError((_) {}));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Churn / re-engagement events
+  // ---------------------------------------------------------------------------
+
+  static bool _noTx7DaysChecked = false;
+
+  /// Fired on the first cold-open per session when the user has made zero
+  /// transactions in the last 7 days. Acts as a churn signal.
+  static Future<void> checkAndTrackNoTransactionsIn7Days(
+    TransactionDao dao,
+    int profileId,
+  ) async {
+    if (_noTx7DaysChecked) return;
+    _noTx7DaysChecked = true;
+    try {
+      final totalCount = await dao.countAllTransactions(profileId);
+      if (totalCount < 3) return;
+      final cutoff = DateTime.now().subtract(const Duration(days: 7));
+      final recentCount = await dao.countTransactionsSince(profileId, cutoff);
+      if (recentCount == 0) {
+        await FirebaseAnalytics.instance
+            .logEvent(name: 'no_transaction_in_7_days');
+      }
+    } catch (_) {}
+  }
+
+  // ---------------------------------------------------------------------------
+  // Engagement events
+  // ---------------------------------------------------------------------------
+
+  /// Fired every time the "Feedback from the Founder" modal is shown.
+  /// The modal itself is already once-ever gated by [FounderFeedbackService],
+  /// so this event will naturally fire at most once per device.
+  static void trackFounderFeedbackShown() {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'founder_feedback_shown')
+          .catchError((_) {}),
+    );
   }
 
   // ---------------------------------------------------------------------------

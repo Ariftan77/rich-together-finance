@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'premium_auth_service.dart';
 import 'remote_config_service.dart';
 
@@ -31,10 +33,46 @@ class IapService {
   Completer<IapResult>? _pendingCompleter;
   String? _pendingProductId;
 
+  static const _pendingActivationKey = 'iap_pending_activation';
+
   Future<void> init() async {
     // Cancel any previous subscription to prevent duplicate listeners
     await _purchaseSub?.cancel();
     _purchaseSub = _iap.purchaseStream.listen(_onPurchaseUpdate);
+
+    await _retryPendingActivation();
+  }
+
+  Future<void> _retryPendingActivation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_pendingActivationKey);
+    if (raw == null) return;
+
+    Map<String, dynamic> pending;
+    try {
+      pending = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      await prefs.remove(_pendingActivationKey);
+      return;
+    }
+
+    final productId = pending['productId'] as String?;
+    if (productId == null) {
+      await prefs.remove(_pendingActivationKey);
+      return;
+    }
+
+    try {
+      await _activateOnBackend(productId);
+      await prefs.remove(_pendingActivationKey);
+      // The platform will not re-deliver a purchase we haven't completed, so
+      // we cannot call completePurchase() here — the PurchaseDetails object is
+      // gone. The backend is now activated; the platform receipt stays
+      // unacknowledged until the store re-delivers it, at which point
+      // _onPurchaseUpdate will complete it normally.
+    } catch (_) {
+      // Leave the flag; will retry next session.
+    }
   }
 
   Future<IapResult> buyPremium() async {
@@ -107,16 +145,20 @@ class IapService {
     for (final p in purchases) {
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
-        IapResult result = IapResult.success;
         try {
           await _activateOnBackend(p.productID);
-
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(_pendingActivationKey);
+          await _iap.completePurchase(p);
+          _completeIfPending(p.productID, IapResult.success);
         } catch (e) {
-
-          result = IapResult.activationFailed;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            _pendingActivationKey,
+            jsonEncode({'productId': p.productID, 'purchaseID': p.purchaseID}),
+          );
+          _completeIfPending(p.productID, IapResult.activationFailed);
         }
-        await _iap.completePurchase(p);
-        _completeIfPending(p.productID, result);
       } else if (p.status == PurchaseStatus.canceled) {
         await _iap.completePurchase(p);
         _completeIfPending(p.productID, IapResult.purchaseFailed);

@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/services/analytics_service.dart';
+import '../../../../core/providers/service_providers.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
+import '../../../../shared/widgets/premium_gate_modal.dart';
 
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/services/currency_exchange_service.dart';
@@ -45,14 +49,57 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void initState() {
     super.initState();
     AnalyticsService.trackFirstOverviewVisit();
+    final _dao = ref.read(transactionDaoProvider);
+    final _profileId = ref.read(activeProfileIdProvider);
+    if (_profileId != null) {
+      unawaited(AnalyticsService.checkAndTrackNoTransactionsIn7Days(_dao, _profileId).catchError((_) {}));
+    }
     _tabController = TabController(length: 2, vsync: this);
+    // Free-tier users default to Monthly Details (index 1); premium users start
+    // on Deep Analytics (index 0) — determined after first frame when context is ready.
     _reportSubTabController = TabController(length: 2, vsync: this);
     _reportScrollController.addListener(_onReportScroll);
+    _reportSubTabController.addListener(_onReportSubTabChanged);
+    // Set initial sub-tab based on premium status after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final isPremium = ref.read(premiumStatusProvider);
+      if (!isPremium) {
+        _reportSubTabController.index = 1;
+      }
+    });
+  }
+
+  /// Intercepts taps on the Deep Analytics sub-tab (index 0) for free-tier users.
+  void _onReportSubTabChanged() {
+    // Only fire on the indexIsChanging edge (user initiated tap, not animation frame)
+    if (!_reportSubTabController.indexIsChanging) return;
+    if (_reportSubTabController.index != 0) return; // Not Deep Analytics
+
+    final isPremium = ref.read(premiumStatusProvider);
+    if (isPremium) return; // Premium users can access freely
+
+    // Snap back to Monthly Details before the animation completes
+    _reportSubTabController.index = 1;
+
+    // Show gate modal after the frame so the tab snap is visible first
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final trans = ref.read(translationsProvider);
+      showPremiumGateModal(
+        context,
+        ref,
+        title: trans.premiumGateDeepAnalyticsTitle,
+        description: trans.premiumGateDeepAnalyticsDesc,
+        icon: Icons.insights_rounded,
+      );
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _reportSubTabController.removeListener(_onReportSubTabChanged);
     _reportSubTabController.dispose();
     _reportScrollController.removeListener(_onReportScroll);
     _reportScrollController.dispose();

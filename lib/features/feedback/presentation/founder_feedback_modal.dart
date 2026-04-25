@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/services/analytics_service.dart';
 import '../../../shared/theme/app_theme_mode.dart';
 import '../../../shared/theme/colors.dart';
 import '../../../shared/theme/theme_provider_widget.dart';
@@ -13,6 +14,7 @@ import '../services/founder_feedback_service.dart';
 ///
 /// [isIndonesian] switches all copy to Bahasa Indonesia.
 void showFounderFeedbackModal(BuildContext context, {required bool isIndonesian}) {
+  AnalyticsService.trackFounderFeedbackShown();
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,

@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import '../services/iap_service.dart';
 import '../services/premium_auth_service.dart';
 import 'currency_exchange_providers.dart';
+import 'service_providers.dart';
 
 /// Provider to handle app initialization tasks
 final appInitProvider = FutureProvider<void>((ref) async {
@@ -29,6 +30,12 @@ final appInitProvider = FutureProvider<void>((ref) async {
     debugPrint('⏱️   ├─ Notifications: ${notifMs}ms');
     debugPrint('⏱️   ├─ IAP: ${iapMs}ms');
     debugPrint('⏱️   └─ PremiumAuth: ${premMs}ms');
+    // Invalidate the cached premium status so any providers that read it
+    // before PremiumAuthService.init() completed now pick up the correct value
+    // loaded from SharedPreferences.
+    ref.invalidate(premiumStatusProvider);
+    ref.invalidate(iapEnabledProvider);
+    ref.invalidate(premiumEnabledProvider);
   } catch (e) {
     // A network failure in Phase 1 must not crash the provider — the app
     // can operate offline without RemoteConfig / Notifications / IAP.

@@ -5,7 +5,6 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
-import '../../../../core/services/currency_exchange_service.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 
 class GoalAccountBalance {
@@ -57,10 +56,7 @@ final goalsWithProgressProvider =
   final balances = ref.read(accountBalanceProvider);
   final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
   final accountsMap = {for (var a in accounts) a.id: a};
-
-  // Pre-load rates once (first async gap — no ref calls after this)
-  final exchangeService = ref.read(currencyExchangeServiceProvider);
-  final rateResult = await exchangeService.getRates();
+  final rates = ref.watch(todayRatesProvider);
 
   final goalsStream = goalDao.watchActiveGoals(profileId);
 
@@ -96,7 +92,7 @@ final goalsWithProgressProvider =
             1.0,
             account.currency.code,
             goal.targetCurrency.code,
-            rateResult.rates,
+            rates,
           );
           convertedAmount = balance * rate;
         }

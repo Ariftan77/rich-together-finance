@@ -89,7 +89,7 @@ final budgetsWithSpendingProvider =
   final budgetDao = ref.watch(budgetDaoProvider);
   final transactionDao = ref.watch(transactionDaoProvider);
   final accountDao = ref.watch(accountDaoProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   final profileId = ref.watch(activeProfileIdProvider);
 
   if (profileId == null) return Stream.value([]);
@@ -120,8 +120,6 @@ final budgetsWithSpendingProvider =
   });
 
   return controller.stream.asyncMap((_) async {
-    final rateResult = await exchangeService.getRates();
-
     final accounts = await accountDao.getAllAccountsIncludingInactive(profileId);
     final accountMap = {for (final a in accounts) a.id: a};
 
@@ -183,7 +181,7 @@ final budgetsWithSpendingProvider =
               tx.amount,
               account.currency.code,
               budget.currency.code,
-              rateResult.rates,
+              rates,
             );
           }
           catSpent += converted;
@@ -211,12 +209,10 @@ final budgetsWithSpendingProvider =
 final budgetPeriodSummariesProvider =
     FutureProvider.autoDispose<List<BudgetPeriodSummary>>((ref) async {
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
-  final exchangeService = ref.watch(currencyExchangeServiceProvider);
+  final rates = ref.watch(todayRatesProvider);
   final budgets = ref.watch(budgetsWithSpendingProvider).valueOrNull ?? [];
 
   if (budgets.isEmpty) return [];
-
-  final rateResult = await exchangeService.getRates();
 
   final Map<BudgetPeriod, _PeriodAccumulator> accumulators = {};
   for (final item in budgets) {
@@ -229,13 +225,13 @@ final budgetPeriodSummariesProvider =
       item.budget.amount,
       item.budget.currency.code,
       defaultCurrency.code,
-      rateResult.rates,
+      rates,
     );
     acc.totalSpent += CurrencyExchangeService.convertCurrency(
       item.spentAmount,
       item.budget.currency.code,
       defaultCurrency.code,
-      rateResult.rates,
+      rates,
     );
   }
 

@@ -728,4 +728,23 @@ abstract class AppTranslations {
   String get shareCaption_gradeA;
   String get shareCaption_gradeB;
   String get shareCaption_spendingUnderControl;
+
+  // Premium Gate Modal
+  String get premiumGateButtonBuyLifetime;
+  String get premiumGateButtonMaybeLater;
+  String get premiumGateTagline;
+  String get premiumGateRestorePurchase;
+  String get premiumGateBudgetTitle;
+  String get premiumGateBudgetDesc;
+  String get premiumGateGoalTitle;
+  String get premiumGateGoalDesc;
+  String get premiumGateAccountTitle;
+  String get premiumGateAccountDesc;
+  String get premiumGateExportTitle;
+  String get premiumGateExportDesc;
+  String get premiumGateDeepAnalyticsTitle;
+  String get premiumGateDeepAnalyticsDesc;
+  String get premiumGateProfileTitle;
+  String get premiumGateProfileDesc;
+  String get premiumGateCloudBackupDesc;
 }

@@ -5,11 +5,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/service_providers.dart';
 import '../../../../core/services/backup_service.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/premium_gate_modal.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -108,7 +110,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   }
 
+  /// Returns true if the user is premium and the Drive flow should proceed.
+  /// If false, the premium gate modal was shown and the caller should abort.
+  Future<bool> _guardCloudBackup() async {
+    final isPremium = ref.read(premiumStatusProvider);
+    if (isPremium) return true;
+    final trans = ref.read(translationsProvider);
+    await showPremiumGateModal(
+      context,
+      ref,
+      title: trans.premiumGateExportTitle,
+      description: trans.premiumGateCloudBackupDesc,
+      icon: Icons.cloud_upload_rounded,
+    );
+    return false;
+  }
+
   Future<void> _handleGoogleSignIn() async {
+    if (!await _guardCloudBackup()) return;
     setState(() => _isLoading = true);
     try {
       final account = await ref.read(backupServiceProvider).signInWithGoogle();
@@ -131,6 +150,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _handleUploadToDrive() async {
+    if (!await _guardCloudBackup()) return;
     final messenger = ScaffoldMessenger.of(context);
     final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);
@@ -151,6 +171,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _handleRestoreFromDrive() async {
+    if (!await _guardCloudBackup()) return;
     final messenger = ScaffoldMessenger.of(context);
     final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);

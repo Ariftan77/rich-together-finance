@@ -4,12 +4,14 @@ import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/providers/profile_provider.dart';
+import '../../../../core/providers/service_providers.dart';
 import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
+import '../../../../shared/widgets/premium_gate_modal.dart';
 import 'add_profile_dialog.dart';
 
 // ---------------------------------------------------------------------------
@@ -367,6 +369,22 @@ class ProfileSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _showAddProfileDialog(BuildContext context, WidgetRef ref, List<Profile> profiles) async {
+    if (!context.mounted) return;
+
+    // Premium gate: free-tier users can only have 1 profile.
+    final isPremium = ref.read(premiumStatusProvider);
+    if (!isPremium && profiles.length >= 1) {
+      final trans = ref.read(translationsProvider);
+      await showPremiumGateModal(
+        context,
+        ref,
+        title: trans.premiumGateProfileTitle,
+        description: trans.premiumGateProfileDesc,
+        icon: Icons.group_add_rounded,
+      );
+      return;
+    }
+
     if (!context.mounted) return;
     Navigator.pop(context);
     showDialog(
