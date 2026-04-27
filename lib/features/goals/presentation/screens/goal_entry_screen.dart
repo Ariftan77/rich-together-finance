@@ -7,6 +7,7 @@ import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/theme/colors.dart';
 
 import '../../../../shared/theme/app_theme_mode.dart';
@@ -146,6 +147,8 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
             updatedAt: drift.Value(DateTime.now()),
           ),
         );
+
+        AnalyticsService.logFirstGoalCreated();
 
         // Link accounts
         for (final accountId in _linkedAccountIds) {

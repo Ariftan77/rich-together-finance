@@ -537,6 +537,8 @@ class AppTranslationsEn implements AppTranslations {
   @override String get backupRestoreFromDriveSubtitle => 'Restore data from cloud backup';
   @override String get backupDisconnect => 'Disconnect';
   @override String get backupDailyAutoInfo => 'Connect your Google account to enable automatic daily backup. Your data will be backed up silently each time you open the app (once per day). Up to 14 backup files are kept.';
+  @override String get backupCloudEnable => 'Enable Cloud Backup';
+  @override String get backupCloudEnableSubtitle => 'Auto daily backup to Google Drive';
 
   // Date Range Filter Modal
   @override String get filterByDateRange => 'Filter by Date Range';
@@ -766,4 +768,22 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumGateProfileTitle => 'Profile Limit Reached';
   @override String get premiumGateProfileDesc => 'Free tier supports 1 profile. Upgrade to manage multiple profiles.';
   @override String get premiumGateCloudBackupDesc => 'Cloud backup to Google Drive is a premium feature.';
+
+  // Premium Benefits Modal
+  @override String get premiumBenefitsTitle => 'Premium Benefits';
+  @override String get premiumBenefitsSeeWhat => 'See what you unlock';
+  @override String get premiumBenefitsModalTitle => 'What You Unlock';
+  @override String get premiumBenefitsModalSubtitle => 'One-time purchase. Yours forever.';
+  @override String get premiumBenefitsClose => 'Close';
+  @override String get premiumFeatureWallets => 'Wallets';
+  @override String get premiumFeatureGoals => 'Goals';
+  @override String get premiumFeatureBudgets => 'Budget Categories';
+  @override String get premiumFeatureProfiles => 'Profiles';
+  @override String get premiumFeatureAnalytics => 'Deep Analytics';
+  @override String get premiumFeatureCloudBackup => 'Daily Backup Google Drive (optional)';
+  @override String get premiumFreeLimit5 => 'Up to 5';
+  @override String get premiumFreeLimit3 => 'Up to 3';
+  @override String get premiumFreeLimit1 => '1 only';
+  @override String get premiumFreeLocked => 'Locked';
+  @override String get premiumUnlimited => 'Unlimited';
 }

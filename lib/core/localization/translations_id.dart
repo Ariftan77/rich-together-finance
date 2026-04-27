@@ -538,6 +538,8 @@ class AppTranslationsId implements AppTranslations {
   @override String get backupRestoreFromDriveSubtitle => 'Pulihkan data dari cadangan cloud';
   @override String get backupDisconnect => 'Putuskan';
   @override String get backupDailyAutoInfo => 'Hubungkan akun Google Anda untuk mengaktifkan cadangan otomatis harian. Data Anda akan dicadangkan secara otomatis setiap kali Anda membuka aplikasi (sekali per hari). Hingga 14 file cadangan akan disimpan.';
+  @override String get backupCloudEnable => 'Aktifkan Backup Cloud';
+  @override String get backupCloudEnableSubtitle => 'Backup harian otomatis ke Google Drive';
 
   // Date Range Filter Modal
   @override String get filterByDateRange => 'Filter berdasarkan tanggal';
@@ -767,4 +769,22 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumGateProfileTitle => 'Batas Profil Tercapai';
   @override String get premiumGateProfileDesc => 'Tier gratis hanya mendukung 1 profil. Upgrade untuk mengelola banyak profil.';
   @override String get premiumGateCloudBackupDesc => 'Backup cloud ke Google Drive adalah fitur premium.';
+
+  // Premium Benefits Modal
+  @override String get premiumBenefitsTitle => 'Keuntungan Premium';
+  @override String get premiumBenefitsSeeWhat => 'Lihat apa yang kamu dapatkan';
+  @override String get premiumBenefitsModalTitle => 'Yang Kamu Dapatkan';
+  @override String get premiumBenefitsModalSubtitle => 'Beli sekali. Milik selamanya.';
+  @override String get premiumBenefitsClose => 'Tutup';
+  @override String get premiumFeatureWallets => 'Dompet';
+  @override String get premiumFeatureGoals => 'Tujuan';
+  @override String get premiumFeatureBudgets => 'Kategori Anggaran';
+  @override String get premiumFeatureProfiles => 'Profil';
+  @override String get premiumFeatureAnalytics => 'Analitik Mendalam';
+  @override String get premiumFeatureCloudBackup => 'Backup Harian Google Drive (opsional)';
+  @override String get premiumFreeLimit5 => 'Maks. 5';
+  @override String get premiumFreeLimit3 => 'Maks. 3';
+  @override String get premiumFreeLimit1 => 'Hanya 1';
+  @override String get premiumFreeLocked => 'Terkunci';
+  @override String get premiumUnlimited => 'Tak Terbatas';
 }

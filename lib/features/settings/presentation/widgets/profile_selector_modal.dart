@@ -372,8 +372,10 @@ class ProfileSelectorModal extends ConsumerWidget {
     if (!context.mounted) return;
 
     // Premium gate: free-tier users can only have 1 profile.
+    final premiumEnabled = ref.read(premiumEnabledProvider);
+    final iapEnabled = ref.read(iapEnabledProvider);
     final isPremium = ref.read(premiumStatusProvider);
-    if (!isPremium && profiles.length >= 1) {
+    if (premiumEnabled && iapEnabled && !isPremium && profiles.length >= 1) {
       final trans = ref.read(translationsProvider);
       await showPremiumGateModal(
         context,

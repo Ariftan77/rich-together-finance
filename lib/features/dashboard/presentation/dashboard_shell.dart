@@ -92,6 +92,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // Fire-and-forget: run after first frame so no UI is blocked
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool('cloud_backup_enabled') ?? false)) return;
       final lastBackupMs = prefs.getInt('last_drive_backup_ms') ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       const oneDayMs = 86400000;
@@ -293,9 +294,11 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
           child: FabButton(
             icon: Icons.add_card,
             onPressed: () async {
+              final premiumEnabled = ref.read(premiumEnabledProvider);
+              final iapEnabled = ref.read(iapEnabledProvider);
               final isPremium = ref.read(premiumStatusProvider);
               final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
-              if (!isPremium && accounts.length >= 5) {
+              if (premiumEnabled && iapEnabled && !isPremium && accounts.length >= 5) {
                 final trans = ref.read(translationsProvider);
                 await showPremiumGateModal(
                   context,
@@ -323,9 +326,11 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
           return FabButton(
             icon: Icons.add,
             onPressed: () async {
+              final premiumEnabled = ref.read(premiumEnabledProvider);
+              final iapEnabled = ref.read(iapEnabledProvider);
               final isPremium = ref.read(premiumStatusProvider);
               final budgets = ref.read(budgetsWithSpendingProvider).valueOrNull ?? [];
-              if (!isPremium && budgets.length >= 3) {
+              if (premiumEnabled && iapEnabled && !isPremium && budgets.length >= 3) {
                 final trans = ref.read(translationsProvider);
                 await showPremiumGateModal(
                   context,
@@ -349,9 +354,11 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
           return FabButton(
             icon: Icons.add,
             onPressed: () async {
+              final premiumEnabled = ref.read(premiumEnabledProvider);
+              final iapEnabled = ref.read(iapEnabledProvider);
               final isPremium = ref.read(premiumStatusProvider);
               final goals = ref.read(goalsWithProgressProvider).valueOrNull ?? [];
-              if (!isPremium && goals.length >= 3) {
+              if (premiumEnabled && iapEnabled && !isPremium && goals.length >= 3) {
                 final trans = ref.read(translationsProvider);
                 await showPremiumGateModal(
                   context,

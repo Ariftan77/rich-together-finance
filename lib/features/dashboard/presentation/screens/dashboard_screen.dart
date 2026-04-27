@@ -77,7 +77,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     if (_reportSubTabController.index != 0) return; // Not Deep Analytics
 
     final isPremium = ref.read(premiumStatusProvider);
-    if (isPremium) return; // Premium users can access freely
+    if (isPremium) {
+      // Premium users land on the tab — track the first visit.
+      AnalyticsService.logFirstDeepAnalyticVisit();
+      return;
+    }
+
+    final premiumEnabled = ref.read(premiumEnabledProvider);
+    final iapEnabled = ref.read(iapEnabledProvider);
+    if (!premiumEnabled || !iapEnabled) {
+      // Gate disabled — allow access, track the first visit.
+      AnalyticsService.logFirstDeepAnalyticVisit();
+      return;
+    }
 
     // Snap back to Monthly Details before the animation completes
     _reportSubTabController.index = 1;

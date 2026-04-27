@@ -9,6 +9,7 @@ import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/models/enums.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../shared/theme/colors.dart';
 
 import '../../../../shared/theme/app_theme_mode.dart';
@@ -175,6 +176,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             creationAccountId: drift.Value(_selectedAccountId),
           ),
         );
+
+        AnalyticsService.logFirstDebtCreated();
 
         // 2. Create Transaction (Balance Impact) — only if account was selected
         if (_selectedAccountId != null) {

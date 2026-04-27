@@ -35,10 +35,33 @@ class IapService {
 
   static const _pendingActivationKey = 'iap_pending_activation';
 
+  // One-shot callback set by the gate modal before a manual restore so the UI
+  // can update when PurchaseStatus.restored arrives with no pending completer.
+  VoidCallback? onRestoreSuccess;
+
+  // Cached product details for the premium product — populated during init().
+  ProductDetails? _premiumProductDetails;
+
+  /// The store-formatted price string for the premium product (e.g. "Rp 150.000").
+  /// Returns null if the product details have not yet loaded or the query failed.
+  String? get premiumPrice => _premiumProductDetails?.price;
+
   Future<void> init() async {
     // Cancel any previous subscription to prevent duplicate listeners
     await _purchaseSub?.cancel();
     _purchaseSub = _iap.purchaseStream.listen(_onPurchaseUpdate);
+
+    // Pre-fetch product details so premiumPrice is available before the user
+    // opens the purchase flow. Failures are silently ignored — the UI degrades
+    // gracefully when premiumPrice is null.
+    try {
+      final result = await _iap.queryProductDetails({_premiumId});
+      if (result.productDetails.isNotEmpty) {
+        _premiumProductDetails = result.productDetails.first;
+      }
+    } catch (_) {
+      // Leave _premiumProductDetails null; UI shows no price.
+    }
 
     await _retryPendingActivation();
   }
@@ -168,6 +191,14 @@ class IapService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove(_pendingActivationKey);
           await _iap.completePurchase(p);
+          // For the manual-restore path (no pending completer), fire the
+          // one-shot UI callback so the gate modal can update itself.
+          if (p.status == PurchaseStatus.restored &&
+              (_pendingCompleter == null || _pendingCompleter!.isCompleted)) {
+            final cb = onRestoreSuccess;
+            onRestoreSuccess = null;
+            cb?.call();
+          }
           _completeIfPending(p.productID, IapResult.success);
         } catch (e) {
           final prefs = await SharedPreferences.getInstance();
@@ -181,6 +212,13 @@ class IapService {
         await _iap.completePurchase(p);
         _completeIfPending(p.productID, IapResult.purchaseFailed);
       } else if (p.status == PurchaseStatus.error) {
+        // itemAlreadyOwned: the user already owns this product on the Play Store.
+        // Trigger a restore instead of failing — the incoming restored event will
+        // complete the pending completer with success. Leave the completer alive.
+        if (p.error?.code == 'itemAlreadyOwned') {
+          await _iap.restorePurchases();
+          return;
+        }
         // completePurchase() throws for already-owned errors on some Play Store
         // versions. Swallow the exception so _completeIfPending always runs and
         // the pending Completer is never left dangling.

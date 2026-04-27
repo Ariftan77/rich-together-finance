@@ -1238,7 +1238,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          // Google account tile — always visible at the top
+          // Premium Benefits tile — always visible at the very top
+          SettingsTile(
+            icon: Icons.workspace_premium,
+            title: trans.premiumBenefitsTitle,
+            subtitle: trans.premiumBenefitsSeeWhat,
+            onTap: () => _showPremiumBenefitsModal(context),
+          ),
+          _buildDivider(),
+          // Google account tile — always visible below benefits tile
           if (auth.isSignedIn)
             _buildSignedInAccountTile(auth)
           else
@@ -1777,6 +1785,334 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  void _showPremiumBenefitsModal(BuildContext context) {
+    final trans = ref.read(translationsProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    final sheetBg = isDefault
+        ? const Color(0xFF1A1208)
+        : isLight
+            ? Colors.white
+            : const Color(0xFF111111);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final accentColor = Theme.of(context).colorScheme.primary;
+        final onSurface = Theme.of(context).colorScheme.onSurface;
+        final surfaceColor = Theme.of(context).colorScheme.surface;
+        final textMuted = onSurface.withValues(alpha: 0.5);
+        final rowAlt = onSurface.withValues(alpha: 0.08);
+        final textPrimary = onSurface;
+
+        // Table data: [featureLabel, freeValue, isPremiumUnlimited, isFreeCheck]
+        // isPremiumUnlimited: true = show "Unlimited", false = show check icon
+        // isFreeCheck: true = show locked icon/muted text, false show the freeValue string
+        final tableRows = [
+          _BenefitsRow(
+            feature: trans.premiumFeatureWallets,
+            freeLabel: trans.premiumFreeLimit5,
+            premiumLabel: trans.premiumUnlimited,
+            freeLocked: false,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureGoals,
+            freeLabel: trans.premiumFreeLimit3,
+            premiumLabel: trans.premiumUnlimited,
+            freeLocked: false,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureBudgets,
+            freeLabel: trans.premiumFreeLimit3,
+            premiumLabel: trans.premiumUnlimited,
+            freeLocked: false,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureProfiles,
+            freeLabel: trans.premiumFreeLimit1,
+            premiumLabel: trans.premiumUnlimited,
+            freeLocked: false,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureAnalytics,
+            freeLabel: trans.premiumFreeLocked,
+            premiumLabel: '',
+            freeLocked: true,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureCloudBackup,
+            freeLabel: trans.premiumFreeLocked,
+            premiumLabel: '',
+            freeLocked: true,
+          ),
+        ];
+
+        final price = IapService().premiumPrice;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: sheetBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 12,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle pill
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: onSurface.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Modal title
+                Text(
+                  trans.premiumBenefitsModalTitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // Subtitle
+                Text(
+                  trans.premiumBenefitsModalSubtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Comparison table
+                Container(
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: onSurface.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Table header row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            // Feature column header (empty label)
+                            const Expanded(flex: 3, child: SizedBox.shrink()),
+                            // Free header
+                            Expanded(
+                              flex: 2,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.lock_outline,
+                                    size: 13,
+                                    color: textMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Free',
+                                    style: TextStyle(
+                                      color: textMuted,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Premium header
+                            Expanded(
+                              flex: 2,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 13,
+                                    color: accentColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Premium',
+                                    style: TextStyle(
+                                      color: accentColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Divider below header
+                      Divider(
+                        height: 1,
+                        color: onSurface.withValues(alpha: 0.08),
+                      ),
+
+                      // Data rows
+                      ...tableRows.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final row = entry.value;
+                        final isAlternate = index.isOdd;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isAlternate ? rowAlt : Colors.transparent,
+                            borderRadius: index == tableRows.length - 1
+                                ? const BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12),
+                                  )
+                                : null,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 11,
+                            ),
+                            child: Row(
+                              children: [
+                                // Feature name
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    row.feature,
+                                    style: TextStyle(
+                                      color: textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                // Free cell
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: row.freeLocked
+                                        ? Icon(
+                                            Icons.close_rounded,
+                                            size: 16,
+                                            color: textMuted,
+                                          )
+                                        : Text(
+                                            row.freeLabel,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: textMuted,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                // Premium cell
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: row.premiumLabel.isEmpty
+                                        ? Icon(
+                                            Icons.check_circle_rounded,
+                                            size: 18,
+                                            color: accentColor,
+                                          )
+                                        : Text(
+                                            row.premiumLabel,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: accentColor,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+
+                // Price line (only when available from the store)
+                if (price != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    price,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: accentColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+
+                // Close button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: textMuted,
+                      side: BorderSide(
+                        color: onSurface.withValues(alpha: 0.2),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      trans.premiumBenefitsClose,
+                      style: TextStyle(
+                        color: textMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showSuccessDialog() {
     final trans = ref.read(translationsProvider);
     showDialog(
@@ -1825,5 +2161,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+}
+
+// ---------------------------------------------------------------------------
+// Internal data model for the premium benefits comparison table
+// ---------------------------------------------------------------------------
+
+class _BenefitsRow {
+  final String feature;
+  final String freeLabel;
+  final String premiumLabel; // empty string = show check icon instead
+  final bool freeLocked;     // true = show X icon instead of freeLabel text
+
+  const _BenefitsRow({
+    required this.feature,
+    required this.freeLabel,
+    required this.premiumLabel,
+    required this.freeLocked,
+  });
 }
 

@@ -530,6 +530,8 @@ abstract class AppTranslations {
   String get backupRestoreFromDriveSubtitle;
   String get backupDisconnect;
   String get backupDailyAutoInfo;
+  String get backupCloudEnable;
+  String get backupCloudEnableSubtitle;
 
   // Date Range Filter Modal
   String get filterByDateRange;
@@ -752,4 +754,22 @@ abstract class AppTranslations {
   String get premiumGateProfileTitle;
   String get premiumGateProfileDesc;
   String get premiumGateCloudBackupDesc;
+
+  // Premium Benefits Modal
+  String get premiumBenefitsTitle;
+  String get premiumBenefitsSeeWhat;
+  String get premiumBenefitsModalTitle;
+  String get premiumBenefitsModalSubtitle;
+  String get premiumBenefitsClose;
+  String get premiumFeatureWallets;
+  String get premiumFeatureGoals;
+  String get premiumFeatureBudgets;
+  String get premiumFeatureProfiles;
+  String get premiumFeatureAnalytics;
+  String get premiumFeatureCloudBackup;
+  String get premiumFreeLimit5;
+  String get premiumFreeLimit3;
+  String get premiumFreeLimit1;
+  String get premiumFreeLocked;
+  String get premiumUnlimited;
 }

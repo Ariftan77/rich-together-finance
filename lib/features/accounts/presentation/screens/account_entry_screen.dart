@@ -18,6 +18,7 @@ import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../providers/balance_provider.dart';
 import 'account_transaction_history_screen.dart';
 
@@ -144,6 +145,7 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
         }
         return;
       }
+      final isFirstAccount = existingAccounts.isEmpty;
       await dao.insertAccount(
         AccountsCompanion(
           profileId: drift.Value(profileId),
@@ -160,6 +162,9 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
           paymentDueDay: drift.Value(_paymentDueDay),
         ),
       );
+      if (isFirstAccount) {
+        AnalyticsService.logFirstAccountAdded();
+      }
     } else {
       // Update
       await dao.updateAccount(

@@ -148,6 +148,50 @@ class AnalyticsService {
   }
 
   // ---------------------------------------------------------------------------
+  // Account / Goal / Analytics / Backup events
+  // ---------------------------------------------------------------------------
+
+  /// Fired only on the very first account ever added.
+  static void logFirstAccountAdded() {
+    unawaited(_fireOnce(
+      key: 'first_account_added_fired',
+      eventName: 'first_account_added',
+    ).catchError((_) {}));
+  }
+
+  /// Fired only on the very first goal ever created.
+  static void logFirstGoalCreated() {
+    unawaited(_fireOnce(
+      key: 'first_goal_created_fired',
+      eventName: 'first_goal_created',
+    ).catchError((_) {}));
+  }
+
+  /// Fired only the first time the user visits the Deep Analytics tab.
+  static void logFirstDeepAnalyticVisit() {
+    unawaited(_fireOnce(
+      key: 'first_deep_analytic_visit_fired',
+      eventName: 'first_deep_analytic_visit',
+    ).catchError((_) {}));
+  }
+
+  /// Fired only on the very first debt ever created.
+  static void logFirstDebtCreated() {
+    unawaited(_fireOnce(
+      key: 'first_debt_created_fired',
+      eventName: 'first_debt_created',
+    ).catchError((_) {}));
+  }
+
+  /// Fired only the first time the user toggles the daily cloud backup switch.
+  static void logToggleDailyBackup({required bool enabled}) {
+    unawaited(_fireOnce(
+      key: 'toggle_daily_backup_fired',
+      eventName: 'toggle_daily_backup',
+    ).catchError((_) {}));
+  }
+
+  // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
 

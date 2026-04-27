@@ -80,6 +80,8 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
 
   @override
   void dispose() {
+    // Clear any stale restore callback to avoid firing into a dead widget.
+    IapService().onRestoreSuccess = null;
     _pulseController.dispose();
     super.dispose();
   }
@@ -293,17 +295,67 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
   }
 
   Future<void> _handleRestore() async {
+    final trans = ref.read(translationsProvider);
     setState(() => _isRestoring = true);
-    await IapService().restorePurchases();
-    if (!mounted) return;
-    setState(() => _isRestoring = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ref.read(translationsProvider).premiumCheckingPlayStore,
+
+    try {
+      // Step 1: Check Supabase first — the user may already have premium on the
+      // backend (e.g. purchased on another device or the cache is stale).
+      String? backendStatus;
+      try {
+        backendStatus = await PremiumAuthService().getPremiumStatus();
+      } catch (_) {
+        // Network error — fall through to Play Store restore silently.
+      }
+
+      if (backendStatus != null) {
+        // Already premium on backend — update local state and close.
+        ref.invalidate(premiumStatusProvider);
+        if (!mounted) return;
+        setState(() => _isRestoring = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(trans.premiumActivated),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pop(true);
+        return;
+      }
+
+      // Step 2: Register the one-shot callback BEFORE triggering the restore
+      // so it is in place when the restored event arrives.
+      IapService().onRestoreSuccess = () {
+        if (!mounted) return;
+        setState(() => _isRestoring = false);
+        ref.invalidate(premiumStatusProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(trans.premiumActivated),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        if (mounted) Navigator.of(context).pop(true);
+      };
+
+      // Step 3: Trigger the Play Store restore flow.
+      await IapService().restorePurchases();
+
+      // Step 4: Show a neutral "checking" snackbar — the callback above handles
+      // the success case asynchronously when the restored event arrives.
+      if (!mounted) return;
+      setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.premiumCheckingPlayStore),
         ),
-      ),
-    );
+      );
+    } catch (_) {
+      // Ensure spinner is always cleared on unexpected errors.
+      IapService().onRestoreSuccess = null;
+      if (!mounted) return;
+      setState(() => _isRestoring = false);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -431,6 +483,18 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
                   onPressed: () {},
                   // Visually disabled — isLoading:false, but we treat onPressed as no-op
                 ),
+          // Price label — shown only when the store has returned a price string.
+          if (iapEnabled && IapService().premiumPrice != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              IapService().premiumPrice!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textMuted,
+                fontSize: 13,
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
 
           // Tagline
