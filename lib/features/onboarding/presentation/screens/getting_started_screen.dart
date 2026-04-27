@@ -33,6 +33,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
   void initState() {
     super.initState();
     AnalyticsService.trackOnboardingStarted();
+    AnalyticsService.trackScreenView('Welcome_Currency_Setup');
     _autoDetect();
   }
 

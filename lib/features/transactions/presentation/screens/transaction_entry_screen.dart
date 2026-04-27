@@ -101,6 +101,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsService.trackScreenView('Transaction_Entry');
     _amountController.text = '0';  // Default to single zero
 
     // Pre-set the transaction type synchronously before the first build so that

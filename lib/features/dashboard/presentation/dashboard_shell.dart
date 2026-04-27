@@ -27,6 +27,7 @@ import '../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../shared/tour/tour_keys.dart';
 import '../../../core/providers/nav_providers.dart';
 import '../../../core/providers/service_providers.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../transactions/presentation/providers/search_provider.dart';
 import '../../feedback/presentation/founder_feedback_modal.dart';
 import '../../feedback/services/founder_feedback_service.dart';
@@ -64,6 +65,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   @override
   void initState() {
     super.initState();
+    AnalyticsService.trackScreenView('Dashboard_Home');
     _tabAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),

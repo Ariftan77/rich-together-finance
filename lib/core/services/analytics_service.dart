@@ -116,6 +116,17 @@ class AnalyticsService {
     ).catchError((_) {}));
   }
 
+  static void trackScreenView(String screenName, {String? screenClass}) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logScreenView(
+            screenName: screenName,
+            screenClass: screenClass ?? screenName,
+          )
+          .catchError((_) {}),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Transaction events
   // ---------------------------------------------------------------------------

@@ -60,6 +60,7 @@ class _OnboardingStoriesScreenState
     _controller = AnimationController(vsync: this, duration: _slideDuration)
       ..addStatusListener(_onAnimationStatus)
       ..forward();
+    AnalyticsService.trackScreenView('Onboarding_Stories');
   }
 
   @override
