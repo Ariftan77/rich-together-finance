@@ -554,10 +554,10 @@ class AppTranslationsId implements AppTranslations {
 
   // Transaction History Screen
   @override String get txnCustomRange => 'Rentang Khusus';
-  @override String get txnNoTransactions => 'Tidak ada transaksi';
-  @override String get txnNoTransactionsHint => 'Ketuk + untuk mencatat transaksi pertama';
-  @override String get txnNoAccountHint => 'Tambahkan akun dompet terlebih dahulu, lalu catat transaksi';
-  @override String get txnZeroBalanceHint => 'Saldo akun Anda nol. Tambahkan pemasukan atau atur saldo awal di pengaturan akun';
+  @override String get txnNoTransactions => 'Catat pengeluaran pertamamu';
+  @override String get txnNoTransactionsHint => 'Ketuk + untuk mencatat apa yang kamu keluarkan hari ini. Sekecil apapun — kopi, parkir, jajan.';
+  @override String get txnNoAccountHint => 'Ketuk + untuk mencatat apa yang kamu keluarkan hari ini. Sekecil apapun — kopi, parkir, jajan.';
+  @override String get txnZeroBalanceHint => 'Ketuk + untuk mencatat apa yang kamu keluarkan hari ini. Sekecil apapun — kopi, parkir, jajan.';
   @override String get txnFilterDebt => 'Hutang';
   @override String get txnFilterAdjustment => 'Penyesuaian';
   @override String get txnDaySummaryTxn => 'Transaksi';

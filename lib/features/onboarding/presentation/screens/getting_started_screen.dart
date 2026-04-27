@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,24 +27,111 @@ class GettingStartedScreen extends ConsumerStatefulWidget {
 
 class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
   Currency _selectedCurrency = Currency.idr;
-  OnboardingCountry _selectedCountry = OnboardingCountry.indonesia;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     AnalyticsService.trackOnboardingStarted();
+    _autoDetect();
   }
 
   // ---------------------------------------------------------------------------
-  // Locale helpers
+  // Auto-detection (Platform.localeName only)
   // ---------------------------------------------------------------------------
 
-  /// Whether the current locale is Bahasa Indonesia.
-  bool get _isIndonesianLocale {
-    final locale = ref.read(localeProvider);
-    return locale.languageCode == 'id';
+  Future<void> _autoDetect() async {
+    try {
+      final localeName = Platform.localeName; // e.g. "id_ID", "en_US", "en_SG"
+      final parts = localeName.split('_');
+      final langCode = parts.first.toLowerCase();
+      final countryCode = parts.length >= 2 ? parts.last.toUpperCase() : '';
+      debugPrint('🌍 [GettingStarted] localeName=$localeName | langCode=$langCode | countryCode=$countryCode');
+
+      // Language: 'id' only if device language is Indonesian, else 'en'
+      final detectedLanguage = langCode == 'id' ? 'id' : 'en';
+
+      // Currency: from country code, fallback to IDR
+      final detectedCurrency = _currencyFromCountryCode(countryCode) ?? Currency.idr;
+      debugPrint('🌍 [GettingStarted] detectedCurrency=${detectedCurrency.code} | detectedLanguage=$detectedLanguage');
+
+      if (mounted) {
+        setState(() => _selectedCurrency = detectedCurrency);
+        AnalyticsService.trackWelcomeScreenShown(
+          currency: detectedCurrency.code,
+          language: detectedLanguage,
+        );
+      }
+      await _setLanguage(detectedLanguage);
+    } catch (_) {
+      // Silently fall back to defaults (IDR / English).
+    }
   }
+
+  Currency? _currencyFromCountryCode(String code) {
+    switch (code) {
+      // Indonesia
+      case 'ID': return Currency.idr;
+      // Singapore
+      case 'SG': return Currency.sgd;
+      // Malaysia
+      case 'MY': return Currency.myr;
+      // Thailand
+      case 'TH': return Currency.thb;
+      // Vietnam
+      case 'VN': return Currency.vnd;
+      // Philippines
+      case 'PH': return Currency.php;
+      // Cambodia
+      case 'KH': return Currency.khr;
+      // Japan
+      case 'JP': return Currency.jpy;
+      // China
+      case 'CN': return Currency.cny;
+      // South Korea
+      case 'KR': return Currency.krw;
+      // Hong Kong
+      case 'HK': return Currency.hkd;
+      // Taiwan
+      case 'TW': return Currency.twd;
+      // India
+      case 'IN': return Currency.inr;
+      // Saudi Arabia
+      case 'SA': return Currency.sar;
+      // Australia
+      case 'AU': return Currency.aud;
+      // United Kingdom
+      case 'GB': return Currency.gbp;
+      // Canada
+      case 'CA': return Currency.cad;
+      // United States
+      case 'US': return Currency.usd;
+      // Eurozone countries
+      case 'DE':
+      case 'FR':
+      case 'IT':
+      case 'ES':
+      case 'NL':
+      case 'BE':
+      case 'AT':
+      case 'PT':
+      case 'FI':
+      case 'IE':
+      case 'GR':
+      case 'SK':
+      case 'SI':
+      case 'LT':
+      case 'LV':
+      case 'EE':
+      case 'LU':
+      case 'MT':
+      case 'CY':
+        return Currency.eur;
+      // No match — caller will fall back to timezone
+      default: return null;
+    }
+  }
+
 
   // ---------------------------------------------------------------------------
   // Language selection
@@ -53,16 +141,6 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
     final profile = await ref.read(profileDaoProvider).getActiveProfile();
     if (profile != null) {
       await ref.read(settingsDaoProvider).setLanguage(profile.id, code);
-    }
-    // Update country default based on language
-    if (mounted) {
-      setState(() {
-        // Bahasa Indonesia always defaults to Indonesia; English keeps current
-        // country selection (defaults to Indonesia unless user changed it).
-        if (code == 'id') {
-          _selectedCountry = OnboardingCountry.indonesia;
-        }
-      });
     }
   }
 
@@ -77,27 +155,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
         onSelected: (code) async {
           Navigator.pop(ctx);
           await _setLanguage(code);
-        },
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Country selection (English locale only)
-  // ---------------------------------------------------------------------------
-
-  void _showCountrySelector() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.bgDarkEnd,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _CountrySelectorSheet(
-        selected: _selectedCountry,
-        onSelected: (country) {
-          Navigator.pop(ctx);
-          setState(() => _selectedCountry = country);
+          AnalyticsService.trackWelcomeLanguageChanged(code);
         },
       ),
     );
@@ -109,6 +167,11 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
 
   Future<void> _onGetStarted() async {
     setState(() => _isSaving = true);
+    final locale = ref.read(localeProvider);
+    AnalyticsService.trackWelcomeGetStartedTapped(
+      currency: _selectedCurrency.code,
+      language: locale.languageCode,
+    );
     try {
       final profileDao = ref.read(profileDaoProvider);
       final profile = await profileDao.getActiveProfile();
@@ -120,9 +183,9 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
         await ref.read(settingsDaoProvider).setDefaultCurrency(profileId, _selectedCurrency);
 
         // 2. Determine which country defaults to seed.
-        final country = _isIndonesianLocale
+        final country = _selectedCurrency == Currency.idr
             ? OnboardingCountry.indonesia
-            : _selectedCountry;
+            : OnboardingCountry.other;
 
         // 3. Seed wallet accounts.
         await _seedAccounts(profileId, country);
@@ -245,7 +308,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
 
                 // App name
                 Text(
-                  'Richer - Money Management',
+                  'Richer - Private Budget & Finance',
                   textAlign: TextAlign.center,
                   style: AppTypography.textTheme.headlineSmall?.copyWith(
                     color: Colors.white,
@@ -315,64 +378,6 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
 
                 const SizedBox(height: 20),
 
-                // ── Country selector (English locale only) ─────────────────
-                if (!isId) ...[
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Choose your country',
-                      style: AppTypography.textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Semantics(
-                    label: 'Country selector, currently ${_selectedCountry.displayName}',
-                    hint: 'Double tap to open country picker',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: _showCountrySelector,
-                      child: GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        borderRadius: 12,
-                        child: Row(
-                          children: [
-                            Text(
-                              _selectedCountry.flag,
-                              style: const TextStyle(fontSize: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _selectedCountry.displayName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.expand_more,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sets up wallet accounts and categories for your region.',
-                    style: AppTypography.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
                 // ── Currency selector ──────────────────────────────────────
                 Align(
                   alignment: Alignment.centerLeft,
@@ -392,7 +397,10 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
                   button: true,
                   child: CurrencyPickerField(
                     value: _selectedCurrency,
-                    onChanged: (c) => setState(() => _selectedCurrency = c),
+                    onChanged: (c) {
+                    setState(() => _selectedCurrency = c);
+                    AnalyticsService.trackWelcomeCurrencyChanged(c.code);
+                  },
                     isDark: true,
                   ),
                 ),
@@ -512,127 +520,6 @@ class _LanguageTile extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppColors.primaryGold, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// Country selector bottom sheet
-// =============================================================================
-
-class _CountrySelectorSheet extends StatelessWidget {
-  final OnboardingCountry selected;
-  final ValueChanged<OnboardingCountry> onSelected;
-
-  const _CountrySelectorSheet({
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Choose Your Country',
-            style: AppTypography.textTheme.titleLarge?.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We\'ll set up wallet accounts and categories tailored to your region.',
-            style: AppTypography.textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...OnboardingCountry.values.map(
-            (country) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _CountryTile(
-                country: country,
-                isSelected: selected == country,
-                onTap: () => onSelected(country),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CountryTile extends StatelessWidget {
-  final OnboardingCountry country;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CountryTile({
-    required this.country,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGold.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryGold.withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(country.flag, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    country.displayName,
-                    style: TextStyle(
-                      color: isSelected ? AppColors.primaryGold : Colors.white,
-                      fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                  if (country == OnboardingCountry.indonesia)
-                    Text(
-                      'Includes BCA, Mandiri, GoPay, OVO, Dana...',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        fontSize: 12,
-                      ),
-                    )
-                  else
-                    Text(
-                      'Generic bank, cash, wallet & credit card',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
               ),
             ),
             if (isSelected)

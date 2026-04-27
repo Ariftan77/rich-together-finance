@@ -94,7 +94,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       ref.read(_walletSearchProvider.notifier).state = _walletSearchController.text;
       setState(() {});
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
+    // Tour disabled — activation rate was ~20%; removing to reduce friction on first open.
+    // WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
   }
 
   @override
@@ -206,9 +207,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<int>(shellTabIndexProvider, (previous, next) {
-      if (next == 1) _maybeLaunchTour(delayed: true);
-    });
+    // Tour disabled — see initState comment.
+    // ref.listen<int>(shellTabIndexProvider, (previous, next) {
+    //   if (next == 1) _maybeLaunchTour(delayed: true);
+    // });
 
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);

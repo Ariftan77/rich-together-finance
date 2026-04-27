@@ -553,10 +553,10 @@ class AppTranslationsEn implements AppTranslations {
 
   // Transaction History Screen
   @override String get txnCustomRange => 'Custom Range';
-  @override String get txnNoTransactions => 'No transactions found';
-  @override String get txnNoTransactionsHint => 'Tap + to record your first transaction';
-  @override String get txnNoAccountHint => 'Add a wallet account first, then record transactions';
-  @override String get txnZeroBalanceHint => 'Your accounts have zero balance. Add an income or set an initial balance in your account settings';
+  @override String get txnNoTransactions => 'Track your first expense';
+  @override String get txnNoTransactionsHint => 'Tap + to log what you spent today. Even small ones — coffee, parking, snacks.';
+  @override String get txnNoAccountHint => 'Tap + to log what you spent today. Even small ones — coffee, parking, snacks.';
+  @override String get txnZeroBalanceHint => 'Tap + to log what you spent today. Even small ones — coffee, parking, snacks.';
   @override String get txnFilterDebt => 'Debt';
   @override String get txnFilterAdjustment => 'Adjustment';
   @override String get txnDaySummaryTxn => 'Txn';

@@ -486,6 +486,14 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
           // Price label — shown only when the store has returned a price string.
           if (iapEnabled && IapService().premiumPrice != null) ...[
             const SizedBox(height: 6),
+            Builder(builder: (_) {
+              final pd = IapService().premiumProductDetails;
+              debugPrint('[PremiumGate] price=${pd?.price} '
+                  'rawPrice=${pd?.rawPrice} '
+                  'currencyCode=${pd?.currencyCode} '
+                  'currencySymbol=${pd?.currencySymbol}');
+              return const SizedBox.shrink();
+            }),
             Text(
               IapService().premiumPrice!,
               textAlign: TextAlign.center,

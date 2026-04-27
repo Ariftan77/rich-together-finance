@@ -41,7 +41,7 @@ class _OnboardingStoriesScreenState
     });
   }
 
-  static const int _slideCount = 3;
+  static const int _slideCount = 1;
   static const int _frameCount = 3;
 
   /// Total duration for one story (3 frames × 2 s each).
@@ -439,7 +439,7 @@ class _BottomActions extends StatelessWidget {
     required this.onGetStarted,
   });
 
-  bool get _isLastSlide => currentIndex == 2;
+  bool get _isLastSlide => currentIndex == 0;
 
   @override
   Widget build(BuildContext context) {
@@ -452,14 +452,20 @@ class _BottomActions extends StatelessWidget {
             onPressed: onSkip,
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              backgroundColor: Colors.white.withValues(alpha: 0.15),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+              ),
             ),
             child: const Text(
               'Skip',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
           )
@@ -469,7 +475,7 @@ class _BottomActions extends StatelessWidget {
         // Get Started button — visible on slide 2 only
         if (_isLastSlide)
           GlassButton(
-            text: 'Get Started  →',
+            text: 'Track your first expense  →',
             size: GlassButtonSize.medium,
             onPressed: onGetStarted,
           )

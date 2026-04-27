@@ -67,8 +67,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     });
     _scrollController.addListener(_onScroll);
 
-    // Launch the tour on first run, after the first frame is rendered.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
+    // Tour disabled — activation rate was ~20%; removing to reduce friction on first open.
+    // WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
   }
 
   Future<void> _maybeLaunchTour({bool delayed = false}) async {
@@ -340,9 +340,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     // Re-trigger tour when the user navigates back to this tab after app start.
     // initState only fires once; ref.listen fires every time the tab index
     // changes to 0 while this screen is alive in the IndexedStack.
-    ref.listen<int>(shellTabIndexProvider, (previous, next) {
-      if (next == 0) _maybeLaunchTour(delayed: true);
-    });
+    // Tour disabled — see initState comment.
+    // ref.listen<int>(shellTabIndexProvider, (previous, next) {
+    //   if (next == 0) _maybeLaunchTour(delayed: true);
+    // });
 
     final filteredHelper = ref.watch(convertedFilteredTransactionsProvider);
     final currentTypeFilter = ref.watch(transactionTypeFilterProvider);
@@ -732,6 +733,10 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                   ),
                                 ),
                               ),
+                              if (emptyHint == trans.txnNoTransactionsHint) ...[
+                                const SizedBox(height: 24),
+                                const _AnimatedArrow(),
+                              ],
                             ],
                           ),
                         );
@@ -1164,5 +1169,64 @@ class _TransactionItem extends ConsumerWidget {
       case TransactionType.debtPaymentIn:
         return Icons.handshake_outlined;
     }
+  }
+}
+
+class _AnimatedArrow extends StatefulWidget {
+  const _AnimatedArrow();
+
+  @override
+  State<_AnimatedArrow> createState() => _AnimatedArrowState();
+}
+
+class _AnimatedArrowState extends State<_AnimatedArrow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _translate;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
+    _translate = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(5, 5),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _fade = Tween<double>(begin: 0.55, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _fade.value,
+          child: Transform.translate(
+            offset: _translate.value,
+            child: child,
+          ),
+        );
+      },
+      child: const Icon(
+        Icons.south_east_rounded,
+        size: 32,
+        color: AppColors.primaryGold,
+      ),
+    );
   }
 }

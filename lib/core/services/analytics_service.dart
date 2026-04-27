@@ -42,6 +42,48 @@ class AnalyticsService {
     );
   }
 
+  static void trackWelcomeScreenShown({required String currency, required String language}) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'welcome_screen_shown', parameters: {
+            'currency': currency,
+            'language': language,
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  static void trackWelcomeLanguageChanged(String language) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'welcome_language_changed', parameters: {
+            'language': language,
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  static void trackWelcomeCurrencyChanged(String currency) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'welcome_currency_changed', parameters: {
+            'currency': currency,
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  static void trackWelcomeGetStartedTapped({required String currency, required String language}) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'welcome_get_started_tapped', parameters: {
+            'currency': currency,
+            'language': language,
+          })
+          .catchError((_) {}),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // First screen visit events
   // ---------------------------------------------------------------------------

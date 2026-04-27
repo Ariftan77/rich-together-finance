@@ -40,12 +40,16 @@ class DashboardShell extends ConsumerStatefulWidget {
 }
 
 class _DashboardShellState extends ConsumerState<DashboardShell>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
   late final AnimationController _tabAnimController;
   late final CurvedAnimation _tabCurvedAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  late final AnimationController _fabPulseController;
+  late final Animation<double> _fabPulseAnimation;
+  bool _fabEverTapped = false;
 
   /// Tracks whether the transaction speed-dial is currently open so we can
   /// render a transparent barrier that dismisses it on outside tap.
@@ -76,6 +80,16 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     );
     _tabAnimController.value = 1.0; // Start fully visible
 
+    _fabPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fabPulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _fabPulseController, curve: Curves.easeInOut),
+    );
+
+    _loadFabTappedState();
+
     // Show "Feedback from the Founder" modal on the 3rd app open — once ever.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final show = await FounderFeedbackService.shouldShowModal();
@@ -86,6 +100,26 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     });
 
     _triggerAutoBackup();
+  }
+
+  Future<void> _loadFabTappedState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tapped = prefs.getBool('fab_first_tapped') ?? false;
+    if (!mounted) return;
+    if (tapped) {
+      setState(() => _fabEverTapped = true);
+    } else {
+      _fabPulseController.repeat(reverse: true);
+    }
+  }
+
+  Future<void> _onFabFirstTap() async {
+    if (_fabEverTapped) return;
+    setState(() => _fabEverTapped = true);
+    _fabPulseController.stop();
+    _fabPulseController.animateTo(1.0, duration: const Duration(milliseconds: 150));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('fab_first_tapped', true);
   }
 
   Future<void> _triggerAutoBackup() async {
@@ -116,6 +150,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   void dispose() {
     _tabCurvedAnimation.dispose();
     _tabAnimController.dispose();
+    _fabPulseController.dispose();
     super.dispose();
   }
 
@@ -280,12 +315,23 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       case 0: // Transactions — speed-dial with Income / Expense / Transfer
         return KeyedSubtree(
           key: TourKeys.fab,
-          child: TransactionSpeedDialFab(
-            key: _speedDialKey,
-            onSelected: _onSpeedDialSelected,
-            onOpenChanged: (isOpen) {
-              setState(() => _speedDialOpen = isOpen);
-            },
+          child: AnimatedBuilder(
+            animation: _fabPulseAnimation,
+            builder: (context, child) => Transform.scale(
+              scale: _fabEverTapped ? 1.0 : _fabPulseAnimation.value,
+              child: child,
+            ),
+            child: TransactionSpeedDialFab(
+              key: _speedDialKey,
+              onSelected: (index) {
+                _onFabFirstTap();
+                _onSpeedDialSelected(index);
+              },
+              onOpenChanged: (isOpen) {
+                if (isOpen) _onFabFirstTap();
+                setState(() => _speedDialOpen = isOpen);
+              },
+            ),
           ),
         );
       case 1: // Wallet (Accounts)

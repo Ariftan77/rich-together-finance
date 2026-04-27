@@ -46,6 +46,9 @@ class IapService {
   /// Returns null if the product details have not yet loaded or the query failed.
   String? get premiumPrice => _premiumProductDetails?.price;
 
+  /// Exposes the raw product details for debugging purposes.
+  ProductDetails? get premiumProductDetails => _premiumProductDetails;
+
   Future<void> init() async {
     // Cancel any previous subscription to prevent duplicate listeners
     await _purchaseSub?.cancel();
