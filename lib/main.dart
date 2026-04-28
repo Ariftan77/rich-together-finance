@@ -88,7 +88,7 @@ class RichTogetherApp extends ConsumerWidget {
     return AppThemeProvider(
       themeMode: appThemeMode,
       child: MaterialApp(
-        title: 'Rich Together',
+        title: 'Richer',
         debugShowCheckedModeBanner: false,
         themeMode: themeMode,
         theme: AppTheme.lightTheme,

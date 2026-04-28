@@ -13,6 +13,7 @@
 /Richer_Mockup_Assets/
 /.claude/
 migrate_working_dir/
+/assets/build/
 
 # IntelliJ related
 *.iml
@@ -65,4 +66,25 @@ lib/core/constants/secrets.dart
 # Android keystore
 android/key.properties
 android/app/upload-keystore.jks
-android/app/debug.jks"lib/firebase_options.dart"        
+android/app/debug.jks
+lib/firebase_options.dart
+
+# ============================================
+# iOS — Generated / Build artifacts
+# ============================================
+ios/Pods/
+ios/Podfile.lock
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+ios/ServiceDefinitions.json
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcshareddata/
+**/ios/Flutter/App.framework/
+**/DerivedData/
+**/xcuserdata/
