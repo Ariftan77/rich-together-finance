@@ -673,6 +673,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                 // List
                 Expanded(
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onHorizontalDragEnd: _onHorizontalSwipe,
                     child: Builder(
                       builder: (context) {

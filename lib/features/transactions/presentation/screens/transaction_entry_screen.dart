@@ -968,12 +968,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) Navigator.pop(context);
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: Colors.transparent, // const Color(0xFF221D10),
       body: Container(
         decoration: BoxDecoration(
@@ -1125,6 +1120,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
                     // Transaction Type Segmented Control
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onHorizontalDragEnd: (details) {
                         final currentIndex = _typeOptions.indexOf(_selectedType);
                         if (details.primaryVelocity != null && details.primaryVelocity! < -200) {
@@ -1701,7 +1697,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         ),
       ),
       ),
-    ),
     );
   }
 
