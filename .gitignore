@@ -88,3 +88,4 @@ ios/Runner.xcodeproj/xcshareddata/
 **/ios/Flutter/App.framework/
 **/DerivedData/
 **/xcuserdata/
+ios/build/
