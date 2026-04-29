@@ -128,22 +128,33 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     // Fire-and-forget: run after first frame so no UI is blocked
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final prefs = await SharedPreferences.getInstance();
-      if (!(prefs.getBool('cloud_backup_enabled') ?? false)) return;
+      final cloudEnabled = prefs.getBool('cloud_backup_enabled') ?? false;
+      debugPrint('[AutoBackup] Gate 1 — cloud_backup_enabled: $cloudEnabled');
+      if (!cloudEnabled) return;
+
       final lastBackupMs = prefs.getInt('last_drive_backup_ms') ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       const oneDayMs = 86400000;
-      if (now - lastBackupMs < oneDayMs) return;
+      final hoursSinceLast = (now - lastBackupMs) / 3600000;
+      debugPrint('[AutoBackup] Gate 2 — last_drive_backup_ms: $lastBackupMs, hours since last: ${hoursSinceLast.toStringAsFixed(1)}');
+      if (now - lastBackupMs < oneDayMs) {
+        debugPrint('[AutoBackup] Gate 2 BLOCKED — less than 24h since last backup');
+        return;
+      }
 
       // Try silent sign-in first; only proceed if already connected
       final backupService = ref.read(backupServiceProvider);
       final account = await backupService.signInSilently();
+      debugPrint('[AutoBackup] Gate 3 — signInSilently result: ${account?.email ?? 'NULL'}');
       if (account == null) return;
 
       try {
+        debugPrint('[AutoBackup] Starting uploadToDrive...');
         await backupService.uploadToDrive();
         await prefs.setInt('last_drive_backup_ms', DateTime.now().millisecondsSinceEpoch);
-      } catch (_) {
-        // Silent failure — user can manually back up from settings
+        debugPrint('[AutoBackup] SUCCESS — backup completed');
+      } catch (e) {
+        debugPrint('[AutoBackup] FAILED — $e');
       }
     });
   }

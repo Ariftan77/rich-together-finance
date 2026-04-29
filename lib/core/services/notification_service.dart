@@ -79,6 +79,22 @@ class NotificationService {
       // Handle foreground messages (sync, no network)
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
+      // On iOS, the APNS token is set asynchronously by the OS after the app
+      // registers for remote notifications. FCM calls (getToken, subscribe)
+      // will fail if the APNS token isn't ready yet. Poll briefly to wait.
+      if (Platform.isIOS) {
+        String? apnsToken;
+        for (var i = 0; i < 10; i++) {
+          apnsToken = await _fcm!.getAPNSToken();
+          if (apnsToken != null) break;
+          await Future.delayed(const Duration(seconds: 1));
+        }
+        if (apnsToken == null) {
+          debugPrint('⚠️ APNS token not available after waiting — skipping FCM setup');
+          return;
+        }
+      }
+
       // Network calls — run in background
       await Future.wait([
         _fcm!.subscribeToTopic('all_users'),

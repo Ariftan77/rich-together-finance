@@ -254,7 +254,7 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
           profileId: drift.Value(profileId),
           name: drift.Value(category.name),
           type: drift.Value(category.type),
-          icon: const drift.Value(kDefaultCategoryIcon),
+          icon: drift.Value(category.icon),
           color: const drift.Value(kDefaultCategoryColor),
           isSystem: const drift.Value(false),
           sortOrder: drift.Value(sortOrder++),

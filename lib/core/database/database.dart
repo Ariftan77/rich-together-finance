@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -560,6 +561,12 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
+/// Loads the SQLCipher dynamic framework on iOS.
+/// Must be a top-level function so it can be sent across isolate boundaries.
+DynamicLibrary _openCipherOnIOS() {
+  return DynamicLibrary.open('SQLCipher.framework/SQLCipher');
+}
+
 /// Opens an encrypted connection to the database file.
 LazyDatabase _openConnection(EncryptionService enc) {
   return LazyDatabase(() async {
@@ -572,6 +579,10 @@ LazyDatabase _openConnection(EncryptionService enc) {
       open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
       // Pre-load via Java for Android < API 23 (only needed if dlopen fails).
       await applyWorkaroundToOpenSqlCipherOnOldAndroidVersions();
+    } else if (Platform.isIOS) {
+      // The sqlite3 Dart package only looks for sqlite3.framework on iOS,
+      // not SQLCipher.framework. Override so it loads SQLCipher explicitly.
+      open.overrideFor(OperatingSystem.iOS, _openCipherOnIOS);
     }
 
     final key = await enc.getOrCreateKey();
@@ -594,6 +605,8 @@ LazyDatabase _openConnection(EncryptionService enc) {
         }
         if (Platform.isAndroid) {
           open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+        } else if (Platform.isIOS) {
+          open.overrideFor(OperatingSystem.iOS, _openCipherOnIOS);
         }
       },
       setup: (db) => db.execute("PRAGMA key = \"x'$key'\""),

@@ -772,4 +772,10 @@ abstract class AppTranslations {
   String get premiumFreeLimit1;
   String get premiumFreeLocked;
   String get premiumUnlimited;
+
+  // Apple Sign-In
+  String get premiumSignInApple;
+  String get signInRequired;
+  String get signInRequiredDesc;
+  String get premiumCheckingAppStore;
 }

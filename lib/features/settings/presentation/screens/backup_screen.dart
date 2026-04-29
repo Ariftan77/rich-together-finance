@@ -26,6 +26,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   bool _isLoading = false;
   bool _cloudBackupEnabled = false;
   GoogleSignInAccount? _currentUser;
+  int _lastBackupMs = 0;
 
   static const _cloudBackupEnabledKey = 'cloud_backup_enabled';
 
@@ -39,7 +40,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _loadCloudBackupPreference() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(() => _cloudBackupEnabled = prefs.getBool(_cloudBackupEnabledKey) ?? false);
+      setState(() {
+        _cloudBackupEnabled = prefs.getBool(_cloudBackupEnabledKey) ?? false;
+        _lastBackupMs = prefs.getInt('last_drive_backup_ms') ?? 0;
+      });
     }
   }
 
@@ -452,6 +456,36 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                                         color: isLight ? const Color(0xFF374151) : Colors.white70,
                                         fontSize: 12,
                                         height: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _lastBackupMs > 0 ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                                    color: _lastBackupMs > 0 ? AppColors.success : Colors.orange,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _lastBackupMs > 0
+                                          ? () {
+                                              final lastDate = DateTime.fromMillisecondsSinceEpoch(_lastBackupMs);
+                                              final diff = DateTime.now().difference(lastDate);
+                                              if (diff.inHours < 1) return 'Last backup: ${diff.inMinutes}m ago';
+                                              if (diff.inHours < 24) return 'Last backup: ${diff.inHours}h ago';
+                                              return 'Last backup: ${diff.inDays}d ago';
+                                            }()
+                                          : 'Never backed up',
+                                      style: TextStyle(
+                                        color: isLight ? const Color(0xFF374151) : Colors.white70,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ),

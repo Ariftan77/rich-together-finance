@@ -14,8 +14,8 @@ class VoucherService {
   Future<VoucherResult> redeem(String code) async {
     if (!RemoteConfigService().voucherEnabled) return VoucherResult.disabled;
 
-    final googleId = PremiumAuthService().googleId;
-    if (googleId == null) return VoucherResult.notSignedIn;
+    final auth = PremiumAuthService();
+    if (!auth.isSignedIn) return VoucherResult.notSignedIn;
 
     // Check if already used
     final existing = await _db
@@ -41,7 +41,7 @@ class VoucherService {
 
     await _db.from('voucher_redemptions').insert({
       'voucher_code': code,
-      'google_id': googleId,
+      'google_id': auth.googleId ?? auth.appleId,
     });
 
     await _db.from('vouchers').update({'used': true}).eq('code', code);

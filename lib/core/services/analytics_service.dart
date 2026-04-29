@@ -245,6 +245,20 @@ class AnalyticsService {
   }
 
   // ---------------------------------------------------------------------------
+  // Sign-in events
+  // ---------------------------------------------------------------------------
+
+  static void logSignInProvider({required String provider}) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'sign_in_provider', parameters: {
+            'provider': provider,
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
 

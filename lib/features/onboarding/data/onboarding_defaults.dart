@@ -12,8 +12,9 @@ class DefaultAccount {
 class DefaultCategory {
   final String name;
   final CategoryType type;
+  final String icon;
 
-  const DefaultCategory({required this.name, required this.type});
+  const DefaultCategory({required this.name, required this.type, required this.icon});
 }
 
 /// Holds the full set of defaults for a given country/region.
@@ -61,22 +62,22 @@ const List<DefaultAccount> _indonesiaAccounts = [
 /// Indonesia-specific default categories.
 const List<DefaultCategory> _indonesiaCategories = [
   // Expense
-  DefaultCategory(name: 'Makanan dan Minuman', type: CategoryType.expense),
-  DefaultCategory(name: 'Belanja', type: CategoryType.expense),
-  DefaultCategory(name: 'Transportasi', type: CategoryType.expense),
-  DefaultCategory(name: 'Bensin', type: CategoryType.expense),
-  DefaultCategory(name: 'Tagihan', type: CategoryType.expense),
-  DefaultCategory(name: 'Sewa', type: CategoryType.expense),
-  DefaultCategory(name: 'Kesehatan', type: CategoryType.expense),
-  DefaultCategory(name: 'Hiburan', type: CategoryType.expense),
-  DefaultCategory(name: 'Liburan', type: CategoryType.expense),
-  DefaultCategory(name: 'Lain-lain', type: CategoryType.expense),
+  DefaultCategory(name: 'Makanan dan Minuman', type: CategoryType.expense, icon: 'ph:forkKnife'),
+  DefaultCategory(name: 'Belanja', type: CategoryType.expense, icon: 'ph:shoppingCart'),
+  DefaultCategory(name: 'Transportasi', type: CategoryType.expense, icon: 'ph:bus'),
+  DefaultCategory(name: 'Bensin', type: CategoryType.expense, icon: 'ph:gasPump'),
+  DefaultCategory(name: 'Tagihan', type: CategoryType.expense, icon: 'ph:receipt'),
+  DefaultCategory(name: 'Sewa', type: CategoryType.expense, icon: 'ph:house'),
+  DefaultCategory(name: 'Kesehatan', type: CategoryType.expense, icon: 'ph:heartbeat'),
+  DefaultCategory(name: 'Hiburan', type: CategoryType.expense, icon: 'ph:filmStrip'),
+  DefaultCategory(name: 'Liburan', type: CategoryType.expense, icon: 'ph:airplane'),
+  DefaultCategory(name: 'Lain-lain', type: CategoryType.expense, icon: 'ph:dotsThree'),
   // Income
-  DefaultCategory(name: 'Gaji', type: CategoryType.income),
-  DefaultCategory(name: 'Bisnis', type: CategoryType.income),
-  DefaultCategory(name: 'Sampingan', type: CategoryType.income),
-  DefaultCategory(name: 'Investasi', type: CategoryType.income),
-  DefaultCategory(name: 'Lain-lain', type: CategoryType.income),
+  DefaultCategory(name: 'Gaji', type: CategoryType.income, icon: 'ph:wallet'),
+  DefaultCategory(name: 'Bisnis', type: CategoryType.income, icon: 'ph:briefcase'),
+  DefaultCategory(name: 'Sampingan', type: CategoryType.income, icon: 'ph:laptop'),
+  DefaultCategory(name: 'Investasi', type: CategoryType.income, icon: 'ph:chartLineUp'),
+  DefaultCategory(name: 'Lain-lain', type: CategoryType.income, icon: 'ph:dotsThree'),
 ];
 
 /// Generic defaults for non-Indonesia countries.
@@ -87,22 +88,22 @@ const List<DefaultAccount> _genericAccounts = [
 /// Generic default categories.
 const List<DefaultCategory> _genericCategories = [
   // Expense
-  DefaultCategory(name: 'Food & Drinks', type: CategoryType.expense),
-  DefaultCategory(name: 'Shopping', type: CategoryType.expense),
-  DefaultCategory(name: 'Transportation', type: CategoryType.expense),
-  DefaultCategory(name: 'Fuel', type: CategoryType.expense),
-  DefaultCategory(name: 'Bills & Utilities', type: CategoryType.expense),
-  DefaultCategory(name: 'Rent', type: CategoryType.expense),
-  DefaultCategory(name: 'Health', type: CategoryType.expense),
-  DefaultCategory(name: 'Entertainment', type: CategoryType.expense),
-  DefaultCategory(name: 'Travel', type: CategoryType.expense),
-  DefaultCategory(name: 'Others', type: CategoryType.expense),
+  DefaultCategory(name: 'Food & Drinks', type: CategoryType.expense, icon: 'ph:forkKnife'),
+  DefaultCategory(name: 'Shopping', type: CategoryType.expense, icon: 'ph:shoppingCart'),
+  DefaultCategory(name: 'Transportation', type: CategoryType.expense, icon: 'ph:bus'),
+  DefaultCategory(name: 'Fuel', type: CategoryType.expense, icon: 'ph:gasPump'),
+  DefaultCategory(name: 'Bills & Utilities', type: CategoryType.expense, icon: 'ph:receipt'),
+  DefaultCategory(name: 'Rent', type: CategoryType.expense, icon: 'ph:house'),
+  DefaultCategory(name: 'Health', type: CategoryType.expense, icon: 'ph:heartbeat'),
+  DefaultCategory(name: 'Entertainment', type: CategoryType.expense, icon: 'ph:filmStrip'),
+  DefaultCategory(name: 'Travel', type: CategoryType.expense, icon: 'ph:airplane'),
+  DefaultCategory(name: 'Others', type: CategoryType.expense, icon: 'ph:dotsThree'),
   // Income
-  DefaultCategory(name: 'Salary', type: CategoryType.income),
-  DefaultCategory(name: 'Business', type: CategoryType.income),
-  DefaultCategory(name: 'Freelance', type: CategoryType.income),
-  DefaultCategory(name: 'Investment', type: CategoryType.income),
-  DefaultCategory(name: 'Others', type: CategoryType.income),
+  DefaultCategory(name: 'Salary', type: CategoryType.income, icon: 'ph:wallet'),
+  DefaultCategory(name: 'Business', type: CategoryType.income, icon: 'ph:briefcase'),
+  DefaultCategory(name: 'Freelance', type: CategoryType.income, icon: 'ph:laptop'),
+  DefaultCategory(name: 'Investment', type: CategoryType.income, icon: 'ph:chartLineUp'),
+  DefaultCategory(name: 'Others', type: CategoryType.income, icon: 'ph:dotsThree'),
 ];
 
 /// Returns the full set of defaults for [country].

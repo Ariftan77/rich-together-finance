@@ -786,4 +786,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumFreeLimit1 => '1 only';
   @override String get premiumFreeLocked => 'Locked';
   @override String get premiumUnlimited => 'Unlimited';
+
+  // Apple Sign-In
+  @override String get premiumSignInApple => 'Sign in with Apple to sync premium purchase forever.';
+  @override String get signInRequired => 'Sign-In Required';
+  @override String get signInRequiredDesc => 'Sign in to purchase and restore premium features.';
+  @override String get premiumCheckingAppStore => 'Checking App Store for previous purchases...';
 }

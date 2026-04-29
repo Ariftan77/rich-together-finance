@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -1246,26 +1247,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _showPremiumBenefitsModal(context),
           ),
           _buildDivider(),
-          // Google account tile — always visible below benefits tile
+          // Account tile — signed in or sign-in options
           if (auth.isSignedIn)
             _buildSignedInAccountTile(auth)
           else
-            SettingsTile(
-              icon: Icons.account_circle_outlined,
-              title: trans.premiumSignInGoogle,
-              subtitle: trans.premiumSignInRequired,
-              trailing: _premiumSignInLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primaryGold,
-                      ),
-                    )
-                  : null,
-              onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
-            ),
+            ..._buildSignInOptions(),
           FutureBuilder<String?>(
             future: _premiumFuture,
             builder: (context, snapshot) {
@@ -1325,8 +1311,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  List<Widget> _buildSignInOptions() {
+    final trans = ref.watch(translationsProvider);
+    return [
+      SettingsTile(
+        icon: Icons.account_circle_outlined,
+        title: trans.premiumSignInGoogle,
+        subtitle: trans.premiumSignInRequired,
+        trailing: _premiumSignInLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryGold,
+                ),
+              )
+            : null,
+        onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
+      ),
+      if (Platform.isIOS) ...[
+        _buildDivider(),
+        SettingsTile(
+          icon: Icons.apple,
+          title: trans.premiumSignInApple,
+          subtitle: trans.premiumSignInRequired,
+          trailing: _premiumSignInLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryGold,
+                  ),
+                )
+              : null,
+          onTap: _premiumSignInLoading ? null : _handleAppleSignIn,
+        ),
+      ],
+    ];
+  }
+
   Widget _buildSignedInAccountTile(PremiumAuthService auth) {
     final photoUrl = auth.photoUrl;
+    final isApple = auth.activeProvider == AuthProvider.apple;
     return Builder(builder: (context) {
       final isLight = AppThemeProvider.isLightMode(context);
       return InkWell(
@@ -1340,15 +1368,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 backgroundColor: AppColors.primaryGold.withValues(alpha: 0.15),
                 backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
                 child: photoUrl == null
-                    ? Text(
-                        (auth.displayName?.isNotEmpty == true)
-                            ? auth.displayName![0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          color: AppColors.primaryGold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
+                    ? isApple
+                        ? const Icon(Icons.apple, color: AppColors.primaryGold, size: 20)
+                        : Text(
+                            (auth.displayName?.isNotEmpty == true)
+                                ? auth.displayName![0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: AppColors.primaryGold,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
                     : null,
               ),
               const SizedBox(width: 16),
@@ -1357,7 +1387,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      auth.displayName ?? 'Google Account',
+                      auth.displayName ?? (isApple ? 'Apple Account' : 'Google Account'),
                       style: TextStyle(
                         color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 15,
@@ -1396,7 +1426,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _premiumSignInLoading = true);
-    final ok = await PremiumAuthService().signIn();
+    final ok = await PremiumAuthService().signInWithGoogle();
     if (!mounted) return;
     setState(() => _premiumSignInLoading = false);
     if (!ok) {
@@ -1405,12 +1435,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
       return;
     }
+    AnalyticsService.logSignInProvider(provider: 'google');
     // Refresh badge/section now that we're signed in
     _refreshPremiumStatus();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(ref.read(translationsProvider).premiumSignInSuccess)),
     );
     // Show reopen-app dialog if the signed-in account already has premium
+    final premiumStatus = await PremiumAuthService().getPremiumStatus();
+    if (!mounted) return;
+    if (premiumStatus != null) {
+      _showSuccessDialog();
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() => _premiumSignInLoading = true);
+    final ok = await PremiumAuthService().signInWithApple();
+    if (!mounted) return;
+    setState(() => _premiumSignInLoading = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.read(translationsProvider).premiumSignInFailed)),
+      );
+      return;
+    }
+    AnalyticsService.logSignInProvider(provider: 'apple');
+    _refreshPremiumStatus();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ref.read(translationsProvider).premiumSignInSuccess)),
+    );
     final premiumStatus = await PremiumAuthService().getPremiumStatus();
     if (!mounted) return;
     if (premiumStatus != null) {
@@ -1433,11 +1487,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Check if signed in
     if (!auth.isSignedIn) {
-      final shouldSignIn = await _showSignInRequiredDialog();
-      if (!shouldSignIn) return;
+      final provider = await _showSignInProviderDialog();
+      if (provider == null) return;
 
       setState(() => _premiumSignInLoading = true);
-      final ok = await auth.signIn();
+      final ok = provider == 'apple'
+          ? await auth.signInWithApple()
+          : await auth.signInWithGoogle();
       if (!mounted) return;
       setState(() => _premiumSignInLoading = false);
 
@@ -1447,6 +1503,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
         return;
       }
+      AnalyticsService.logSignInProvider(provider: provider);
     }
 
     if (!mounted) return;
@@ -1539,12 +1596,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Check if signed in
     if (!auth.isSignedIn) {
-      final shouldSignIn = await _showSignInRequiredDialog();
-      if (!shouldSignIn) return;
+      final provider = await _showSignInProviderDialog();
+      if (provider == null) return;
 
       // Sign in
       setState(() => _premiumSignInLoading = true);
-      final ok = await auth.signIn();
+      final ok = provider == 'apple'
+          ? await auth.signInWithApple()
+          : await auth.signInWithGoogle();
       if (!mounted) return;
       setState(() => _premiumSignInLoading = false);
 
@@ -1614,12 +1673,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Check if signed in
     if (!auth.isSignedIn) {
-      final shouldSignIn = await _showSignInRequiredDialog();
-      if (!shouldSignIn) return;
+      final provider = await _showSignInProviderDialog();
+      if (provider == null) return;
 
       // Sign in
       setState(() => _premiumSignInLoading = true);
-      final ok = await auth.signIn();
+      final ok = provider == 'apple'
+          ? await auth.signInWithApple()
+          : await auth.signInWithGoogle();
       if (!mounted) return;
       setState(() => _premiumSignInLoading = false);
 
@@ -1674,9 +1735,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<bool> _showSignInRequiredDialog() async {
+  /// Returns 'google', 'apple', or null (cancelled).
+  Future<String?> _showSignInProviderDialog() async {
     final trans = ref.read(translationsProvider);
-    final result = await showDialog<bool>(
+    final result = await showDialog<String>(
       context: context,
       builder: (context) {
         final themeMode = AppThemeProvider.of(context);
@@ -1689,9 +1751,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             const Icon(Icons.account_circle, color: AppColors.primaryGold),
             const SizedBox(width: 12),
-            Text(
-              'Google Sign-In Required',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+            Expanded(
+              child: Text(
+                trans.signInRequired,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+              ),
             ),
           ],
         ),
@@ -1700,7 +1764,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You need to sign in with Google to purchase premium features.',
+              trans.signInRequiredDesc,
               style: TextStyle(
                 color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.9),
               ),
@@ -1735,16 +1799,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(context),
             child: Text(
               trans.genericCancel,
               style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
             ),
           ),
+          if (Platform.isIOS)
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, 'apple'),
+              icon: const Icon(Icons.apple, size: 18),
+              label: const Text('Apple'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isLight ? Colors.black : Colors.white,
+                foregroundColor: isLight ? Colors.white : Colors.black,
+              ),
+            ),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(context, 'google'),
             icon: const Icon(Icons.login, size: 18),
-            label: const Text('Sign In'),
+            label: const Text('Google'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
               foregroundColor: Colors.black,
@@ -1754,33 +1828,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       },
     );
-    return result ?? false;
+    return result;
   }
 
   Future<void> _handleRestorePurchase() async {
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
     if (!auth.isSignedIn) {
-      final ok = await auth.signIn();
+      final provider = await _showSignInProviderDialog();
+      if (provider == null) return;
+      final ok = provider == 'apple'
+          ? await auth.signInWithApple()
+          : await auth.signInWithGoogle();
       if (!ok || !mounted) return;
+      AnalyticsService.logSignInProvider(provider: provider);
     }
 
     // Check Supabase
     final status = await auth.getPremiumStatus();
     if (status != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${trans.premiumRestored}$status 🎉'), backgroundColor: AppColors.success),
+        SnackBar(content: Text('${trans.premiumRestored}$status'), backgroundColor: AppColors.success),
       );
       _refreshPremiumStatus();
       _showSuccessDialog();
       return;
     }
 
-    // Fallback: check Play Store
+    // Fallback: check platform store
     await IapService().restorePurchases();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(trans.premiumCheckingPlayStore)),
+        SnackBar(content: Text(
+          Platform.isIOS ? trans.premiumCheckingAppStore : trans.premiumCheckingPlayStore,
+        )),
       );
     }
   }

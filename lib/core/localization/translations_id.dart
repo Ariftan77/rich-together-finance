@@ -787,4 +787,10 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumFreeLimit1 => 'Hanya 1';
   @override String get premiumFreeLocked => 'Terkunci';
   @override String get premiumUnlimited => 'Tak Terbatas';
+
+  // Apple Sign-In
+  @override String get premiumSignInApple => 'Masuk dengan Apple untuk menyinkronkan pembelian premium selamanya.';
+  @override String get signInRequired => 'Diperlukan Masuk';
+  @override String get signInRequiredDesc => 'Masuk untuk membeli dan memulihkan fitur premium.';
+  @override String get premiumCheckingAppStore => 'Memeriksa App Store untuk pembelian sebelumnya...';
 }

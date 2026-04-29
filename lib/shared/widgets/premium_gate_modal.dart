@@ -1,9 +1,11 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/locale_provider.dart';
 import '../../core/providers/nav_providers.dart';
 import '../../core/providers/service_providers.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/services/iap_service.dart';
 import '../../core/services/premium_auth_service.dart';
 import '../theme/app_theme_mode.dart';
@@ -91,30 +93,33 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
   // ---------------------------------------------------------------------------
 
   Future<void> _handleBuyPremium() async {
-    // Step 1: Pre-check — ensure the user is signed in with Google before
-    // attempting a purchase. IapService.buyPremium() requires a Google account
+    // Step 1: Pre-check — ensure the user is signed in before
+    // attempting a purchase. IapService.buyPremium() requires a signed-in account
     // to record the purchase; catching it here gives a better UX than the
     // IapResult.notSignedIn fallback.
     if (!PremiumAuthService().isSignedIn) {
-      final shouldSignIn = await _showSignInRequiredDialog();
+      final provider = await _showSignInProviderDialog();
       if (!mounted) return;
-      if (!shouldSignIn) return; // user tapped Cancel — stay on modal
+      if (provider == null) return; // user tapped Cancel — stay on modal
 
       // Step 2: Attempt sign-in while showing the loading spinner.
       setState(() => _isLoading = true);
-      final signedIn = await PremiumAuthService().signIn();
+      final signedIn = provider == 'apple'
+          ? await PremiumAuthService().signInWithApple()
+          : await PremiumAuthService().signInWithGoogle();
       if (!mounted) return;
       if (!signedIn) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Google sign-in failed. Please try again.'),
+            content: Text('Sign-in failed. Please try again.'),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 3),
           ),
         );
         return;
       }
+      AnalyticsService.logSignInProvider(provider: provider);
       // signIn() succeeded — keep _isLoading = true and fall through to purchase.
     } else {
       setState(() => _isLoading = true);
@@ -199,9 +204,10 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
     }
   }
 
-  Future<bool> _showSignInRequiredDialog() async {
+  /// Returns 'google', 'apple', or null (cancelled).
+  Future<String?> _showSignInProviderDialog() async {
     final trans = ref.read(translationsProvider);
-    final result = await showDialog<bool>(
+    final result = await showDialog<String>(
       context: context,
       builder: (context) {
         final themeMode = AppThemeProvider.of(context);
@@ -220,9 +226,11 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
             children: [
               const Icon(Icons.account_circle, color: AppColors.primaryGold),
               const SizedBox(width: 12),
-              Text(
-                'Google Sign-In Required',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+              Expanded(
+                child: Text(
+                  trans.signInRequired,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+                ),
               ),
             ],
           ),
@@ -231,7 +239,7 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'You need to sign in with Google to purchase premium features.',
+                trans.signInRequiredDesc,
                 style: TextStyle(
                   color: isLight
                       ? AppColors.textPrimaryLight
@@ -270,7 +278,7 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context),
               child: Text(
                 trans.genericCancel,
                 style: TextStyle(
@@ -278,10 +286,20 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
                 ),
               ),
             ),
+            if (Platform.isIOS)
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context, 'apple'),
+                icon: const Icon(Icons.apple, size: 18),
+                label: const Text('Apple'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isLight ? Colors.black : Colors.white,
+                  foregroundColor: isLight ? Colors.white : Colors.black,
+                ),
+              ),
             ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(context, 'google'),
               icon: const Icon(Icons.login, size: 18),
-              label: const Text('Sign In'),
+              label: const Text('Google'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
                 foregroundColor: Colors.black,
@@ -291,7 +309,7 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
         );
       },
     );
-    return result ?? false;
+    return result;
   }
 
   Future<void> _handleRestore() async {
@@ -338,7 +356,7 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
         if (mounted) Navigator.of(context).pop(true);
       };
 
-      // Step 3: Trigger the Play Store restore flow.
+      // Step 3: Trigger the platform store restore flow.
       await IapService().restorePurchases();
 
       // Step 4: Show a neutral "checking" snackbar — the callback above handles
@@ -347,7 +365,9 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
       setState(() => _isRestoring = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(trans.premiumCheckingPlayStore),
+          content: Text(
+            Platform.isIOS ? trans.premiumCheckingAppStore : trans.premiumCheckingPlayStore,
+          ),
         ),
       );
     } catch (_) {
