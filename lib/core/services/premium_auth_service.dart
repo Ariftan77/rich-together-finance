@@ -184,6 +184,7 @@ class PremiumAuthService {
         _activeProvider = AuthProvider.google;
         await _persistAuthProvider(AuthProvider.google);
         await _ensureUserExistsOnBackend();
+        await syncLocalPremiumToBackend();
         await _refreshPremiumCache();
         return true;
       }
@@ -212,6 +213,7 @@ class PremiumAuthService {
       await _persistAppleIdentity();
       await _persistAuthProvider(AuthProvider.apple);
       await _ensureUserExistsOnBackend();
+      await syncLocalPremiumToBackend();
       await _refreshPremiumCache();
       return true;
     } catch (e) {
@@ -259,6 +261,33 @@ class PremiumAuthService {
       return type;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Writes premium status to the local cache without calling the backend.
+  /// Used for iOS purchases made while the user is not signed in so that
+  /// [isPremium] returns true immediately after the store transaction completes.
+  Future<void> storePendingPremiumLocally(String premiumType) async {
+    _premiumType = premiumType;
+    _expiresAt = null;
+    await _writePremiumCache(premiumType);
+  }
+
+  /// If a pending premium type was stored locally (iOS unsigned purchase),
+  /// activates it on the backend and clears the pending key.
+  /// Called automatically after a successful sign-in.
+  Future<void> syncLocalPremiumToBackend() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingType = prefs.getString('pending_premium_type');
+      if (pendingType == null) return;
+
+      await activatePremium(pendingType);
+      await prefs.remove('pending_premium_type');
+      debugPrint('[PremiumAuth] Synced pending premium "$pendingType" to backend.');
+    } catch (e) {
+      debugPrint('[PremiumAuth] Failed to sync pending premium to backend: $e');
+      // Leave the key in place — will retry on next sign-in.
     }
   }
 

@@ -778,4 +778,11 @@ abstract class AppTranslations {
   String get signInRequired;
   String get signInRequiredDesc;
   String get premiumCheckingAppStore;
+
+  // Sign-In Benefits Modal (shown after unsigned purchase/voucher)
+  String get signInBenefitsTitle;
+  String get signInBenefitRestore;
+  String get signInBenefitBackup;
+  String get signInBenefitsSignInButton;
+  String get signInBenefitsSkipButton;
 }

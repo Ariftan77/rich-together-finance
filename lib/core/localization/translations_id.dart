@@ -793,4 +793,11 @@ class AppTranslationsId implements AppTranslations {
   @override String get signInRequired => 'Diperlukan Masuk';
   @override String get signInRequiredDesc => 'Masuk untuk membeli dan memulihkan fitur premium.';
   @override String get premiumCheckingAppStore => 'Memeriksa App Store untuk pembelian sebelumnya...';
+
+  // Sign-In Benefits Modal (shown after unsigned purchase/voucher)
+  @override String get signInBenefitsTitle => 'Masuk untuk Fitur Lebih';
+  @override String get signInBenefitRestore => 'Pulihkan pembelian di perangkat mana saja saat ganti HP';
+  @override String get signInBenefitBackup => 'Pencadangan harian ke Google Drive';
+  @override String get signInBenefitsSignInButton => 'Masuk dengan Google';
+  @override String get signInBenefitsSkipButton => 'Nanti Saja';
 }

@@ -34,6 +34,7 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/providers/announcement_providers.dart';
+import '../../../../core/providers/service_providers.dart' show premiumStatusProvider;
 import '../widgets/announcements_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -1313,11 +1314,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _buildSignInOptions() {
     final trans = ref.watch(translationsProvider);
+    const syncSubtitle = 'Sign in to restore purchases across devices and sync your premium status';
     return [
       SettingsTile(
         icon: Icons.account_circle_outlined,
         title: trans.premiumSignInGoogle,
-        subtitle: trans.premiumSignInRequired,
+        subtitle: syncSubtitle,
         trailing: _premiumSignInLoading
             ? const SizedBox(
                 width: 20,
@@ -1335,7 +1337,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SettingsTile(
           icon: Icons.apple,
           title: trans.premiumSignInApple,
-          subtitle: trans.premiumSignInRequired,
+          subtitle: syncSubtitle,
           trailing: _premiumSignInLoading
               ? const SizedBox(
                   width: 20,
@@ -1483,28 +1485,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _showVoucherDialog() async {
     final trans = ref.read(translationsProvider);
-    final auth = PremiumAuthService();
-
-    // Check if signed in
-    if (!auth.isSignedIn) {
-      final provider = await _showSignInProviderDialog();
-      if (provider == null) return;
-
-      setState(() => _premiumSignInLoading = true);
-      final ok = provider == 'apple'
-          ? await auth.signInWithApple()
-          : await auth.signInWithGoogle();
-      if (!mounted) return;
-      setState(() => _premiumSignInLoading = false);
-
-      if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(trans.premiumSignInFailed), backgroundColor: AppColors.error),
-        );
-        return;
-      }
-      AnalyticsService.logSignInProvider(provider: provider);
-    }
 
     if (!mounted) return;
     final codeController = TextEditingController();
@@ -1553,28 +1533,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (result != null && result.isNotEmpty && mounted) {
-      final voucherResult = await VoucherService().redeem(result);
+      // Pass requireSignIn: false — unsigned voucher redemption is now allowed
+      // on all platforms. The sign-in benefits modal is shown on success.
+      final voucherResult = await VoucherService().redeem(
+        result,
+        requireSignIn: false,
+      );
       if (!mounted) return;
 
-      if (voucherResult == VoucherResult.notSignedIn) {
-        // Auto-trigger sign in instead of a dead-end snackbar
-        final ok = await PremiumAuthService().signIn();
-        if (!mounted) return;
-        if (ok) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(trans.premiumSignedInTryAgain)),
-          );
-          setState(() {});
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(trans.premiumSignInFailed)),
-          );
-        }
-        return;
-      }
-
       if (voucherResult == VoucherResult.success) {
-        _showSuccessDialog();
+        _refreshPremiumStatus();
+        // Show success snackbar then nudge unsigned users to sign in.
+        if (!PremiumAuthService().isSignedIn) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(trans.premiumActivated),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 800));
+          if (!mounted) return;
+          await _showSignInBenefitsModal();
+        } else {
+          _showSuccessDialog();
+        }
       } else {
         final message = switch (voucherResult) {
           VoucherResult.invalid => trans.premiumInvalidVoucher,
@@ -1594,30 +1577,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
 
-    // Check if signed in
-    if (!auth.isSignedIn) {
-      final provider = await _showSignInProviderDialog();
-      if (provider == null) return;
-
-      // Sign in
-      setState(() => _premiumSignInLoading = true);
-      final ok = provider == 'apple'
-          ? await auth.signInWithApple()
-          : await auth.signInWithGoogle();
-      if (!mounted) return;
-      setState(() => _premiumSignInLoading = false);
-
-      if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(trans.premiumSignInFailed), backgroundColor: AppColors.error),
-        );
-        return;
-      }
-    }
-
-    // If the user already has premium (revealed after sign-in or was already
-    // signed in), restore directly — calling buyPremium() would trigger a
-    // Play Store "already owned" error and leave the spinner stuck.
+    // If the user already has premium, restore directly — calling buyPremium()
+    // would trigger a Play Store "already owned" error and leave the UI stuck.
     if (auth.isPremium) {
       _refreshPremiumStatus();
       _showSuccessDialog();
@@ -1634,28 +1595,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
 
-    // Make purchase
-    final result = await IapService().buyPremium();
+    // Both iOS and Android now skip the sign-in check — unsigned purchases are
+    // stored locally and synced to the backend when the user later signs in.
+    final result = await IapService().buyPremium(
+      skipSignInCheck: true,
+    );
     if (!mounted) return;
     Navigator.pop(context); // Close loading
 
     // Handle result
-    final message = switch (result) {
-      IapResult.success => trans.premiumActivated,
-      IapResult.notSignedIn => trans.premiumNotSignedIn,
-      IapResult.productNotFound => 'Product not found. Please try again later.',
-      IapResult.purchaseFailed => 'Purchase failed. Please try again.',
-      IapResult.activationFailed => 'Activation failed. Please contact support.',
-      IapResult.disabled => 'In-app purchases are currently disabled.',
-    };
-
     final isSuccess = result == IapResult.success;
     if (isSuccess) {
       if (mounted) {
         _refreshPremiumStatus();
-        _showSuccessDialog();
+        // Nudge unsigned users to sign in after a brief success confirmation.
+        if (!auth.isSignedIn) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(trans.premiumActivated),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 800));
+          if (!mounted) return;
+          await _showSignInBenefitsModal();
+        } else {
+          _showSuccessDialog();
+        }
       }
     } else {
+      final message = switch (result) {
+        IapResult.success => trans.premiumActivated,
+        IapResult.notSignedIn => trans.premiumNotSignedIn,
+        IapResult.productNotFound => 'Product not found. Please try again later.',
+        IapResult.purchaseFailed => 'Purchase failed. Please try again.',
+        IapResult.activationFailed => 'Activation failed. Please contact support.',
+        IapResult.disabled => 'In-app purchases are currently disabled.',
+      };
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2194,6 +2171,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Shows a bottom sheet nudging the user to sign in after a successful
+  /// unsigned purchase or voucher redemption. Attempts Google sign-in when the
+  /// user taps the sign-in button and invalidates premium status on success.
+  Future<void> _showSignInBenefitsModal() async {
+    final trans = ref.read(translationsProvider);
+    final auth = PremiumAuthService();
+    final themeMode = AppThemeProvider.of(context);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+
+    final sheetBg = isDefault
+        ? const Color(0xFF1A1208)
+        : isLight
+            ? Colors.white
+            : const Color(0xFF111111);
+    final textPrimary = isLight ? AppColors.textPrimaryLight : Colors.white;
+    final textMuted = isLight
+        ? const Color(0xFF64748B)
+        : Colors.white.withValues(alpha: 0.6);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => _SettingsSignInBenefitsSheet(
+        sheetBg: sheetBg,
+        textPrimary: textPrimary,
+        textMuted: textMuted,
+        trans: trans,
+        onSignIn: () async {
+          Navigator.pop(sheetContext);
+          if (!mounted) return;
+          setState(() => _premiumSignInLoading = true);
+          final ok = await auth.signInWithGoogle();
+          if (!mounted) return;
+          setState(() => _premiumSignInLoading = false);
+          if (ok) {
+            AnalyticsService.logSignInProvider(provider: 'google');
+            ref.invalidate(premiumStatusProvider);
+            _refreshPremiumStatus();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(trans.premiumSignInSuccess),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(trans.premiumSignInFailed),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        },
+        onSkip: () => Navigator.pop(sheetContext),
+      ),
+    );
+  }
+
   void _showSuccessDialog() {
     final trans = ref.read(translationsProvider);
     showDialog(
@@ -2242,6 +2281,211 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+}
+
+// ---------------------------------------------------------------------------
+// Sign-In Benefits Sheet — shown after unsigned purchase/voucher success
+// ---------------------------------------------------------------------------
+
+class _SettingsSignInBenefitsSheet extends StatefulWidget {
+  final Color sheetBg;
+  final Color textPrimary;
+  final Color textMuted;
+  final dynamic trans;
+  final Future<void> Function() onSignIn;
+  final VoidCallback onSkip;
+
+  const _SettingsSignInBenefitsSheet({
+    required this.sheetBg,
+    required this.textPrimary,
+    required this.textMuted,
+    required this.trans,
+    required this.onSignIn,
+    required this.onSkip,
+  });
+
+  @override
+  State<_SettingsSignInBenefitsSheet> createState() =>
+      _SettingsSignInBenefitsSheetState();
+}
+
+class _SettingsSignInBenefitsSheetState
+    extends State<_SettingsSignInBenefitsSheet> {
+  bool _signingIn = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final benefits = [
+      widget.trans.signInBenefitRestore as String,
+      widget.trans.signInBenefitBackup as String,
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 36,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: widget.textMuted.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Icon
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryGold.withValues(alpha: 0.15),
+              border: Border.all(
+                color: AppColors.primaryGold.withValues(alpha: 0.4),
+                width: 1.5,
+              ),
+            ),
+            child: const Icon(
+              Icons.cloud_sync_rounded,
+              color: AppColors.primaryGold,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Title
+          Text(
+            widget.trans.signInBenefitsTitle as String,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: widget.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Benefits list
+          ...benefits.map(
+            (benefit) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: AppColors.primaryGold,
+                      size: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      benefit,
+                      style: TextStyle(
+                        color: widget.textMuted,
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Sign-in button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _signingIn
+                  ? null
+                  : () async {
+                      setState(() => _signingIn = true);
+                      await widget.onSignIn();
+                      if (mounted) setState(() => _signingIn = false);
+                    },
+              icon: _signingIn
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Icon(Icons.login, size: 18),
+              label: Text(
+                _signingIn
+                    ? ''
+                    : widget.trans.signInBenefitsSignInButton as String,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGold,
+                foregroundColor: Colors.black,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Skip button
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: _signingIn ? null : widget.onSkip,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(double.infinity, 46),
+                foregroundColor: widget.textMuted,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: widget.textMuted.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+              child: Text(
+                widget.trans.signInBenefitsSkipButton as String,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: widget.textMuted,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -792,4 +792,11 @@ class AppTranslationsEn implements AppTranslations {
   @override String get signInRequired => 'Sign-In Required';
   @override String get signInRequiredDesc => 'Sign in to purchase and restore premium features.';
   @override String get premiumCheckingAppStore => 'Checking App Store for previous purchases...';
+
+  // Sign-In Benefits Modal (shown after unsigned purchase/voucher)
+  @override String get signInBenefitsTitle => 'Sign In to Unlock More';
+  @override String get signInBenefitRestore => 'Restore purchases on any device when you switch phones';
+  @override String get signInBenefitBackup => 'Daily backup to Google Drive';
+  @override String get signInBenefitsSignInButton => 'Sign In with Google';
+  @override String get signInBenefitsSkipButton => 'Maybe Later';
 }

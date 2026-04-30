@@ -101,11 +101,11 @@ class IapService {
     }
   }
 
-  Future<IapResult> buyPremium() async {
+  Future<IapResult> buyPremium({bool skipSignInCheck = false}) async {
     if (!RemoteConfigService().iapEnabled) return IapResult.disabled;
 
     final auth = PremiumAuthService();
-    if (!auth.isSignedIn) return IapResult.notSignedIn;
+    if (!skipSignInCheck && !auth.isSignedIn) return IapResult.notSignedIn;
 
     try {
       final details = await _iap.queryProductDetails({_premiumId});
@@ -190,9 +190,19 @@ class IapService {
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
         try {
-          await _activateOnBackend(p.productID);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove(_pendingActivationKey);
+          final auth = PremiumAuthService();
+          if (!auth.isSignedIn && p.productID == _premiumId) {
+            // iOS unsigned purchase: store locally for later backend sync.
+            final premiumType = 'lifetime';
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('pending_premium_type', premiumType);
+            // Also write to the premium cache so isPremium returns true immediately.
+            await auth.storePendingPremiumLocally(premiumType);
+          } else {
+            await _activateOnBackend(p.productID);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove(_pendingActivationKey);
+          }
           await _iap.completePurchase(p);
           // For the manual-restore path (no pending completer), fire the
           // one-shot UI callback so the gate modal can update itself.
