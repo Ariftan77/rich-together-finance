@@ -799,4 +799,17 @@ class AppTranslationsEn implements AppTranslations {
   @override String get signInBenefitBackup => 'Daily backup to Google Drive';
   @override String get signInBenefitsSignInButton => 'Sign In with Google';
   @override String get signInBenefitsSkipButton => 'Maybe Later';
+
+  // IAP error messages
+  @override String get iapErrorProductNotFound => 'Product not found. Please try again later.';
+  @override String get iapErrorServiceUnavailable => 'Store service temporarily unavailable. Please try again.';
+  @override String get iapErrorBillingUnavailable => 'Billing unavailable. Please check your Play Store account and try again.';
+  @override String get iapErrorFeatureNotSupported => 'In-app purchases are not supported on this device.';
+  @override String get iapErrorPurchaseFailed => 'Purchase failed. Please try again.';
+  @override String get iapErrorActivationFailed => 'Purchase received but activation failed. Please contact support.';
+  @override String get iapErrorDisabled => 'In-app purchases are currently unavailable.';
+  @override String get iapErrorAlreadyOwned => 'You already own Premium. Tap Restore to recover it.';
+  @override String get iapActionTryAgain => 'Try Again';
+  @override String get iapActionContactSupport => 'Contact Support';
+  @override String get iapActionRestore => 'Restore';
 }

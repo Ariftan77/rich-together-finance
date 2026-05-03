@@ -779,6 +779,22 @@ abstract class AppTranslations {
   String get signInRequiredDesc;
   String get premiumCheckingAppStore;
 
+  // IAP error messages
+  String get iapErrorProductNotFound;
+  String get iapErrorServiceUnavailable;
+  String get iapErrorBillingUnavailable;
+  String get iapErrorFeatureNotSupported;
+  String get iapErrorPurchaseFailed;
+  String get iapErrorActivationFailed;
+  String get iapErrorDisabled;
+  // Shown when the Play Store returns itemAlreadyOwned but local state is not
+  // premium — the user needs to tap Restore to recover their purchase.
+  String get iapErrorAlreadyOwned;
+  String get iapActionTryAgain;
+  String get iapActionContactSupport;
+  // Label for the Restore action button in the alreadyOwned snackbar.
+  String get iapActionRestore;
+
   // Sign-In Benefits Modal (shown after unsigned purchase/voucher)
   String get signInBenefitsTitle;
   String get signInBenefitRestore;

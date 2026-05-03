@@ -14,7 +14,6 @@ import '../../../../shared/theme/theme_provider_widget.dart';
 
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
-import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../core/services/auth_service.dart';
 import '../widgets/profile_selector_modal.dart';
@@ -1603,10 +1602,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!mounted) return;
     Navigator.pop(context); // Close loading
 
-    // Handle result
-    final isSuccess = result == IapResult.success;
-    if (isSuccess) {
+    if (result == IapResult.success) {
       if (mounted) {
+        ref.invalidate(premiumStatusProvider);
         _refreshPremiumStatus();
         // Nudge unsigned users to sign in after a brief success confirmation.
         if (!auth.isSignedIn) {
@@ -1625,21 +1623,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }
       }
     } else {
-      final message = switch (result) {
-        IapResult.success => trans.premiumActivated,
-        IapResult.notSignedIn => trans.premiumNotSignedIn,
-        IapResult.productNotFound => 'Product not found. Please try again later.',
-        IapResult.purchaseFailed => 'Purchase failed. Please try again.',
-        IapResult.activationFailed => 'Activation failed. Please contact support.',
-        IapResult.disabled => 'In-app purchases are currently disabled.',
-      };
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showIapErrorSnackBar(result, trans, onRetry: _handleBuyPremium);
       }
     }
   }
@@ -1684,32 +1669,108 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!mounted) return;
     Navigator.pop(context); // Close loading
 
-    // Handle result
-    final message = switch (result) {
-      IapResult.success => trans.premiumActivated,
-      IapResult.notSignedIn => trans.premiumNotSignedIn,
-      IapResult.productNotFound => 'Product not found. Please try again later.',
-      IapResult.purchaseFailed => 'Purchase failed. Please try again.',
-      IapResult.activationFailed => 'Activation failed. Please contact support.',
-      IapResult.disabled => 'In-app purchases are currently disabled.',
-    };
-
-    final isSuccess = result == IapResult.success;
-    if (isSuccess) {
+    if (result == IapResult.success) {
       if (mounted) {
         _refreshPremiumStatus();
         _showSuccessDialog();
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showIapErrorSnackBar(result, trans, onRetry: _handleBuySync);
       }
     }
+  }
+
+  /// Shows an appropriate snackbar for IAP error results.
+  ///
+  /// - [IapResult.userCanceled]: silently ignored — no snackbar shown.
+  /// - Retryable errors (serviceUnavailable, serviceDisconnected): snackbar
+  ///   with a "Try Again" action that re-invokes [onRetry].
+  /// - [IapResult.activationFailed]: snackbar with "Contact Support" action.
+  /// - All other errors: plain error snackbar with localized message.
+  void _showIapErrorSnackBar(
+    IapResult result,
+    dynamic trans, {
+    required VoidCallback onRetry,
+  }) {
+    // USER_CANCELED: user chose to back out — never show error UI.
+    if (result == IapResult.userCanceled) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Retryable infrastructure errors — offer a "Try Again" action.
+    if (result == IapResult.serviceUnavailable ||
+        result == IapResult.serviceDisconnected) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorServiceUnavailable as String),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: trans.iapActionTryAgain as String,
+            textColor: Colors.white,
+            onPressed: onRetry,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Activation succeeded on Play Store but backend call failed — direct to
+    // support so the user can recover their purchase.
+    if (result == IapResult.activationFailed) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorActivationFailed as String),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: trans.iapActionContactSupport as String,
+            textColor: Colors.white,
+            onPressed: () {
+              final email = Uri.encodeComponent('axiomtech.dev@gmail.com');
+              final subject = Uri.encodeComponent('Premium Activation Issue');
+              launchUrl(Uri.parse('mailto:$email?subject=$subject'));
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    // itemAlreadyOwned: the purchase is on the Play Store but not active locally.
+    // Show a snackbar with a Restore action so the user can recover immediately.
+    if (result == IapResult.alreadyOwned) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorAlreadyOwned as String),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: trans.iapActionRestore as String,
+            textColor: Colors.white,
+            onPressed: _handleRestorePurchase,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // All other non-retryable errors — plain localized message.
+    final message = switch (result) {
+      IapResult.notSignedIn => trans.premiumNotSignedIn as String,
+      IapResult.productNotFound => trans.iapErrorProductNotFound as String,
+      IapResult.billingUnavailable => trans.iapErrorBillingUnavailable as String,
+      IapResult.featureNotSupported => trans.iapErrorFeatureNotSupported as String,
+      IapResult.disabled => trans.iapErrorDisabled as String,
+      _ => trans.iapErrorPurchaseFailed as String,
+    };
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   /// Returns 'google', 'apple', or null (cancelled).

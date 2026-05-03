@@ -1,9 +1,9 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/locale_provider.dart';
-import '../../core/providers/nav_providers.dart';
 import '../../core/providers/service_providers.dart';
 import '../../core/services/analytics_service.dart';
 import '../../core/services/iap_service.dart';
@@ -121,77 +121,127 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    switch (result) {
-      case IapResult.success:
-        // Invalidate the cached premium status so any watchers update.
-        ref.invalidate(premiumStatusProvider);
-        // Pop with true to signal caller that premium is now active.
-        Navigator.of(context).pop(true);
+    final trans = ref.read(translationsProvider);
+
+    if (result == IapResult.success) {
+      // Invalidate the cached premium status so any watchers update.
+      ref.invalidate(premiumStatusProvider);
+      // Pop with true to signal caller that premium is now active.
+      Navigator.of(context).pop(true);
+      if (!mounted) return;
+      // Show a brief success snackbar then nudge unsigned users to sign in.
+      if (!PremiumAuthService().isSignedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(trans.premiumActivated),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // Brief delay so the snackbar is visible before the modal appears.
+        await Future.delayed(const Duration(milliseconds: 800));
         if (!mounted) return;
-        // Show a brief success snackbar then nudge unsigned users to sign in.
-        if (!PremiumAuthService().isSignedIn) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ref.read(translationsProvider).premiumActivated),
-              backgroundColor: AppColors.success,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-          // Brief delay so the snackbar is visible before the modal appears.
-          await Future.delayed(const Duration(milliseconds: 800));
-          if (!mounted) return;
-          await _showSignInBenefitsModal();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ref.read(translationsProvider).premiumActivated),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-        break;
-
-      case IapResult.notSignedIn:
-        // Defensive fallback — both platforms now use skipSignInCheck: true,
-        // so this case should not occur; handle gracefully anyway.
-        Navigator.of(context).pop(false);
+        await _showSignInBenefitsModal();
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ref.read(translationsProvider).premiumNotSignedIn),
-            backgroundColor: AppColors.info,
-            duration: const Duration(seconds: 3),
+            content: Text(trans.premiumActivated),
+            backgroundColor: AppColors.success,
           ),
         );
-        break;
-
-      case IapResult.productNotFound:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Product not found. Please try again later.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        break;
-
-      case IapResult.disabled:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('In-app purchases are currently unavailable.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        break;
-
-      case IapResult.purchaseFailed:
-      case IapResult.activationFailed:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Purchase failed. Please try again.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        break;
+      }
+      return;
     }
+
+    // USER_CANCELED: user backed out — silently dismiss, no snackbar.
+    if (result == IapResult.userCanceled) return;
+
+    // Retryable infrastructure errors — offer a "Try Again" action.
+    if (result == IapResult.serviceUnavailable ||
+        result == IapResult.serviceDisconnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorServiceUnavailable),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: trans.iapActionTryAgain,
+            textColor: Colors.white,
+            onPressed: _handleBuyPremium,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Activation succeeded on Play Store but backend call failed — direct to
+    // support so the user can recover their purchase.
+    if (result == IapResult.activationFailed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorActivationFailed),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: trans.iapActionContactSupport,
+            textColor: Colors.white,
+            onPressed: () {
+              final email = Uri.encodeComponent('axiomtech.dev@gmail.com');
+              final subject = Uri.encodeComponent('Premium Activation Issue');
+              launchUrl(Uri.parse('mailto:$email?subject=$subject'));
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    // itemAlreadyOwned: the purchase is on the Play Store but not active locally.
+    // Show a snackbar with a Restore action so the user can recover immediately.
+    if (result == IapResult.alreadyOwned) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorAlreadyOwned),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: trans.iapActionRestore,
+            textColor: Colors.white,
+            onPressed: _handleRestore,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Defensive fallback for notSignedIn — both platforms now use
+    // skipSignInCheck: true, so this case should not occur.
+    if (result == IapResult.notSignedIn) {
+      Navigator.of(context).pop(false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.premiumNotSignedIn),
+          backgroundColor: AppColors.info,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // All other non-retryable errors — plain localized message.
+    final message = switch (result) {
+      IapResult.productNotFound => trans.iapErrorProductNotFound,
+      IapResult.billingUnavailable => trans.iapErrorBillingUnavailable,
+      IapResult.featureNotSupported => trans.iapErrorFeatureNotSupported,
+      IapResult.disabled => trans.iapErrorDisabled,
+      _ => trans.iapErrorPurchaseFailed,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   /// Shows the sign-in benefits bottom sheet after a successful unsigned

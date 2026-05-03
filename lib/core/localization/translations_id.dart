@@ -800,4 +800,17 @@ class AppTranslationsId implements AppTranslations {
   @override String get signInBenefitBackup => 'Pencadangan harian ke Google Drive';
   @override String get signInBenefitsSignInButton => 'Masuk dengan Google';
   @override String get signInBenefitsSkipButton => 'Nanti Saja';
+
+  // IAP error messages
+  @override String get iapErrorProductNotFound => 'Produk tidak ditemukan. Coba lagi nanti.';
+  @override String get iapErrorServiceUnavailable => 'Layanan toko sementara tidak tersedia. Silakan coba lagi.';
+  @override String get iapErrorBillingUnavailable => 'Pembayaran tidak tersedia. Periksa akun Play Store Anda dan coba lagi.';
+  @override String get iapErrorFeatureNotSupported => 'Pembelian dalam aplikasi tidak didukung di perangkat ini.';
+  @override String get iapErrorPurchaseFailed => 'Pembelian gagal. Silakan coba lagi.';
+  @override String get iapErrorActivationFailed => 'Pembelian diterima tetapi aktivasi gagal. Silakan hubungi dukungan.';
+  @override String get iapErrorDisabled => 'Pembelian dalam aplikasi saat ini tidak tersedia.';
+  @override String get iapErrorAlreadyOwned => 'Anda sudah memiliki Premium. Ketuk Pulihkan untuk memulihkannya.';
+  @override String get iapActionTryAgain => 'Coba Lagi';
+  @override String get iapActionContactSupport => 'Hubungi Dukungan';
+  @override String get iapActionRestore => 'Pulihkan';
 }

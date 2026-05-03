@@ -241,7 +241,8 @@ class PremiumAuthService {
   /// Check if the user has an active premium record in Supabase.
   /// Returns 'lifetime' or 'sync_yearly' if premium, null otherwise.
   Future<String?> getPremiumStatus() async {
-    if (!isSignedIn) return null;
+    // For unsigned users, return local cached state (set by storePendingPremiumLocally).
+    if (!isSignedIn) return isPremium ? _premiumType : null;
 
     try {
       final record = await _fetchPremiumRecord();
