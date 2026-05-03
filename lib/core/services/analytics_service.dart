@@ -245,6 +245,31 @@ class AnalyticsService {
   }
 
   // ---------------------------------------------------------------------------
+  // Premium events
+  // ---------------------------------------------------------------------------
+
+  /// Fired every time the premium gate modal is shown.
+  static void trackPremiumModalGateOpen() {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'premium_modal_gate_open')
+          .catchError((_) {}),
+    );
+  }
+
+  /// Fired when the user taps the "Get Premium" / "Unlock Premium" button.
+  /// [source] is either `'modal'` (premium gate modal) or `'settings'`.
+  static void trackGetPremiumTapped({required String source}) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: 'get_premium', parameters: {
+            'source': source,
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Sign-in events
   // ---------------------------------------------------------------------------
 

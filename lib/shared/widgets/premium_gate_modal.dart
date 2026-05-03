@@ -28,6 +28,7 @@ Future<bool> showPremiumGateModal(
   required String description,
   IconData icon = Icons.workspace_premium,
 }) async {
+  AnalyticsService.trackPremiumModalGateOpen();
   final result = await showModalBottomSheet<bool>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -93,6 +94,7 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
   // ---------------------------------------------------------------------------
 
   Future<void> _handleBuyPremium() async {
+    AnalyticsService.trackGetPremiumTapped(source: 'modal');
     setState(() => _isLoading = true);
 
     // If the user already has premium (e.g. was already signed in), restore

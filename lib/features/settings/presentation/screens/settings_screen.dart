@@ -1573,6 +1573,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _handleBuyPremium() async {
+    AnalyticsService.trackGetPremiumTapped(source: 'settings');
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
 
