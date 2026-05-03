@@ -435,7 +435,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumVoucherDisabled => 'Voucher redemption is not available.';
   @override String get premiumRestored => 'Restored premium for: ';
   @override String get premiumCheckingPlayStore => 'Checking Play Store for purchases...';
-  @override String get premiumSignInGoogle => 'Sign in with Google to sync premium purchase forever.';
+  @override String get premiumSignInGoogle => 'Sign in to sync premium purchase forever';
   @override String get premiumRestartAppToHideAds => 'Restart app to completely remove ads';
   @override String get premiumVoucherSuccessTitle => 'Lifetime Premium Activated';
   @override String get premiumVoucherSuccessBody => 'You\'re all set. Thank you so much — this truly means a lot. Enjoy every feature, and may good things always find their way to you.';
@@ -788,7 +788,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumUnlimited => 'Unlimited';
 
   // Apple Sign-In
-  @override String get premiumSignInApple => 'Sign in with Apple to sync premium purchase forever.';
+  @override String get premiumSignInApple => 'Sign in to sync premium purchase forever';
   @override String get signInRequired => 'Sign-In Required';
   @override String get signInRequiredDesc => 'Sign in to purchase and restore premium features.';
   @override String get premiumCheckingAppStore => 'Checking App Store for previous purchases...';

@@ -25,6 +25,7 @@ import 'help_faq_screen.dart';
 import 'categories_screen.dart';
 import 'backup_screen.dart';
 import '../../providers/notification_settings_provider.dart';
+import '../../../../core/constants/store_review_urls.dart';
 import '../../../../core/services/remote_config_service.dart';
 import '../../../../core/services/premium_auth_service.dart';
 import '../../../../core/services/voucher_service.dart';
@@ -553,12 +554,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SettingsTile(
             icon: Icons.star_outline,
             title: ref.watch(translationsProvider).settingsRateUs,
-            onTap: () async {
-              final url = Uri.parse(
-                'https://play.google.com/store/apps/details?id=com.axiomtechdev.richtogether',
-              );
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            },
+            onTap: () => _launchStoreReview(),
           ),
           _buildDivider(),
           SettingsTile(
@@ -707,6 +703,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return false;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Store review
+  // ---------------------------------------------------------------------------
+
+  Future<void> _launchStoreReview() async {
+    if (Platform.isIOS) {
+      final deep = StoreReviewUrls.iosDeepLink;
+      if (await canLaunchUrl(deep)) {
+        await launchUrl(deep, mode: LaunchMode.externalApplication);
+        return;
+      }
+      // Simulator / restricted environment: fall back to HTTPS.
+      await launchUrl(StoreReviewUrls.iosFallback, mode: LaunchMode.externalApplication);
+    } else {
+      // Android — Play Store intent first, HTTPS as fallback.
+      final intent = StoreReviewUrls.androidIntent;
+      if (await canLaunchUrl(intent)) {
+        await launchUrl(intent, mode: LaunchMode.externalApplication);
+        return;
+      }
+      await launchUrl(StoreReviewUrls.androidFallback, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
 
   Widget _buildDivider() {
     return Builder(builder: (context) {
@@ -1261,13 +1283,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (!isPremium) ...[
                     _buildDivider(),
                     if (RemoteConfigService().voucherEnabled) ...[
-                      SettingsTile(
-                        icon: Icons.card_giftcard,
-                        title: trans.premiumRedeemVoucher,
-                        subtitle: trans.premiumLifetimeSubtitle,
-                        onTap: _showVoucherDialog,
-                      ),
-                      _buildDivider(),
+                      if (!Platform.isIOS) ...[
+                        SettingsTile(
+                          icon: Icons.card_giftcard,
+                          title: trans.premiumRedeemVoucher,
+                          subtitle: trans.premiumLifetimeSubtitle,
+                          onTap: _showVoucherDialog,
+                        ),
+                        _buildDivider(),
+                      ],
                       SettingsTile(
                         icon: Icons.star,
                         title: trans.premiumGetPremium,
@@ -1329,28 +1353,176 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               )
             : null,
-        onTap: _premiumSignInLoading ? null : _handleGoogleSignIn,
+        onTap: _premiumSignInLoading ? null : _showSignInChooserSheet,
       ),
-      if (Platform.isIOS) ...[
-        _buildDivider(),
-        SettingsTile(
-          icon: Icons.apple,
-          title: trans.premiumSignInApple,
-          subtitle: syncSubtitle,
-          trailing: _premiumSignInLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primaryGold,
-                  ),
-                )
-              : null,
-          onTap: _premiumSignInLoading ? null : _handleAppleSignIn,
-        ),
-      ],
     ];
+  }
+
+  void _showSignInChooserSheet() {
+    final trans = ref.read(translationsProvider);
+    final themeMode = AppThemeProvider.of(context);
+    final isLight = themeMode == AppThemeMode.light ||
+        (themeMode == AppThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.light);
+    final isDefault = themeMode == AppThemeMode.defaultTheme;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDefault
+          ? AppColors.bgDarkEnd
+          : isLight
+              ? Colors.white
+              : const Color(0xFF111111),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        final sheetThemeMode = AppThemeProvider.of(sheetContext);
+        final isSheetLight = sheetThemeMode == AppThemeMode.light ||
+            (sheetThemeMode == AppThemeMode.system &&
+                MediaQuery.platformBrightnessOf(sheetContext) == Brightness.light);
+        final textPrimary = isSheetLight ? AppColors.textPrimaryLight : Colors.white;
+        final textMuted = isSheetLight
+            ? const Color(0xFF64748B)
+            : Colors.white.withValues(alpha: 0.6);
+        final dividerColor = isSheetLight
+            ? Colors.black.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.1);
+
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isSheetLight
+                      ? const Color(0xFFCBD5E1)
+                      : Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.account_circle_outlined,
+                      color: AppColors.primaryGold,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        trans.premiumSignInGoogle,
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Choose how you want to sign in',
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Divider(height: 1, color: dividerColor),
+              ListTile(
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.login,
+                    color: AppColors.primaryGold,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  trans.premiumSignInGoogle,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text(
+                  'Continue with your Google account',
+                  style: TextStyle(color: textMuted, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _handleGoogleSignIn();
+                },
+              ),
+              if (Platform.isIOS) ...[
+                Divider(height: 1, color: dividerColor, indent: 72),
+                ListTile(
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isSheetLight
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.apple,
+                      color: isSheetLight ? Colors.black : Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    trans.premiumSignInApple,
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Continue with your Apple ID',
+                    style: TextStyle(color: textMuted, fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handleAppleSignIn();
+                  },
+                ),
+              ],
+              Divider(height: 1, color: dividerColor),
+              ListTile(
+                title: Text(
+                  trans.genericCancel,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: textMuted),
+                ),
+                onTap: () => Navigator.pop(sheetContext),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildSignedInAccountTile(PremiumAuthService auth) {
