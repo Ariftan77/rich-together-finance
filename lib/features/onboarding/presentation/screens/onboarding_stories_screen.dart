@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/locale_provider.dart';
@@ -31,12 +32,19 @@ class _OnboardingStoriesScreenState
   /// Returns the frame lists for the current language suffix.
   /// Index 0 = story 1, index 1 = story 2, index 2 = story 3.
   /// Each inner list has 3 frame paths.
+  ///
+  /// iOS uses dedicated assets prefixed with "ios" (e.g. onboarding_ios_1_1_en.webp).
+  /// Android (and all other platforms) fall back to the standard naming.
   List<List<String>> _buildStoryFrames(String langSuffix) {
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     return List.generate(3, (storyIndex) {
       final s = storyIndex + 1; // 1-based story number
       return List.generate(3, (frameIndex) {
         final f = frameIndex + 1; // 1-based frame number
-        return 'assets/images/onboarding_${s}_${f}_$langSuffix.webp';
+        final name = isIos
+            ? 'onboarding_ios_${s}_${f}_$langSuffix'
+            : 'onboarding_${s}_${f}_$langSuffix';
+        return 'assets/images/$name.webp';
       });
     });
   }

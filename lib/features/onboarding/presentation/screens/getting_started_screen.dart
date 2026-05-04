@@ -183,6 +183,12 @@ class _GettingStartedScreenState extends ConsumerState<GettingStartedScreen> {
         // 1. Save selected currency.
         await ref.read(settingsDaoProvider).setDefaultCurrency(profileId, _selectedCurrency);
 
+        // 1b. Set decimal default: IDR never shows decimals (Rp100),
+        //     every other currency shows decimals ($100.00).
+        //     The user can still override this in Settings.
+        final showDecimalDefault = _selectedCurrency != Currency.idr;
+        await ref.read(settingsDaoProvider).setShowDecimal(profileId, showDecimalDefault);
+
         // 2. Determine which country defaults to seed.
         final country = _selectedCurrency == Currency.idr
             ? OnboardingCountry.indonesia
