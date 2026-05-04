@@ -503,6 +503,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get profileNameExists => 'A profile with this name already exists';
   @override String profileCreated(String name) => 'Profile "$name" created!';
 
+  // Edit Profile Dialog
+  @override String get profileEditTitle => 'Edit Profile';
+  @override String get profileUpdated => 'Profile updated!';
+
   // Backup Screen
   @override String get backupTitle => 'Backup & Restore';
   @override String get backupManual => 'Manual Backup';

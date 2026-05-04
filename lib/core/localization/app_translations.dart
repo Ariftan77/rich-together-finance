@@ -498,6 +498,10 @@ abstract class AppTranslations {
   String get profileNameExists;
   String profileCreated(String name);
 
+  // Edit Profile Dialog
+  String get profileEditTitle;
+  String get profileUpdated;
+
   // Backup Screen
   String get backupTitle;
   String get backupManual;

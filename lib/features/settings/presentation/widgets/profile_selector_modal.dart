@@ -13,6 +13,7 @@ import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/premium_gate_modal.dart';
 import 'add_profile_dialog.dart';
+import 'edit_profile_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // Private dialog widget — owns its controller so mounted checks work correctly
@@ -275,6 +276,22 @@ class ProfileSelectorModal extends ConsumerWidget {
             ),
             if (isActive)
               const Icon(Icons.check_circle, color: AppColors.primaryGold),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showEditProfileDialog(context, ref, profile),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.primaryGold.withValues(alpha: 0.8),
+                  size: 18,
+                ),
+              ),
+            ),
             if (canDelete) ...[
               const SizedBox(width: 8),
               GestureDetector(
@@ -296,6 +313,18 @@ class ProfileSelectorModal extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showEditProfileDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Profile profile,
+  ) async {
+    Navigator.pop(context); // close the modal
+    showDialog(
+      context: context,
+      builder: (context) => EditProfileDialog(profile: profile),
     );
   }
 

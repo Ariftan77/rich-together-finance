@@ -504,6 +504,10 @@ class AppTranslationsId implements AppTranslations {
   @override String get profileNameExists => 'Profil dengan nama ini sudah ada';
   @override String profileCreated(String name) => 'Profil "$name" berhasil dibuat!';
 
+  // Edit Profile Dialog
+  @override String get profileEditTitle => 'Edit Profil';
+  @override String get profileUpdated => 'Profil diperbarui!';
+
   // Backup Screen
   @override String get backupTitle => 'Cadangan & Pemulihan';
   @override String get backupManual => 'Cadangan Manual';
