@@ -47,6 +47,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
   bool _premiumSignInLoading = false;
+  bool _isRestoringPurchase = false;
   late Future<String?> _premiumFuture;
 
   @override
@@ -55,6 +56,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     AnalyticsService.trackFirstSettingsVisit();
     _loadAppInfo();
     _premiumFuture = PremiumAuthService().getPremiumStatus();
+  }
+
+  @override
+  void dispose() {
+    IapService().onRestoreSuccess = null;
+    super.dispose();
   }
 
   void _refreshPremiumStatus() {
@@ -212,6 +219,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   label: Text(ref.watch(translationsProvider).settingsClearData, style: const TextStyle(color: AppColors.error)),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // Delete Account button (only for signed-in users)
+              if (PremiumAuthService().isSignedIn)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      debugPrint('[Settings] Delete Account button pressed');
+                      _showDeleteAccountDialog();
+                    },
+                    icon: const Icon(Icons.person_remove, color: AppColors.error, size: 18),
+                    label: Text(ref.watch(translationsProvider).settingsDeleteAccount, style: const TextStyle(color: AppColors.error)),
+                  ),
+                ),
 
               // Version info at bottom
               Center(
@@ -1078,6 +1099,166 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _showDeleteAccountDialog() async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('[Settings] _showDeleteAccountDialog() opened');
+    final authService = PremiumAuthService();
+    debugPrint('   - isSignedIn: ${authService.isSignedIn}');
+    debugPrint('   - activeProvider: ${authService.activeProvider}');
+    debugPrint('   - userId: ${authService.userId}');
+    debugPrint('═══════════════════════════════════════');
+
+    final confirmController = TextEditingController();
+    bool canProceed = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final themeMode = AppThemeProvider.of(context);
+          final isLight = themeMode == AppThemeMode.light ||
+              (themeMode == AppThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.light);
+          final isDefault = themeMode == AppThemeMode.defaultTheme;
+          return AlertDialog(
+            backgroundColor: isDefault
+                ? AppColors.bgDarkEnd
+                : isLight
+                    ? Colors.white
+                    : const Color(0xFF111111),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(ref.watch(translationsProvider).settingsDeleteAccountTitle, style: const TextStyle(color: AppColors.error)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  ref.watch(translationsProvider).settingsDeleteAccountContent,
+                  style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  ref.watch(translationsProvider).settingsDeleteAccountConfirmPrompt,
+                  style: TextStyle(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GlassInput(
+                  controller: confirmController,
+                  hintText: ref.watch(translationsProvider).settingsDeleteAccountConfirmKeyword,
+                  onChanged: (value) {
+                    setState(() {
+                      canProceed = value == ref.watch(translationsProvider).settingsDeleteAccountConfirmKeyword;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  ref.watch(translationsProvider).genericCancel,
+                  style: TextStyle(color: isLight ? const Color(0xFF374151) : Colors.white70),
+                ),
+              ),
+              TextButton(
+                onPressed: canProceed
+                    ? () async {
+                        Navigator.pop(context);
+                        await _performDeleteAccount();
+                      }
+                    : null,
+                child: Text(
+                  ref.watch(translationsProvider).settingsDeleteAccount,
+                  style: TextStyle(
+                    color: canProceed ? AppColors.error : (isLight ? const Color(0xFFCBD5E1) : Colors.white24),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('[Settings] _performDeleteAccount() START');
+    debugPrint('═══════════════════════════════════════');
+
+    try {
+      if (!mounted) return;
+
+      debugPrint('[Settings] 1️⃣ Showing loading dialog...');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+      );
+
+      final authService = PremiumAuthService();
+      debugPrint('[Settings] 2️⃣ Auth state before delete:');
+      debugPrint('   - isSignedIn: ${authService.isSignedIn}');
+      debugPrint('   - activeProvider: ${authService.activeProvider}');
+      debugPrint('   - userId: ${authService.userId}');
+      debugPrint('   - email: ${authService.email}');
+
+      debugPrint('[Settings] 3️⃣ Calling deleteAccount()...');
+      await authService.deleteAccount();
+      debugPrint('[Settings] ✅ deleteAccount() completed');
+
+      debugPrint('[Settings] 4️⃣ Calling signOut()...');
+      await authService.signOut();
+      debugPrint('[Settings] ✅ signOut() completed');
+      debugPrint('[Settings] Auth state after delete: isSignedIn=${authService.isSignedIn}');
+
+      if (!mounted) return;
+
+      debugPrint('[Settings] 5️⃣ Invalidating providers...');
+      ref.invalidate(premiumStatusProvider);
+      setState(() {
+        _premiumFuture = PremiumAuthService().getPremiumStatus();
+      });
+      debugPrint('[Settings] ✅ Providers invalidated');
+
+      if (!mounted) return;
+
+      debugPrint('[Settings] 6️⃣ Closing loading dialog...');
+      Navigator.pop(context);
+
+      debugPrint('[Settings] 7️⃣ Showing success message...');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ref.watch(translationsProvider).settingsDeleteAccountSuccess),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate to home/splash after account deletion
+      if (!mounted) return;
+      debugPrint('[Settings] 8️⃣ Navigating to home...');
+      Navigator.of(context).popUntil((route) => route.isFirst);
+
+      debugPrint('[Settings] ✅ Delete account flow completed successfully');
+      debugPrint('═══════════════════════════════════════');
+    } catch (e, stackTrace) {
+      debugPrint('[Settings] ❌ Error during delete account: $e');
+      debugPrint('[Settings] Stack trace: $stackTrace');
+      debugPrint('═══════════════════════════════════════');
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${ref.read(translationsProvider).settingsDeleteAccountError}: $e'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
   void _showThemeSelector(int currentMode) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light ||
@@ -1324,7 +1505,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SettingsTile(
                     icon: Icons.restore,
                     title: trans.premiumRestorePurchase,
-                    onTap: _handleRestorePurchase,
+                    trailing: _isRestoringPurchase
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryGold,
+                            ),
+                          )
+                        : null,
+                    onTap: _isRestoringPurchase ? null : _handleRestorePurchase,
                   ),
                 ],
               );
@@ -2045,34 +2236,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _handleRestorePurchase() async {
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
-    if (!auth.isSignedIn) {
-      final provider = await _showSignInProviderDialog();
-      if (provider == null) return;
-      final ok = provider == 'apple'
-          ? await auth.signInWithApple()
-          : await auth.signInWithGoogle();
-      if (!ok || !mounted) return;
-      AnalyticsService.logSignInProvider(provider: provider);
-    }
 
-    // Check Supabase
-    final status = await auth.getPremiumStatus();
-    if (status != null && mounted) {
+    // Show loading indicator in the tile area.
+    setState(() => _isRestoringPurchase = true);
+
+    try {
+      // Step 1: For signed-in users, check the Supabase backend first.
+      // This covers the common case where the user has premium on the backend
+      // already (different device, reinstall, cache expired).
+      // No sign-in requirement for non-signed-in users — they go straight to
+      // platform restore so unsigned purchases can also be recovered.
+      if (auth.isSignedIn) {
+        String? status;
+        try {
+          status = await auth.getPremiumStatus();
+        } catch (_) {
+          // Network timeout or backend error — fall through to platform restore.
+        }
+        if (status != null && mounted) {
+          _refreshPremiumStatus();
+          ref.invalidate(premiumStatusProvider);
+          setState(() => _isRestoringPurchase = false);
+          _showSuccessDialog();
+          return;
+        }
+      }
+
+      // Step 2: Android — silently validate the existing Play Store purchase
+      // on the backend. Works regardless of sign-in state because the backend
+      // accepts temporary_user_id for unsigned users.
+      if (Platform.isAndroid) {
+        final validation =
+            await IapService().validateExistingPurchaseOnBackend();
+        if (validation != null && validation.success) {
+          final premiumType = validation.premiumType ?? 'lifetime';
+          await auth.activatePremiumFromValidation(
+            premiumType,
+            expiresAt: validation.expiresAt,
+          );
+          if (!mounted) return;
+          _refreshPremiumStatus();
+          ref.invalidate(premiumStatusProvider);
+          setState(() => _isRestoringPurchase = false);
+          _showSuccessDialog();
+          return;
+        }
+      }
+
+      // Step 3: Trigger the platform restore flow.
+      // iOS: shows the App Store restore sheet; StoreKit delivers events to
+      //      _onPurchaseUpdate, which validates with the backend before activating.
+      // Android: fires here only when queryPastPurchases found no owned items
+      //          (e.g. different Play account), so the full restore sheet appears.
+      IapService().onRestoreSuccess = () {
+        if (!mounted) return;
+        setState(() => _isRestoringPurchase = false);
+        ref.invalidate(premiumStatusProvider);
+        _showSuccessDialog();
+      };
+
+      await IapService().restorePurchases();
+
+      // Step 4: Show a neutral "checking" snackbar. The callback above handles
+      // the success path asynchronously when the restored event arrives.
+      if (!mounted) return;
+      setState(() => _isRestoringPurchase = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${trans.premiumRestored}$status'), backgroundColor: AppColors.success),
+        SnackBar(
+          content: Text(
+            Platform.isIOS
+                ? trans.premiumCheckingAppStore
+                : trans.premiumCheckingPlayStore,
+          ),
+        ),
       );
-      _refreshPremiumStatus();
-      _showSuccessDialog();
-      return;
-    }
-
-    // Fallback: check platform store
-    await IapService().restorePurchases();
-    if (mounted) {
+    } catch (e) {
+      IapService().onRestoreSuccess = null;
+      if (!mounted) return;
+      setState(() => _isRestoringPurchase = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-          Platform.isIOS ? trans.premiumCheckingAppStore : trans.premiumCheckingPlayStore,
-        )),
+        SnackBar(
+          content: Text(trans.iapErrorPurchaseFailed),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
@@ -2484,7 +2730,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  trans.premiumVoucherSuccessTitle,
+                  trans.premiumActivated,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
                 ),
               ),

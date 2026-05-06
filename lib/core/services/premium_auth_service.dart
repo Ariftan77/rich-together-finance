@@ -22,6 +22,7 @@ class PremiumAuthService {
   static const _kAppleUserId = 'apple_user_id';
   static const _kAppleEmail = 'apple_email';
   static const _kAppleDisplayName = 'apple_display_name';
+  static const _kTemporaryUserId = 'iap_temporary_user_id';
 
   final _googleSignIn = GoogleSignIn();
   GoogleSignInAccount? _googleUser;
@@ -238,6 +239,77 @@ class PremiumAuthService {
     await _clearPremiumCache();
   }
 
+  /// Deletes the user account from Supabase.
+  /// Cascades to delete all related receipts/purchases via ON DELETE SET NULL.
+  Future<void> deleteAccount() async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('[PremiumAuth] deleteAccount() START');
+    debugPrint('═══════════════════════════════════════');
+
+    if (!isSignedIn) {
+      debugPrint('[PremiumAuth] ❌ Not signed in, skipping delete');
+      return;
+    }
+
+    final db = Supabase.instance.client;
+
+    try {
+      debugPrint('[PremiumAuth] Active Provider: $_activeProvider');
+      debugPrint('[PremiumAuth] Google ID: $googleId');
+      debugPrint('[PremiumAuth] Apple ID: $appleId');
+      debugPrint('[PremiumAuth] Email: $email');
+
+      if (googleId != null) {
+        debugPrint('[PremiumAuth] 🔍 Querying users table with google_id=$googleId');
+
+        // Check if user exists first
+        final existing = await db
+            .from('users')
+            .select('google_id, apple_id, id')
+            .eq('google_id', googleId!)
+            .maybeSingle();
+
+        debugPrint('[PremiumAuth] Found user: $existing');
+
+        if (existing != null) {
+          debugPrint('[PremiumAuth] 🗑️ Deleting user with google_id: $googleId');
+          final response = await db.from('users').delete().eq('google_id', googleId!);
+          debugPrint('[PremiumAuth] ✅ Delete response: $response');
+        } else {
+          debugPrint('[PremiumAuth] ⚠️ User not found with google_id: $googleId');
+        }
+      } else if (appleId != null) {
+        debugPrint('[PremiumAuth] 🔍 Querying users table with apple_id=$appleId');
+
+        // Check if user exists first
+        final existing = await db
+            .from('users')
+            .select('google_id, apple_id, id')
+            .eq('apple_id', appleId!)
+            .maybeSingle();
+
+        debugPrint('[PremiumAuth] Found user: $existing');
+
+        if (existing != null) {
+          debugPrint('[PremiumAuth] 🗑️ Deleting user with apple_id: $appleId');
+          final response = await db.from('users').delete().eq('apple_id', appleId!);
+          debugPrint('[PremiumAuth] ✅ Delete response: $response');
+        } else {
+          debugPrint('[PremiumAuth] ⚠️ User not found with apple_id: $appleId');
+        }
+      } else {
+        throw Exception('No google_id or apple_id found');
+      }
+
+      debugPrint('[PremiumAuth] ✅ Account deleted successfully');
+      debugPrint('═══════════════════════════════════════');
+    } catch (e) {
+      debugPrint('[PremiumAuth] ❌ Failed to delete account: $e');
+      debugPrint('═══════════════════════════════════════');
+      rethrow;
+    }
+  }
+
   /// Check if the user has an active premium record in Supabase.
   /// Returns 'lifetime' or 'sync_yearly' if premium, null otherwise.
   Future<String?> getPremiumStatus() async {
@@ -274,10 +346,61 @@ class PremiumAuthService {
     await _writePremiumCache(premiumType);
   }
 
+  /// Links any receipts purchased while the user was not signed in to their
+  /// account by calling the `link-temporary-purchase` Edge Function.
+  ///
+  /// Reads `temporary_user_id` from SharedPreferences (written during the
+  /// purchase flow). If the key is absent this is a no-op.
+  /// All errors are logged but never rethrown — callers are not affected.
+  Future<void> linkTemporaryPurchases() async {
+    if (!isSignedIn) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final temporaryUserId = prefs.getString(_kTemporaryUserId);
+      if (temporaryUserId == null) {
+        debugPrint('[PremiumAuth] linkTemporaryPurchases: no temporary_user_id — skipping.');
+        return;
+      }
+
+      final currentUserId = userId;
+      if (currentUserId == null) return;
+
+      debugPrint('[PremiumAuth] linkTemporaryPurchases: linking tmp=$temporaryUserId → user=$currentUserId');
+
+      final response = await Supabase.instance.client.functions.invoke(
+        'link-temporary-purchase',
+        body: {
+          'user_id': currentUserId,
+          'temporary_user_id': temporaryUserId,
+        },
+      );
+
+      final data = response.data as Map<String, dynamic>?;
+      final success = data?['success'] as bool? ?? false;
+      final linkedCount = data?['linked_count'] as int? ?? 0;
+      final error = data?['error'] as String?;
+
+      if (success) {
+        debugPrint('[PremiumAuth] linkTemporaryPurchases: linked $linkedCount purchase(s).');
+      } else {
+        debugPrint('[PremiumAuth] linkTemporaryPurchases: backend returned success=false. error=$error');
+      }
+    } catch (e) {
+      // Non-fatal — receipts are still stored, will retry on next sign-in.
+      debugPrint('[PremiumAuth] linkTemporaryPurchases failed (non-fatal): $e');
+    }
+  }
+
   /// If a pending premium type was stored locally (iOS unsigned purchase),
   /// activates it on the backend and clears the pending key.
   /// Called automatically after a successful sign-in.
+  ///
+  /// Also calls [linkTemporaryPurchases] first to link any unsigned receipts
+  /// to the now-authenticated user via the backend Edge Function.
   Future<void> syncLocalPremiumToBackend() async {
+    // Link unsigned receipts first — fire-and-forget, errors are swallowed inside.
+    await linkTemporaryPurchases();
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingType = prefs.getString('pending_premium_type');
@@ -307,6 +430,32 @@ class PremiumAuthService {
     if (expiresAt != null) row['expires_at'] = expiresAt.toIso8601String();
 
     await _upsertUser(row);
+
+    _premiumType = premiumType;
+    _expiresAt = expiresAt;
+    await _writePremiumCache(premiumType, expiresAt: expiresAt);
+  }
+
+  /// Activates premium using the authoritative values returned by the backend
+  /// receipt validation endpoint. Unlike [activatePremium], this accepts the
+  /// exact [expiresAt] from the server rather than computing it locally.
+  ///
+  /// For signed-in users the Supabase record is upserted.
+  /// For unsigned users the data is written to the local cache only, and will
+  /// be synced to the backend when the user eventually signs in.
+  Future<void> activatePremiumFromValidation(
+    String premiumType, {
+    DateTime? expiresAt,
+  }) async {
+    if (isSignedIn) {
+      final row = <String, dynamic>{'premium_type': premiumType};
+      if (googleId != null) row['google_id'] = googleId!;
+      if (appleId != null) row['apple_id'] = appleId!;
+      if (email != null) row['email'] = email!;
+      if (expiresAt != null) row['expires_at'] = expiresAt.toIso8601String();
+
+      await _upsertUser(row);
+    }
 
     _premiumType = premiumType;
     _expiresAt = expiresAt;

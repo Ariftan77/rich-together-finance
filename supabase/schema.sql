@@ -78,6 +78,10 @@ CREATE POLICY "users_update_own" ON users
   USING (true)
   WITH CHECK (true);
 
+CREATE POLICY "users_delete_own" ON users
+  FOR DELETE TO anon
+  USING (true);
+
 -- vouchers: anon read-only (admin inserts directly via dashboard / service key)
 CREATE POLICY "vouchers_select" ON vouchers
   FOR SELECT TO anon

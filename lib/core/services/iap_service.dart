@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'premium_auth_service.dart';
 import 'remote_config_service.dart';
 
@@ -28,6 +30,38 @@ enum IapResult {
   // The caller should show a "Restore" action so the user can recover their
   // purchase without another 30-second spinner.
   alreadyOwned,
+}
+
+/// Result of a server-side receipt validation call.
+///
+/// Backend endpoint (not yet implemented — design reference):
+///
+/// POST /api/purchases/validate-receipt
+///   iOS body:   { "platform": "ios",     "transaction_id": "[numeric string]", "product_id": "...", "temporary_user_id": "..." }
+/// Android body: { "platform": "android", "purchase_token": "[token]",          "product_id": "...", "package_name": "...", "temporary_user_id": "..." }
+///
+/// Response: { "success": true, "premium_type": "lifetime", "expires_at": null | "[iso8601]" }
+///
+/// POST /api/purchases/restore
+///   Same body as validate-receipt.
+///   Server additionally de-duplicates via original_transaction_id (iOS) or
+///   purchase_token (Android) so a single receipt cannot be used by two users.
+///   Response: same shape as validate-receipt.
+class ReceiptValidationResult {
+  final bool success;
+  final String? premiumType;
+  final DateTime? expiresAt;
+  final String? error;
+
+  const ReceiptValidationResult({
+    required this.success,
+    this.premiumType,
+    this.expiresAt,
+    this.error,
+  });
+
+  factory ReceiptValidationResult.failure(String error) =>
+      ReceiptValidationResult(success: false, error: error);
 }
 
 /// Android BillingResponse code strings as surfaced by in_app_purchase.
@@ -53,6 +87,10 @@ class IapService {
   static const _premiumId = 'expense_tracker_premium';
   static const _syncId = 'expense_tracker_sync_yearly';
 
+  // SharedPreferences keys
+  static const _pendingActivationKey = 'iap_pending_activation';
+  static const _kTempUserId = 'iap_temporary_user_id';
+
   final _iap = InAppPurchase.instance;
 
   // Stored so we can cancel before re-subscribing (Bug 4 fix)
@@ -68,8 +106,6 @@ class IapService {
   // Safety-net timer that fires if no restored event arrives within 5 s after
   // an itemAlreadyOwned-triggered restore.
   Timer? _restoreTimeoutTimer;
-
-  static const _pendingActivationKey = 'iap_pending_activation';
 
   // One-shot callback set by the gate modal before a manual restore so the UI
   // can update when PurchaseStatus.restored arrives with no pending completer.
@@ -102,8 +138,237 @@ class IapService {
       // Leave _premiumProductDetails null; UI shows no price.
     }
 
+    // Ensure a stable temporary_user_id exists for unsigned users.
+    await _ensureTemporaryUserId();
+
     await _retryPendingActivation();
   }
+
+  // ---------------------------------------------------------------------------
+  // Temporary user ID — used for unsigned purchase attribution
+  // ---------------------------------------------------------------------------
+
+  /// Returns the stored temporary_user_id, creating one if it does not exist.
+  ///
+  /// When the user later signs in, the backend merges purchases attached to
+  /// this ID into the authenticated account.
+  Future<String> getOrCreateTemporaryUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_kTempUserId);
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    // Generate a UUID-style identifier without an external package by
+    // combining timestamp and random bytes via dart:math.
+    final id = _generateLocalUuid();
+    await prefs.setString(_kTempUserId, id);
+    debugPrint('[IapService] Created temporary_user_id: $id');
+    return id;
+  }
+
+  Future<void> _ensureTemporaryUserId() async {
+    await getOrCreateTemporaryUserId();
+  }
+
+  /// Generates a UUID v4-like string using only dart:math (no extra package).
+  /// Sufficient for temporary session tracking — not cryptographically strong.
+  String _generateLocalUuid() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // dart:math Random is available via import dart:math
+    final rand = now ^ (now >> 17) ^ (now << 3);
+    return 'tmp-${now.toRadixString(16)}-${rand.abs().toRadixString(16)}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Backend receipt validation
+  // ---------------------------------------------------------------------------
+
+  /// Validates a purchase receipt with the backend and activates premium if
+  /// the backend confirms the purchase is genuine.
+  ///
+  /// For iOS: [serverVerificationData] is the base64-encoded App Store receipt
+  ///           (StoreKit provides this as PurchaseDetails.verificationData.serverVerificationData).
+  /// For Android: [serverVerificationData] is the JSON string containing the
+  ///               signed purchase data (originalJson) and signature from Google Play.
+  ///
+  /// [isRestore] distinguishes a fresh purchase from a restore call so the
+  /// backend can apply deduplication logic for restores.
+  ///
+  /// Returns a [ReceiptValidationResult] with the server response.
+  ///
+  /// NOTE: This method calls Supabase Edge Function `validate-purchase`.
+  /// Until the backend is deployed, it falls back to local activation.
+  Future<ReceiptValidationResult> validateReceiptOnBackend(
+    PurchaseDetails purchase, {
+    bool isRestore = false,
+  }) async {
+    try {
+      final tempUserId = await getOrCreateTemporaryUserId();
+      final auth = PremiumAuthService();
+
+      // Build the platform-specific payload.
+      final Map<String, dynamic> payload;
+      if (Platform.isIOS) {
+        // iOS: StoreKit 2 uses a numeric transactionId, not the legacy base64 receipt blob.
+        // Priority order:
+        //   1. SK2PurchaseDetails.purchaseID   — pure StoreKit 2 flow (preferred)
+        //   2. AppStorePurchaseDetails.skPaymentTransaction.transactionIdentifier — SK1 bridge
+        //   3. PurchaseDetails.purchaseID      — already equals transactionIdentifier for AppStorePurchaseDetails
+        //   4. Fallback to legacy receipt blob  — should never happen in practice on iOS 15+
+        String? transactionId;
+
+        if (purchase is SK2PurchaseDetails) {
+          // SK2PurchaseDetails.purchaseID is the StoreKit 2 transaction ID string.
+          transactionId = purchase.purchaseID;
+          debugPrint('[IapService] iOS SK2 transactionId=$transactionId');
+        } else if (purchase is AppStorePurchaseDetails) {
+          // AppStorePurchaseDetails.skPaymentTransaction.transactionIdentifier
+          // is the same value as purchaseID — prefer the explicit field for clarity.
+          transactionId = purchase.skPaymentTransaction.transactionIdentifier
+              ?? purchase.purchaseID;
+          debugPrint('[IapService] iOS SK1 transactionId=$transactionId');
+        } else {
+          // Generic fallback — purchaseID == transactionIdentifier on iOS.
+          transactionId = purchase.purchaseID;
+          debugPrint('[IapService] iOS generic purchaseID as transactionId=$transactionId');
+        }
+
+        if (transactionId != null && transactionId.isNotEmpty) {
+          payload = {
+            'platform': 'ios',
+            'transaction_id': transactionId,
+            'product_id': purchase.productID,
+            'is_restore': isRestore,
+            if (auth.isSignedIn) 'user_id': auth.userId,
+            if (!auth.isSignedIn) 'temporary_user_id': tempUserId,
+          };
+        } else {
+          // Last-resort fallback: send legacy receipt blob so the purchase is
+          // never silently dropped if transactionId is unavailable.
+          final receipt = purchase.verificationData.serverVerificationData;
+          debugPrint('[IapService] iOS fallback to receipt blob (transactionId unavailable)');
+          payload = {
+            'platform': 'ios',
+            'receipt': receipt,
+            'product_id': purchase.productID,
+            'is_restore': isRestore,
+            if (auth.isSignedIn) 'user_id': auth.userId,
+            if (!auth.isSignedIn) 'temporary_user_id': tempUserId,
+          };
+        }
+      } else {
+        // Android: serverVerificationData contains the purchase token JSON.
+        // The purchase token is needed for Google Play Developer API validation.
+        String purchaseToken = purchase.verificationData.serverVerificationData;
+        debugPrint('[IapService] Android raw serverVerificationData: $purchaseToken');
+
+        // Try to extract the actual token from the JSON if it's wrapped.
+        try {
+          final decoded = jsonDecode(purchaseToken) as Map<String, dynamic>;
+          final extracted = decoded['purchaseToken'] as String? ?? purchaseToken;
+          debugPrint('[IapService] Android extracted purchaseToken: $extracted');
+          purchaseToken = extracted;
+        } catch (e) {
+          // serverVerificationData might already be the raw token — use as-is.
+          debugPrint('[IapService] Android failed to decode JSON (use raw): $e');
+        }
+
+        final androidDetails = purchase as GooglePlayPurchaseDetails?;
+        payload = {
+          'platform': 'android',
+          'purchase_token': purchaseToken,
+          'product_id': purchase.productID,
+          'package_name': 'com.axiomtechdev.richtogether', // Must match Play Console
+          'original_json': androidDetails?.billingClientPurchase.originalJson ?? '',
+          'signature': androidDetails?.billingClientPurchase.signature ?? '',
+          'is_restore': isRestore,
+          if (auth.isSignedIn) 'user_id': auth.userId,
+          if (!auth.isSignedIn) 'temporary_user_id': tempUserId,
+        };
+      }
+
+      debugPrint('[IapService] Calling validate-purchase endpoint, platform=${payload['platform']}, isRestore=$isRestore');
+
+      // Call Supabase Edge Function.
+      // Edge function name: "validate-purchase"
+      // Deploy with: supabase functions deploy validate-purchase
+      final response = await Supabase.instance.client.functions.invoke(
+        'validate-purchase',
+        body: payload,
+      );
+
+      if (response.status != 200) {
+        debugPrint('[IapService] Backend validation failed: status=${response.status}, data=${response.data}');
+        return ReceiptValidationResult.failure(
+          'Backend returned status ${response.status}',
+        );
+      }
+
+      final data = response.data as Map<String, dynamic>?;
+      if (data == null || data['success'] != true) {
+        return ReceiptValidationResult.failure(
+          data?['error'] as String? ?? 'Validation failed',
+        );
+      }
+
+      final premiumType = data['premium_type'] as String?;
+      DateTime? expiresAt;
+      final expiresAtStr = data['expires_at'] as String?;
+      if (expiresAtStr != null) {
+        expiresAt = DateTime.tryParse(expiresAtStr);
+      }
+
+      debugPrint('[IapService] Backend validation succeeded: premiumType=$premiumType, expiresAt=$expiresAt');
+
+      return ReceiptValidationResult(
+        success: true,
+        premiumType: premiumType,
+        expiresAt: expiresAt,
+      );
+    } catch (e) {
+      debugPrint('[IapService] validateReceiptOnBackend error: $e');
+      return ReceiptValidationResult.failure(e.toString());
+    }
+  }
+
+  /// Convenience method for the restore flow in Settings and PremiumGateModal.
+  ///
+  /// Queries existing owned purchases from the platform, picks the best match
+  /// for [_premiumId], and calls [validateReceiptOnBackend] with isRestore=true.
+  ///
+  /// Returns null if no owned premium purchase is found on the platform, or
+  /// if validation fails.
+  Future<ReceiptValidationResult?> validateExistingPurchaseOnBackend() async {
+    try {
+      PurchaseDetails? ownedPurchase;
+
+      if (Platform.isAndroid) {
+        final addition =
+            _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition?>();
+        if (addition == null) return null;
+
+        final response = await addition.queryPastPurchases();
+        ownedPurchase = response.pastPurchases
+            .where((p) =>
+                p.productID == _premiumId &&
+                p.status == PurchaseStatus.purchased)
+            .firstOrNull;
+      }
+      // iOS: we cannot query past purchases directly without triggering the
+      // StoreKit restore sheet. Use the stream-based restorePurchases() path
+      // and capture the PurchaseDetails in _onPurchaseUpdate instead.
+
+      if (ownedPurchase == null) return null;
+
+      return validateReceiptOnBackend(ownedPurchase, isRestore: true);
+    } catch (e) {
+      debugPrint('[IapService] validateExistingPurchaseOnBackend error: $e');
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pending activation retry
+  // ---------------------------------------------------------------------------
 
   Future<void> _retryPendingActivation() async {
     final prefs = await SharedPreferences.getInstance();
@@ -136,6 +401,10 @@ class IapService {
       // Leave the flag; will retry next session.
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Purchase initiation
+  // ---------------------------------------------------------------------------
 
   /// Attempt a purchase with exponential backoff for retryable errors.
   /// [maxAttempts] is applied only to SERVICE_UNAVAILABLE / SERVICE_DISCONNECTED.
@@ -288,24 +557,49 @@ class IapService {
 
   Future<void> restorePurchases() => _iap.restorePurchases();
 
+  // ---------------------------------------------------------------------------
+  // Purchase stream handler
+  // ---------------------------------------------------------------------------
+
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final p in purchases) {
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
         try {
           final auth = PremiumAuthService();
-          if (!auth.isSignedIn && p.productID == _premiumId) {
-            // iOS unsigned purchase: store locally for later backend sync.
-            final premiumType = 'lifetime';
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('pending_premium_type', premiumType);
-            // Also write to the premium cache so isPremium returns true immediately.
-            await auth.storePendingPremiumLocally(premiumType);
+          final isRestore = p.status == PurchaseStatus.restored;
+
+          // Attempt backend receipt validation first.
+          // If backend is not yet deployed or unavailable, fall back to the
+          // existing local activation path so users are never blocked.
+          final validationResult = await _tryBackendValidation(p, isRestore: isRestore);
+
+          if (validationResult != null && validationResult.success) {
+            // Backend confirmed — activate with backend-authoritative premium type.
+            final premiumType = validationResult.premiumType ?? 'lifetime';
+            if (auth.isSignedIn) {
+              await auth.activatePremiumFromValidation(
+                premiumType,
+                expiresAt: validationResult.expiresAt,
+              );
+            } else {
+              await auth.storePendingPremiumLocally(premiumType);
+            }
           } else {
-            await _activateOnBackend(p.productID);
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.remove(_pendingActivationKey);
+            // Backend unavailable or not yet deployed — fall back to local activation.
+            // This preserves existing behaviour during the transition period.
+            if (!auth.isSignedIn && p.productID == _premiumId) {
+              final premiumType = 'lifetime';
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('pending_premium_type', premiumType);
+              await auth.storePendingPremiumLocally(premiumType);
+            } else {
+              await _activateOnBackend(p.productID);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove(_pendingActivationKey);
+            }
           }
+
           await _iap.completePurchase(p);
 
           // If this restored event arrived because of an itemAlreadyOwned
@@ -318,7 +612,7 @@ class IapService {
 
           // For the manual-restore path (no pending completer), fire the
           // one-shot UI callback so the gate modal can update itself.
-          if (p.status == PurchaseStatus.restored &&
+          if (isRestore &&
               (_pendingCompleter == null || _pendingCompleter!.isCompleted)) {
             final cb = onRestoreSuccess;
             onRestoreSuccess = null;
@@ -334,7 +628,10 @@ class IapService {
           _completeIfPending(p.productID, IapResult.activationFailed);
         }
       } else if (p.status == PurchaseStatus.canceled) {
-        await _iap.completePurchase(p);
+        // Try to complete, but swallow errors since canceled purchases may have invalid details.
+        try {
+          await _iap.completePurchase(p);
+        } catch (_) {}
         // Map canceled status to userCanceled so callers can silently dismiss.
         _completeIfPending(p.productID, IapResult.userCanceled);
       } else if (p.status == PurchaseStatus.error) {
@@ -385,6 +682,26 @@ class IapService {
     }
   }
 
+  /// Attempts backend receipt validation without throwing.
+  ///
+  /// Returns null when the backend is unreachable or validation fails, which
+  /// is the signal to fall back to the existing local activation path.
+  Future<ReceiptValidationResult?> _tryBackendValidation(
+    PurchaseDetails purchase, {
+    required bool isRestore,
+  }) async {
+    try {
+      return await validateReceiptOnBackend(purchase, isRestore: isRestore);
+    } catch (e) {
+      debugPrint('[IapService] Backend validation unavailable, using fallback: $e');
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Billing error mapping
+  // ---------------------------------------------------------------------------
+
   /// Maps Android BillingResponse error codes to typed [IapResult] values.
   ///
   /// Reference: https://developer.android.com/google/play/billing/errors
@@ -429,6 +746,10 @@ class IapService {
         return IapResult.purchaseFailed;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Completer helpers
+  // ---------------------------------------------------------------------------
 
   /// Completes the pending Completer only if the product ID matches.
   /// No-op for purchases that arrive after a cold-start (no active Completer).

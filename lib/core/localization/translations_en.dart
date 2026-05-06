@@ -408,6 +408,13 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsClearEverything => 'Clear Everything';
   @override String get settingsClearSuccess => 'All data cleared successfully';
   @override String get settingsClearError => 'Error clearing data';
+  @override String get settingsDeleteAccount => 'Delete Account';
+  @override String get settingsDeleteAccountTitle => 'Delete Account';
+  @override String get settingsDeleteAccountContent => 'This will permanently delete your account from our servers. This action cannot be undone.';
+  @override String get settingsDeleteAccountConfirmPrompt => 'Type "DELETE ACCOUNT" to confirm:';
+  @override String get settingsDeleteAccountConfirmKeyword => 'DELETE ACCOUNT';
+  @override String get settingsDeleteAccountSuccess => 'Account deleted successfully';
+  @override String get settingsDeleteAccountError => 'Failed to delete account';
   @override String get deleteProfileTitle => 'Delete Profile';
   @override String get deleteProfileContent => 'This will permanently delete this profile and ALL its data including transactions, accounts, categories, budgets, and goals.\n\nThis action cannot be undone.';
   @override String get deleteProfileButton => 'Delete Profile';

@@ -97,20 +97,16 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
     AnalyticsService.trackGetPremiumTapped(source: 'modal');
     setState(() => _isLoading = true);
 
+    final trans = ref.read(translationsProvider);
+
     // If the user already has premium (e.g. was already signed in), restore
     // directly instead of triggering a new purchase which would result in a
     // Play Store "already owned" error.
     if (PremiumAuthService().isPremium) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pop(true);
       ref.invalidate(premiumStatusProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ref.read(translationsProvider).premiumActivated),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      Navigator.of(context).pop(true);
       return;
     }
 
@@ -123,12 +119,10 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    final trans = ref.read(translationsProvider);
-
     if (result == IapResult.success) {
       // Invalidate the cached premium status so any watchers update.
       ref.invalidate(premiumStatusProvider);
-      // Pop with true to signal caller that premium is now active.
+      // Pop modal — caller will handle snackbars and UI refresh.
       Navigator.of(context).pop(true);
       if (!mounted) return;
       // Show a brief success snackbar then nudge unsigned users to sign in.
@@ -140,10 +134,13 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
             duration: const Duration(seconds: 2),
           ),
         );
-        // Brief delay so the snackbar is visible before the modal appears.
-        await Future.delayed(const Duration(milliseconds: 800));
-        if (!mounted) return;
-        await _showSignInBenefitsModal();
+        // Only show sign-in modal on Android (disabled for iOS).
+        if (Platform.isAndroid) {
+          // Brief delay so the snackbar is visible before the modal appears.
+          await Future.delayed(const Duration(milliseconds: 800));
+          if (!mounted) return;
+          await _showSignInBenefitsModal();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -294,32 +291,63 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
     setState(() => _isRestoring = true);
 
     try {
-      // Step 1: Check Supabase first — the user may already have premium on the
-      // backend (e.g. purchased on another device or the cache is stale).
-      String? backendStatus;
-      try {
-        backendStatus = await PremiumAuthService().getPremiumStatus();
-      } catch (_) {
-        // Network error — fall through to Play Store restore silently.
+      // Step 1: For signed-in users, check Supabase first — the user may
+      // already have premium on the backend (e.g. purchased on another device
+      // or the local cache is stale). Skip for unsigned users since they have
+      // no backend record yet.
+      if (PremiumAuthService().isSignedIn) {
+        String? backendStatus;
+        try {
+          backendStatus = await PremiumAuthService().getPremiumStatus();
+        } catch (_) {
+          // Network error — fall through to platform restore.
+        }
+
+        if (backendStatus != null) {
+          ref.invalidate(premiumStatusProvider);
+          if (!mounted) return;
+          setState(() => _isRestoring = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(trans.premiumActivated),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.of(context).pop(true);
+          return;
+        }
       }
 
-      if (backendStatus != null) {
-        // Already premium on backend — update local state and close.
-        ref.invalidate(premiumStatusProvider);
-        if (!mounted) return;
-        setState(() => _isRestoring = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(trans.premiumActivated),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        Navigator.of(context).pop(true);
-        return;
+      // Step 2: Android — try to validate the existing Play Store purchase
+      // against the backend without showing any native UI. This works for both
+      // signed-in and unsigned users because the backend accepts temporary_user_id.
+      if (Platform.isAndroid) {
+        final validation =
+            await IapService().validateExistingPurchaseOnBackend();
+        if (validation != null && validation.success) {
+          final premiumType = validation.premiumType ?? 'lifetime';
+          await PremiumAuthService().activatePremiumFromValidation(
+            premiumType,
+            expiresAt: validation.expiresAt,
+          );
+          ref.invalidate(premiumStatusProvider);
+          if (!mounted) return;
+          setState(() => _isRestoring = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(trans.premiumActivated),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.of(context).pop(true);
+          return;
+        }
       }
 
-      // Step 2: Register the one-shot callback BEFORE triggering the restore
-      // so it is in place when the restored event arrives.
+      // Step 3: Register the one-shot callback BEFORE triggering the platform
+      // restore so it is in place when the restored event arrives.
+      // _onPurchaseUpdate will call validateReceiptOnBackend internally before
+      // activating, and then fire this callback on success.
       IapService().onRestoreSuccess = () {
         if (!mounted) return;
         setState(() => _isRestoring = false);
@@ -333,17 +361,23 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
         if (mounted) Navigator.of(context).pop(true);
       };
 
-      // Step 3: Trigger the platform store restore flow.
+      // Step 4: Trigger the platform store restore flow.
+      // iOS: shows the App Store restore sheet; StoreKit delivers restored
+      //      events to _onPurchaseUpdate, which now validates with the backend.
+      // Android: falls through here only when queryPastPurchases returned
+      //          nothing (e.g. different account).
       await IapService().restorePurchases();
 
-      // Step 4: Show a neutral "checking" snackbar — the callback above handles
-      // the success case asynchronously when the restored event arrives.
+      // Step 5: Show a neutral "checking" snackbar — the callback above
+      // handles the success case asynchronously when the restored event arrives.
       if (!mounted) return;
       setState(() => _isRestoring = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            Platform.isIOS ? trans.premiumCheckingAppStore : trans.premiumCheckingPlayStore,
+            Platform.isIOS
+                ? trans.premiumCheckingAppStore
+                : trans.premiumCheckingPlayStore,
           ),
         ),
       );
@@ -352,6 +386,12 @@ class _PremiumGateModalState extends ConsumerState<_PremiumGateModal>
       IapService().onRestoreSuccess = null;
       if (!mounted) return;
       setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(trans.iapErrorPurchaseFailed),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 

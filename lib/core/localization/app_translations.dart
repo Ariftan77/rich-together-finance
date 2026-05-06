@@ -405,6 +405,13 @@ abstract class AppTranslations {
   String get settingsClearEverything;
   String get settingsClearSuccess;
   String get settingsClearError;
+  String get settingsDeleteAccount;
+  String get settingsDeleteAccountTitle;
+  String get settingsDeleteAccountContent;
+  String get settingsDeleteAccountConfirmPrompt;
+  String get settingsDeleteAccountConfirmKeyword;
+  String get settingsDeleteAccountSuccess;
+  String get settingsDeleteAccountError;
   String get deleteProfileTitle;
   String get deleteProfileContent;
   String get deleteProfileButton;

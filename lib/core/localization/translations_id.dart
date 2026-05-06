@@ -409,6 +409,13 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsClearEverything => 'Hapus Semuanya';
   @override String get settingsClearSuccess => 'Semua data berhasil dihapus';
   @override String get settingsClearError => 'Gagal menghapus data';
+  @override String get settingsDeleteAccount => 'Hapus Akun';
+  @override String get settingsDeleteAccountTitle => 'Hapus Akun';
+  @override String get settingsDeleteAccountContent => 'Ini akan menghapus akun Anda secara permanen dari server kami. Tindakan ini tidak dapat dibatalkan.';
+  @override String get settingsDeleteAccountConfirmPrompt => 'Ketik "HAPUS AKUN" untuk mengonfirmasi:';
+  @override String get settingsDeleteAccountConfirmKeyword => 'HAPUS AKUN';
+  @override String get settingsDeleteAccountSuccess => 'Akun berhasil dihapus';
+  @override String get settingsDeleteAccountError => 'Gagal menghapus akun';
   @override String get deleteProfileTitle => 'Hapus Profil';
   @override String get deleteProfileContent => 'Ini akan menghapus profil ini dan SEMUA datanya secara permanen termasuk transaksi, akun, kategori, anggaran, dan tujuan.\n\nTindakan ini tidak dapat dibatalkan.';
   @override String get deleteProfileButton => 'Hapus Profil';
