@@ -12,6 +12,7 @@ import '../../../../shared/theme/app_theme_mode.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 
+import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../../shared/widgets/currency_picker_field.dart';
@@ -48,6 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _appVersion = '';
   bool _premiumSignInLoading = false;
   bool _isRestoringPurchase = false;
+  bool _isBuyingFromModal = false;
   late Future<String?> _premiumFuture;
 
   @override
@@ -1443,11 +1445,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         children: [
           // Premium Benefits tile — always visible at the very top
-          SettingsTile(
-            icon: Icons.workspace_premium,
-            title: trans.premiumBenefitsTitle,
-            subtitle: trans.premiumBenefitsSeeWhat,
-            onTap: () => _showPremiumBenefitsModal(context),
+          FutureBuilder<String?>(
+            future: _premiumFuture,
+            builder: (context, snapshot) {
+              final isPremium = snapshot.data != null;
+              return SettingsTile(
+                icon: Icons.workspace_premium,
+                title: trans.premiumBenefitsTitle,
+                subtitle: isPremium
+                    ? trans.premiumBenefitsSeeUnlocked
+                    : trans.premiumBenefitsSeeWhat,
+                onTap: () => _showPremiumBenefitsModal(
+                  context,
+                  isPremium: isPremium,
+                ),
+              );
+            },
           ),
           _buildDivider(),
           // Account tile — signed in or sign-in options
@@ -2331,7 +2344,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _showPremiumBenefitsModal(BuildContext context) {
+  void _showPremiumBenefitsModal(BuildContext context, {bool isPremium = false}) {
     final trans = ref.read(translationsProvider);
     final themeMode = AppThemeProvider.of(context);
     final isDefault = themeMode == AppThemeMode.defaultTheme;
@@ -2429,7 +2442,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // Modal title
                 Text(
-                  trans.premiumBenefitsModalTitle,
+                  isPremium
+                      ? trans.premiumBenefitsModalTitleUnlocked
+                      : trans.premiumBenefitsModalTitle,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: textPrimary,
@@ -2441,7 +2456,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // Subtitle
                 Text(
-                  trans.premiumBenefitsModalSubtitle,
+                  isPremium
+                      ? trans.premiumBenefitsModalSubtitleOwned
+                      : trans.premiumBenefitsModalSubtitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: textMuted,
@@ -2612,20 +2629,87 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
-                // Price line (only when available from the store)
-                if (price != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    price,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                // Price line + buy button (only when not premium)
+                if (!isPremium) ...[
+                  if (price != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      price,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: accentColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                  ],
+                  const SizedBox(height: 16),
+                  StatefulBuilder(
+                    builder: (context, setModalState) {
+                      return GlassButton(
+                        text: trans.premiumGateUnlockAllForever,
+                        icon: Icons.workspace_premium,
+                        isPrimary: true,
+                        isFullWidth: true,
+                        isLoading: _isBuyingFromModal,
+                        onPressed: () async {
+                          final nav = Navigator.of(context);
+                          setState(() => _isBuyingFromModal = true);
+                          setModalState(() {});
+
+                          final auth = PremiumAuthService();
+                          if (auth.isPremium) {
+                            setState(() => _isBuyingFromModal = false);
+                            setModalState(() {});
+                            _refreshPremiumStatus();
+                            nav.pop();
+                            _showSuccessDialog();
+                            return;
+                          }
+
+                          final result = await IapService().buyPremium(
+                            skipSignInCheck: true,
+                          );
+
+                          if (!mounted) return;
+                          setState(() => _isBuyingFromModal = false);
+                          setModalState(() {});
+
+                          if (result == IapResult.success) {
+                            ref.invalidate(premiumStatusProvider);
+                            _refreshPremiumStatus();
+                            nav.pop();
+                            if (!auth.isSignedIn) {
+                              final trans = ref.read(translationsProvider);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(trans.premiumActivated),
+                                  backgroundColor: AppColors.success,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                              await Future.delayed(
+                                const Duration(milliseconds: 800),
+                              );
+                              if (!mounted) return;
+                              await _showSignInBenefitsModal();
+                            } else {
+                              _showSuccessDialog();
+                            }
+                          } else {
+                            final trans = ref.read(translationsProvider);
+                            _showIapErrorSnackBar(
+                              result,
+                              trans,
+                              onRetry: _handleBuyPremium,
+                            );
+                          }
+                        },
+                      );
+                    },
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // Close button
                 SizedBox(

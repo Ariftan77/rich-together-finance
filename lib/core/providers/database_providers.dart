@@ -74,6 +74,11 @@ final exportServiceProvider = Provider<ExportService>((ref) {
     ref.watch(transactionDaoProvider),
     ref.watch(accountDaoProvider),
     ref.watch(categoryDaoProvider),
+    ref.watch(recurringDaoProvider),
+    ref.watch(budgetDaoProvider),
+    ref.watch(goalDaoProvider),
+    ref.watch(debtDaoProvider),
+    ref.watch(holdingDaoProvider),
   );
 });
 

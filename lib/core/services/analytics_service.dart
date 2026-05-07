@@ -245,6 +245,21 @@ class AnalyticsService {
   }
 
   // ---------------------------------------------------------------------------
+  // Report export events
+  // ---------------------------------------------------------------------------
+
+  /// Fired every time a report is successfully exported from the Advanced
+  /// Reports modal. [reportType] is a short snake_case event name that
+  /// identifies which report was exported.
+  static void logReportExported(String reportType) {
+    unawaited(
+      FirebaseAnalytics.instance
+          .logEvent(name: reportType)
+          .catchError((_) {}),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Premium events
   // ---------------------------------------------------------------------------
 

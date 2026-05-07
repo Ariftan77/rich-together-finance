@@ -784,9 +784,13 @@ class AppTranslationsId implements AppTranslations {
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Keuntungan Premium';
   @override String get premiumBenefitsSeeWhat => 'Lihat apa yang kamu dapatkan';
+  @override String get premiumBenefitsSeeUnlocked => 'Lihat fitur yang terbuka';
   @override String get premiumBenefitsModalTitle => 'Yang Kamu Dapatkan';
+  @override String get premiumBenefitsModalTitleUnlocked => 'Fitur yang Terbuka';
   @override String get premiumBenefitsModalSubtitle => 'Beli sekali. Milik selamanya.';
+  @override String get premiumBenefitsModalSubtitleOwned => 'Ini milikmu. Selamanya.';
   @override String get premiumBenefitsClose => 'Tutup';
+  @override String get premiumGateUnlockAllForever => 'Buka semua fitur premium selamanya';
   @override String get premiumFeatureWallets => 'Dompet';
   @override String get premiumFeatureGoals => 'Tujuan';
   @override String get premiumFeatureBudgets => 'Kategori Anggaran';

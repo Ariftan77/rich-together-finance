@@ -769,9 +769,13 @@ abstract class AppTranslations {
   // Premium Benefits Modal
   String get premiumBenefitsTitle;
   String get premiumBenefitsSeeWhat;
+  String get premiumBenefitsSeeUnlocked;
   String get premiumBenefitsModalTitle;
+  String get premiumBenefitsModalTitleUnlocked;
   String get premiumBenefitsModalSubtitle;
+  String get premiumBenefitsModalSubtitleOwned;
   String get premiumBenefitsClose;
+  String get premiumGateUnlockAllForever;
   String get premiumFeatureWallets;
   String get premiumFeatureGoals;
   String get premiumFeatureBudgets;

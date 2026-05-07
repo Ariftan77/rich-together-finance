@@ -30,6 +30,7 @@ import '../widgets/budget_performance_chart.dart';
 import '../widgets/financial_health_card.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
 import '../../../reports/presentation/widgets/export_report_modal.dart';
+import '../../../reports/presentation/widgets/advanced_report_modal.dart';
 
 /// Dashboard Overview Screen with Tabs
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -160,20 +161,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         animation: _tabController,
                         builder: (_, __) {
                           if (_tabController.index != 1) {
-                            return const SizedBox(width: 40, height: 40);
+                            return const SizedBox(width: 88, height: 40);
                           }
-                          return IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 40,
-                              minHeight: 40,
-                            ),
-                            icon: const Icon(
-                              Icons.file_download_outlined,
-                              color: AppColors.primaryGold,
-                            ),
-                            onPressed: () =>
-                                showExportReportModal(context),
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                                icon: const Icon(
+                                  Icons.bar_chart,
+                                  color: AppColors.primaryGold,
+                                ),
+                                onPressed: () =>
+                                    showAdvancedReportModal(context),
+                              ),
+                              /*
+                              const SizedBox(width: 8),
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                                icon: const Icon(
+                                  Icons.file_download_outlined,
+                                  color: AppColors.primaryGold,
+                                ),
+                                onPressed: () =>
+                                    showExportReportModal(context),
+                              ),
+                              */
+                            ],
                           );
                         },
                       ),

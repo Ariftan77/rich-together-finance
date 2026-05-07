@@ -233,10 +233,7 @@ class PremiumAuthService {
     _appleUserId = null;
     _appleEmail = null;
     _appleDisplayName = null;
-    _premiumType = null;
-    _expiresAt = null;
     await _clearAuthProvider();
-    await _clearPremiumCache();
   }
 
   /// Deletes the user account from Supabase.

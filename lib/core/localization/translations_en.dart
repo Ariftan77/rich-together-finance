@@ -783,9 +783,13 @@ class AppTranslationsEn implements AppTranslations {
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Premium Benefits';
   @override String get premiumBenefitsSeeWhat => 'See what you unlock';
+  @override String get premiumBenefitsSeeUnlocked => 'See unlocked features';
   @override String get premiumBenefitsModalTitle => 'What You Unlock';
+  @override String get premiumBenefitsModalTitleUnlocked => 'Unlocked Features';
   @override String get premiumBenefitsModalSubtitle => 'One-time purchase. Yours forever.';
+  @override String get premiumBenefitsModalSubtitleOwned => 'You own this. Forever.';
   @override String get premiumBenefitsClose => 'Close';
+  @override String get premiumGateUnlockAllForever => 'Unlock all premium features forever';
   @override String get premiumFeatureWallets => 'Wallets';
   @override String get premiumFeatureGoals => 'Goals';
   @override String get premiumFeatureBudgets => 'Budget Categories';
