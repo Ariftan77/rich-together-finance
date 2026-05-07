@@ -210,6 +210,7 @@ class _AccountTransactionHistoryScreenState
                 // Transaction list
                 Expanded(
                   child: txsAsync.when(
+                    skipLoadingOnReload: true,
                     data: (txs) {
                       final isLight = AppThemeProvider.isLightMode(context);
                       if (txs.isEmpty) {

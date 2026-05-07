@@ -1544,7 +1544,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               )
             : null,
-        onTap: _premiumSignInLoading ? null : _showSignInChooserSheet,
+        onTap: _premiumSignInLoading
+            ? null
+            : () {
+                if (Platform.isIOS) {
+                  _showSignInChooserSheet();
+                } else {
+                  _handleGoogleSignIn();
+                }
+              },
       ),
     ];
   }
