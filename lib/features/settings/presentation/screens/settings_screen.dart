@@ -2688,11 +2688,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   duration: const Duration(seconds: 2),
                                 ),
                               );
-                              await Future.delayed(
-                                const Duration(milliseconds: 800),
-                              );
-                              if (!mounted) return;
-                              await _showSignInBenefitsModal();
+                              if (Platform.isAndroid) {
+                                await Future.delayed(
+                                  const Duration(milliseconds: 800),
+                                );
+                                if (!mounted) return;
+                                await _showSignInBenefitsModal();
+                              }
                             } else {
                               _showSuccessDialog();
                             }
