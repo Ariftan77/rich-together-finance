@@ -443,10 +443,22 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumRestored => 'Restored premium for: ';
   @override String get premiumCheckingPlayStore => 'Checking Play Store for purchases...';
   @override String get premiumSignInGoogle => 'Sign in to sync premium purchase forever';
+  @override String get premiumSignInSubtitle => 'Sign in to restore purchases across devices and sync your premium status';
+  @override String get premiumSignInRequired => 'Sign-In Required';
+  @override String get premiumSignInRequiredDesc => 'This allows you to restore your purchase on any device.';
+  @override String get premiumSignInChooseMethod => 'Choose how you want to sign in';
+  @override String get premiumSignInWithGoogle => 'Sign in with Google';
+  @override String get premiumSignInWithApple => 'Sign in with Apple';
+  @override String get premiumSignInContinueGoogle => 'Continue with your Google account';
+  @override String get premiumSignInContinueApple => 'Continue with your Apple ID';
+  @override String get premiumSignInButtonGoogle => 'Google';
+  @override String get premiumSignInButtonApple => 'Apple';
+  @override String get premiumSignOutTooltip => 'Sign out';
+  @override String get premiumGoogleAccount => 'Google Account';
+  @override String get premiumAppleAccount => 'Apple Account';
   @override String get premiumRestartAppToHideAds => 'Restart app to completely remove ads';
   @override String get premiumVoucherSuccessTitle => 'Lifetime Premium Activated';
   @override String get premiumVoucherSuccessBody => 'You\'re all set. Thank you so much — this truly means a lot. Enjoy every feature, and may good things always find their way to you.';
-  @override String get premiumSignInRequired => 'Google Sign-In Required';
   @override String get premiumSignInFailed => 'Sign-In Failed';
   @override String get premiumSignInSuccess => 'Signed in successfully.';
   @override String get premiumSignOutSuccess => 'Signed out successfully.';
@@ -762,10 +774,12 @@ class AppTranslationsEn implements AppTranslations {
       'My expenses have been going down for 3 months in a row. Not because I\'m depriving myself — just being more intentional. #Richer #SpendingSmarter #FinancialFreedom';
 
   // Premium Gate Modal
-  @override String get premiumGateButtonBuyLifetime => 'Unlock Lifetime Premium';
+  @override String get premiumGateButtonBuyLifetime => 'Get Lifetime Premium';
   @override String get premiumGateButtonMaybeLater => 'Maybe Later';
   @override String get premiumGateTagline => 'One-time purchase. No subscriptions.';
   @override String get premiumGateRestorePurchase => 'Restore Purchase';
+  @override String get premiumTableHeaderFree => 'Free';
+  @override String get premiumTableHeaderPremium => 'Premium';
   @override String get premiumGateBudgetTitle => 'Budget Limit Reached';
   @override String get premiumGateBudgetDesc => 'Free tier allows up to 3 budgets. Upgrade to add unlimited budgets.';
   @override String get premiumGateGoalTitle => 'Goal Limit Reached';
@@ -779,6 +793,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumGateProfileTitle => 'Profile Limit Reached';
   @override String get premiumGateProfileDesc => 'Free tier supports 1 profile. Upgrade to manage multiple profiles.';
   @override String get premiumGateCloudBackupDesc => 'Cloud backup to Google Drive is a premium feature.';
+  @override String get premiumGateCloudBackupTitle => 'Cloud Backup';
 
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Premium Benefits';
@@ -803,7 +818,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumUnlimited => 'Unlimited';
 
   // Apple Sign-In
-  @override String get premiumSignInApple => 'Sign in to sync premium purchase forever';
+  @override String get premiumSignInApple => 'Sign in with Apple';
   @override String get signInRequired => 'Sign-In Required';
   @override String get signInRequiredDesc => 'Sign in to purchase and restore premium features.';
   @override String get premiumCheckingAppStore => 'Checking App Store for previous purchases...';

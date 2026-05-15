@@ -440,10 +440,22 @@ abstract class AppTranslations {
   String get premiumRestored;
   String get premiumCheckingPlayStore;
   String get premiumSignInGoogle;
+  String get premiumSignInSubtitle;
+  String get premiumSignInRequired;
+  String get premiumSignInRequiredDesc;
+  String get premiumSignInChooseMethod;
+  String get premiumSignInWithGoogle;
+  String get premiumSignInWithApple;
+  String get premiumSignInContinueGoogle;
+  String get premiumSignInContinueApple;
+  String get premiumSignInButtonGoogle;
+  String get premiumSignInButtonApple;
+  String get premiumSignOutTooltip;
+  String get premiumGoogleAccount;
+  String get premiumAppleAccount;
   String get premiumRestartAppToHideAds;
   String get premiumVoucherSuccessTitle;
   String get premiumVoucherSuccessBody;
-  String get premiumSignInRequired;
   String get premiumSignInFailed;
   String get premiumSignInSuccess;
   String get premiumSignOutSuccess;
@@ -765,6 +777,9 @@ abstract class AppTranslations {
   String get premiumGateProfileTitle;
   String get premiumGateProfileDesc;
   String get premiumGateCloudBackupDesc;
+  String get premiumGateCloudBackupTitle;
+  String get premiumTableHeaderFree;
+  String get premiumTableHeaderPremium;
 
   // Premium Benefits Modal
   String get premiumBenefitsTitle;

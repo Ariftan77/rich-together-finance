@@ -1541,12 +1541,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _buildSignInOptions() {
     final trans = ref.watch(translationsProvider);
-    const syncSubtitle = 'Sign in to restore purchases across devices and sync your premium status';
     return [
       SettingsTile(
         icon: Icons.account_circle_outlined,
         title: trans.premiumSignInGoogle,
-        subtitle: syncSubtitle,
+        subtitle: trans.premiumSignInSubtitle,
         trailing: _premiumSignInLoading
             ? const SizedBox(
                 width: 20,
@@ -1647,7 +1646,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Choose how you want to sign in',
+                  trans.premiumSignInChooseMethod,
                   style: TextStyle(
                     color: textMuted,
                     fontSize: 13,
@@ -1671,14 +1670,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 title: Text(
-                  trans.premiumSignInGoogle,
+                  trans.premiumSignInWithGoogle,
                   style: TextStyle(
                     color: textPrimary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
-                  'Continue with your Google account',
+                  trans.premiumSignInContinueGoogle,
                   style: TextStyle(color: textMuted, fontSize: 12),
                 ),
                 onTap: () {
@@ -1705,14 +1704,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   title: Text(
-                    trans.premiumSignInApple,
+                    trans.premiumSignInWithApple,
                     style: TextStyle(
                       color: textPrimary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   subtitle: Text(
-                    'Continue with your Apple ID',
+                    trans.premiumSignInContinueApple,
                     style: TextStyle(color: textMuted, fontSize: 12),
                   ),
                   onTap: () {
@@ -1740,6 +1739,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildSignedInAccountTile(PremiumAuthService auth) {
     final photoUrl = auth.photoUrl;
     final isApple = auth.activeProvider == AuthProvider.apple;
+    final trans = ref.watch(translationsProvider);
     return Builder(builder: (context) {
       final isLight = AppThemeProvider.isLightMode(context);
       return InkWell(
@@ -1772,7 +1772,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      auth.displayName ?? (isApple ? 'Apple Account' : 'Google Account'),
+                      auth.displayName ?? (isApple ? trans.premiumAppleAccount : trans.premiumGoogleAccount),
                       style: TextStyle(
                         color: isLight ? AppColors.textPrimaryLight : Colors.white,
                         fontSize: 15,
@@ -1800,7 +1800,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   size: 20,
                 ),
                 onPressed: _handleGoogleSignOut,
-                tooltip: 'Sign out',
+                tooltip: ref.read(translationsProvider).premiumSignOutTooltip,
               ),
             ],
           ),
@@ -2208,7 +2208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'This allows you to restore your purchase on any device.',
+                      trans.premiumSignInRequiredDesc,
                       style: TextStyle(
                         color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.8),
                         fontSize: 13,
@@ -2232,7 +2232,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context, 'apple'),
               icon: const Icon(Icons.apple, size: 18),
-              label: const Text('Apple'),
+              label: Text(trans.premiumSignInButtonApple),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isLight ? Colors.black : Colors.white,
                 foregroundColor: isLight ? Colors.white : Colors.black,
@@ -2241,7 +2241,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, 'google'),
             icon: const Icon(Icons.login, size: 18),
-            label: const Text('Google'),
+            label: Text(trans.premiumSignInButtonGoogle),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
               foregroundColor: Colors.black,
@@ -2502,7 +2502,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Free',
+                                    trans.premiumTableHeaderFree,
                                     style: TextStyle(
                                       color: textMuted,
                                       fontSize: 12,
@@ -2525,7 +2525,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Premium',
+                                    trans.premiumTableHeaderPremium,
                                     style: TextStyle(
                                       color: accentColor,
                                       fontSize: 12,

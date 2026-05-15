@@ -60,4 +60,12 @@ post_install do |installer|
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_APP_TRACKING_TRANSPARENCY=0'
     end
   end
+
+  # Remove GoogleAdsOnDeviceConversion from Runner target (not using Google Ads)
+  runner_target = installer.pods_project.targets.find { |t| t.name == 'Pods-Runner' }
+  if runner_target
+    runner_target.frameworks_build_phase.files_references.each do |ref|
+      runner_target.frameworks_build_phase.remove_file_reference(ref) if ref.real_path.to_s.include?('GoogleAdsOnDeviceConversion')
+    end
+  end
 end

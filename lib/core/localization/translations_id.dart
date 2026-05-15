@@ -443,11 +443,23 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumVoucherDisabled => 'Penukaran voucher tidak tersedia.';
   @override String get premiumRestored => 'Premium dipulihkan: ';
   @override String get premiumCheckingPlayStore => 'Memeriksa pembelian Play Store...';
-  @override String get premiumSignInGoogle => 'Masuk dengan Google';
+  @override String get premiumSignInGoogle => 'Masuk untuk sinkronkan pembelian premium selamanya';
+  @override String get premiumSignInSubtitle => 'Masuk untuk memulihkan pembelian di semua perangkat dan sinkronkan status premium Anda';
+  @override String get premiumSignInRequired => 'Diperlukan Masuk';
+  @override String get premiumSignInRequiredDesc => 'Ini memungkinkan Anda memulihkan pembelian Anda di perangkat apa pun.';
+  @override String get premiumSignInChooseMethod => 'Pilih cara Anda ingin masuk';
+  @override String get premiumSignInWithGoogle => 'Masuk dengan Google';
+  @override String get premiumSignInWithApple => 'Masuk dengan Apple';
+  @override String get premiumSignInContinueGoogle => 'Lanjutkan dengan akun Google Anda';
+  @override String get premiumSignInContinueApple => 'Lanjutkan dengan Apple ID Anda';
+  @override String get premiumSignInButtonGoogle => 'Google';
+  @override String get premiumSignInButtonApple => 'Apple';
+  @override String get premiumSignOutTooltip => 'Keluar';
+  @override String get premiumGoogleAccount => 'Akun Google';
+  @override String get premiumAppleAccount => 'Akun Apple';
   @override String get premiumRestartAppToHideAds => 'Muat ulang aplikasi agar iklan hilang sepenuhnya';
   @override String get premiumVoucherSuccessTitle => 'Premium Seumur Hidup Aktif';
   @override String get premiumVoucherSuccessBody => 'Semua sudah siap. Terima kasih banyak — ini sungguh berarti. Nikmati semua fiturnya, dan semoga rezeki selalu hadir untukmu.';
-  @override String get premiumSignInRequired => 'Diperlukan untuk tukar voucher & pulihkan pembelian';
   @override String get premiumSignInFailed => 'Masuk gagal. Silakan coba lagi.';
   @override String get premiumSignInSuccess => 'Berhasil masuk.';
   @override String get premiumSignOutSuccess => 'Berhasil keluar.';
@@ -763,10 +775,12 @@ class AppTranslationsId implements AppTranslations {
       'Pengeluaranku terus turun 3 bulan berturut-turut. Bukan karena menyiksa diri — hanya lebih disengaja dalam pengeluaran. #Richer #BelanjaCerdas #KebebasanFinansial';
 
   // Premium Gate Modal
-  @override String get premiumGateButtonBuyLifetime => 'Beli Premium Seumur Hidup';
+  @override String get premiumGateButtonBuyLifetime => 'Dapatkan Premium Seumur Hidup';
   @override String get premiumGateButtonMaybeLater => 'Nanti Saja';
   @override String get premiumGateTagline => 'Bayar sekali. Tanpa langganan.';
   @override String get premiumGateRestorePurchase => 'Pulihkan Pembelian';
+  @override String get premiumTableHeaderFree => 'Gratis';
+  @override String get premiumTableHeaderPremium => 'Premium';
   @override String get premiumGateBudgetTitle => 'Batas Anggaran Tercapai';
   @override String get premiumGateBudgetDesc => 'Tier gratis hanya mendukung 3 anggaran. Upgrade untuk anggaran tak terbatas.';
   @override String get premiumGateGoalTitle => 'Batas Target Tercapai';
@@ -779,7 +793,8 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumGateDeepAnalyticsDesc => 'Buka wawasan keuangan mendalam dan analisis tren dengan premium.';
   @override String get premiumGateProfileTitle => 'Batas Profil Tercapai';
   @override String get premiumGateProfileDesc => 'Tier gratis hanya mendukung 1 profil. Upgrade untuk mengelola banyak profil.';
-  @override String get premiumGateCloudBackupDesc => 'Backup cloud ke Google Drive adalah fitur premium.';
+  @override String get premiumGateCloudBackupDesc => 'Cadangan cloud ke Google Drive adalah fitur premium.';
+  @override String get premiumGateCloudBackupTitle => 'Cadangan Cloud';
 
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Keuntungan Premium';
@@ -792,11 +807,11 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumBenefitsClose => 'Tutup';
   @override String get premiumGateUnlockAllForever => 'Buka semua fitur premium selamanya';
   @override String get premiumFeatureWallets => 'Dompet';
-  @override String get premiumFeatureGoals => 'Tujuan';
+  @override String get premiumFeatureGoals => 'Target';
   @override String get premiumFeatureBudgets => 'Kategori Anggaran';
   @override String get premiumFeatureProfiles => 'Profil';
   @override String get premiumFeatureAnalytics => 'Analitik Mendalam';
-  @override String get premiumFeatureCloudBackup => 'Backup Harian Google Drive (opsional)';
+  @override String get premiumFeatureCloudBackup => 'Cadangan Harian Google Drive (opsional)';
   @override String get premiumFreeLimit5 => 'Maks. 5';
   @override String get premiumFreeLimit3 => 'Maks. 3';
   @override String get premiumFreeLimit1 => 'Hanya 1';
@@ -804,7 +819,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumUnlimited => 'Tak Terbatas';
 
   // Apple Sign-In
-  @override String get premiumSignInApple => 'Masuk dengan Apple untuk menyinkronkan pembelian premium selamanya.';
+  @override String get premiumSignInApple => 'Masuk dengan Apple';
   @override String get signInRequired => 'Diperlukan Masuk';
   @override String get signInRequiredDesc => 'Masuk untuk membeli dan memulihkan fitur premium.';
   @override String get premiumCheckingAppStore => 'Memeriksa App Store untuk pembelian sebelumnya...';
