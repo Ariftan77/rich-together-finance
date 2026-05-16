@@ -189,7 +189,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Future<void> _handleGoogleSignOut() async {
     await ref.read(backupServiceProvider).signOutFromGoogle();
-    setState(() => _currentUser = null);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_cloudBackupEnabledKey, false);
+    if (mounted) setState(() { _currentUser = null; _cloudBackupEnabled = false; });
   }
 
   Future<void> _handleUploadToDrive() async {
@@ -199,6 +201,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     setState(() => _isLoading = true);
     try {
       await ref.read(backupServiceProvider).uploadToDrive();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('last_drive_backup_ms', DateTime.now().millisecondsSinceEpoch);
+      await _loadCloudBackupPreference();
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text(trans.backupUploadSuccess), backgroundColor: AppColors.success),
@@ -290,6 +295,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     setState(() => _isLoading = true);
     try {
       await ref.read(backupServiceProvider).restoreFromDrive(selectedFileId);
+      await _loadCloudBackupPreference();
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text(trans.backupRestoreSuccess), backgroundColor: AppColors.success),

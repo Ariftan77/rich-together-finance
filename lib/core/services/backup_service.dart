@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
@@ -24,6 +25,8 @@ class BackupService {
     ],
   );
 
+  bool _isUploading = false;
+
   BackupService(this._ref);
 
   Future<String> get _dbPath async {
@@ -39,7 +42,7 @@ class BackupService {
     final tempDir = await getTemporaryDirectory();
     final now = DateTime.now();
     final fileName =
-        'rich_together_backup_${now.year}${now.month}${now.day}_${now.hour}${now.minute}.sqlite';
+        'rich_together_backup_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}.sqlite';
     final tempPath = p.join(tempDir.path, fileName);
     try {
       final db = _ref.read(databaseProvider);
@@ -125,15 +128,11 @@ class BackupService {
 
   Stream<GoogleSignInAccount?> get currentUserStream => _googleSignIn.onCurrentUserChanged;
 
-  Future<dynamic> _getAuthenticatedClient() async {
+  Future<gapis.AuthClient> _getAuthenticatedClient() async {
     if (_googleSignIn.currentUser == null) throw Exception('User not signed in');
-
-    final granted = await _googleSignIn.requestScopes([drive.DriveApi.driveAppdataScope]);
-    if (!granted) throw Exception('Drive access denied. Please reconnect Google Drive.');
 
     var client = await _googleSignIn.authenticatedClient();
     if (client == null) {
-      // Token is invalid/expired — force a fresh sign-in
       final account = await _googleSignIn.signIn();
       if (account == null) throw Exception('Sign in was cancelled');
       client = await _googleSignIn.authenticatedClient();
@@ -143,6 +142,8 @@ class BackupService {
   }
 
   Future<void> uploadToDrive() async {
+    if (_isUploading) return;
+    _isUploading = true;
     final tempDir = await getTemporaryDirectory();
     final tempPath = p.join(tempDir.path, 'drive_export_temp.sqlite');
     try {
@@ -157,7 +158,7 @@ class BackupService {
 
       final now = DateTime.now();
       final fileName =
-          'rich_together_backup_${now.year}-${now.month}-${now.day}.sqlite';
+          'rich_together_backup_${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}.sqlite';
 
       final driveFile = drive.File()
         ..name = fileName
@@ -184,6 +185,7 @@ class BackupService {
         }
       }
     } finally {
+      _isUploading = false;
       try {
         await File(tempPath).delete();
       } catch (_) {}
@@ -199,6 +201,7 @@ class BackupService {
         q: "name contains 'rich_together_backup_' and 'appDataFolder' in parents and trashed = false",
         spaces: 'appDataFolder',
         $fields: 'files(id, name, createdTime, size)',
+        orderBy: 'createdTime desc',
       );
 
       return fileList.files ?? [];
@@ -222,9 +225,9 @@ class BackupService {
       ) as drive.Media;
 
       final List<int> dataStore = [];
-      await media.stream.listen((data) {
+      await for (final data in media.stream) {
         dataStore.addAll(data);
-      }).asFuture();
+      }
       await File(tempPlainPath).writeAsBytes(dataStore);
 
       final enc = _ref.read(encryptionServiceProvider);
