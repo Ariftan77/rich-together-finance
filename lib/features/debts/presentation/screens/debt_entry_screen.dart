@@ -40,6 +40,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
   DebtType _selectedType = DebtType.payable;
   Currency _selectedCurrency = Currency.idr; // overwritten in initState
   DateTime? _dueDate;
+  DateTime _creationDate = DateTime.now();
   int? _selectedAccountId; // For transaction creation
   bool _isLoading = false;
 
@@ -107,6 +108,29 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
     super.dispose();
   }
 
+  Future<void> _selectCreationDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _creationDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryGold,
+              surface: Color(0xFF221D10),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && mounted) {
+      setState(() => _creationDate = picked);
+    }
+  }
+
   Future<void> _selectDueDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -171,7 +195,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
             note: drift.Value(_noteController.text.trim()),
             isSettled: const drift.Value(false),
             paidAmount: const drift.Value(0.0),
-            createdAt: drift.Value(now),
+            createdAt: drift.Value(_creationDate),
             updatedAt: drift.Value(now),
             creationAccountId: drift.Value(_selectedAccountId),
           ),
@@ -192,8 +216,8 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
               amount: drift.Value(amount),
               title: drift.Value('Debt: ${_personController.text.trim()}'),
               note: drift.Value(_noteController.text.trim()),
-              date: drift.Value(now),
-              createdAt: drift.Value(now),
+              date: drift.Value(_creationDate),
+              createdAt: drift.Value(_creationDate),
             ),
           );
         }
@@ -812,48 +836,114 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         ],
                       ),
                     ] else ...[
-                      // Creation mode: Due Date only (full width)
-                      Text(trans.debtDueDate,
-                          style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: _selectDueDate,
-                        child: GlassCard(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          borderRadius: 12,
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today,
-                                  color: AppColors.primaryGold, size: 20),
-                              const SizedBox(width: 12),
-                              Text(
-                                _dueDate != null
-                                    ? DateFormat.yMMMd().format(_dueDate!)
-                                    : trans.goalNoDeadline,
-                                style: TextStyle(
-                                  color: _dueDate != null
-                                      ? (isLight ? AppColors.textPrimaryLight : Colors.white)
-                                      : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const Spacer(),
-                              if (_dueDate != null)
+                      // Creation mode: Debt Date + Due Date side by side
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.debtCreatedDate, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
                                 GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _dueDate = null),
-                                  child: Icon(
-                                    Icons.clear,
-                                    color: isLight
-                                        ? const Color(0xFF94A3B8)
-                                        : Colors.white54,
-                                    size: 20,
+                                  onTap: _selectCreationDate,
+                                  child: Container(
+                                    height: 50,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.glassBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isLight
+                                            ? Colors.black.withValues(alpha: 0.08)
+                                            : Colors.white.withValues(alpha: 0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_today,
+                                            color: AppColors.primaryGold, size: 16),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            DateFormat.yMMMd(ref.watch(localeProvider).languageCode)
+                                                .format(_creationDate),
+                                            style: TextStyle(
+                                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(trans.debtDueDate, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: 8),
+                                GestureDetector(
+                                  onTap: _selectDueDate,
+                                  child: Container(
+                                    height: 50,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.glassBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isLight
+                                            ? Colors.black.withValues(alpha: 0.08)
+                                            : Colors.white.withValues(alpha: 0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.event,
+                                            color: AppColors.primaryGold, size: 16),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            _dueDate != null
+                                                ? DateFormat.yMMMd().format(_dueDate!)
+                                                : trans.goalNoDeadline,
+                                            style: TextStyle(
+                                              color: _dueDate != null
+                                                  ? (isLight ? AppColors.textPrimaryLight : Colors.white)
+                                                  : (isLight ? const Color(0xFF94A3B8) : Colors.white54),
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (_dueDate != null) ...[
+                                          const SizedBox(width: 4),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _dueDate = null),
+                                            child: Icon(
+                                              Icons.clear,
+                                              color: isLight
+                                                  ? const Color(0xFF94A3B8)
+                                                  : Colors.white54,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     const SizedBox(height: 24),
