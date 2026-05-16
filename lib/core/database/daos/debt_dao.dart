@@ -134,15 +134,16 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
   }
 
   /// Find the debt that corresponds to a creation transaction.
-  /// Matches profile + name + type, then narrows by creationAccountId and
-  /// creation date (within 2 minutes) for precision when multiple debts share
-  /// the same person name.
+  /// Matches profile + name + type, then narrows by creationAccountId,
+  /// amount, and creation date (within 2 minutes) for precision when multiple
+  /// debts share the same person name.
   Future<Debt?> findDebtByNameAndType(
     int profileId,
     String personName,
     DebtType type, {
     int? accountId,
     DateTime? date,
+    double? amount,
   }) async {
     final results = await (select(debts)
           ..where((d) =>
@@ -154,13 +155,21 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
 
     if (results.isEmpty) return null;
 
-    // Most precise: match both account and creation time window
-    if (accountId != null && date != null) {
+    // Most precise: match account + amount + creation time window
+    if (accountId != null && date != null && amount != null) {
       const window = Duration(minutes: 2);
       final precise = results.where((d) =>
           d.creationAccountId == accountId &&
+          d.amount == amount &&
           d.createdAt.difference(date).abs() <= window);
       if (precise.isNotEmpty) return precise.first;
+    }
+
+    // Fallback: account + amount
+    if (accountId != null && amount != null) {
+      final byAccountAmount = results.where((d) =>
+          d.creationAccountId == accountId && d.amount == amount);
+      if (byAccountAmount.isNotEmpty) return byAccountAmount.first;
     }
 
     // Fallback: account match only

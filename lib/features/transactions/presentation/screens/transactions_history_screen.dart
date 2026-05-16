@@ -1018,6 +1018,7 @@ class _TransactionItem extends ConsumerWidget {
                 debtType,
                 accountId: transaction.accountId,
                 date: transaction.date,
+                amount: transaction.amount,
               );
               if (!context.mounted) return;
               if (debt != null) {
