@@ -19,4 +19,8 @@ class UserSettings extends Table {
   DateTimeColumn get deletedAt => dateTime().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   BoolColumn get cardShadow => boolean().withDefault(const Constant(true))();
+
+  /// When true, the transaction history list drops the category icon avatar
+  /// entirely and starts the row at the text. Default false = icon shown.
+  BoolColumn get hideCategoryIcon => boolean().withDefault(const Constant(false))();
 }

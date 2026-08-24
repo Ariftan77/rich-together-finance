@@ -753,6 +753,21 @@ class $UserSettingsTable extends UserSettings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _hideCategoryIconMeta = const VerificationMeta(
+    'hideCategoryIcon',
+  );
+  @override
+  late final GeneratedColumn<bool> hideCategoryIcon = GeneratedColumn<bool>(
+    'hide_category_icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hide_category_icon" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -770,6 +785,7 @@ class $UserSettingsTable extends UserSettings
     deletedAt,
     isSynced,
     cardShadow,
+    hideCategoryIcon,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -878,6 +894,15 @@ class $UserSettingsTable extends UserSettings
         cardShadow.isAcceptableOrUnknown(data['card_shadow']!, _cardShadowMeta),
       );
     }
+    if (data.containsKey('hide_category_icon')) {
+      context.handle(
+        _hideCategoryIconMeta,
+        hideCategoryIcon.isAcceptableOrUnknown(
+          data['hide_category_icon']!,
+          _hideCategoryIconMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -949,6 +974,10 @@ class $UserSettingsTable extends UserSettings
         DriftSqlType.bool,
         data['${effectivePrefix}card_shadow'],
       )!,
+      hideCategoryIcon: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hide_category_icon'],
+      )!,
     );
   }
 
@@ -977,6 +1006,10 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   final DateTime? deletedAt;
   final bool isSynced;
   final bool cardShadow;
+
+  /// When true, the transaction history list drops the category icon avatar
+  /// entirely and starts the row at the text. Default false = icon shown.
+  final bool hideCategoryIcon;
   const UserSetting({
     required this.id,
     required this.profileId,
@@ -993,6 +1026,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     this.deletedAt,
     required this.isSynced,
     required this.cardShadow,
+    required this.hideCategoryIcon,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1022,6 +1056,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     }
     map['is_synced'] = Variable<bool>(isSynced);
     map['card_shadow'] = Variable<bool>(cardShadow);
+    map['hide_category_icon'] = Variable<bool>(hideCategoryIcon);
     return map;
   }
 
@@ -1048,6 +1083,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           : Value(deletedAt),
       isSynced: Value(isSynced),
       cardShadow: Value(cardShadow),
+      hideCategoryIcon: Value(hideCategoryIcon),
     );
   }
 
@@ -1076,6 +1112,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
       cardShadow: serializer.fromJson<bool>(json['cardShadow']),
+      hideCategoryIcon: serializer.fromJson<bool>(json['hideCategoryIcon']),
     );
   }
   @override
@@ -1099,6 +1136,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'isSynced': serializer.toJson<bool>(isSynced),
       'cardShadow': serializer.toJson<bool>(cardShadow),
+      'hideCategoryIcon': serializer.toJson<bool>(hideCategoryIcon),
     };
   }
 
@@ -1118,6 +1156,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     Value<DateTime?> deletedAt = const Value.absent(),
     bool? isSynced,
     bool? cardShadow,
+    bool? hideCategoryIcon,
   }) => UserSetting(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -1134,6 +1173,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     isSynced: isSynced ?? this.isSynced,
     cardShadow: cardShadow ?? this.cardShadow,
+    hideCategoryIcon: hideCategoryIcon ?? this.hideCategoryIcon,
   );
   UserSetting copyWithCompanion(UserSettingsCompanion data) {
     return UserSetting(
@@ -1166,6 +1206,9 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       cardShadow: data.cardShadow.present
           ? data.cardShadow.value
           : this.cardShadow,
+      hideCategoryIcon: data.hideCategoryIcon.present
+          ? data.hideCategoryIcon.value
+          : this.hideCategoryIcon,
     );
   }
 
@@ -1186,7 +1229,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced, ')
-          ..write('cardShadow: $cardShadow')
+          ..write('cardShadow: $cardShadow, ')
+          ..write('hideCategoryIcon: $hideCategoryIcon')
           ..write(')'))
         .toString();
   }
@@ -1208,6 +1252,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     deletedAt,
     isSynced,
     cardShadow,
+    hideCategoryIcon,
   );
   @override
   bool operator ==(Object other) =>
@@ -1227,7 +1272,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.isSynced == this.isSynced &&
-          other.cardShadow == this.cardShadow);
+          other.cardShadow == this.cardShadow &&
+          other.hideCategoryIcon == this.hideCategoryIcon);
 }
 
 class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
@@ -1246,6 +1292,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
   final Value<DateTime?> deletedAt;
   final Value<bool> isSynced;
   final Value<bool> cardShadow;
+  final Value<bool> hideCategoryIcon;
   const UserSettingsCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -1262,6 +1309,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.cardShadow = const Value.absent(),
+    this.hideCategoryIcon = const Value.absent(),
   });
   UserSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1279,6 +1327,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.deletedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.cardShadow = const Value.absent(),
+    this.hideCategoryIcon = const Value.absent(),
   }) : profileId = Value(profileId);
   static Insertable<UserSetting> custom({
     Expression<int>? id,
@@ -1296,6 +1345,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Expression<DateTime>? deletedAt,
     Expression<bool>? isSynced,
     Expression<bool>? cardShadow,
+    Expression<bool>? hideCategoryIcon,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1314,6 +1364,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (isSynced != null) 'is_synced': isSynced,
       if (cardShadow != null) 'card_shadow': cardShadow,
+      if (hideCategoryIcon != null) 'hide_category_icon': hideCategoryIcon,
     });
   }
 
@@ -1333,6 +1384,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Value<DateTime?>? deletedAt,
     Value<bool>? isSynced,
     Value<bool>? cardShadow,
+    Value<bool>? hideCategoryIcon,
   }) {
     return UserSettingsCompanion(
       id: id ?? this.id,
@@ -1350,6 +1402,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       deletedAt: deletedAt ?? this.deletedAt,
       isSynced: isSynced ?? this.isSynced,
       cardShadow: cardShadow ?? this.cardShadow,
+      hideCategoryIcon: hideCategoryIcon ?? this.hideCategoryIcon,
     );
   }
 
@@ -1405,6 +1458,9 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     if (cardShadow.present) {
       map['card_shadow'] = Variable<bool>(cardShadow.value);
     }
+    if (hideCategoryIcon.present) {
+      map['hide_category_icon'] = Variable<bool>(hideCategoryIcon.value);
+    }
     return map;
   }
 
@@ -1425,7 +1481,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('isSynced: $isSynced, ')
-          ..write('cardShadow: $cardShadow')
+          ..write('cardShadow: $cardShadow, ')
+          ..write('hideCategoryIcon: $hideCategoryIcon')
           ..write(')'))
         .toString();
   }
@@ -4126,6 +4183,1027 @@ class RecurringCompanion extends UpdateCompanion<RecurringData> {
   }
 }
 
+class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DebtsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DebtType, int> type =
+      GeneratedColumn<int>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<DebtType>($DebtsTable.$convertertype);
+  static const VerificationMeta _personNameMeta = const VerificationMeta(
+    'personName',
+  );
+  @override
+  late final GeneratedColumn<String> personName = GeneratedColumn<String>(
+    'person_name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paidAmountMeta = const VerificationMeta(
+    'paidAmount',
+  );
+  @override
+  late final GeneratedColumn<double> paidAmount = GeneratedColumn<double>(
+    'paid_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _creationAccountIdMeta = const VerificationMeta(
+    'creationAccountId',
+  );
+  @override
+  late final GeneratedColumn<int> creationAccountId = GeneratedColumn<int>(
+    'creation_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Currency, int> currency =
+      GeneratedColumn<int>(
+        'currency',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<Currency>($DebtsTable.$convertercurrency);
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isSettledMeta = const VerificationMeta(
+    'isSettled',
+  );
+  @override
+  late final GeneratedColumn<bool> isSettled = GeneratedColumn<bool>(
+    'is_settled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_settled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _settledDateMeta = const VerificationMeta(
+    'settledDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> settledDate = GeneratedColumn<DateTime>(
+    'settled_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _settledAccountIdMeta = const VerificationMeta(
+    'settledAccountId',
+  );
+  @override
+  late final GeneratedColumn<int> settledAccountId = GeneratedColumn<int>(
+    'settled_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isSyncedMeta = const VerificationMeta(
+    'isSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
+    'is_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    type,
+    personName,
+    amount,
+    paidAmount,
+    creationAccountId,
+    currency,
+    dueDate,
+    note,
+    isSettled,
+    settledDate,
+    settledAccountId,
+    createdAt,
+    updatedAt,
+    remoteId,
+    deletedAt,
+    isSynced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'debts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Debt> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('person_name')) {
+      context.handle(
+        _personNameMeta,
+        personName.isAcceptableOrUnknown(data['person_name']!, _personNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personNameMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('paid_amount')) {
+      context.handle(
+        _paidAmountMeta,
+        paidAmount.isAcceptableOrUnknown(data['paid_amount']!, _paidAmountMeta),
+      );
+    }
+    if (data.containsKey('creation_account_id')) {
+      context.handle(
+        _creationAccountIdMeta,
+        creationAccountId.isAcceptableOrUnknown(
+          data['creation_account_id']!,
+          _creationAccountIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('is_settled')) {
+      context.handle(
+        _isSettledMeta,
+        isSettled.isAcceptableOrUnknown(data['is_settled']!, _isSettledMeta),
+      );
+    }
+    if (data.containsKey('settled_date')) {
+      context.handle(
+        _settledDateMeta,
+        settledDate.isAcceptableOrUnknown(
+          data['settled_date']!,
+          _settledDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('settled_account_id')) {
+      context.handle(
+        _settledAccountIdMeta,
+        settledAccountId.isAcceptableOrUnknown(
+          data['settled_account_id']!,
+          _settledAccountIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('is_synced')) {
+      context.handle(
+        _isSyncedMeta,
+        isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Debt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Debt(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      type: $DebtsTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+      personName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}person_name'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount'],
+      )!,
+      paidAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}paid_amount'],
+      )!,
+      creationAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}creation_account_id'],
+      ),
+      currency: $DebtsTable.$convertercurrency.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}currency'],
+        )!,
+      ),
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      isSettled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_settled'],
+      )!,
+      settledDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}settled_date'],
+      ),
+      settledAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}settled_account_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      isSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_synced'],
+      )!,
+    );
+  }
+
+  @override
+  $DebtsTable createAlias(String alias) {
+    return $DebtsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<DebtType, int, int> $convertertype =
+      const EnumIndexConverter<DebtType>(DebtType.values);
+  static JsonTypeConverter2<Currency, int, int> $convertercurrency =
+      const EnumIndexConverter<Currency>(Currency.values);
+}
+
+class Debt extends DataClass implements Insertable<Debt> {
+  final int id;
+  final int profileId;
+  final DebtType type;
+  final String personName;
+  final double amount;
+  final double paidAmount;
+  final int? creationAccountId;
+  final Currency currency;
+  final DateTime? dueDate;
+  final String? note;
+  final bool isSettled;
+  final DateTime? settledDate;
+  final int? settledAccountId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? remoteId;
+  final DateTime? deletedAt;
+  final bool isSynced;
+  const Debt({
+    required this.id,
+    required this.profileId,
+    required this.type,
+    required this.personName,
+    required this.amount,
+    required this.paidAmount,
+    this.creationAccountId,
+    required this.currency,
+    this.dueDate,
+    this.note,
+    required this.isSettled,
+    this.settledDate,
+    this.settledAccountId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.remoteId,
+    this.deletedAt,
+    required this.isSynced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<int>(profileId);
+    {
+      map['type'] = Variable<int>($DebtsTable.$convertertype.toSql(type));
+    }
+    map['person_name'] = Variable<String>(personName);
+    map['amount'] = Variable<double>(amount);
+    map['paid_amount'] = Variable<double>(paidAmount);
+    if (!nullToAbsent || creationAccountId != null) {
+      map['creation_account_id'] = Variable<int>(creationAccountId);
+    }
+    {
+      map['currency'] = Variable<int>(
+        $DebtsTable.$convertercurrency.toSql(currency),
+      );
+    }
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['is_settled'] = Variable<bool>(isSettled);
+    if (!nullToAbsent || settledDate != null) {
+      map['settled_date'] = Variable<DateTime>(settledDate);
+    }
+    if (!nullToAbsent || settledAccountId != null) {
+      map['settled_account_id'] = Variable<int>(settledAccountId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['is_synced'] = Variable<bool>(isSynced);
+    return map;
+  }
+
+  DebtsCompanion toCompanion(bool nullToAbsent) {
+    return DebtsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      type: Value(type),
+      personName: Value(personName),
+      amount: Value(amount),
+      paidAmount: Value(paidAmount),
+      creationAccountId: creationAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creationAccountId),
+      currency: Value(currency),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      isSettled: Value(isSettled),
+      settledDate: settledDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settledDate),
+      settledAccountId: settledAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settledAccountId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      isSynced: Value(isSynced),
+    );
+  }
+
+  factory Debt.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Debt(
+      id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      type: $DebtsTable.$convertertype.fromJson(
+        serializer.fromJson<int>(json['type']),
+      ),
+      personName: serializer.fromJson<String>(json['personName']),
+      amount: serializer.fromJson<double>(json['amount']),
+      paidAmount: serializer.fromJson<double>(json['paidAmount']),
+      creationAccountId: serializer.fromJson<int?>(json['creationAccountId']),
+      currency: $DebtsTable.$convertercurrency.fromJson(
+        serializer.fromJson<int>(json['currency']),
+      ),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
+      note: serializer.fromJson<String?>(json['note']),
+      isSettled: serializer.fromJson<bool>(json['isSettled']),
+      settledDate: serializer.fromJson<DateTime?>(json['settledDate']),
+      settledAccountId: serializer.fromJson<int?>(json['settledAccountId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      isSynced: serializer.fromJson<bool>(json['isSynced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<int>(profileId),
+      'type': serializer.toJson<int>($DebtsTable.$convertertype.toJson(type)),
+      'personName': serializer.toJson<String>(personName),
+      'amount': serializer.toJson<double>(amount),
+      'paidAmount': serializer.toJson<double>(paidAmount),
+      'creationAccountId': serializer.toJson<int?>(creationAccountId),
+      'currency': serializer.toJson<int>(
+        $DebtsTable.$convertercurrency.toJson(currency),
+      ),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
+      'note': serializer.toJson<String?>(note),
+      'isSettled': serializer.toJson<bool>(isSettled),
+      'settledDate': serializer.toJson<DateTime?>(settledDate),
+      'settledAccountId': serializer.toJson<int?>(settledAccountId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'isSynced': serializer.toJson<bool>(isSynced),
+    };
+  }
+
+  Debt copyWith({
+    int? id,
+    int? profileId,
+    DebtType? type,
+    String? personName,
+    double? amount,
+    double? paidAmount,
+    Value<int?> creationAccountId = const Value.absent(),
+    Currency? currency,
+    Value<DateTime?> dueDate = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    bool? isSettled,
+    Value<DateTime?> settledDate = const Value.absent(),
+    Value<int?> settledAccountId = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    bool? isSynced,
+  }) => Debt(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    type: type ?? this.type,
+    personName: personName ?? this.personName,
+    amount: amount ?? this.amount,
+    paidAmount: paidAmount ?? this.paidAmount,
+    creationAccountId: creationAccountId.present
+        ? creationAccountId.value
+        : this.creationAccountId,
+    currency: currency ?? this.currency,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
+    note: note.present ? note.value : this.note,
+    isSettled: isSettled ?? this.isSettled,
+    settledDate: settledDate.present ? settledDate.value : this.settledDate,
+    settledAccountId: settledAccountId.present
+        ? settledAccountId.value
+        : this.settledAccountId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    isSynced: isSynced ?? this.isSynced,
+  );
+  Debt copyWithCompanion(DebtsCompanion data) {
+    return Debt(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      type: data.type.present ? data.type.value : this.type,
+      personName: data.personName.present
+          ? data.personName.value
+          : this.personName,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      paidAmount: data.paidAmount.present
+          ? data.paidAmount.value
+          : this.paidAmount,
+      creationAccountId: data.creationAccountId.present
+          ? data.creationAccountId.value
+          : this.creationAccountId,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      note: data.note.present ? data.note.value : this.note,
+      isSettled: data.isSettled.present ? data.isSettled.value : this.isSettled,
+      settledDate: data.settledDate.present
+          ? data.settledDate.value
+          : this.settledDate,
+      settledAccountId: data.settledAccountId.present
+          ? data.settledAccountId.value
+          : this.settledAccountId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Debt(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('type: $type, ')
+          ..write('personName: $personName, ')
+          ..write('amount: $amount, ')
+          ..write('paidAmount: $paidAmount, ')
+          ..write('creationAccountId: $creationAccountId, ')
+          ..write('currency: $currency, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('note: $note, ')
+          ..write('isSettled: $isSettled, ')
+          ..write('settledDate: $settledDate, ')
+          ..write('settledAccountId: $settledAccountId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    type,
+    personName,
+    amount,
+    paidAmount,
+    creationAccountId,
+    currency,
+    dueDate,
+    note,
+    isSettled,
+    settledDate,
+    settledAccountId,
+    createdAt,
+    updatedAt,
+    remoteId,
+    deletedAt,
+    isSynced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Debt &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.type == this.type &&
+          other.personName == this.personName &&
+          other.amount == this.amount &&
+          other.paidAmount == this.paidAmount &&
+          other.creationAccountId == this.creationAccountId &&
+          other.currency == this.currency &&
+          other.dueDate == this.dueDate &&
+          other.note == this.note &&
+          other.isSettled == this.isSettled &&
+          other.settledDate == this.settledDate &&
+          other.settledAccountId == this.settledAccountId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.remoteId == this.remoteId &&
+          other.deletedAt == this.deletedAt &&
+          other.isSynced == this.isSynced);
+}
+
+class DebtsCompanion extends UpdateCompanion<Debt> {
+  final Value<int> id;
+  final Value<int> profileId;
+  final Value<DebtType> type;
+  final Value<String> personName;
+  final Value<double> amount;
+  final Value<double> paidAmount;
+  final Value<int?> creationAccountId;
+  final Value<Currency> currency;
+  final Value<DateTime?> dueDate;
+  final Value<String?> note;
+  final Value<bool> isSettled;
+  final Value<DateTime?> settledDate;
+  final Value<int?> settledAccountId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> remoteId;
+  final Value<DateTime?> deletedAt;
+  final Value<bool> isSynced;
+  const DebtsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.personName = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.paidAmount = const Value.absent(),
+    this.creationAccountId = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isSettled = const Value.absent(),
+    this.settledDate = const Value.absent(),
+    this.settledAccountId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  });
+  DebtsCompanion.insert({
+    this.id = const Value.absent(),
+    required int profileId,
+    required DebtType type,
+    required String personName,
+    required double amount,
+    this.paidAmount = const Value.absent(),
+    this.creationAccountId = const Value.absent(),
+    required Currency currency,
+    this.dueDate = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isSettled = const Value.absent(),
+    this.settledDate = const Value.absent(),
+    this.settledAccountId = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  }) : profileId = Value(profileId),
+       type = Value(type),
+       personName = Value(personName),
+       amount = Value(amount),
+       currency = Value(currency),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Debt> custom({
+    Expression<int>? id,
+    Expression<int>? profileId,
+    Expression<int>? type,
+    Expression<String>? personName,
+    Expression<double>? amount,
+    Expression<double>? paidAmount,
+    Expression<int>? creationAccountId,
+    Expression<int>? currency,
+    Expression<DateTime>? dueDate,
+    Expression<String>? note,
+    Expression<bool>? isSettled,
+    Expression<DateTime>? settledDate,
+    Expression<int>? settledAccountId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? remoteId,
+    Expression<DateTime>? deletedAt,
+    Expression<bool>? isSynced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (type != null) 'type': type,
+      if (personName != null) 'person_name': personName,
+      if (amount != null) 'amount': amount,
+      if (paidAmount != null) 'paid_amount': paidAmount,
+      if (creationAccountId != null) 'creation_account_id': creationAccountId,
+      if (currency != null) 'currency': currency,
+      if (dueDate != null) 'due_date': dueDate,
+      if (note != null) 'note': note,
+      if (isSettled != null) 'is_settled': isSettled,
+      if (settledDate != null) 'settled_date': settledDate,
+      if (settledAccountId != null) 'settled_account_id': settledAccountId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (isSynced != null) 'is_synced': isSynced,
+    });
+  }
+
+  DebtsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? profileId,
+    Value<DebtType>? type,
+    Value<String>? personName,
+    Value<double>? amount,
+    Value<double>? paidAmount,
+    Value<int?>? creationAccountId,
+    Value<Currency>? currency,
+    Value<DateTime?>? dueDate,
+    Value<String?>? note,
+    Value<bool>? isSettled,
+    Value<DateTime?>? settledDate,
+    Value<int?>? settledAccountId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? remoteId,
+    Value<DateTime?>? deletedAt,
+    Value<bool>? isSynced,
+  }) {
+    return DebtsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      type: type ?? this.type,
+      personName: personName ?? this.personName,
+      amount: amount ?? this.amount,
+      paidAmount: paidAmount ?? this.paidAmount,
+      creationAccountId: creationAccountId ?? this.creationAccountId,
+      currency: currency ?? this.currency,
+      dueDate: dueDate ?? this.dueDate,
+      note: note ?? this.note,
+      isSettled: isSettled ?? this.isSettled,
+      settledDate: settledDate ?? this.settledDate,
+      settledAccountId: settledAccountId ?? this.settledAccountId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      remoteId: remoteId ?? this.remoteId,
+      deletedAt: deletedAt ?? this.deletedAt,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<int>($DebtsTable.$convertertype.toSql(type.value));
+    }
+    if (personName.present) {
+      map['person_name'] = Variable<String>(personName.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (paidAmount.present) {
+      map['paid_amount'] = Variable<double>(paidAmount.value);
+    }
+    if (creationAccountId.present) {
+      map['creation_account_id'] = Variable<int>(creationAccountId.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<int>(
+        $DebtsTable.$convertercurrency.toSql(currency.value),
+      );
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (isSettled.present) {
+      map['is_settled'] = Variable<bool>(isSettled.value);
+    }
+    if (settledDate.present) {
+      map['settled_date'] = Variable<DateTime>(settledDate.value);
+    }
+    if (settledAccountId.present) {
+      map['settled_account_id'] = Variable<int>(settledAccountId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (isSynced.present) {
+      map['is_synced'] = Variable<bool>(isSynced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DebtsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('type: $type, ')
+          ..write('personName: $personName, ')
+          ..write('amount: $amount, ')
+          ..write('paidAmount: $paidAmount, ')
+          ..write('creationAccountId: $creationAccountId, ')
+          ..write('currency: $currency, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('note: $note, ')
+          ..write('isSettled: $isSettled, ')
+          ..write('settledDate: $settledDate, ')
+          ..write('settledAccountId: $settledAccountId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTable extends Transactions
     with TableInfo<$TransactionsTable, Transaction> {
   @override
@@ -4283,6 +5361,18 @@ class $TransactionsTable extends Transactions
       'REFERENCES recurring (id)',
     ),
   );
+  static const VerificationMeta _debtIdMeta = const VerificationMeta('debtId');
+  @override
+  late final GeneratedColumn<int> debtId = GeneratedColumn<int>(
+    'debt_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES debts (id)',
+    ),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4357,6 +5447,7 @@ class $TransactionsTable extends Transactions
     title,
     note,
     recurringId,
+    debtId,
     createdAt,
     remoteId,
     updatedAt,
@@ -4464,6 +5555,12 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('debt_id')) {
+      context.handle(
+        _debtIdMeta,
+        debtId.isAcceptableOrUnknown(data['debt_id']!, _debtIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4559,6 +5656,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}recurring_id'],
       ),
+      debtId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}debt_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -4605,6 +5706,10 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? title;
   final String? note;
   final int? recurringId;
+
+  /// Links this transaction to the debt it belongs to (creation or payment).
+  /// Null for non-debt transactions and legacy rows that could not be matched.
+  final int? debtId;
   final DateTime createdAt;
   final String? remoteId;
   final DateTime? updatedAt;
@@ -4624,6 +5729,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.title,
     this.note,
     this.recurringId,
+    this.debtId,
     required this.createdAt,
     this.remoteId,
     this.updatedAt,
@@ -4663,6 +5769,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || recurringId != null) {
       map['recurring_id'] = Variable<int>(recurringId);
+    }
+    if (!nullToAbsent || debtId != null) {
+      map['debt_id'] = Variable<int>(debtId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || remoteId != null) {
@@ -4705,6 +5814,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringId: recurringId == null && nullToAbsent
           ? const Value.absent()
           : Value(recurringId),
+      debtId: debtId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(debtId),
       createdAt: Value(createdAt),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
@@ -4742,6 +5854,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       title: serializer.fromJson<String?>(json['title']),
       note: serializer.fromJson<String?>(json['note']),
       recurringId: serializer.fromJson<int?>(json['recurringId']),
+      debtId: serializer.fromJson<int?>(json['debtId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
@@ -4768,6 +5881,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'title': serializer.toJson<String?>(title),
       'note': serializer.toJson<String?>(note),
       'recurringId': serializer.toJson<int?>(recurringId),
+      'debtId': serializer.toJson<int?>(debtId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'remoteId': serializer.toJson<String?>(remoteId),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
@@ -4790,6 +5904,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> title = const Value.absent(),
     Value<String?> note = const Value.absent(),
     Value<int?> recurringId = const Value.absent(),
+    Value<int?> debtId = const Value.absent(),
     DateTime? createdAt,
     Value<String?> remoteId = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
@@ -4811,6 +5926,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     title: title.present ? title.value : this.title,
     note: note.present ? note.value : this.note,
     recurringId: recurringId.present ? recurringId.value : this.recurringId,
+    debtId: debtId.present ? debtId.value : this.debtId,
     createdAt: createdAt ?? this.createdAt,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
@@ -4842,6 +5958,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringId: data.recurringId.present
           ? data.recurringId.value
           : this.recurringId,
+      debtId: data.debtId.present ? data.debtId.value : this.debtId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -4866,6 +5983,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('title: $title, ')
           ..write('note: $note, ')
           ..write('recurringId: $recurringId, ')
+          ..write('debtId: $debtId, ')
           ..write('createdAt: $createdAt, ')
           ..write('remoteId: $remoteId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4890,6 +6008,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     title,
     note,
     recurringId,
+    debtId,
     createdAt,
     remoteId,
     updatedAt,
@@ -4913,6 +6032,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.title == this.title &&
           other.note == this.note &&
           other.recurringId == this.recurringId &&
+          other.debtId == this.debtId &&
           other.createdAt == this.createdAt &&
           other.remoteId == this.remoteId &&
           other.updatedAt == this.updatedAt &&
@@ -4934,6 +6054,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> title;
   final Value<String?> note;
   final Value<int?> recurringId;
+  final Value<int?> debtId;
   final Value<DateTime> createdAt;
   final Value<String?> remoteId;
   final Value<DateTime?> updatedAt;
@@ -4953,6 +6074,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.title = const Value.absent(),
     this.note = const Value.absent(),
     this.recurringId = const Value.absent(),
+    this.debtId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4973,6 +6095,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.title = const Value.absent(),
     this.note = const Value.absent(),
     this.recurringId = const Value.absent(),
+    this.debtId = const Value.absent(),
     required DateTime createdAt,
     this.remoteId = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4998,6 +6121,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? title,
     Expression<String>? note,
     Expression<int>? recurringId,
+    Expression<int>? debtId,
     Expression<DateTime>? createdAt,
     Expression<String>? remoteId,
     Expression<DateTime>? updatedAt,
@@ -5018,6 +6142,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (title != null) 'title': title,
       if (note != null) 'note': note,
       if (recurringId != null) 'recurring_id': recurringId,
+      if (debtId != null) 'debt_id': debtId,
       if (createdAt != null) 'created_at': createdAt,
       if (remoteId != null) 'remote_id': remoteId,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -5040,6 +6165,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? title,
     Value<String?>? note,
     Value<int?>? recurringId,
+    Value<int?>? debtId,
     Value<DateTime>? createdAt,
     Value<String?>? remoteId,
     Value<DateTime?>? updatedAt,
@@ -5060,6 +6186,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       title: title ?? this.title,
       note: note ?? this.note,
       recurringId: recurringId ?? this.recurringId,
+      debtId: debtId ?? this.debtId,
       createdAt: createdAt ?? this.createdAt,
       remoteId: remoteId ?? this.remoteId,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5112,6 +6239,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (recurringId.present) {
       map['recurring_id'] = Variable<int>(recurringId.value);
     }
+    if (debtId.present) {
+      map['debt_id'] = Variable<int>(debtId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5146,6 +6276,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('title: $title, ')
           ..write('note: $note, ')
           ..write('recurringId: $recurringId, ')
+          ..write('debtId: $debtId, ')
           ..write('createdAt: $createdAt, ')
           ..write('remoteId: $remoteId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -9702,1027 +10833,6 @@ class GoalAccountsCompanion extends UpdateCompanion<GoalAccount> {
   }
 }
 
-class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $DebtsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _profileIdMeta = const VerificationMeta(
-    'profileId',
-  );
-  @override
-  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
-    'profile_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES profiles (id)',
-    ),
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<DebtType, int> type =
-      GeneratedColumn<int>(
-        'type',
-        aliasedName,
-        false,
-        type: DriftSqlType.int,
-        requiredDuringInsert: true,
-      ).withConverter<DebtType>($DebtsTable.$convertertype);
-  static const VerificationMeta _personNameMeta = const VerificationMeta(
-    'personName',
-  );
-  @override
-  late final GeneratedColumn<String> personName = GeneratedColumn<String>(
-    'person_name',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 100,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
-  @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-    'amount',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _paidAmountMeta = const VerificationMeta(
-    'paidAmount',
-  );
-  @override
-  late final GeneratedColumn<double> paidAmount = GeneratedColumn<double>(
-    'paid_amount',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0.0),
-  );
-  static const VerificationMeta _creationAccountIdMeta = const VerificationMeta(
-    'creationAccountId',
-  );
-  @override
-  late final GeneratedColumn<int> creationAccountId = GeneratedColumn<int>(
-    'creation_account_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES accounts (id)',
-    ),
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<Currency, int> currency =
-      GeneratedColumn<int>(
-        'currency',
-        aliasedName,
-        false,
-        type: DriftSqlType.int,
-        requiredDuringInsert: true,
-      ).withConverter<Currency>($DebtsTable.$convertercurrency);
-  static const VerificationMeta _dueDateMeta = const VerificationMeta(
-    'dueDate',
-  );
-  @override
-  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
-    'due_date',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _noteMeta = const VerificationMeta('note');
-  @override
-  late final GeneratedColumn<String> note = GeneratedColumn<String>(
-    'note',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isSettledMeta = const VerificationMeta(
-    'isSettled',
-  );
-  @override
-  late final GeneratedColumn<bool> isSettled = GeneratedColumn<bool>(
-    'is_settled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_settled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _settledDateMeta = const VerificationMeta(
-    'settledDate',
-  );
-  @override
-  late final GeneratedColumn<DateTime> settledDate = GeneratedColumn<DateTime>(
-    'settled_date',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _settledAccountIdMeta = const VerificationMeta(
-    'settledAccountId',
-  );
-  @override
-  late final GeneratedColumn<int> settledAccountId = GeneratedColumn<int>(
-    'settled_account_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES accounts (id)',
-    ),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
-    'remoteId',
-  );
-  @override
-  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
-    'remote_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isSyncedMeta = const VerificationMeta(
-    'isSynced',
-  );
-  @override
-  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
-    'is_synced',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_synced" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    profileId,
-    type,
-    personName,
-    amount,
-    paidAmount,
-    creationAccountId,
-    currency,
-    dueDate,
-    note,
-    isSettled,
-    settledDate,
-    settledAccountId,
-    createdAt,
-    updatedAt,
-    remoteId,
-    deletedAt,
-    isSynced,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'debts';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Debt> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('profile_id')) {
-      context.handle(
-        _profileIdMeta,
-        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_profileIdMeta);
-    }
-    if (data.containsKey('person_name')) {
-      context.handle(
-        _personNameMeta,
-        personName.isAcceptableOrUnknown(data['person_name']!, _personNameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_personNameMeta);
-    }
-    if (data.containsKey('amount')) {
-      context.handle(
-        _amountMeta,
-        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_amountMeta);
-    }
-    if (data.containsKey('paid_amount')) {
-      context.handle(
-        _paidAmountMeta,
-        paidAmount.isAcceptableOrUnknown(data['paid_amount']!, _paidAmountMeta),
-      );
-    }
-    if (data.containsKey('creation_account_id')) {
-      context.handle(
-        _creationAccountIdMeta,
-        creationAccountId.isAcceptableOrUnknown(
-          data['creation_account_id']!,
-          _creationAccountIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('due_date')) {
-      context.handle(
-        _dueDateMeta,
-        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
-      );
-    }
-    if (data.containsKey('note')) {
-      context.handle(
-        _noteMeta,
-        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
-      );
-    }
-    if (data.containsKey('is_settled')) {
-      context.handle(
-        _isSettledMeta,
-        isSettled.isAcceptableOrUnknown(data['is_settled']!, _isSettledMeta),
-      );
-    }
-    if (data.containsKey('settled_date')) {
-      context.handle(
-        _settledDateMeta,
-        settledDate.isAcceptableOrUnknown(
-          data['settled_date']!,
-          _settledDateMeta,
-        ),
-      );
-    }
-    if (data.containsKey('settled_account_id')) {
-      context.handle(
-        _settledAccountIdMeta,
-        settledAccountId.isAcceptableOrUnknown(
-          data['settled_account_id']!,
-          _settledAccountIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
-    }
-    if (data.containsKey('remote_id')) {
-      context.handle(
-        _remoteIdMeta,
-        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
-      );
-    }
-    if (data.containsKey('deleted_at')) {
-      context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
-      );
-    }
-    if (data.containsKey('is_synced')) {
-      context.handle(
-        _isSyncedMeta,
-        isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Debt map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Debt(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      profileId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}profile_id'],
-      )!,
-      type: $DebtsTable.$convertertype.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
-          data['${effectivePrefix}type'],
-        )!,
-      ),
-      personName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}person_name'],
-      )!,
-      amount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}amount'],
-      )!,
-      paidAmount: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}paid_amount'],
-      )!,
-      creationAccountId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}creation_account_id'],
-      ),
-      currency: $DebtsTable.$convertercurrency.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
-          data['${effectivePrefix}currency'],
-        )!,
-      ),
-      dueDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}due_date'],
-      ),
-      note: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}note'],
-      ),
-      isSettled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_settled'],
-      )!,
-      settledDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}settled_date'],
-      ),
-      settledAccountId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}settled_account_id'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      remoteId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}remote_id'],
-      ),
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
-      isSynced: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_synced'],
-      )!,
-    );
-  }
-
-  @override
-  $DebtsTable createAlias(String alias) {
-    return $DebtsTable(attachedDatabase, alias);
-  }
-
-  static JsonTypeConverter2<DebtType, int, int> $convertertype =
-      const EnumIndexConverter<DebtType>(DebtType.values);
-  static JsonTypeConverter2<Currency, int, int> $convertercurrency =
-      const EnumIndexConverter<Currency>(Currency.values);
-}
-
-class Debt extends DataClass implements Insertable<Debt> {
-  final int id;
-  final int profileId;
-  final DebtType type;
-  final String personName;
-  final double amount;
-  final double paidAmount;
-  final int? creationAccountId;
-  final Currency currency;
-  final DateTime? dueDate;
-  final String? note;
-  final bool isSettled;
-  final DateTime? settledDate;
-  final int? settledAccountId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? remoteId;
-  final DateTime? deletedAt;
-  final bool isSynced;
-  const Debt({
-    required this.id,
-    required this.profileId,
-    required this.type,
-    required this.personName,
-    required this.amount,
-    required this.paidAmount,
-    this.creationAccountId,
-    required this.currency,
-    this.dueDate,
-    this.note,
-    required this.isSettled,
-    this.settledDate,
-    this.settledAccountId,
-    required this.createdAt,
-    required this.updatedAt,
-    this.remoteId,
-    this.deletedAt,
-    required this.isSynced,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['profile_id'] = Variable<int>(profileId);
-    {
-      map['type'] = Variable<int>($DebtsTable.$convertertype.toSql(type));
-    }
-    map['person_name'] = Variable<String>(personName);
-    map['amount'] = Variable<double>(amount);
-    map['paid_amount'] = Variable<double>(paidAmount);
-    if (!nullToAbsent || creationAccountId != null) {
-      map['creation_account_id'] = Variable<int>(creationAccountId);
-    }
-    {
-      map['currency'] = Variable<int>(
-        $DebtsTable.$convertercurrency.toSql(currency),
-      );
-    }
-    if (!nullToAbsent || dueDate != null) {
-      map['due_date'] = Variable<DateTime>(dueDate);
-    }
-    if (!nullToAbsent || note != null) {
-      map['note'] = Variable<String>(note);
-    }
-    map['is_settled'] = Variable<bool>(isSettled);
-    if (!nullToAbsent || settledDate != null) {
-      map['settled_date'] = Variable<DateTime>(settledDate);
-    }
-    if (!nullToAbsent || settledAccountId != null) {
-      map['settled_account_id'] = Variable<int>(settledAccountId);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || remoteId != null) {
-      map['remote_id'] = Variable<String>(remoteId);
-    }
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
-    map['is_synced'] = Variable<bool>(isSynced);
-    return map;
-  }
-
-  DebtsCompanion toCompanion(bool nullToAbsent) {
-    return DebtsCompanion(
-      id: Value(id),
-      profileId: Value(profileId),
-      type: Value(type),
-      personName: Value(personName),
-      amount: Value(amount),
-      paidAmount: Value(paidAmount),
-      creationAccountId: creationAccountId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(creationAccountId),
-      currency: Value(currency),
-      dueDate: dueDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(dueDate),
-      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
-      isSettled: Value(isSettled),
-      settledDate: settledDate == null && nullToAbsent
-          ? const Value.absent()
-          : Value(settledDate),
-      settledAccountId: settledAccountId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(settledAccountId),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      remoteId: remoteId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(remoteId),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
-      isSynced: Value(isSynced),
-    );
-  }
-
-  factory Debt.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Debt(
-      id: serializer.fromJson<int>(json['id']),
-      profileId: serializer.fromJson<int>(json['profileId']),
-      type: $DebtsTable.$convertertype.fromJson(
-        serializer.fromJson<int>(json['type']),
-      ),
-      personName: serializer.fromJson<String>(json['personName']),
-      amount: serializer.fromJson<double>(json['amount']),
-      paidAmount: serializer.fromJson<double>(json['paidAmount']),
-      creationAccountId: serializer.fromJson<int?>(json['creationAccountId']),
-      currency: $DebtsTable.$convertercurrency.fromJson(
-        serializer.fromJson<int>(json['currency']),
-      ),
-      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
-      note: serializer.fromJson<String?>(json['note']),
-      isSettled: serializer.fromJson<bool>(json['isSettled']),
-      settledDate: serializer.fromJson<DateTime?>(json['settledDate']),
-      settledAccountId: serializer.fromJson<int?>(json['settledAccountId']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      remoteId: serializer.fromJson<String?>(json['remoteId']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-      isSynced: serializer.fromJson<bool>(json['isSynced']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'profileId': serializer.toJson<int>(profileId),
-      'type': serializer.toJson<int>($DebtsTable.$convertertype.toJson(type)),
-      'personName': serializer.toJson<String>(personName),
-      'amount': serializer.toJson<double>(amount),
-      'paidAmount': serializer.toJson<double>(paidAmount),
-      'creationAccountId': serializer.toJson<int?>(creationAccountId),
-      'currency': serializer.toJson<int>(
-        $DebtsTable.$convertercurrency.toJson(currency),
-      ),
-      'dueDate': serializer.toJson<DateTime?>(dueDate),
-      'note': serializer.toJson<String?>(note),
-      'isSettled': serializer.toJson<bool>(isSettled),
-      'settledDate': serializer.toJson<DateTime?>(settledDate),
-      'settledAccountId': serializer.toJson<int?>(settledAccountId),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'remoteId': serializer.toJson<String?>(remoteId),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-      'isSynced': serializer.toJson<bool>(isSynced),
-    };
-  }
-
-  Debt copyWith({
-    int? id,
-    int? profileId,
-    DebtType? type,
-    String? personName,
-    double? amount,
-    double? paidAmount,
-    Value<int?> creationAccountId = const Value.absent(),
-    Currency? currency,
-    Value<DateTime?> dueDate = const Value.absent(),
-    Value<String?> note = const Value.absent(),
-    bool? isSettled,
-    Value<DateTime?> settledDate = const Value.absent(),
-    Value<int?> settledAccountId = const Value.absent(),
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    Value<String?> remoteId = const Value.absent(),
-    Value<DateTime?> deletedAt = const Value.absent(),
-    bool? isSynced,
-  }) => Debt(
-    id: id ?? this.id,
-    profileId: profileId ?? this.profileId,
-    type: type ?? this.type,
-    personName: personName ?? this.personName,
-    amount: amount ?? this.amount,
-    paidAmount: paidAmount ?? this.paidAmount,
-    creationAccountId: creationAccountId.present
-        ? creationAccountId.value
-        : this.creationAccountId,
-    currency: currency ?? this.currency,
-    dueDate: dueDate.present ? dueDate.value : this.dueDate,
-    note: note.present ? note.value : this.note,
-    isSettled: isSettled ?? this.isSettled,
-    settledDate: settledDate.present ? settledDate.value : this.settledDate,
-    settledAccountId: settledAccountId.present
-        ? settledAccountId.value
-        : this.settledAccountId,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    remoteId: remoteId.present ? remoteId.value : this.remoteId,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-    isSynced: isSynced ?? this.isSynced,
-  );
-  Debt copyWithCompanion(DebtsCompanion data) {
-    return Debt(
-      id: data.id.present ? data.id.value : this.id,
-      profileId: data.profileId.present ? data.profileId.value : this.profileId,
-      type: data.type.present ? data.type.value : this.type,
-      personName: data.personName.present
-          ? data.personName.value
-          : this.personName,
-      amount: data.amount.present ? data.amount.value : this.amount,
-      paidAmount: data.paidAmount.present
-          ? data.paidAmount.value
-          : this.paidAmount,
-      creationAccountId: data.creationAccountId.present
-          ? data.creationAccountId.value
-          : this.creationAccountId,
-      currency: data.currency.present ? data.currency.value : this.currency,
-      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
-      note: data.note.present ? data.note.value : this.note,
-      isSettled: data.isSettled.present ? data.isSettled.value : this.isSettled,
-      settledDate: data.settledDate.present
-          ? data.settledDate.value
-          : this.settledDate,
-      settledAccountId: data.settledAccountId.present
-          ? data.settledAccountId.value
-          : this.settledAccountId,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Debt(')
-          ..write('id: $id, ')
-          ..write('profileId: $profileId, ')
-          ..write('type: $type, ')
-          ..write('personName: $personName, ')
-          ..write('amount: $amount, ')
-          ..write('paidAmount: $paidAmount, ')
-          ..write('creationAccountId: $creationAccountId, ')
-          ..write('currency: $currency, ')
-          ..write('dueDate: $dueDate, ')
-          ..write('note: $note, ')
-          ..write('isSettled: $isSettled, ')
-          ..write('settledDate: $settledDate, ')
-          ..write('settledAccountId: $settledAccountId, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('remoteId: $remoteId, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('isSynced: $isSynced')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    profileId,
-    type,
-    personName,
-    amount,
-    paidAmount,
-    creationAccountId,
-    currency,
-    dueDate,
-    note,
-    isSettled,
-    settledDate,
-    settledAccountId,
-    createdAt,
-    updatedAt,
-    remoteId,
-    deletedAt,
-    isSynced,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Debt &&
-          other.id == this.id &&
-          other.profileId == this.profileId &&
-          other.type == this.type &&
-          other.personName == this.personName &&
-          other.amount == this.amount &&
-          other.paidAmount == this.paidAmount &&
-          other.creationAccountId == this.creationAccountId &&
-          other.currency == this.currency &&
-          other.dueDate == this.dueDate &&
-          other.note == this.note &&
-          other.isSettled == this.isSettled &&
-          other.settledDate == this.settledDate &&
-          other.settledAccountId == this.settledAccountId &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.remoteId == this.remoteId &&
-          other.deletedAt == this.deletedAt &&
-          other.isSynced == this.isSynced);
-}
-
-class DebtsCompanion extends UpdateCompanion<Debt> {
-  final Value<int> id;
-  final Value<int> profileId;
-  final Value<DebtType> type;
-  final Value<String> personName;
-  final Value<double> amount;
-  final Value<double> paidAmount;
-  final Value<int?> creationAccountId;
-  final Value<Currency> currency;
-  final Value<DateTime?> dueDate;
-  final Value<String?> note;
-  final Value<bool> isSettled;
-  final Value<DateTime?> settledDate;
-  final Value<int?> settledAccountId;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String?> remoteId;
-  final Value<DateTime?> deletedAt;
-  final Value<bool> isSynced;
-  const DebtsCompanion({
-    this.id = const Value.absent(),
-    this.profileId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.personName = const Value.absent(),
-    this.amount = const Value.absent(),
-    this.paidAmount = const Value.absent(),
-    this.creationAccountId = const Value.absent(),
-    this.currency = const Value.absent(),
-    this.dueDate = const Value.absent(),
-    this.note = const Value.absent(),
-    this.isSettled = const Value.absent(),
-    this.settledDate = const Value.absent(),
-    this.settledAccountId = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.remoteId = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.isSynced = const Value.absent(),
-  });
-  DebtsCompanion.insert({
-    this.id = const Value.absent(),
-    required int profileId,
-    required DebtType type,
-    required String personName,
-    required double amount,
-    this.paidAmount = const Value.absent(),
-    this.creationAccountId = const Value.absent(),
-    required Currency currency,
-    this.dueDate = const Value.absent(),
-    this.note = const Value.absent(),
-    this.isSettled = const Value.absent(),
-    this.settledDate = const Value.absent(),
-    this.settledAccountId = const Value.absent(),
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    this.remoteId = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.isSynced = const Value.absent(),
-  }) : profileId = Value(profileId),
-       type = Value(type),
-       personName = Value(personName),
-       amount = Value(amount),
-       currency = Value(currency),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<Debt> custom({
-    Expression<int>? id,
-    Expression<int>? profileId,
-    Expression<int>? type,
-    Expression<String>? personName,
-    Expression<double>? amount,
-    Expression<double>? paidAmount,
-    Expression<int>? creationAccountId,
-    Expression<int>? currency,
-    Expression<DateTime>? dueDate,
-    Expression<String>? note,
-    Expression<bool>? isSettled,
-    Expression<DateTime>? settledDate,
-    Expression<int>? settledAccountId,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? remoteId,
-    Expression<DateTime>? deletedAt,
-    Expression<bool>? isSynced,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (profileId != null) 'profile_id': profileId,
-      if (type != null) 'type': type,
-      if (personName != null) 'person_name': personName,
-      if (amount != null) 'amount': amount,
-      if (paidAmount != null) 'paid_amount': paidAmount,
-      if (creationAccountId != null) 'creation_account_id': creationAccountId,
-      if (currency != null) 'currency': currency,
-      if (dueDate != null) 'due_date': dueDate,
-      if (note != null) 'note': note,
-      if (isSettled != null) 'is_settled': isSettled,
-      if (settledDate != null) 'settled_date': settledDate,
-      if (settledAccountId != null) 'settled_account_id': settledAccountId,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (remoteId != null) 'remote_id': remoteId,
-      if (deletedAt != null) 'deleted_at': deletedAt,
-      if (isSynced != null) 'is_synced': isSynced,
-    });
-  }
-
-  DebtsCompanion copyWith({
-    Value<int>? id,
-    Value<int>? profileId,
-    Value<DebtType>? type,
-    Value<String>? personName,
-    Value<double>? amount,
-    Value<double>? paidAmount,
-    Value<int?>? creationAccountId,
-    Value<Currency>? currency,
-    Value<DateTime?>? dueDate,
-    Value<String?>? note,
-    Value<bool>? isSettled,
-    Value<DateTime?>? settledDate,
-    Value<int?>? settledAccountId,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String?>? remoteId,
-    Value<DateTime?>? deletedAt,
-    Value<bool>? isSynced,
-  }) {
-    return DebtsCompanion(
-      id: id ?? this.id,
-      profileId: profileId ?? this.profileId,
-      type: type ?? this.type,
-      personName: personName ?? this.personName,
-      amount: amount ?? this.amount,
-      paidAmount: paidAmount ?? this.paidAmount,
-      creationAccountId: creationAccountId ?? this.creationAccountId,
-      currency: currency ?? this.currency,
-      dueDate: dueDate ?? this.dueDate,
-      note: note ?? this.note,
-      isSettled: isSettled ?? this.isSettled,
-      settledDate: settledDate ?? this.settledDate,
-      settledAccountId: settledAccountId ?? this.settledAccountId,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      remoteId: remoteId ?? this.remoteId,
-      deletedAt: deletedAt ?? this.deletedAt,
-      isSynced: isSynced ?? this.isSynced,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (profileId.present) {
-      map['profile_id'] = Variable<int>(profileId.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<int>($DebtsTable.$convertertype.toSql(type.value));
-    }
-    if (personName.present) {
-      map['person_name'] = Variable<String>(personName.value);
-    }
-    if (amount.present) {
-      map['amount'] = Variable<double>(amount.value);
-    }
-    if (paidAmount.present) {
-      map['paid_amount'] = Variable<double>(paidAmount.value);
-    }
-    if (creationAccountId.present) {
-      map['creation_account_id'] = Variable<int>(creationAccountId.value);
-    }
-    if (currency.present) {
-      map['currency'] = Variable<int>(
-        $DebtsTable.$convertercurrency.toSql(currency.value),
-      );
-    }
-    if (dueDate.present) {
-      map['due_date'] = Variable<DateTime>(dueDate.value);
-    }
-    if (note.present) {
-      map['note'] = Variable<String>(note.value);
-    }
-    if (isSettled.present) {
-      map['is_settled'] = Variable<bool>(isSettled.value);
-    }
-    if (settledDate.present) {
-      map['settled_date'] = Variable<DateTime>(settledDate.value);
-    }
-    if (settledAccountId.present) {
-      map['settled_account_id'] = Variable<int>(settledAccountId.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (remoteId.present) {
-      map['remote_id'] = Variable<String>(remoteId.value);
-    }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
-    if (isSynced.present) {
-      map['is_synced'] = Variable<bool>(isSynced.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('DebtsCompanion(')
-          ..write('id: $id, ')
-          ..write('profileId: $profileId, ')
-          ..write('type: $type, ')
-          ..write('personName: $personName, ')
-          ..write('amount: $amount, ')
-          ..write('paidAmount: $paidAmount, ')
-          ..write('creationAccountId: $creationAccountId, ')
-          ..write('currency: $currency, ')
-          ..write('dueDate: $dueDate, ')
-          ..write('note: $note, ')
-          ..write('isSettled: $isSettled, ')
-          ..write('settledDate: $settledDate, ')
-          ..write('settledAccountId: $settledAccountId, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('remoteId: $remoteId, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('isSynced: $isSynced')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $DailyExchangeRatesTable extends DailyExchangeRates
     with TableInfo<$DailyExchangeRatesTable, DailyExchangeRate> {
   @override
@@ -11143,6 +11253,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AccountsTable accounts = $AccountsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $RecurringTable recurring = $RecurringTable(this);
+  late final $DebtsTable debts = $DebtsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $HoldingsTable holdings = $HoldingsTable(this);
   late final $InvestmentTransactionsTable investmentTransactions =
@@ -11154,7 +11265,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $GoalsTable goals = $GoalsTable(this);
   late final $GoalAccountsTable goalAccounts = $GoalAccountsTable(this);
-  late final $DebtsTable debts = $DebtsTable(this);
   late final $DailyExchangeRatesTable dailyExchangeRates =
       $DailyExchangeRatesTable(this);
   @override
@@ -11167,6 +11277,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     accounts,
     categories,
     recurring,
+    debts,
     transactions,
     holdings,
     investmentTransactions,
@@ -11175,7 +11286,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgetCategories,
     goals,
     goalAccounts,
-    debts,
     dailyExchangeRates,
   ];
 }
@@ -11282,6 +11392,25 @@ final class $$ProfilesTableReferences
     );
   }
 
+  static MultiTypedResultKey<$DebtsTable, List<Debt>> _debtsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.debts,
+    aliasName: $_aliasNameGenerator(db.profiles.id, db.debts.profileId),
+  );
+
+  $$DebtsTableProcessedTableManager get debtsRefs {
+    final manager = $$DebtsTableTableManager(
+      $_db,
+      $_db.debts,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_debtsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
   _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.transactions,
@@ -11352,25 +11481,6 @@ final class $$ProfilesTableReferences
     ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_goalsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$DebtsTable, List<Debt>> _debtsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.debts,
-    aliasName: $_aliasNameGenerator(db.profiles.id, db.debts.profileId),
-  );
-
-  $$DebtsTableProcessedTableManager get debtsRefs {
-    final manager = $$DebtsTableTableManager(
-      $_db,
-      $_db.debts,
-    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_debtsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -11531,6 +11641,31 @@ class $$ProfilesTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> debtsRefs(
+    Expression<bool> Function($$DebtsTableFilterComposer f) f,
+  ) {
+    final $$DebtsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableFilterComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> transactionsRefs(
     Expression<bool> Function($$TransactionsTableFilterComposer f) f,
   ) {
@@ -11622,31 +11757,6 @@ class $$ProfilesTableFilterComposer
           }) => $$GoalsTableFilterComposer(
             $db: $db,
             $table: $db.goals,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> debtsRefs(
-    Expression<bool> Function($$DebtsTableFilterComposer f) f,
-  ) {
-    final $$DebtsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.debts,
-      getReferencedColumn: (t) => t.profileId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$DebtsTableFilterComposer(
-            $db: $db,
-            $table: $db.debts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11848,6 +11958,31 @@ class $$ProfilesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> debtsRefs<T extends Object>(
+    Expression<T> Function($$DebtsTableAnnotationComposer a) f,
+  ) {
+    final $$DebtsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> transactionsRefs<T extends Object>(
     Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
   ) {
@@ -11947,31 +12082,6 @@ class $$ProfilesTableAnnotationComposer
     );
     return f(composer);
   }
-
-  Expression<T> debtsRefs<T extends Object>(
-    Expression<T> Function($$DebtsTableAnnotationComposer a) f,
-  ) {
-    final $$DebtsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.debts,
-      getReferencedColumn: (t) => t.profileId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$DebtsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.debts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$ProfilesTableTableManager
@@ -11992,11 +12102,11 @@ class $$ProfilesTableTableManager
             bool accountsRefs,
             bool categoriesRefs,
             bool recurringRefs,
+            bool debtsRefs,
             bool transactionsRefs,
             bool holdingsRefs,
             bool budgetsRefs,
             bool goalsRefs,
-            bool debtsRefs,
           })
         > {
   $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
@@ -12068,11 +12178,11 @@ class $$ProfilesTableTableManager
                 accountsRefs = false,
                 categoriesRefs = false,
                 recurringRefs = false,
+                debtsRefs = false,
                 transactionsRefs = false,
                 holdingsRefs = false,
                 budgetsRefs = false,
                 goalsRefs = false,
-                debtsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -12081,11 +12191,11 @@ class $$ProfilesTableTableManager
                     if (accountsRefs) db.accounts,
                     if (categoriesRefs) db.categories,
                     if (recurringRefs) db.recurring,
+                    if (debtsRefs) db.debts,
                     if (transactionsRefs) db.transactions,
                     if (holdingsRefs) db.holdings,
                     if (budgetsRefs) db.budgets,
                     if (goalsRefs) db.goals,
-                    if (debtsRefs) db.debts,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -12168,6 +12278,27 @@ class $$ProfilesTableTableManager
                                 table,
                                 p0,
                               ).recurringRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (debtsRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          Debt
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._debtsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).debtsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.profileId == item.id,
@@ -12258,27 +12389,6 @@ class $$ProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (debtsRefs)
-                        await $_getPrefetchedData<
-                          Profile,
-                          $ProfilesTable,
-                          Debt
-                        >(
-                          currentTable: table,
-                          referencedTable: $$ProfilesTableReferences
-                              ._debtsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$ProfilesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).debtsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.profileId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                     ];
                   },
                 );
@@ -12304,11 +12414,11 @@ typedef $$ProfilesTableProcessedTableManager =
         bool accountsRefs,
         bool categoriesRefs,
         bool recurringRefs,
+        bool debtsRefs,
         bool transactionsRefs,
         bool holdingsRefs,
         bool budgetsRefs,
         bool goalsRefs,
-        bool debtsRefs,
       })
     >;
 typedef $$UserSettingsTableCreateCompanionBuilder =
@@ -12328,6 +12438,7 @@ typedef $$UserSettingsTableCreateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
       Value<bool> cardShadow,
+      Value<bool> hideCategoryIcon,
     });
 typedef $$UserSettingsTableUpdateCompanionBuilder =
     UserSettingsCompanion Function({
@@ -12346,6 +12457,7 @@ typedef $$UserSettingsTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<bool> isSynced,
       Value<bool> cardShadow,
+      Value<bool> hideCategoryIcon,
     });
 
 final class $$UserSettingsTableReferences
@@ -12452,6 +12564,11 @@ class $$UserSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get hideCategoryIcon => $composableBuilder(
+    column: $table.hideCategoryIcon,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProfilesTableFilterComposer get profileId {
     final $$ProfilesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -12555,6 +12672,11 @@ class $$UserSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hideCategoryIcon => $composableBuilder(
+    column: $table.hideCategoryIcon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -12645,6 +12767,11 @@ class $$UserSettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get hideCategoryIcon => $composableBuilder(
+    column: $table.hideCategoryIcon,
+    builder: (column) => column,
+  );
+
   $$ProfilesTableAnnotationComposer get profileId {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -12712,6 +12839,7 @@ class $$UserSettingsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
                 Value<bool> cardShadow = const Value.absent(),
+                Value<bool> hideCategoryIcon = const Value.absent(),
               }) => UserSettingsCompanion(
                 id: id,
                 profileId: profileId,
@@ -12728,6 +12856,7 @@ class $$UserSettingsTableTableManager
                 deletedAt: deletedAt,
                 isSynced: isSynced,
                 cardShadow: cardShadow,
+                hideCategoryIcon: hideCategoryIcon,
               ),
           createCompanionCallback:
               ({
@@ -12746,6 +12875,7 @@ class $$UserSettingsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
                 Value<bool> cardShadow = const Value.absent(),
+                Value<bool> hideCategoryIcon = const Value.absent(),
               }) => UserSettingsCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -12762,6 +12892,7 @@ class $$UserSettingsTableTableManager
                 deletedAt: deletedAt,
                 isSynced: isSynced,
                 cardShadow: cardShadow,
+                hideCategoryIcon: hideCategoryIcon,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -15364,6 +15495,853 @@ typedef $$RecurringTableProcessedTableManager =
         bool transactionsRefs,
       })
     >;
+typedef $$DebtsTableCreateCompanionBuilder =
+    DebtsCompanion Function({
+      Value<int> id,
+      required int profileId,
+      required DebtType type,
+      required String personName,
+      required double amount,
+      Value<double> paidAmount,
+      Value<int?> creationAccountId,
+      required Currency currency,
+      Value<DateTime?> dueDate,
+      Value<String?> note,
+      Value<bool> isSettled,
+      Value<DateTime?> settledDate,
+      Value<int?> settledAccountId,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> remoteId,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+typedef $$DebtsTableUpdateCompanionBuilder =
+    DebtsCompanion Function({
+      Value<int> id,
+      Value<int> profileId,
+      Value<DebtType> type,
+      Value<String> personName,
+      Value<double> amount,
+      Value<double> paidAmount,
+      Value<int?> creationAccountId,
+      Value<Currency> currency,
+      Value<DateTime?> dueDate,
+      Value<String?> note,
+      Value<bool> isSettled,
+      Value<DateTime?> settledDate,
+      Value<int?> settledAccountId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> remoteId,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+
+final class $$DebtsTableReferences
+    extends BaseReferences<_$AppDatabase, $DebtsTable, Debt> {
+  $$DebtsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _profileIdTable(_$AppDatabase db) => db.profiles
+      .createAlias($_aliasNameGenerator(db.debts.profileId, db.profiles.id));
+
+  $$ProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<int>('profile_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _creationAccountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias(
+        $_aliasNameGenerator(db.debts.creationAccountId, db.accounts.id),
+      );
+
+  $$AccountsTableProcessedTableManager? get creationAccountId {
+    final $_column = $_itemColumn<int>('creation_account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_creationAccountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _settledAccountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias(
+        $_aliasNameGenerator(db.debts.settledAccountId, db.accounts.id),
+      );
+
+  $$AccountsTableProcessedTableManager? get settledAccountId {
+    final $_column = $_itemColumn<int>('settled_account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_settledAccountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
+  _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transactions,
+    aliasName: $_aliasNameGenerator(db.debts.id, db.transactions.debtId),
+  );
+
+  $$TransactionsTableProcessedTableManager get transactionsRefs {
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.debtId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DebtType, DebtType, int> get type =>
+      $composableBuilder(
+        column: $table.type,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get personName => $composableBuilder(
+    column: $table.personName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Currency, Currency, int> get currency =>
+      $composableBuilder(
+        column: $table.currency,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSettled => $composableBuilder(
+    column: $table.isSettled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get settledDate => $composableBuilder(
+    column: $table.settledDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get profileId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get creationAccountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.creationAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get settledAccountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.settledAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> transactionsRefs(
+    Expression<bool> Function($$TransactionsTableFilterComposer f) f,
+  ) {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.debtId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DebtsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personName => $composableBuilder(
+    column: $table.personName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSettled => $composableBuilder(
+    column: $table.isSettled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get settledDate => $composableBuilder(
+    column: $table.settledDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get profileId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get creationAccountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.creationAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get settledAccountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.settledAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DebtsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DebtType, int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get personName => $composableBuilder(
+    column: $table.personName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<Currency, int> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSettled =>
+      $composableBuilder(column: $table.isSettled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get settledDate => $composableBuilder(
+    column: $table.settledDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSynced =>
+      $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get profileId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get creationAccountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.creationAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get settledAccountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.settledAccountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> transactionsRefs<T extends Object>(
+    Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.debtId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DebtsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DebtsTable,
+          Debt,
+          $$DebtsTableFilterComposer,
+          $$DebtsTableOrderingComposer,
+          $$DebtsTableAnnotationComposer,
+          $$DebtsTableCreateCompanionBuilder,
+          $$DebtsTableUpdateCompanionBuilder,
+          (Debt, $$DebtsTableReferences),
+          Debt,
+          PrefetchHooks Function({
+            bool profileId,
+            bool creationAccountId,
+            bool settledAccountId,
+            bool transactionsRefs,
+          })
+        > {
+  $$DebtsTableTableManager(_$AppDatabase db, $DebtsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DebtsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DebtsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DebtsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<DebtType> type = const Value.absent(),
+                Value<String> personName = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+                Value<double> paidAmount = const Value.absent(),
+                Value<int?> creationAccountId = const Value.absent(),
+                Value<Currency> currency = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isSettled = const Value.absent(),
+                Value<DateTime?> settledDate = const Value.absent(),
+                Value<int?> settledAccountId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => DebtsCompanion(
+                id: id,
+                profileId: profileId,
+                type: type,
+                personName: personName,
+                amount: amount,
+                paidAmount: paidAmount,
+                creationAccountId: creationAccountId,
+                currency: currency,
+                dueDate: dueDate,
+                note: note,
+                isSettled: isSettled,
+                settledDate: settledDate,
+                settledAccountId: settledAccountId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int profileId,
+                required DebtType type,
+                required String personName,
+                required double amount,
+                Value<double> paidAmount = const Value.absent(),
+                Value<int?> creationAccountId = const Value.absent(),
+                required Currency currency,
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isSettled = const Value.absent(),
+                Value<DateTime?> settledDate = const Value.absent(),
+                Value<int?> settledAccountId = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => DebtsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                type: type,
+                personName: personName,
+                amount: amount,
+                paidAmount: paidAmount,
+                creationAccountId: creationAccountId,
+                currency: currency,
+                dueDate: dueDate,
+                note: note,
+                isSettled: isSettled,
+                settledDate: settledDate,
+                settledAccountId: settledAccountId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$DebtsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                profileId = false,
+                creationAccountId = false,
+                settledAccountId = false,
+                transactionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (transactionsRefs) db.transactions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profileId,
+                                    referencedTable: $$DebtsTableReferences
+                                        ._profileIdTable(db),
+                                    referencedColumn: $$DebtsTableReferences
+                                        ._profileIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (creationAccountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.creationAccountId,
+                                    referencedTable: $$DebtsTableReferences
+                                        ._creationAccountIdTable(db),
+                                    referencedColumn: $$DebtsTableReferences
+                                        ._creationAccountIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (settledAccountId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.settledAccountId,
+                                    referencedTable: $$DebtsTableReferences
+                                        ._settledAccountIdTable(db),
+                                    referencedColumn: $$DebtsTableReferences
+                                        ._settledAccountIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (transactionsRefs)
+                        await $_getPrefetchedData<
+                          Debt,
+                          $DebtsTable,
+                          Transaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DebtsTableReferences
+                              ._transactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DebtsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.debtId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$DebtsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DebtsTable,
+      Debt,
+      $$DebtsTableFilterComposer,
+      $$DebtsTableOrderingComposer,
+      $$DebtsTableAnnotationComposer,
+      $$DebtsTableCreateCompanionBuilder,
+      $$DebtsTableUpdateCompanionBuilder,
+      (Debt, $$DebtsTableReferences),
+      Debt,
+      PrefetchHooks Function({
+        bool profileId,
+        bool creationAccountId,
+        bool settledAccountId,
+        bool transactionsRefs,
+      })
+    >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
       Value<int> id,
@@ -15379,6 +16357,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> title,
       Value<String?> note,
       Value<int?> recurringId,
+      Value<int?> debtId,
       required DateTime createdAt,
       Value<String?> remoteId,
       Value<DateTime?> updatedAt,
@@ -15400,6 +16379,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> title,
       Value<String?> note,
       Value<int?> recurringId,
+      Value<int?> debtId,
       Value<DateTime> createdAt,
       Value<String?> remoteId,
       Value<DateTime?> updatedAt,
@@ -15500,6 +16480,24 @@ final class $$TransactionsTableReferences
       $_db.recurring,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_recurringIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $DebtsTable _debtIdTable(_$AppDatabase db) => db.debts.createAlias(
+    $_aliasNameGenerator(db.transactions.debtId, db.debts.id),
+  );
+
+  $$DebtsTableProcessedTableManager? get debtId {
+    final $_column = $_itemColumn<int>('debt_id');
+    if ($_column == null) return null;
+    final manager = $$DebtsTableTableManager(
+      $_db,
+      $_db.debts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_debtIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -15688,6 +16686,29 @@ class $$TransactionsTableFilterComposer
           }) => $$RecurringTableFilterComposer(
             $db: $db,
             $table: $db.recurring,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DebtsTableFilterComposer get debtId {
+    final $$DebtsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableFilterComposer(
+            $db: $db,
+            $table: $db.debts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -15886,6 +16907,29 @@ class $$TransactionsTableOrderingComposer
     );
     return composer;
   }
+
+  $$DebtsTableOrderingComposer get debtId {
+    final $$DebtsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableOrderingComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -16054,6 +17098,29 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$DebtsTableAnnotationComposer get debtId {
+    final $$DebtsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -16075,6 +17142,7 @@ class $$TransactionsTableTableManager
             bool categoryId,
             bool toAccountId,
             bool recurringId,
+            bool debtId,
           })
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
@@ -16103,6 +17171,7 @@ class $$TransactionsTableTableManager
                 Value<String?> title = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<int?> recurringId = const Value.absent(),
+                Value<int?> debtId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -16122,6 +17191,7 @@ class $$TransactionsTableTableManager
                 title: title,
                 note: note,
                 recurringId: recurringId,
+                debtId: debtId,
                 createdAt: createdAt,
                 remoteId: remoteId,
                 updatedAt: updatedAt,
@@ -16143,6 +17213,7 @@ class $$TransactionsTableTableManager
                 Value<String?> title = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<int?> recurringId = const Value.absent(),
+                Value<int?> debtId = const Value.absent(),
                 required DateTime createdAt,
                 Value<String?> remoteId = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -16162,6 +17233,7 @@ class $$TransactionsTableTableManager
                 title: title,
                 note: note,
                 recurringId: recurringId,
+                debtId: debtId,
                 createdAt: createdAt,
                 remoteId: remoteId,
                 updatedAt: updatedAt,
@@ -16183,6 +17255,7 @@ class $$TransactionsTableTableManager
                 categoryId = false,
                 toAccountId = false,
                 recurringId = false,
+                debtId = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -16278,6 +17351,21 @@ class $$TransactionsTableTableManager
                                   )
                                   as T;
                         }
+                        if (debtId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.debtId,
+                                    referencedTable:
+                                        $$TransactionsTableReferences
+                                            ._debtIdTable(db),
+                                    referencedColumn:
+                                        $$TransactionsTableReferences
+                                            ._debtIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
                         return state;
                       },
@@ -16308,6 +17396,7 @@ typedef $$TransactionsTableProcessedTableManager =
         bool categoryId,
         bool toAccountId,
         bool recurringId,
+        bool debtId,
       })
     >;
 typedef $$HoldingsTableCreateCompanionBuilder =
@@ -19858,758 +20947,6 @@ typedef $$GoalAccountsTableProcessedTableManager =
       GoalAccount,
       PrefetchHooks Function({bool goalId, bool accountId})
     >;
-typedef $$DebtsTableCreateCompanionBuilder =
-    DebtsCompanion Function({
-      Value<int> id,
-      required int profileId,
-      required DebtType type,
-      required String personName,
-      required double amount,
-      Value<double> paidAmount,
-      Value<int?> creationAccountId,
-      required Currency currency,
-      Value<DateTime?> dueDate,
-      Value<String?> note,
-      Value<bool> isSettled,
-      Value<DateTime?> settledDate,
-      Value<int?> settledAccountId,
-      required DateTime createdAt,
-      required DateTime updatedAt,
-      Value<String?> remoteId,
-      Value<DateTime?> deletedAt,
-      Value<bool> isSynced,
-    });
-typedef $$DebtsTableUpdateCompanionBuilder =
-    DebtsCompanion Function({
-      Value<int> id,
-      Value<int> profileId,
-      Value<DebtType> type,
-      Value<String> personName,
-      Value<double> amount,
-      Value<double> paidAmount,
-      Value<int?> creationAccountId,
-      Value<Currency> currency,
-      Value<DateTime?> dueDate,
-      Value<String?> note,
-      Value<bool> isSettled,
-      Value<DateTime?> settledDate,
-      Value<int?> settledAccountId,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String?> remoteId,
-      Value<DateTime?> deletedAt,
-      Value<bool> isSynced,
-    });
-
-final class $$DebtsTableReferences
-    extends BaseReferences<_$AppDatabase, $DebtsTable, Debt> {
-  $$DebtsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $ProfilesTable _profileIdTable(_$AppDatabase db) => db.profiles
-      .createAlias($_aliasNameGenerator(db.debts.profileId, db.profiles.id));
-
-  $$ProfilesTableProcessedTableManager get profileId {
-    final $_column = $_itemColumn<int>('profile_id')!;
-
-    final manager = $$ProfilesTableTableManager(
-      $_db,
-      $_db.profiles,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $AccountsTable _creationAccountIdTable(_$AppDatabase db) =>
-      db.accounts.createAlias(
-        $_aliasNameGenerator(db.debts.creationAccountId, db.accounts.id),
-      );
-
-  $$AccountsTableProcessedTableManager? get creationAccountId {
-    final $_column = $_itemColumn<int>('creation_account_id');
-    if ($_column == null) return null;
-    final manager = $$AccountsTableTableManager(
-      $_db,
-      $_db.accounts,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_creationAccountIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $AccountsTable _settledAccountIdTable(_$AppDatabase db) =>
-      db.accounts.createAlias(
-        $_aliasNameGenerator(db.debts.settledAccountId, db.accounts.id),
-      );
-
-  $$AccountsTableProcessedTableManager? get settledAccountId {
-    final $_column = $_itemColumn<int>('settled_account_id');
-    if ($_column == null) return null;
-    final manager = $$AccountsTableTableManager(
-      $_db,
-      $_db.accounts,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_settledAccountIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
-  $$DebtsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<DebtType, DebtType, int> get type =>
-      $composableBuilder(
-        column: $table.type,
-        builder: (column) => ColumnWithTypeConverterFilters(column),
-      );
-
-  ColumnFilters<String> get personName => $composableBuilder(
-    column: $table.personName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get amount => $composableBuilder(
-    column: $table.amount,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get paidAmount => $composableBuilder(
-    column: $table.paidAmount,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<Currency, Currency, int> get currency =>
-      $composableBuilder(
-        column: $table.currency,
-        builder: (column) => ColumnWithTypeConverterFilters(column),
-      );
-
-  ColumnFilters<DateTime> get dueDate => $composableBuilder(
-    column: $table.dueDate,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get note => $composableBuilder(
-    column: $table.note,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isSettled => $composableBuilder(
-    column: $table.isSettled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get settledDate => $composableBuilder(
-    column: $table.settledDate,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isSynced => $composableBuilder(
-    column: $table.isSynced,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$ProfilesTableFilterComposer get profileId {
-    final $$ProfilesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.profileId,
-      referencedTable: $db.profiles,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProfilesTableFilterComposer(
-            $db: $db,
-            $table: $db.profiles,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableFilterComposer get creationAccountId {
-    final $$AccountsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.creationAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableFilterComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableFilterComposer get settledAccountId {
-    final $$AccountsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.settledAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableFilterComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$DebtsTableOrderingComposer
-    extends Composer<_$AppDatabase, $DebtsTable> {
-  $$DebtsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get personName => $composableBuilder(
-    column: $table.personName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get amount => $composableBuilder(
-    column: $table.amount,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get paidAmount => $composableBuilder(
-    column: $table.paidAmount,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get currency => $composableBuilder(
-    column: $table.currency,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
-    column: $table.dueDate,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get note => $composableBuilder(
-    column: $table.note,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isSettled => $composableBuilder(
-    column: $table.isSettled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get settledDate => $composableBuilder(
-    column: $table.settledDate,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get remoteId => $composableBuilder(
-    column: $table.remoteId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isSynced => $composableBuilder(
-    column: $table.isSynced,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$ProfilesTableOrderingComposer get profileId {
-    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.profileId,
-      referencedTable: $db.profiles,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProfilesTableOrderingComposer(
-            $db: $db,
-            $table: $db.profiles,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableOrderingComposer get creationAccountId {
-    final $$AccountsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.creationAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableOrderingComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableOrderingComposer get settledAccountId {
-    final $$AccountsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.settledAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableOrderingComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$DebtsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $DebtsTable> {
-  $$DebtsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<DebtType, int> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get personName => $composableBuilder(
-    column: $table.personName,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get amount =>
-      $composableBuilder(column: $table.amount, builder: (column) => column);
-
-  GeneratedColumn<double> get paidAmount => $composableBuilder(
-    column: $table.paidAmount,
-    builder: (column) => column,
-  );
-
-  GeneratedColumnWithTypeConverter<Currency, int> get currency =>
-      $composableBuilder(column: $table.currency, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get dueDate =>
-      $composableBuilder(column: $table.dueDate, builder: (column) => column);
-
-  GeneratedColumn<String> get note =>
-      $composableBuilder(column: $table.note, builder: (column) => column);
-
-  GeneratedColumn<bool> get isSettled =>
-      $composableBuilder(column: $table.isSettled, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get settledDate => $composableBuilder(
-    column: $table.settledDate,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get remoteId =>
-      $composableBuilder(column: $table.remoteId, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
-  GeneratedColumn<bool> get isSynced =>
-      $composableBuilder(column: $table.isSynced, builder: (column) => column);
-
-  $$ProfilesTableAnnotationComposer get profileId {
-    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.profileId,
-      referencedTable: $db.profiles,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ProfilesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.profiles,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableAnnotationComposer get creationAccountId {
-    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.creationAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$AccountsTableAnnotationComposer get settledAccountId {
-    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.settledAccountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$DebtsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $DebtsTable,
-          Debt,
-          $$DebtsTableFilterComposer,
-          $$DebtsTableOrderingComposer,
-          $$DebtsTableAnnotationComposer,
-          $$DebtsTableCreateCompanionBuilder,
-          $$DebtsTableUpdateCompanionBuilder,
-          (Debt, $$DebtsTableReferences),
-          Debt,
-          PrefetchHooks Function({
-            bool profileId,
-            bool creationAccountId,
-            bool settledAccountId,
-          })
-        > {
-  $$DebtsTableTableManager(_$AppDatabase db, $DebtsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$DebtsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$DebtsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$DebtsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> profileId = const Value.absent(),
-                Value<DebtType> type = const Value.absent(),
-                Value<String> personName = const Value.absent(),
-                Value<double> amount = const Value.absent(),
-                Value<double> paidAmount = const Value.absent(),
-                Value<int?> creationAccountId = const Value.absent(),
-                Value<Currency> currency = const Value.absent(),
-                Value<DateTime?> dueDate = const Value.absent(),
-                Value<String?> note = const Value.absent(),
-                Value<bool> isSettled = const Value.absent(),
-                Value<DateTime?> settledDate = const Value.absent(),
-                Value<int?> settledAccountId = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String?> remoteId = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-                Value<bool> isSynced = const Value.absent(),
-              }) => DebtsCompanion(
-                id: id,
-                profileId: profileId,
-                type: type,
-                personName: personName,
-                amount: amount,
-                paidAmount: paidAmount,
-                creationAccountId: creationAccountId,
-                currency: currency,
-                dueDate: dueDate,
-                note: note,
-                isSettled: isSettled,
-                settledDate: settledDate,
-                settledAccountId: settledAccountId,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                remoteId: remoteId,
-                deletedAt: deletedAt,
-                isSynced: isSynced,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int profileId,
-                required DebtType type,
-                required String personName,
-                required double amount,
-                Value<double> paidAmount = const Value.absent(),
-                Value<int?> creationAccountId = const Value.absent(),
-                required Currency currency,
-                Value<DateTime?> dueDate = const Value.absent(),
-                Value<String?> note = const Value.absent(),
-                Value<bool> isSettled = const Value.absent(),
-                Value<DateTime?> settledDate = const Value.absent(),
-                Value<int?> settledAccountId = const Value.absent(),
-                required DateTime createdAt,
-                required DateTime updatedAt,
-                Value<String?> remoteId = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-                Value<bool> isSynced = const Value.absent(),
-              }) => DebtsCompanion.insert(
-                id: id,
-                profileId: profileId,
-                type: type,
-                personName: personName,
-                amount: amount,
-                paidAmount: paidAmount,
-                creationAccountId: creationAccountId,
-                currency: currency,
-                dueDate: dueDate,
-                note: note,
-                isSettled: isSettled,
-                settledDate: settledDate,
-                settledAccountId: settledAccountId,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                remoteId: remoteId,
-                deletedAt: deletedAt,
-                isSynced: isSynced,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) =>
-                    (e.readTable(table), $$DebtsTableReferences(db, table, e)),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                profileId = false,
-                creationAccountId = false,
-                settledAccountId = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (profileId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.profileId,
-                                    referencedTable: $$DebtsTableReferences
-                                        ._profileIdTable(db),
-                                    referencedColumn: $$DebtsTableReferences
-                                        ._profileIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-                        if (creationAccountId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.creationAccountId,
-                                    referencedTable: $$DebtsTableReferences
-                                        ._creationAccountIdTable(db),
-                                    referencedColumn: $$DebtsTableReferences
-                                        ._creationAccountIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-                        if (settledAccountId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.settledAccountId,
-                                    referencedTable: $$DebtsTableReferences
-                                        ._settledAccountIdTable(db),
-                                    referencedColumn: $$DebtsTableReferences
-                                        ._settledAccountIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$DebtsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $DebtsTable,
-      Debt,
-      $$DebtsTableFilterComposer,
-      $$DebtsTableOrderingComposer,
-      $$DebtsTableAnnotationComposer,
-      $$DebtsTableCreateCompanionBuilder,
-      $$DebtsTableUpdateCompanionBuilder,
-      (Debt, $$DebtsTableReferences),
-      Debt,
-      PrefetchHooks Function({
-        bool profileId,
-        bool creationAccountId,
-        bool settledAccountId,
-      })
-    >;
 typedef $$DailyExchangeRatesTableCreateCompanionBuilder =
     DailyExchangeRatesCompanion Function({
       required String id,
@@ -20858,6 +21195,8 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$RecurringTableTableManager get recurring =>
       $$RecurringTableTableManager(_db, _db.recurring);
+  $$DebtsTableTableManager get debts =>
+      $$DebtsTableTableManager(_db, _db.debts);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$HoldingsTableTableManager get holdings =>
@@ -20877,8 +21216,6 @@ class $AppDatabaseManager {
       $$GoalsTableTableManager(_db, _db.goals);
   $$GoalAccountsTableTableManager get goalAccounts =>
       $$GoalAccountsTableTableManager(_db, _db.goalAccounts);
-  $$DebtsTableTableManager get debts =>
-      $$DebtsTableTableManager(_db, _db.debts);
   $$DailyExchangeRatesTableTableManager get dailyExchangeRates =>
       $$DailyExchangeRatesTableTableManager(_db, _db.dailyExchangeRates);
 }

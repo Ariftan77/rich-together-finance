@@ -2070,6 +2070,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               note: drift.Value(debt.note ?? ''),
               date: drift.Value(DateTime.now()),
               createdAt: drift.Value(DateTime.now()),
+              debtId: drift.Value(debt.id),
             ),
           );
         }
@@ -2373,23 +2374,32 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
       if (profileId == null) return;
 
       try {
-        await ref.read(debtDaoProvider).recordGroupPayment(profileId, personName, type, amount);
+        final allocations = await ref
+            .read(debtDaoProvider)
+            .recordGroupPayment(profileId, personName, type, amount);
 
+        // Write one transaction per debt the payment actually covered, each
+        // carrying its own debtId. Deleting any single row then reverses
+        // exactly that debt instead of guessing by person name.
         final transactionDao = ref.read(transactionDaoProvider);
-        await transactionDao.insertTransaction(
-          TransactionsCompanion(
-            profileId: drift.Value(profileId),
-            accountId: drift.Value(accountId),
-            type: drift.Value(type == DebtType.payable
-                ? TransactionType.debtPaymentOut
-                : TransactionType.debtPaymentIn),
-            amount: drift.Value(amount),
-            title: drift.Value('Group Debt Payment: $personName'),
-            note: drift.Value('Settled debts for $personName'),
-            date: drift.Value(DateTime.now()),
-            createdAt: drift.Value(DateTime.now()),
-          ),
-        );
+        final paidAt = DateTime.now();
+        for (final allocation in allocations) {
+          await transactionDao.insertTransaction(
+            TransactionsCompanion(
+              profileId: drift.Value(profileId),
+              accountId: drift.Value(accountId),
+              type: drift.Value(type == DebtType.payable
+                  ? TransactionType.debtPaymentOut
+                  : TransactionType.debtPaymentIn),
+              amount: drift.Value(allocation.amount),
+              title: drift.Value('Debt Payment: $personName'),
+              note: drift.Value('Settled debts for $personName'),
+              date: drift.Value(paidAt),
+              createdAt: drift.Value(paidAt),
+              debtId: drift.Value(allocation.debt.id),
+            ),
+          );
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

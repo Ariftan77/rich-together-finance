@@ -8,5 +8,6 @@ mixin _$TransactionDaoMixin on DatabaseAccessor<AppDatabase> {
   $AccountsTable get accounts => attachedDatabase.accounts;
   $CategoriesTable get categories => attachedDatabase.categories;
   $RecurringTable get recurring => attachedDatabase.recurring;
+  $DebtsTable get debts => attachedDatabase.debts;
   $TransactionsTable get transactions => attachedDatabase.transactions;
 }

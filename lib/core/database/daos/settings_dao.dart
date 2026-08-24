@@ -43,6 +43,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
     bool? notificationsEnabled,
     bool? showDecimal,
     bool? cardShadow,
+    bool? hideCategoryIcon,
   }) async {
     final updated = await (update(userSettings)..where((s) => s.profileId.equals(profileId))).write(
       UserSettingsCompanion(
@@ -55,6 +56,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
         notificationsEnabled: notificationsEnabled != null ? Value(notificationsEnabled) : const Value.absent(),
         showDecimal: showDecimal != null ? Value(showDecimal) : const Value.absent(),
         cardShadow: cardShadow != null ? Value(cardShadow) : const Value.absent(),
+        hideCategoryIcon: hideCategoryIcon != null ? Value(hideCategoryIcon) : const Value.absent(),
       ),
     );
     return updated > 0;
@@ -102,5 +104,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
   /// Toggle card shadow
   Future<bool> setCardShadow(int profileId, bool show) {
     return updateSettings(profileId: profileId, cardShadow: show);
+  }
+
+  /// Toggle hiding the category icon in the transaction history list
+  Future<bool> setHideCategoryIcon(int profileId, bool hide) {
+    return updateSettings(profileId: profileId, hideCategoryIcon: hide);
   }
 }

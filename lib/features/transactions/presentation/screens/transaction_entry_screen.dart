@@ -84,6 +84,10 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   double? _originalAmount;
   int? _originalAccountId;
 
+  // Debt this transaction belongs to (null for non-debt rows and for legacy
+  // debt rows created before the debtId link existed)
+  int? _debtId;
+
   // Focus node for title field (to detect when user finishes typing)
   final _titleFocusNode = FocusNode();
 
@@ -214,6 +218,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _rawAmount = transaction.amount.toString();
         _originalAmount = transaction.amount;
         _originalAccountId = transaction.accountId;
+        _debtId = transaction.debtId;
         
         // Format amount
         _amountController.text = Formatters.formatCurrency(
@@ -639,34 +644,63 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
       final title = _titleController.text;
       final profileId = ref.read(activeProfileIdProvider);
+      final debtDao = ref.read(debtDaoProvider);
 
-      // Debt settlement deleted → reverse paid amount on the debt
-      const paymentPrefix = 'Debt Payment: ';
-      if (title.startsWith(paymentPrefix) && _originalAmount != null && profileId != null) {
-        final personName = title.substring(paymentPrefix.length).trim();
-        if (personName.isNotEmpty) {
-          await ref.read(debtDaoProvider).reverseDebtPayment(profileId, personName, _originalAmount!);
+      final isCreationTx = _selectedType == TransactionType.debtIn ||
+          _selectedType == TransactionType.debtOut;
+      final isPaymentTx = _selectedType == TransactionType.debtPaymentOut ||
+          _selectedType == TransactionType.debtPaymentIn;
+
+      if (_debtId != null) {
+        // Precise path: the transaction points straight at its debt.
+        if (isCreationTx) {
+          // Creation row deleted → the debt goes with it, along with any
+          // payments recorded against it (their balance impact is reversed
+          // by removing them).
+          await dao.deleteTransactionsByDebt(_debtId!);
+          await debtDao.deleteDebt(_debtId!);
+        } else if (isPaymentTx && _originalAmount != null) {
+          // Settlement row deleted → restore exactly that debt's paid amount.
+          await debtDao.reverseDebtPaymentById(_debtId!, _originalAmount!);
         }
-      }
+      } else {
+        // Legacy path: rows written before the debtId link, and group
+        // payments, are still matched by title prefix + person name.
 
-      // Debt creation transaction deleted → delete the linked debt record
-      const creationPrefix = 'Debt: ';
-      if ((_selectedType == TransactionType.debtIn || _selectedType == TransactionType.debtOut) &&
-          title.startsWith(creationPrefix) && profileId != null) {
-        final personName = title.substring(creationPrefix.length).trim();
-        if (personName.isNotEmpty) {
-          final debtType = _selectedType == TransactionType.debtIn ? DebtType.payable : DebtType.receivable;
-          final txDate = DateTime(
-            _selectedDate.year, _selectedDate.month, _selectedDate.day,
-            _selectedTime.hour, _selectedTime.minute,
-          );
-          final debt = await ref.read(debtDaoProvider).findDebtByNameAndType(
-            profileId, personName, debtType,
-            accountId: _selectedAccountId,
-            date: txDate,
-          );
-          if (debt != null) {
-            await ref.read(debtDaoProvider).deleteDebt(debt.id);
+        // Debt settlement deleted → reverse paid amount on the debt
+        const paymentPrefix = 'Debt Payment: ';
+        const groupPaymentPrefix = 'Group Debt Payment: ';
+        if (_originalAmount != null && profileId != null) {
+          String? personName;
+          if (title.startsWith(paymentPrefix)) {
+            personName = title.substring(paymentPrefix.length).trim();
+          } else if (title.startsWith(groupPaymentPrefix)) {
+            personName = title.substring(groupPaymentPrefix.length).trim();
+          }
+          if (personName != null && personName.isNotEmpty) {
+            await debtDao.reverseDebtPayment(profileId, personName, _originalAmount!);
+          }
+        }
+
+        // Debt creation transaction deleted → delete the linked debt record
+        const creationPrefix = 'Debt: ';
+        if (isCreationTx && title.startsWith(creationPrefix) && profileId != null) {
+          final personName = title.substring(creationPrefix.length).trim();
+          if (personName.isNotEmpty) {
+            final debtType = _selectedType == TransactionType.debtIn ? DebtType.payable : DebtType.receivable;
+            final txDate = DateTime(
+              _selectedDate.year, _selectedDate.month, _selectedDate.day,
+              _selectedTime.hour, _selectedTime.minute,
+            );
+            final debt = await debtDao.findDebtByNameAndType(
+              profileId, personName, debtType,
+              accountId: _selectedAccountId,
+              date: txDate,
+            );
+            if (debt != null) {
+              await dao.deleteTransactionsByDebt(debt.id);
+              await debtDao.deleteDebt(debt.id);
+            }
           }
         }
       }

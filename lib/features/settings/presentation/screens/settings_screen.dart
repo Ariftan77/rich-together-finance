@@ -341,6 +341,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final currency = settings?.defaultCurrency ?? Currency.idr;
     final showDecimal = settings?.showDecimal ?? false;
     final cardShadow = settings?.cardShadow ?? true;
+    final hideCategoryIcon = settings?.hideCategoryIcon ?? false;
 
     return GlassCard(
       padding: EdgeInsets.zero,
@@ -428,6 +429,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Switch(
               value: cardShadow,
               onChanged: (value) => _toggleCardShadow(value),
+              activeColor: AppColors.primaryGold,
+            ),
+          ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.hide_image_outlined,
+            title: ref.watch(translationsProvider).settingsHideCategoryIcon,
+            trailing: Switch(
+              value: hideCategoryIcon,
+              onChanged: (value) => _toggleHideCategoryIcon(value),
               activeColor: AppColors.primaryGold,
             ),
           ),
@@ -968,6 +979,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profileId = ref.read(activeProfileIdProvider);
     if (profileId != null) {
       await ref.read(settingsDaoProvider).setCardShadow(profileId, show);
+    }
+  }
+
+  Future<void> _toggleHideCategoryIcon(bool hide) async {
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId != null) {
+      await ref.read(settingsDaoProvider).setHideCategoryIcon(profileId, hide);
     }
   }
 

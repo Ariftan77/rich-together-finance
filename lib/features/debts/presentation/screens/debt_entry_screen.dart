@@ -184,7 +184,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
 
         // 1. Create Debt
         final now = DateTime.now();
-        await debtDao.createDebt(
+        final newDebtId = await debtDao.createDebt(
           DebtsCompanion(
             profileId: drift.Value(profileId),
             type: drift.Value(_selectedType),
@@ -218,6 +218,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
               note: drift.Value(_noteController.text.trim()),
               date: drift.Value(_creationDate),
               createdAt: drift.Value(_creationDate),
+              debtId: drift.Value(newDebtId),
             ),
           );
         }
@@ -236,29 +237,31 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
           ),
         );
 
-        // Update linked transaction if type or amount changed
-        // Only if we have the creation link
-        if (widget.debt!.creationAccountId != null) {
-          final transactionDao = ref.read(transactionDaoProvider);
-          final oldTx = await transactionDao.findDebtTransaction(
-            accountId: widget.debt!.creationAccountId!,
-            amount: widget.debt!.amount,
-            date: widget.debt!.createdAt,
-          );
+        // Update the linked creation transaction if type or amount changed.
+        // Resolved by debtId; the account/amount/date args only serve legacy
+        // rows created before the debtId link existed.
+        final transactionDao = ref.read(transactionDaoProvider);
+        final oldTx = await transactionDao.getDebtCreationTransaction(
+          widget.debt!.id,
+          legacyAccountId: widget.debt!.creationAccountId,
+          legacyAmount: widget.debt!.amount,
+          legacyDate: widget.debt!.createdAt,
+        );
 
-          if (oldTx != null) {
-            await transactionDao.updateTransaction(
-              oldTx.id,
-              TransactionsCompanion(
-                type: drift.Value(_selectedType == DebtType.payable
-                    ? TransactionType.debtIn
-                    : TransactionType.debtOut),
-                amount: drift.Value(amount),
-                title: drift.Value('Debt: ${_personController.text.trim()}'),
-                note: drift.Value(_noteController.text.trim()),
-              ),
-            );
-          }
+        if (oldTx != null) {
+          await transactionDao.updateTransaction(
+            oldTx.id,
+            TransactionsCompanion(
+              type: drift.Value(_selectedType == DebtType.payable
+                  ? TransactionType.debtIn
+                  : TransactionType.debtOut),
+              amount: drift.Value(amount),
+              title: drift.Value('Debt: ${_personController.text.trim()}'),
+              note: drift.Value(_noteController.text.trim()),
+              // Backfill the link for legacy rows matched by heuristic
+              debtId: drift.Value(widget.debt!.id),
+            ),
+          );
         }
       }
 
@@ -1024,9 +1027,16 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                               final navigator = Navigator.of(context);
                               final debt = widget.debt!;
 
-                              // Delete linked transaction first (reverses balance impact)
-                              if (debt.creationAccountId != null) {
-                                final transactionDao = ref.read(transactionDaoProvider);
+                              // Delete every linked transaction first — the
+                              // creation row and any payments — so no orphan
+                              // row keeps affecting account balances.
+                              final transactionDao = ref.read(transactionDaoProvider);
+                              final removed = await transactionDao
+                                  .deleteTransactionsByDebt(debt.id);
+
+                              // Legacy rows (pre-debtId) fall back to the
+                              // account/amount/date heuristic.
+                              if (removed == 0 && debt.creationAccountId != null) {
                                 final linkedTx = await transactionDao.findDebtTransaction(
                                   accountId: debt.creationAccountId!,
                                   amount: debt.amount,

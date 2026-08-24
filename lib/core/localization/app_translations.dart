@@ -132,6 +132,7 @@ abstract class AppTranslations {
   String get settingsBaseCurrency;
   String get settingsShowDecimals;
   String get settingsCardShadow;
+  String get settingsHideCategoryIcon;
   String get settingsPremium;
 
   String get settingsAboutApp;
@@ -576,6 +577,17 @@ abstract class AppTranslations {
   String get txnFilterDebt;
   String get txnFilterAdjustment;
   String get txnDaySummaryTxn;
+
+  // Transaction History Search Screen (full-history search)
+  String get historySearchTitle;
+  String get historySearchTooltip;
+  String get historySearchHint;
+  String get historySearchIntroTitle;
+  String get historySearchIntroHint;
+  String get historySearchNoResults;
+  String get historySearchNoResultsHint;
+  String get historySearchDateRange;
+  String historySearchResults(int count);
 
   // Debt Payoff Card (Phase 6)
   String get debtPayoffTitle;

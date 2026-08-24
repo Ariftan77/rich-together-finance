@@ -111,8 +111,62 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
         .write(AccountsCompanion(lastActivityDate: Value(DateTime.now())));
   }
 
-  /// Find a transaction that likely matches a debt creation
-  /// Matches on accountId, amount, and approximate time
+  /// Get every transaction linked to a debt (creation + payments), newest first
+  Future<List<Transaction>> getTransactionsByDebt(int debtId) =>
+      (select(transactions)
+            ..where((t) => t.debtId.equals(debtId))
+            ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          .get();
+
+  /// Watch every transaction linked to a debt (creation + payments)
+  Stream<List<Transaction>> watchTransactionsByDebt(int debtId) =>
+      (select(transactions)
+            ..where((t) => t.debtId.equals(debtId))
+            ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          .watch();
+
+  /// Get the creation transaction (debtIn/debtOut) for a debt.
+  ///
+  /// Uses the [Transactions.debtId] link when present. [legacyAccountId],
+  /// [legacyAmount] and [legacyDate] are only consulted for pre-v22 rows that
+  /// the migration backfill could not match.
+  Future<Transaction?> getDebtCreationTransaction(
+    int debtId, {
+    int? legacyAccountId,
+    double? legacyAmount,
+    DateTime? legacyDate,
+  }) async {
+    final linked = await (select(transactions)
+          ..where((t) =>
+              t.debtId.equals(debtId) &
+              t.type.isIn([
+                TransactionType.debtIn.index,
+                TransactionType.debtOut.index,
+              ]))
+          ..orderBy([(t) => OrderingTerm.asc(t.date)])
+          ..limit(1))
+        .getSingleOrNull();
+    if (linked != null) return linked;
+
+    if (legacyAccountId == null || legacyAmount == null || legacyDate == null) {
+      return null;
+    }
+    return findDebtTransaction(
+      accountId: legacyAccountId,
+      amount: legacyAmount,
+      date: legacyDate,
+    );
+  }
+
+  /// Delete every transaction linked to a debt (creation + payments).
+  /// Used when the debt record itself is removed, so no orphan rows keep
+  /// affecting account balances.
+  Future<int> deleteTransactionsByDebt(int debtId) =>
+      (delete(transactions)..where((t) => t.debtId.equals(debtId))).go();
+
+  /// Legacy fallback: find a transaction that likely matches a debt creation.
+  /// Matches on accountId, amount, and approximate time.
+  /// Prefer [getDebtCreationTransaction] — this only helps rows without a debtId.
   Future<Transaction?> findDebtTransaction({
     required int accountId,
     required double amount,
@@ -239,13 +293,21 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
 
     if (searchQuery != null && searchQuery.isNotEmpty) {
       final term = '%${searchQuery.toLowerCase()}%';
-      query.where(
-        transactions.title.lower().like(term) |
-        transactions.note.lower().like(term) |
-        transactions.amount.cast<String>().like(term) | 
-        accounts.name.lower().like(term) |
-        categories.name.lower().like(term)
-      );
+      var matches = transactions.title.lower().like(term) |
+          transactions.note.lower().like(term) |
+          transactions.amount.cast<String>().like(term) |
+          accounts.name.lower().like(term) |
+          categories.name.lower().like(term);
+
+      // Users type amounts the way the app formats them ("50.000" / "50,000"),
+      // but the column stores a bare double ("50000.0"). Strip the grouping
+      // separators and match on the raw digits as well.
+      final digitsOnly = searchQuery.replaceAll(RegExp(r'[^0-9]'), '');
+      if (digitsOnly.isNotEmpty && digitsOnly != searchQuery) {
+        matches = matches | transactions.amount.cast<String>().like('$digitsOnly%');
+      }
+
+      query.where(matches);
     }
 
     query.orderBy([OrderingTerm.desc(transactions.date)]);

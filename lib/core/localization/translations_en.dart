@@ -136,6 +136,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsBaseCurrency => 'Base Currency';
   @override String get settingsShowDecimals => 'Show Decimals';
   @override String get settingsCardShadow => 'Card Shadow';
+  @override String get settingsHideCategoryIcon => 'Hide Category Icon';
   @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'About Richer';
@@ -583,6 +584,17 @@ class AppTranslationsEn implements AppTranslations {
   @override String get txnFilterDebt => 'Debt';
   @override String get txnFilterAdjustment => 'Adjustment';
   @override String get txnDaySummaryTxn => 'Txn';
+
+  // Transaction History Search Screen (full-history search)
+  @override String get historySearchTitle => 'Search History';
+  @override String get historySearchTooltip => 'Search all history';
+  @override String get historySearchHint => 'Title, category, note, amount, wallet';
+  @override String get historySearchIntroTitle => 'Find any transaction';
+  @override String get historySearchIntroHint => 'Search your entire history, no matter how far back. Type a title, category, note, amount or wallet name — or filter by a date range.';
+  @override String get historySearchNoResults => 'No matching transactions';
+  @override String get historySearchNoResultsHint => 'Try a shorter keyword, or widen the date range.';
+  @override String get historySearchDateRange => 'Date range';
+  @override String historySearchResults(int count) => count == 1 ? '1 result' : '$count results';
 
   // Debt Payoff Card (Phase 6)
   @override String get debtPayoffTitle => 'Payoff Overview';

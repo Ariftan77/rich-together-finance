@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
-import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/database_providers.dart';
@@ -17,22 +16,19 @@ import '../../../../shared/tour/tour_keys.dart';
 import '../../../../shared/tour/tour_content.dart';
 import '../../../../core/providers/nav_providers.dart';
 
-import '../../../../shared/widgets/category_icon_widget.dart';
 // import '../../../../shared/widgets/glass_item.dart'; // Removed
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_input.dart';
 
 import '../../../../core/providers/date_providers.dart';
-import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
 import '../providers/search_provider.dart';
 import '../widgets/date_range_filter_modal.dart';
 import '../widgets/month_year_picker_modal.dart';
-import 'transaction_entry_screen.dart';
+import '../widgets/transaction_list_item.dart';
 import 'recurring_list_screen.dart';
-import '../../../debts/presentation/screens/debt_entry_screen.dart';
-import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
+import 'transaction_search_screen.dart';
 import '../../../reports/presentation/providers/report_details_providers.dart';
 
 
@@ -401,6 +397,24 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                         ),
                       ),
                       const Spacer(),
+                      // Full-history search — opens a blank screen that can
+                      // reach every transaction ever recorded, not just the
+                      // month this tab is showing.
+                      IconButton(
+                        icon: Icon(
+                          Icons.manage_search,
+                          color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TransactionSearchScreen(),
+                            ),
+                          );
+                        },
+                        tooltip: trans.historySearchTooltip,
+                      ),
                       // Recurring button
                       IconButton(
                         key: _tourKeyRecurring,
@@ -828,7 +842,7 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                                   ],
                                 ),
                               ),
-                              ...cts.map((ct) => _TransactionItem(
+                              ...cts.map((ct) => TransactionListItem(
                                 key: ValueKey(ct.transaction.id),
                                 transaction: ct.transaction,
                                 category: categoryMap[ct.transaction.categoryId],
@@ -931,246 +945,6 @@ class _FilterChip extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _TransactionItem extends ConsumerWidget {
-  final Transaction transaction;
-  final Category? category;
-  final Account? account;
-
-  const _TransactionItem({
-    super.key,
-    required this.transaction,
-    this.category,
-    this.account,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLight = AppThemeProvider.isLightMode(context);
-    final showDecimal = ref.watch(showDecimalProvider);
-    final trans = ref.watch(translationsProvider);
-    final isExpense = transaction.type == TransactionType.expense;
-    final isIncome = transaction.type == TransactionType.income;
-    final isAdjustmentIn = transaction.type == TransactionType.adjustmentIn;
-    final isAdjustmentOut = transaction.type == TransactionType.adjustmentOut;
-    final isDebtIn = transaction.type == TransactionType.debtIn;
-    final isDebtOut = transaction.type == TransactionType.debtOut;
-    final isDebtPaymentOut = transaction.type == TransactionType.debtPaymentOut;
-    final isDebtPaymentIn = transaction.type == TransactionType.debtPaymentIn;
-
-    // Localized transaction type name
-    String localizedTypeName(TransactionType type) {
-      switch (type) {
-        case TransactionType.income: return trans.entryTypeIncome;
-        case TransactionType.expense: return trans.entryTypeExpense;
-        case TransactionType.transfer: return trans.entryTypeTransfer;
-        case TransactionType.adjustmentIn: return trans.entryTypeAdjustmentIn;
-        case TransactionType.adjustmentOut: return trans.entryTypeAdjustmentOut;
-        case TransactionType.debtIn: return trans.entryTypeDebtIn;
-        case TransactionType.debtOut: return trans.entryTypeDebtOut;
-        case TransactionType.debtPaymentOut: return trans.entryTypeDebtPaymentOut;
-        case TransactionType.debtPaymentIn: return trans.entryTypeDebtPaymentIn;
-      }
-    }
-
-    final color = isExpense
-        ? const Color(0xFFFB7185)
-        : isIncome
-            ? const Color(0xFF34D399)
-            : (isAdjustmentIn || isAdjustmentOut)
-                ? Colors.amber
-                : isDebtIn
-                    ? Colors.orange   // borrowed (I owe) — matches overview orange
-                    : isDebtOut
-                        ? const Color(0xFF60A5FA) // lent (owed to me) — matches overview blue
-                        : isDebtPaymentOut
-                            ? const Color(0xFFFB7185) // debt payment out — red (money leaving)
-                            : isDebtPaymentIn
-                                ? const Color(0xFF34D399) // debt payment in — green (money returning)
-                                : const Color(0xFF60A5FA);
-    final prefix = isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn ? '+' : '');
-    
-    // Data is now passed in, no need for Futures
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: GestureDetector(
-        onTap: () async {
-          if (isDebtIn || isDebtOut) {
-            // Debt transactions — navigate to the corresponding DebtEntryScreen.
-            // Parse person name from title "Debt: <name>" or fall back to the
-            // raw title / empty string.
-            final title = transaction.title ?? '';
-            final personName = title.startsWith('Debt: ')
-                ? title.substring(6).trim()
-                : title.trim();
-
-            final debtType = isDebtIn ? DebtType.payable : DebtType.receivable;
-            final profileId = ref.read(activeProfileIdProvider);
-            final navigator = Navigator.of(context);
-
-            if (profileId != null && personName.isNotEmpty) {
-              final debt = await ref.read(debtDaoProvider).findDebtByNameAndType(
-                profileId,
-                personName,
-                debtType,
-                accountId: transaction.accountId,
-                date: transaction.date,
-                amount: transaction.amount,
-              );
-              if (!context.mounted) return;
-              if (debt != null) {
-                navigator.push(
-                  MaterialPageRoute(
-                    builder: (context) => DebtEntryScreen(debt: debt),
-                  ),
-                );
-                return;
-              }
-            }
-            // Fallback: debt record not found — open normal transaction editor.
-            navigator.push(
-              MaterialPageRoute(
-                builder: (context) => (transaction.type == TransactionType.debtPaymentOut ||
-                        transaction.type == TransactionType.debtPaymentIn)
-                    ? DebtPaymentViewScreen(transactionId: transaction.id)
-                    : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
-              ),
-            );
-          } else {
-            // Navigate to edit page
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => (transaction.type == TransactionType.debtPaymentOut ||
-                        transaction.type == TransactionType.debtPaymentIn)
-                    ? DebtPaymentViewScreen(transactionId: transaction.id)
-                    : TransactionEntryScreen(transactionId: transaction.id, transactionType: transaction.type),
-              ),
-            );
-          }
-        },
-        child: GlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-          children: [
-            // Icon with colored background
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: (isIncome || isExpense) && category != null
-                    ? _categoryBgColor(category!.color)
-                    : color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: (isIncome || isExpense) && category != null && category!.icon.isNotEmpty
-                  ? Center(child: CategoryIconWidget(iconString: category!.icon, size: 20, color: color))
-                  : Icon(_getIcon(transaction.type), color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            // Transaction details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Transaction title (or fallback to type)
-                  Text(
-                    transaction.title != null && transaction.title!.isNotEmpty 
-                      ? transaction.title! 
-                      : localizedTypeName(transaction.type),
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Time and category
-                  Builder(
-                    builder: (context) {
-                      final categoryName = category?.name ?? localizedTypeName(transaction.type);
-                      final timeStr = _formatTime(transaction.date);
-                      return Text(
-                        '$timeStr • $categoryName',
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
-                          fontSize: 11,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            // Amount and Account
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Builder(
-                  builder: (context) {
-                    final currencySymbol = account?.currency.code ?? 'IDR';
-                    return Text(
-                      '$currencySymbol $prefix${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 4),
-                Builder(
-                  builder: (context) {
-                    final accountName = account?.name ?? trans.loading;
-                    return Text(
-                      accountName,
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.4),
-                        fontSize: 11,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-    );
-  }
-
-  String _formatTime(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
-    final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  Color _categoryBgColor(String? hex) =>
-      parseHexColor(hex).withValues(alpha: 0.25);
-
-  IconData _getIcon(TransactionType type) {
-    switch (type) {
-      case TransactionType.income: return Icons.arrow_downward;
-      case TransactionType.expense: return Icons.arrow_upward;
-      case TransactionType.transfer: return Icons.swap_horiz;
-      case TransactionType.adjustmentIn: return Icons.tune;
-      case TransactionType.adjustmentOut: return Icons.tune;
-      case TransactionType.debtIn: return Icons.people_outline;
-      case TransactionType.debtOut: return Icons.people_outline;
-      case TransactionType.debtPaymentOut:
-      case TransactionType.debtPaymentIn:
-        return Icons.handshake_outlined;
-    }
   }
 }
 

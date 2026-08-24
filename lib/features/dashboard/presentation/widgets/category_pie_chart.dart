@@ -21,6 +21,51 @@ const _chartColors = [
   Color(0xFFFBBF24), // amber
   Color(0xFF34D399), // emerald
   Color(0xFFF472B6), // pink
+  // — extended palette: hue-jumped so adjacent slices stay contrasty —
+  // bold band
+  Color(0xFF14B8A6), // teal
+  Color(0xFFF97316), // orange
+  Color(0xFF6366F1), // indigo
+  Color(0xFF84CC16), // lime
+  Color(0xFFEC4899), // pink
+  Color(0xFF0EA5E9), // sky
+  Color(0xFFB91C1C), // deep red
+  Color(0xFFA855F7), // purple
+  Color(0xFF059669), // deep emerald
+  Color(0xFFD946EF), // fuchsia
+  // light band
+  Color(0xFFFCA5A5), // light red
+  Color(0xFF5EEAD4), // light teal
+  Color(0xFFFDBA74), // light orange
+  Color(0xFF93C5FD), // pale blue
+  Color(0xFFBEF264), // light lime
+  Color(0xFFD8B4FE), // light purple
+  Color(0xFF86EFAC), // light green
+  Color(0xFFF9A8D4), // light pink
+  Color(0xFF22D3EE), // cyan
+  Color(0xFFFDE68A), // light amber
+  // deep band
+  Color(0xFF4338CA), // deep indigo
+  Color(0xFF15803D), // deep green
+  Color(0xFFBE185D), // deep pink
+  Color(0xFF0D9488), // deep teal
+  Color(0xFFC2410C), // deep orange
+  Color(0xFF0369A1), // deep sky
+  Color(0xFFA16207), // bronze
+  Color(0xFF7C3AED), // violet
+  Color(0xFF65A30D), // olive
+  Color(0xFF9D174D), // wine
+  // bright band
+  Color(0xFF2DD4BF), // aqua
+  Color(0xFFFB7185), // rose
+  Color(0xFFA3E635), // chartreuse
+  Color(0xFF818CF8), // periwinkle
+  Color(0xFFEA580C), // burnt orange
+  Color(0xFF06B6D4), // deep cyan
+  Color(0xFFE879F9), // orchid
+  Color(0xFF16A34A), // forest green
+  Color(0xFFF43F5E), // crimson
+  Color(0xFF38BDF8), // azure
 ];
 
 class _PieSlice {

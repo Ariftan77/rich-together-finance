@@ -136,6 +136,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsBaseCurrency => 'Mata Uang Dasar';
   @override String get settingsShowDecimals => 'Tampilkan Desimal';
   @override String get settingsCardShadow => 'Bayangan Kartu';
+  @override String get settingsHideCategoryIcon => 'Sembunyikan Ikon Kategori';
   @override String get settingsPremium => 'Premium';
 
   @override String get settingsAboutApp => 'Tentang Richer';
@@ -584,6 +585,17 @@ class AppTranslationsId implements AppTranslations {
   @override String get txnFilterDebt => 'Hutang';
   @override String get txnFilterAdjustment => 'Penyesuaian';
   @override String get txnDaySummaryTxn => 'Transaksi';
+
+  // Transaction History Search Screen (full-history search)
+  @override String get historySearchTitle => 'Cari Riwayat';
+  @override String get historySearchTooltip => 'Cari seluruh riwayat';
+  @override String get historySearchHint => 'Judul, kategori, catatan, jumlah, dompet';
+  @override String get historySearchIntroTitle => 'Temukan transaksi apa pun';
+  @override String get historySearchIntroHint => 'Cari seluruh riwayatmu, sejauh apa pun ke belakang. Ketik judul, kategori, catatan, jumlah, atau nama dompet — atau saring dengan rentang tanggal.';
+  @override String get historySearchNoResults => 'Tidak ada transaksi yang cocok';
+  @override String get historySearchNoResultsHint => 'Coba kata kunci lebih pendek, atau perluas rentang tanggalnya.';
+  @override String get historySearchDateRange => 'Rentang tanggal';
+  @override String historySearchResults(int count) => '$count hasil';
 
   // Debt Payoff Card (Phase 6)
   @override String get debtPayoffTitle => 'Ringkasan Pelunasan';

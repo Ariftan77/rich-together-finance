@@ -92,14 +92,18 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     );
   }
 
-  /// Record a group payment (settle oldest debts first)
-  Future<void> recordGroupPayment(
+  /// Record a group payment (settle oldest debts first).
+  ///
+  /// Returns how much was applied to each debt, so the caller can write one
+  /// linked transaction per debt instead of a single unlinked lump row.
+  Future<List<DebtPaymentAllocation>> recordGroupPayment(
     int profileId,
     String personName,
     DebtType type,
     double paymentAmount,
   ) async {
     return transaction(() async {
+      final allocations = <DebtPaymentAllocation>[];
       double remainingPayment = paymentAmount;
       final unsettledDebts = await (select(debts)
             ..where((d) =>
@@ -128,8 +132,10 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
           ),
         );
 
+        allocations.add(DebtPaymentAllocation(debt: debt, amount: amountToApply));
         remainingPayment -= amountToApply;
       }
+      return allocations;
     });
   }
 
@@ -182,9 +188,33 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     return results.first;
   }
 
-  /// Reverse a debt payment (e.g. when a settlement transaction is deleted).
+  /// Reverse a debt payment against a known debt id (precise path).
+  ///
+  /// Used when the deleted settlement transaction carries a `debtId`, so the
+  /// right debt is restored even when several debts share a person name.
+  Future<void> reverseDebtPaymentById(int debtId, double amount) async {
+    final debt = await getDebtById(debtId);
+    if (debt == null) return;
+
+    final newPaidAmount = (debt.paidAmount - amount).clamp(0.0, debt.amount);
+    final isStillFullyPaid = newPaidAmount >= debt.amount;
+
+    await (update(debts)..where((d) => d.id.equals(debtId))).write(
+      DebtsCompanion(
+        paidAmount: Value(newPaidAmount),
+        isSettled: Value(isStillFullyPaid),
+        settledDate: isStillFullyPaid ? Value(debt.settledDate) : const Value(null),
+        settledAccountId:
+            isStillFullyPaid ? Value(debt.settledAccountId) : const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Legacy fallback: reverse a debt payment by person name.
   /// Finds the most-recently-updated debt matching [profileId] + [personName]
-  /// and subtracts [amount] from its paidAmount.
+  /// and subtracts [amount] from its paidAmount. Only used for pre-v22
+  /// transactions and group payments, which have no `debtId`.
   Future<void> reverseDebtPayment(int profileId, String personName, double amount) async {
     final matches = await (select(debts)
           ..where((d) => d.profileId.equals(profileId) & d.personName.equals(personName))
@@ -236,4 +266,12 @@ class DebtDao extends DatabaseAccessor<AppDatabase> with _$DebtDaoMixin {
     final receivables = await getDebtsByType(profileId, DebtType.receivable);
     return receivables.fold<double>(0.0, (sum, debt) => sum + (debt.amount - debt.paidAmount));
   }
+}
+
+/// How much of a group payment was applied to one debt.
+class DebtPaymentAllocation {
+  final Debt debt;
+  final double amount;
+
+  const DebtPaymentAllocation({required this.debt, required this.amount});
 }

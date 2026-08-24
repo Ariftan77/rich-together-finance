@@ -4,6 +4,7 @@ import 'accounts.dart';
 import 'categories.dart';
 import 'recurring.dart';
 import 'profiles.dart';
+import 'debts.dart';
 
 /// Transactions table definition
 class Transactions extends Table {
@@ -20,6 +21,9 @@ class Transactions extends Table {
   TextColumn get title => text().nullable()();  // Transaction title
   TextColumn get note => text().nullable()();
   IntColumn get recurringId => integer().nullable().references(Recurring, #id)();
+  /// Links this transaction to the debt it belongs to (creation or payment).
+  /// Null for non-debt transactions and legacy rows that could not be matched.
+  IntColumn get debtId => integer().nullable().references(Debts, #id)();
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get remoteId => text().nullable()();
   DateTimeColumn get updatedAt => dateTime().nullable()();

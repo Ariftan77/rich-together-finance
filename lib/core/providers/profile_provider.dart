@@ -93,3 +93,9 @@ final cardShadowProvider = Provider<bool>((ref) {
   final settingsAsync = ref.watch(activeProfileSettingsProvider);
   return settingsAsync.whenOrNull(data: (settings) => settings?.cardShadow) ?? true;
 });
+
+/// Provider for hiding the category icon in the transaction history list
+final hideCategoryIconProvider = Provider<bool>((ref) {
+  final settingsAsync = ref.watch(activeProfileSettingsProvider);
+  return settingsAsync.whenOrNull(data: (settings) => settings?.hideCategoryIcon) ?? false;
+});

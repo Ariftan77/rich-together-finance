@@ -56,7 +56,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration {
@@ -239,8 +239,118 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(budgets, budgets.iconColor);
           } catch (_) {}
         }
+        if (from < 22) {
+          try {
+            await m.addColumn(transactions, transactions.debtId);
+          } catch (_) {}
+          // Never let the backfill fail the upgrade — an exception here would
+          // abort onUpgrade and leave the app unable to open its database.
+          // Losing the links only costs precision: every debt lookup still has
+          // a name/amount/date fallback for rows where debtId is null.
+          try {
+            await backfillTransactionDebtLinks();
+          } catch (_) {}
+        }
+        if (from < 23) {
+          try {
+            await customStatement(
+              'ALTER TABLE user_settings ADD COLUMN hide_category_icon INTEGER NOT NULL DEFAULT 0',
+            );
+          } catch (_) {}
+        }
       },
     );
+  }
+
+  /// Backfill for schema v22: link existing debt transactions to their debt
+  /// record now that transactions carry a real `debtId` foreign key.
+  ///
+  /// Before v22 the link was inferred at read time from the title prefix plus
+  /// account/amount/time heuristics. This replays those heuristics once, so
+  /// historic rows open and delete as precisely as newly written ones.
+  ///
+  /// Group payments ("Group Debt Payment: ...") are intentionally left
+  /// unlinked — one row settled several debts, which a single debtId cannot
+  /// express. They keep the legacy name-based reversal path.
+  Future<void> backfillTransactionDebtLinks() async {
+    const creationPrefix = 'Debt: ';
+    const paymentPrefix = 'Debt Payment: ';
+
+    final unlinked = await (select(transactions)
+          ..where((t) =>
+              t.debtId.isNull() &
+              t.type.isIn([
+                TransactionType.debtIn.index,
+                TransactionType.debtOut.index,
+                TransactionType.debtPaymentOut.index,
+                TransactionType.debtPaymentIn.index,
+              ])))
+        .get();
+    if (unlinked.isEmpty) return;
+
+    final allDebts = await select(debts).get();
+    if (allDebts.isEmpty) return;
+
+    for (final tx in unlinked) {
+      final title = tx.title ?? '';
+      final isCreation = tx.type == TransactionType.debtIn ||
+          tx.type == TransactionType.debtOut;
+
+      final String personName;
+      if (isCreation) {
+        if (!title.startsWith(creationPrefix)) continue;
+        personName = title.substring(creationPrefix.length).trim();
+      } else {
+        // Excludes "Group Debt Payment: " — it does not carry this prefix.
+        if (!title.startsWith(paymentPrefix)) continue;
+        personName = title.substring(paymentPrefix.length).trim();
+      }
+      if (personName.isEmpty) continue;
+
+      final debtType = (tx.type == TransactionType.debtIn ||
+              tx.type == TransactionType.debtPaymentOut)
+          ? DebtType.payable
+          : DebtType.receivable;
+
+      final candidates = allDebts
+          .where((d) =>
+              d.profileId == tx.profileId &&
+              d.personName == personName &&
+              d.type == debtType)
+          .toList();
+      if (candidates.isEmpty) continue;
+
+      Debt? match;
+      if (isCreation) {
+        // Strongest signal: the debt was created from this very account for
+        // this very amount. Fall back to person + type alone when the debt
+        // was edited afterwards.
+        final exact = candidates
+            .where((d) =>
+                d.creationAccountId == tx.accountId && d.amount == tx.amount)
+            .toList();
+        match = _closestByCreation(exact.isNotEmpty ? exact : candidates, tx.date);
+      } else {
+        // A payment can only belong to a debt that already existed.
+        final existing =
+            candidates.where((d) => !d.createdAt.isAfter(tx.date)).toList();
+        match = _closestByCreation(
+            existing.isNotEmpty ? existing : candidates, tx.date);
+      }
+
+      if (match == null) continue;
+      await (update(transactions)..where((t) => t.id.equals(tx.id)))
+          .write(TransactionsCompanion(debtId: Value(match.id)));
+    }
+  }
+
+  /// The debt whose creation date sits closest to [date].
+  Debt? _closestByCreation(List<Debt> candidates, DateTime date) {
+    if (candidates.isEmpty) return null;
+    return candidates.reduce((a, b) =>
+        a.createdAt.difference(date).abs() <= b.createdAt.difference(date).abs()
+            ? a
+            : b);
   }
 
   /// Creates default profile during migration to version 5

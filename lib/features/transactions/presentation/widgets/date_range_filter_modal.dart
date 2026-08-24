@@ -7,9 +7,25 @@ import '../../../../shared/theme/colors.dart';
 import '../../../../shared/theme/theme_provider_widget.dart';
 import '../providers/search_provider.dart';
 
-/// Modal bottom sheet for filtering transactions by date range
+/// Modal bottom sheet for filtering transactions by date range.
+///
+/// By default it reads and writes the transactions-tab filter providers.
+/// Pass [initialFrom]/[initialTo] together with [onApply] to drive a different
+/// pair of providers (the full-history search screen does this), and [maxDate]
+/// to allow picking beyond today for advance-recorded transactions.
 class DateRangeFilterModal extends ConsumerStatefulWidget {
-  const DateRangeFilterModal({super.key});
+  final DateTime? initialFrom;
+  final DateTime? initialTo;
+  final void Function(DateTime? from, DateTime? to)? onApply;
+  final DateTime? maxDate;
+
+  const DateRangeFilterModal({
+    super.key,
+    this.initialFrom,
+    this.initialTo,
+    this.onApply,
+    this.maxDate,
+  });
 
   @override
   ConsumerState<DateRangeFilterModal> createState() => _DateRangeFilterModalState();
@@ -23,28 +39,48 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
   @override
   void initState() {
     super.initState();
-    // Load current filter values
-    _dateFrom = ref.read(dateFromFilterProvider);
-    _dateTo = ref.read(dateToFilterProvider);
+    // Load current filter values — from the caller when it owns the state,
+    // otherwise from the transactions-tab providers.
+    _dateFrom = widget.onApply != null ? widget.initialFrom : ref.read(dateFromFilterProvider);
+    _dateTo = widget.onApply != null ? widget.initialTo : ref.read(dateToFilterProvider);
+  }
+
+  /// The picker must follow the app theme — a dark picker on a light sheet is
+  /// the bug light mode always hides.
+  ThemeData _pickerTheme(BuildContext context) {
+    final isLight = AppThemeProvider.isLightMode(context);
+    return (isLight ? ThemeData.light() : ThemeData.dark()).copyWith(
+      colorScheme: isLight
+          ? const ColorScheme.light(
+              primary: AppColors.primaryGold,
+              onPrimary: Colors.black,
+              surface: Color(0xFFF8FAFC),
+              onSurface: AppColors.textPrimaryLight,
+            )
+          : const ColorScheme.dark(
+              primary: AppColors.primaryGold,
+              onPrimary: Colors.black,
+              surface: Color(0xFF221D10),
+            ),
+    );
+  }
+
+  DateTime get _lastDate => widget.maxDate ?? DateTime.now();
+
+  /// Keeps the picker's initial date inside [firstDate, lastDate] — showDatePicker
+  /// asserts otherwise.
+  DateTime _initialFor(DateTime? current) {
+    final candidate = current ?? DateTime.now();
+    return candidate.isAfter(_lastDate) ? _lastDate : candidate;
   }
 
   Future<void> _selectDateFrom() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dateFrom ?? DateTime.now(),
+      initialDate: _initialFor(_dateFrom),
       firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGold,
-              surface: Color(0xFF221D10),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      lastDate: _lastDate,
+      builder: (context, child) => Theme(data: _pickerTheme(context), child: child!),
     );
 
     if (picked != null) {
@@ -62,20 +98,10 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
   Future<void> _selectDateTo() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dateTo ?? DateTime.now(),
+      initialDate: _initialFor(_dateTo),
       firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGold,
-              surface: Color(0xFF221D10),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      lastDate: _lastDate,
+      builder: (context, child) => Theme(data: _pickerTheme(context), child: child!),
     );
 
     if (picked != null) {
@@ -108,8 +134,13 @@ class _DateRangeFilterModalState extends ConsumerState<DateRangeFilterModal> {
     }
     
     // Apply filters
-    ref.read(dateFromFilterProvider.notifier).state = _dateFrom;
-    ref.read(dateToFilterProvider.notifier).state = _dateTo;
+    final onApply = widget.onApply;
+    if (onApply != null) {
+      onApply(_dateFrom, _dateTo);
+    } else {
+      ref.read(dateFromFilterProvider.notifier).state = _dateFrom;
+      ref.read(dateToFilterProvider.notifier).state = _dateTo;
+    }
     
     Navigator.pop(context);
   }

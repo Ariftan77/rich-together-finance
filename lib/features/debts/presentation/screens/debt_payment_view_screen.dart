@@ -14,6 +14,7 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/glass_button.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
+import 'debt_entry_screen.dart';
 
 class DebtPaymentViewScreen extends ConsumerStatefulWidget {
   final int transactionId;
@@ -39,6 +40,10 @@ class _DebtPaymentViewScreenState extends ConsumerState<DebtPaymentViewScreen> {
   String? _originalTitle;
   TransactionType? _originalType;
 
+  // Debt this payment belongs to (null for legacy rows and group payments)
+  int? _debtId;
+  Debt? _debt;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +66,11 @@ class _DebtPaymentViewScreenState extends ConsumerState<DebtPaymentViewScreen> {
     final account = await accountDao.getAccountById(tx.accountId);
     if (!mounted) return;
 
+    final debt = tx.debtId != null
+        ? await ref.read(debtDaoProvider).getDebtById(tx.debtId!)
+        : null;
+    if (!mounted) return;
+
     setState(() {
       _transaction = tx;
       _account = account;
@@ -68,6 +78,8 @@ class _DebtPaymentViewScreenState extends ConsumerState<DebtPaymentViewScreen> {
       _originalAmount = tx.amount;
       _originalTitle = tx.title;
       _originalType = tx.type;
+      _debtId = tx.debtId;
+      _debt = debt;
       _isLoading = false;
     });
   }
@@ -159,8 +171,13 @@ class _DebtPaymentViewScreenState extends ConsumerState<DebtPaymentViewScreen> {
 
       final profileId = ref.read(activeProfileIdProvider);
 
-      // Reverse debt payment — check both "Debt Payment: " prefix and "Group Debt Payment: " prefix
-      if (_originalAmount != null && profileId != null && _originalTitle != null) {
+      if (_debtId != null && _originalAmount != null) {
+        // Precise path: restore exactly the debt this payment was linked to.
+        await ref.read(debtDaoProvider).reverseDebtPaymentById(_debtId!, _originalAmount!);
+      } else if (_originalAmount != null && profileId != null && _originalTitle != null) {
+        // Legacy fallback for rows without a debtId (pre-v22 payments and
+        // older group payments): match by "Debt Payment: " / "Group Debt
+        // Payment: " prefix and person name.
         const paymentPrefix = 'Debt Payment: ';
         const groupPrefix = 'Group Debt Payment: ';
         String? personName;
@@ -399,6 +416,50 @@ class _DebtPaymentViewScreenState extends ConsumerState<DebtPaymentViewScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // Linked debt — tap to open the exact debt record
+                        if (_debt != null) ...[
+                          Text(
+                            'Linked Debt',
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: isLight ? AppColors.textPrimaryLight : Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DebtEntryScreen(debt: _debt!),
+                              ),
+                            ),
+                            child: GlassCard(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              borderRadius: 12,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.link, color: AppColors.primaryGold, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _debt!.personName,
+                                      style: TextStyle(
+                                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: isLight ? const Color(0xFFCBD5E1) : Colors.white.withValues(alpha: 0.3),
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Note (editable)
                         GlassInput(
