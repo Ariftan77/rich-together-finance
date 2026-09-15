@@ -54,6 +54,8 @@ abstract class AppTranslations {
   String get entryTypeDebtOut;
   String get entryTypeDebtPaymentOut;
   String get entryTypeDebtPaymentIn;
+  String get entryTypeInvestmentOut;
+  String get entryTypeInvestmentIn;
   String get entryCategoryCreated;
   String get entryCategory;
   String get entryAccount;
@@ -290,9 +292,6 @@ abstract class AppTranslations {
   String get debtNoDebtsHint;
   String get debtSettled;
 
-  // Investment
-  String get investmentPlaceholder;
-  String get investmentPlaceholderHint;
 
   // Recurring
   String get recurringTitle;
@@ -843,4 +842,97 @@ abstract class AppTranslations {
   String get signInBenefitBackup;
   String get signInBenefitsSignInButton;
   String get signInBenefitsSkipButton;
+
+  // ===== Investment tracking (snapshot-based) =====
+  String get investmentAssetTypeStock;
+  String get investmentAssetTypeCrypto;
+  String get investmentAssetTypeGold;
+  String get investmentAssetTypeSilver;
+  String get investmentAssetTypeEtf;
+  String get investmentAssetTypeMutualFund;
+  String get investmentAssetTypeProperty;
+  String get investmentAssetTypeBond;
+  String get investmentAssetTypeOther;
+
+  String get investmentTotalValue;
+  String get investmentInvested;
+  String get investmentGain;
+  String get investmentReturn;
+  String get investmentReturnBreakdownTitle;
+  String get investmentTotalPutIn;
+  String get investmentInvestedFormula;
+  String get investmentGainFormula;
+  String get investmentReturnFormula;
+  String get investmentReturnBreakdownNote;
+  String get investmentSinceLastUpdate;
+
+  String get investmentEmptyTitle;
+  String get investmentEmptyHint;
+  String get investmentSaveButton;
+  String get investmentDeleteConfirmAction;
+  String get investmentAddAsset;
+  String get investmentUpdateValues;
+  String get investmentAssetsSection;
+
+  String get investmentChartTitle;
+  String get investmentChartValueLabel;
+  String get investmentChartInvestedLabel;
+  /// Shown instead of the chart until three snapshot dates exist - two points
+  /// would draw a trend line the data cannot support.
+  String investmentChartNeedMore(int count);
+  String get investmentAssetChartTitle;
+  String get investmentUpdateValue;
+  String get investmentSelectAssetType;
+  String get investmentWalletLabel;
+  String get investmentWalletNone;
+  String investmentWalletNoneInCurrency(String currencyCode);
+  String get investmentWalletAddedHint;
+  String get investmentWalletWithdrawnHint;
+  String get investmentContributionAdded;
+  String get investmentContributionWithdrawn;
+
+  String get investmentAssetNameLabel;
+  String get investmentAssetNameHint;
+  String get investmentAssetTypeLabel;
+  String get investmentAssetCurrencyLabel;
+  String get investmentCurrentValueLabel;
+  String get investmentInvestedSoFarLabel;
+  String get investmentInvestedSoFarHint;
+  String get investmentNoteLabel;
+  String get investmentAddAssetTitle;
+  String get investmentEditAssetTitle;
+  String get investmentDeleteAsset;
+  String get investmentDeleteAssetConfirm;
+
+  String get investmentUpdateTitle;
+  String get investmentUpdateAsOf;
+  String get investmentUpdateValueLabel;
+  String get investmentUpdateContributionLabel;
+  String get investmentUpdateContributionHint;
+  String get investmentUpdateSaved;
+  String get investmentUpdateNothingEntered;
+
+  String get investmentSellTitle;
+  String get investmentSellProceedsLabel;
+  String get investmentSellHint;
+  String get investmentSellOrWithdraw;
+  String get investmentSellAll;
+  String get investmentSellAllHint;
+  String get investmentWithdrawPart;
+  String get investmentWithdrawPartHint;
+  String get investmentSellAction;
+  String get investmentSellDone;
+
+  String get investmentHistoryTitle;
+  String get investmentHistoryEmpty;
+  String investmentHistoryAssetCount(int count);
+  String get investmentDeleteSession;
+  String get investmentDeleteSessionConfirm;
+
+  String investmentLastUpdated(String date);
+
+  String get premiumGateInvestmentTitle;
+  String get premiumGateInvestmentDesc;
+  String get premiumFeatureInvestments;
+  String get dashboardInvestments;
 }

@@ -15,6 +15,7 @@ import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
+import '../../../investments/presentation/screens/investment_asset_detail_screen.dart';
 import '../screens/transaction_entry_screen.dart';
 
 /// A single transaction row used by the transaction history list and the
@@ -50,6 +51,8 @@ class TransactionListItem extends ConsumerWidget {
     final isDebtOut = transaction.type == TransactionType.debtOut;
     final isDebtPaymentOut = transaction.type == TransactionType.debtPaymentOut;
     final isDebtPaymentIn = transaction.type == TransactionType.debtPaymentIn;
+    final isInvestmentOut = transaction.type == TransactionType.investmentOut;
+    final isInvestmentIn = transaction.type == TransactionType.investmentIn;
 
     // Localized transaction type name
     String localizedTypeName(TransactionType type) {
@@ -63,10 +66,14 @@ class TransactionListItem extends ConsumerWidget {
         case TransactionType.debtOut: return trans.entryTypeDebtOut;
         case TransactionType.debtPaymentOut: return trans.entryTypeDebtPaymentOut;
         case TransactionType.debtPaymentIn: return trans.entryTypeDebtPaymentIn;
+        case TransactionType.investmentOut: return trans.entryTypeInvestmentOut;
+        case TransactionType.investmentIn: return trans.entryTypeInvestmentIn;
       }
     }
 
-    final color = isExpense
+    final color = (isInvestmentOut || isInvestmentIn)
+        ? (isLight ? AppColors.primaryGoldTextLight : AppColors.primaryGold)
+        : isExpense
         ? const Color(0xFFFB7185)
         : isIncome
             ? const Color(0xFF34D399)
@@ -81,7 +88,7 @@ class TransactionListItem extends ConsumerWidget {
                             : isDebtPaymentIn
                                 ? const Color(0xFF34D399) // debt payment in — green (money returning)
                                 : const Color(0xFF60A5FA);
-    final prefix = isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn ? '+' : '');
+    final prefix = isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut || isInvestmentOut ? '-' : (isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn || isInvestmentIn ? '+' : '');
     
     // Data is now passed in, no need for Futures
 
@@ -89,7 +96,10 @@ class TransactionListItem extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: GestureDetector(
         onTap: () async {
-          if (isDebtIn || isDebtOut) {
+          if (isInvestmentOut || isInvestmentIn) {
+            // Owned by an investment snapshot — changes go through the asset.
+            await openInvestmentTransaction(context, transaction.id);
+          } else if (isDebtIn || isDebtOut) {
             // Debt creation transactions — open the debt record they belong to.
             final navigator = Navigator.of(context);
 
@@ -283,6 +293,9 @@ class TransactionListItem extends ConsumerWidget {
       case TransactionType.debtPaymentOut:
       case TransactionType.debtPaymentIn:
         return Icons.handshake_outlined;
+      case TransactionType.investmentOut:
+      case TransactionType.investmentIn:
+        return Icons.show_chart;
     }
   }
 }

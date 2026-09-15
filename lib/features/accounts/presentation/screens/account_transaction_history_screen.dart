@@ -15,6 +15,7 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/widgets/glass_input.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
+import '../../../investments/presentation/screens/investment_asset_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Module-private providers — autoDispose so they reset on every navigation
@@ -377,13 +378,17 @@ class _TxItem extends StatelessWidget {
     final isExpense = transaction.type == TransactionType.expense ||
         transaction.type == TransactionType.adjustmentOut ||
         transaction.type == TransactionType.debtOut ||
-        transaction.type == TransactionType.debtPaymentOut;
+        transaction.type == TransactionType.debtPaymentOut ||
+        transaction.type == TransactionType.investmentOut;
     final isIncome = transaction.type == TransactionType.income ||
         transaction.type == TransactionType.adjustmentIn ||
         transaction.type == TransactionType.debtIn ||
-        transaction.type == TransactionType.debtPaymentIn;
+        transaction.type == TransactionType.debtPaymentIn ||
+        transaction.type == TransactionType.investmentIn;
 
-    final color = transaction.type == TransactionType.expense
+    final color = transaction.type.isInvestment
+        ? (isLight ? AppColors.primaryGoldTextLight : AppColors.primaryGold)
+        : transaction.type == TransactionType.expense
         ? const Color(0xFFFB7185)
         : transaction.type == TransactionType.income
             ? const Color(0xFF34D399)
@@ -411,7 +416,9 @@ class _TxItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
-        onTap: () => Navigator.push(
+        onTap: () => transaction.type.isInvestment
+            ? openInvestmentTransaction(context, transaction.id)
+            : Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => (transaction.type == TransactionType.debtPaymentOut ||
@@ -495,6 +502,9 @@ class _TxItem extends StatelessWidget {
       case TransactionType.debtPaymentOut:
       case TransactionType.debtPaymentIn:
         return Icons.handshake_outlined;
+      case TransactionType.investmentOut:
+      case TransactionType.investmentIn:
+        return Icons.show_chart;
     }
   }
 }

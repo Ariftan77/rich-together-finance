@@ -2417,6 +2417,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             freeLocked: false,
           ),
           _BenefitsRow(
+            feature: trans.premiumFeatureInvestments,
+            freeLabel: trans.premiumFreeLimit3,
+            premiumLabel: trans.premiumUnlimited,
+            freeLocked: false,
+          ),
+          _BenefitsRow(
             feature: trans.premiumFeatureAnalytics,
             freeLabel: trans.premiumFreeLocked,
             premiumLabel: '',

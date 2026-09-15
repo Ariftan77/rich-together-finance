@@ -22,6 +22,8 @@ import '../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../budget/presentation/providers/budget_provider.dart';
 import '../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../goals/presentation/providers/goal_provider.dart';
+import '../../investments/presentation/providers/investment_providers.dart';
+import '../../investments/presentation/screens/investment_asset_entry_screen.dart';
 import '../../wealth/presentation/screens/wealth_screen.dart';
 import '../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../shared/tour/tour_keys.dart';
@@ -443,6 +445,38 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
             onSelected: _onDebtDialSelected,
             onOpenChanged: (isOpen) {
               setState(() => _debtDialOpen = isOpen);
+            },
+          );
+        }
+        if (wealthTab == 3) {
+          return FabButton(
+            icon: Icons.add,
+            onPressed: () async {
+              final premiumEnabled = ref.read(premiumEnabledProvider);
+              final iapEnabled = ref.read(iapEnabledProvider);
+              final isPremium = ref.read(premiumStatusProvider);
+              final assets =
+                  ref.read(investmentAssetsStreamProvider).valueOrNull ?? [];
+              if (premiumEnabled &&
+                  iapEnabled &&
+                  !isPremium &&
+                  assets.length >= kFreeInvestmentAssetLimit) {
+                final trans = ref.read(translationsProvider);
+                await showPremiumGateModal(
+                  context,
+                  ref,
+                  title: trans.premiumGateInvestmentTitle,
+                  description: trans.premiumGateInvestmentDesc,
+                );
+                return;
+              }
+              if (!mounted) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const InvestmentAssetEntryScreen(),
+                ),
+              );
             },
           );
         }

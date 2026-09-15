@@ -89,6 +89,7 @@ class NetWorthService {
     double stockValue = 0;
     double goldValue = 0;
     double silverValue = 0;
+    double otherValue = 0;
 
     for (final holding in holdings) {
       final assetType = holding.assetType;
@@ -122,6 +123,13 @@ class NetWorthService {
         case AssetType.silver:
           silverValue += convertedValue;
           break;
+        case AssetType.etf:
+        case AssetType.mutualFund:
+        case AssetType.property:
+        case AssetType.bond:
+        case AssetType.other:
+          otherValue += convertedValue;
+          break;
       }
     }
 
@@ -131,6 +139,7 @@ class NetWorthService {
       'stocks': stockValue,
       'gold': goldValue,
       'silver': silverValue,
+      'other': otherValue,
     };
   }
 }

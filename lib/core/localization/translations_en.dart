@@ -58,6 +58,8 @@ class AppTranslationsEn implements AppTranslations {
   @override String get entryTypeDebtOut => 'Lent';
   @override String get entryTypeDebtPaymentOut => 'Debt Payment';
   @override String get entryTypeDebtPaymentIn => 'Debt Received';
+  @override String get entryTypeInvestmentOut => 'Investment Top-up';
+  @override String get entryTypeInvestmentIn => 'Investment Withdrawal';
   @override String get entryCategoryCreated => 'Category created successfully';
   @override String get entryCategory => 'Category';
   @override String get entryAccount => 'Account';
@@ -294,9 +296,6 @@ class AppTranslationsEn implements AppTranslations {
   @override String get debtNoDebtsHint => 'Tap + to add a debt record';
   @override String get debtSettled => 'Debt settled';
 
-  // Investment
-  @override String get investmentPlaceholder => 'Investment Tracking';
-  @override String get investmentPlaceholderHint => 'Coming soon — track your portfolio here';
 
   // Recurring
   @override String get recurringTitle => 'Recurring';
@@ -854,4 +853,98 @@ class AppTranslationsEn implements AppTranslations {
   @override String get iapActionTryAgain => 'Try Again';
   @override String get iapActionContactSupport => 'Contact Support';
   @override String get iapActionRestore => 'Restore';
+
+  // ===== Investment tracking (snapshot-based) =====
+  @override String get investmentAssetTypeStock => 'Stocks';
+  @override String get investmentAssetTypeCrypto => 'Crypto';
+  @override String get investmentAssetTypeGold => 'Gold';
+  @override String get investmentAssetTypeSilver => 'Silver';
+  @override String get investmentAssetTypeEtf => 'ETF';
+  @override String get investmentAssetTypeMutualFund => 'Mutual Fund';
+  @override String get investmentAssetTypeProperty => 'Property';
+  @override String get investmentAssetTypeBond => 'Bonds';
+  @override String get investmentAssetTypeOther => 'Other';
+
+  @override String get investmentTotalValue => 'Total Value';
+  @override String get investmentInvested => 'Invested';
+  @override String get investmentGain => 'Gain';
+  @override String get investmentReturn => 'Return';
+  @override String get investmentReturnBreakdownTitle => 'How return is calculated';
+  @override String get investmentTotalPutIn => 'Total put in';
+  @override String get investmentInvestedFormula => 'Invested (put in − withdrawn)';
+  @override String get investmentGainFormula => 'Gain (value − invested)';
+  @override String get investmentReturnFormula => 'Return (gain ÷ total put in)';
+  @override String get investmentReturnBreakdownNote => 'Profit already withdrawn is not counted. Once everything put in has been withdrawn, the next deposit starts fresh.';
+  @override String get investmentSinceLastUpdate => 'Since last update';
+
+  @override String get investmentEmptyTitle => 'Track your investments';
+  @override String get investmentEmptyHint => 'Add an asset, then update its value whenever you like. The growth chart builds itself.';
+  @override String get investmentSaveButton => 'Save';
+  @override String get investmentDeleteConfirmAction => 'Delete';
+  @override String get investmentAddAsset => 'Add Asset';
+  @override String get investmentUpdateValues => 'Update Values';
+  @override String get investmentAssetsSection => 'Assets';
+
+  @override String get investmentChartTitle => 'Portfolio Value';
+  @override String get investmentChartValueLabel => 'Value';
+  @override String get investmentChartInvestedLabel => 'Invested';
+  @override String investmentChartNeedMore(int count) => count == 1
+      ? 'Update once more to see your trend'
+      : 'Update $count more times to see your trend';
+
+  @override String get investmentAssetChartTitle => 'Value History';
+  @override String get investmentUpdateValue => 'Update Value';
+  @override String get investmentSelectAssetType => 'Select Type';
+  @override String get investmentWalletLabel => 'Wallet (optional)';
+  @override String get investmentWalletNone => 'Not from a wallet';
+  @override String investmentWalletNoneInCurrency(String currencyCode) => 'No $currencyCode wallet available';
+  @override String get investmentWalletAddedHint => 'The amount is deducted from this wallet.';
+  @override String get investmentWalletWithdrawnHint => 'The amount is added to this wallet.';
+  @override String get investmentContributionAdded => 'Added';
+  @override String get investmentContributionWithdrawn => 'Withdrawn';
+
+  @override String get investmentAssetNameLabel => 'Asset name';
+  @override String get investmentAssetNameHint => 'e.g. Gold bar 10g';
+  @override String get investmentAssetTypeLabel => 'Type';
+  @override String get investmentAssetCurrencyLabel => 'Currency';
+  @override String get investmentCurrentValueLabel => 'Current value';
+  @override String get investmentInvestedSoFarLabel => 'Invested so far';
+  @override String get investmentInvestedSoFarHint => 'What you have paid in. Defaults to the current value, which starts this asset at zero gain.';
+  @override String get investmentNoteLabel => 'Note (optional)';
+  @override String get investmentAddAssetTitle => 'Add Asset';
+  @override String get investmentEditAssetTitle => 'Edit Asset';
+  @override String get investmentDeleteAsset => 'Delete asset';
+  @override String get investmentDeleteAssetConfirm => 'Delete this asset and its entire value history? This cannot be undone.';
+
+  @override String get investmentUpdateTitle => 'Update Values';
+  @override String get investmentUpdateAsOf => 'As of';
+  @override String get investmentUpdateValueLabel => 'Value now';
+  @override String get investmentUpdateContributionLabel => 'Money added or withdrawn';
+  @override String get investmentUpdateContributionHint => 'Leave at 0 if you only re-valued the asset.';
+  @override String get investmentUpdateSaved => 'Values saved';
+  @override String get investmentUpdateNothingEntered => 'Enter at least one value';
+
+  @override String get investmentSellTitle => 'Mark as Sold';
+  @override String get investmentSellProceedsLabel => 'Amount received';
+  @override String get investmentSellOrWithdraw => 'Sell / Withdraw';
+  @override String get investmentSellAll => 'Sold everything';
+  @override String get investmentSellAllHint => 'Record the amount received. The asset is archived.';
+  @override String get investmentWithdrawPart => 'Withdraw part';
+  @override String get investmentWithdrawPartHint => 'Take some money out and keep the asset.';
+  @override String get investmentSellHint =>'The asset is archived and removed from your totals and chart.';
+  @override String get investmentSellAction => 'Sold / withdrew';
+  @override String get investmentSellDone => 'Asset archived';
+
+  @override String get investmentHistoryTitle => 'Update History';
+  @override String get investmentHistoryEmpty => 'No updates yet';
+  @override String investmentHistoryAssetCount(int count) => count == 1 ? '1 asset' : '$count assets';
+  @override String get investmentDeleteSession => 'Delete update';
+  @override String get investmentDeleteSessionConfirm => 'Delete every value recorded on this date?';
+
+  @override String investmentLastUpdated(String date) => 'Updated $date';
+
+  @override String get premiumGateInvestmentTitle => 'Asset Limit Reached';
+  @override String get premiumGateInvestmentDesc => 'Free tier allows up to 3 investment assets. Upgrade to track unlimited assets.';
+  @override String get premiumFeatureInvestments => 'Investment Assets';
+  @override String get dashboardInvestments => 'Investments';
 }

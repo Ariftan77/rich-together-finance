@@ -20,6 +20,8 @@ import 'tables/categories.dart';
 import 'tables/holdings.dart';
 import 'tables/investment_transactions.dart';
 import 'tables/price_cache.dart';
+import 'tables/investment_assets.dart';
+import 'tables/investment_snapshots.dart';
 import 'tables/budgets.dart';
 import 'tables/goals.dart';
 import 'tables/goal_accounts.dart';
@@ -40,6 +42,8 @@ part 'database.g.dart';
   Holdings,
   InvestmentTransactions,
   PriceCache,
+  InvestmentAssets,
+  InvestmentSnapshots,
   Budgets,
   BudgetCategories,
   Goals,
@@ -56,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -256,6 +260,24 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'ALTER TABLE user_settings ADD COLUMN hide_category_icon INTEGER NOT NULL DEFAULT 0',
             );
+          } catch (_) {}
+        }
+        if (from < 24) {
+          // Snapshot-based investment tracking. Both tables start empty for
+          // every user, so there is nothing to backfill.
+          try {
+            await m.createTable(investmentAssets);
+          } catch (_) {}
+          try {
+            await m.createTable(investmentSnapshots);
+          } catch (_) {}
+        }
+        if (from < 25) {
+          // Optional wallet link for investment contributions. Installs coming
+          // from < 24 already got the column from createTable above, so this
+          // throws there and is ignored.
+          try {
+            await m.addColumn(investmentSnapshots, investmentSnapshots.transactionId);
           } catch (_) {}
         }
       },
@@ -622,6 +644,8 @@ class AppDatabase extends _$AppDatabase {
       await (delete(debts)..where((d) => d.profileId.equals(profileId))).go();
       await (delete(goals)..where((g) => g.profileId.equals(profileId))).go();
       await (delete(holdings)..where((h) => h.profileId.equals(profileId))).go();
+      await (delete(investmentSnapshots)..where((s) => s.profileId.equals(profileId))).go();
+      await (delete(investmentAssets)..where((a) => a.profileId.equals(profileId))).go();
       await (delete(categories)..where((c) => c.profileId.equals(profileId))).go();
       await (delete(accounts)..where((a) => a.profileId.equals(profileId))).go();
       await (delete(userSettings)..where((s) => s.profileId.equals(profileId))).go();
@@ -645,6 +669,8 @@ class AppDatabase extends _$AppDatabase {
       await delete(goalAccounts).go();
       await delete(debts).go();
       await delete(holdings).go();
+      await delete(investmentSnapshots).go();
+      await delete(investmentAssets).go();
       
       // Delete user-created categories (system ones are managed by seed, but let's wipe clean)
       await delete(categories).go();

@@ -165,7 +165,8 @@ void main() {
         .customSelect('PRAGMA user_version')
         .getSingle()
         .then((r) => r.data.values.first as int);
-    expect(version, 23, reason: 'schema version should advance to the current version');
+    expect(version, upgraded.schemaVersion,
+        reason: 'schema version should advance to the current version');
 
     Future<Transaction> tx(int id) => (upgraded.select(upgraded.transactions)
           ..where((t) => t.id.equals(id)))
@@ -238,7 +239,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .getSingle()
         .then((r) => r.data.values.first as int);
-    expect(version, 23);
+    expect(version, fresh.schemaVersion);
 
     final columns = await fresh
         .customSelect('PRAGMA table_info(transactions)')

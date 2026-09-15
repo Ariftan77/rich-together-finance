@@ -114,7 +114,12 @@ class PriceService {
         return fetchStockPrice(ticker, apiKey: apiKey);
       case AssetType.gold:
       case AssetType.silver:
-        // Gold/silver prices require manual entry or scraping (see notes)
+      case AssetType.etf:
+      case AssetType.mutualFund:
+      case AssetType.property:
+      case AssetType.bond:
+      case AssetType.other:
+        // No live price source — these are valued by manual snapshot entry
         return null;
     }
   }

@@ -21,6 +21,8 @@ enum TransactionType {
   debtOut,       // 6 - debt transaction (lent money, subtracts from balance)
   debtPaymentOut, // 7 - debt settlement (I pay back what I owe, subtracts from balance)
   debtPaymentIn,  // 8 - debt settlement (someone pays me back, adds to balance)
+  investmentOut,  // 9 - money moved from a wallet into an investment asset (subtracts from balance)
+  investmentIn,   // 10 - money taken out of an investment asset into a wallet (adds to balance)
 }
 
 /// Category types (income or expense categories)
@@ -30,11 +32,18 @@ enum CategoryType {
 }
 
 /// Asset types for portfolio
+///
+/// APPEND ONLY — stored as int index, reordering reinterprets existing rows.
 enum AssetType {
   stock,      // 0
   crypto,     // 1
   gold,       // 2
   silver,     // 3
+  etf,        // 4
+  mutualFund, // 5
+  property,   // 6
+  bond,       // 7
+  other,      // 8
 }
 
 /// Investment transaction types
@@ -186,8 +195,16 @@ extension TransactionTypeX on TransactionType {
         return 'Debt Payment';
       case TransactionType.debtPaymentIn:
         return 'Debt Received';
+      case TransactionType.investmentOut:
+        return 'Investment Top-up';
+      case TransactionType.investmentIn:
+        return 'Investment Withdrawal';
     }
   }
+
+  /// Written and removed only by the investment feature, through its snapshot.
+  bool get isInvestment =>
+      this == TransactionType.investmentOut || this == TransactionType.investmentIn;
 }
 
 extension CategoryTypeX on CategoryType {
@@ -212,6 +229,16 @@ extension AssetTypeX on AssetType {
         return 'Gold';
       case AssetType.silver:
         return 'Silver';
+      case AssetType.etf:
+        return 'ETF';
+      case AssetType.mutualFund:
+        return 'Mutual Fund';
+      case AssetType.property:
+        return 'Property';
+      case AssetType.bond:
+        return 'Bonds';
+      case AssetType.other:
+        return 'Other';
     }
   }
 
@@ -225,6 +252,16 @@ extension AssetTypeX on AssetType {
         return 'diamond';
       case AssetType.silver:
         return 'diamond';
+      case AssetType.etf:
+        return 'show_chart';
+      case AssetType.mutualFund:
+        return 'pie_chart';
+      case AssetType.property:
+        return 'home_work';
+      case AssetType.bond:
+        return 'account_balance';
+      case AssetType.other:
+        return 'savings';
     }
   }
 }

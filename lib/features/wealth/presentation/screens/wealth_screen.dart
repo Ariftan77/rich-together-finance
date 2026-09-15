@@ -27,6 +27,7 @@ import '../../../budget/presentation/screens/budget_entry_screen.dart';
 import '../../../goals/presentation/providers/goal_provider.dart';
 import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
+import '../../../investments/presentation/widgets/investment_tab.dart';
 import '../../../../shared/utils/indonesian_currency_formatter.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
@@ -61,7 +62,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   void initState() {
     super.initState();
     AnalyticsService.trackFirstWealthVisit();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         ref.read(wealthTabIndexProvider.notifier).state = _tabController.index;
@@ -128,11 +129,15 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
+                      // A fourth tab leaves ~a quarter of the width each, and
+                      // "Investment" / "Investasi" does not fit at full size.
+                      // Scaling down beats clipping the label.
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                       tabs: [
-                        Tab(text: trans.wealthBudget),
-                        Tab(text: trans.wealthGoals),
-                        Tab(text: trans.debtTitle),
-                        // Tab(text: trans.wealthInvestment), // TODO: Re-enable when investment feature is ready
+                        _scaledTab(trans.wealthBudget),
+                        _scaledTab(trans.wealthGoals),
+                        _scaledTab(trans.debtTitle),
+                        _scaledTab(trans.wealthInvestment),
                       ],
                     ),
                   ),
@@ -148,7 +153,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                   _buildBudgetTab(),
                   _buildGoalsTab(),
                   _buildDebtsTab(),
-                  // _buildInvestmentTab(), // TODO: Re-enable when investment feature is ready
+                  const InvestmentTab(),
                 ],
               ),
             ),
@@ -2417,47 +2422,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   // ===================== INVESTMENT TAB =====================
-  Widget _buildInvestmentTab() {
-    final themeMode = AppThemeProvider.of(context);
-    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final trans = ref.watch(translationsProvider);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.show_chart,
-            size: 80,
-            color: isLight
-                ? const Color(0xFFCBD5E1)
-                : Colors.white.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            trans.investmentPlaceholder,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: isLight
-                  ? const Color(0xFF94A3B8)
-                  : Colors.white.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            trans.investmentPlaceholderHint,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isLight
-                  ? const Color(0xFFCBD5E1)
-                  : Colors.white.withValues(alpha: 0.3),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   // ===================== HELPERS =====================
+  /// Tab label that shrinks to fit rather than being clipped — four tabs and
+  /// two languages leave no room for a fixed size.
+  Widget _scaledTab(String label) => Tab(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label, maxLines: 1),
+        ),
+      );
+
   Widget _buildPeriodBadge(BudgetPeriod period) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);

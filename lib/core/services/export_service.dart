@@ -100,6 +100,8 @@ class ExportService {
         TransactionType.debtOut => trans.entryTypeDebtOut,
         TransactionType.debtPaymentOut => trans.entryTypeDebtPaymentOut,
         TransactionType.debtPaymentIn => trans.entryTypeDebtPaymentIn,
+        TransactionType.investmentOut => trans.entryTypeInvestmentOut,
+        TransactionType.investmentIn => trans.entryTypeInvestmentIn,
       };
 
       final rowData = [
@@ -1396,11 +1398,13 @@ class ExportService {
             case TransactionType.adjustmentIn:
             case TransactionType.debtIn:
             case TransactionType.debtPaymentIn:
+            case TransactionType.investmentIn:
               result[tx.accountId] = (result[tx.accountId] ?? 0) + tx.amount;
             case TransactionType.expense:
             case TransactionType.adjustmentOut:
             case TransactionType.debtOut:
             case TransactionType.debtPaymentOut:
+            case TransactionType.investmentOut:
             case TransactionType.transfer:
               result[tx.accountId] = (result[tx.accountId] ?? 0) - tx.amount;
           }

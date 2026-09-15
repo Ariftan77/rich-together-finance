@@ -28,6 +28,7 @@ import '../widgets/dow_spending_chart.dart';
 import '../widgets/recurring_split_card.dart';
 import '../widgets/budget_performance_chart.dart';
 import '../widgets/financial_health_card.dart';
+import '../../../investments/presentation/providers/investment_providers.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
 import '../../../reports/presentation/widgets/export_report_modal.dart';
 import '../../../reports/presentation/widgets/advanced_report_modal.dart';
@@ -268,6 +269,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final monthlyExpenseAsync = ref.watch(dashboardMonthlyExpenseProvider);
     final monthlyAdjustmentAsync = ref.watch(dashboardMonthlyAdjustmentProvider);
     final categoryBreakdownAsync = ref.watch(dashboardCategoryBreakdownProvider);
+    final investmentSummary = ref.watch(investmentSummaryProvider);
     final showDecimal = ref.watch(showDecimalProvider);
     final baseCurrency = ref.watch(defaultCurrencyProvider);
     final trans = ref.watch(translationsProvider);
@@ -327,6 +329,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     onTap: () => _showNetWorthBreakdown(context),
                     onLongPress: () => _showNetWorthBreakdown(context),
                   ),
+                  // Investments, only once the user actually tracks something
+                  if (investmentSummary.assets.isNotEmpty) ...[
+                    _buildDivider(),
+                    _SummaryRow(
+                      icon: Icons.show_chart,
+                      iconColor: AppColors.primaryGold,
+                      title: trans.dashboardInvestments,
+                      // Gain, not raw value change - deposits are not growth.
+                      subtitle: investmentSummary.totalReturnPct == null
+                          ? null
+                          : '${trans.investmentGain} ${investmentSummary.totalGain >= 0 ? '+' : '-'}${baseCurrency.symbol} ${Formatters.formatCurrency(investmentSummary.totalGain.abs(), showDecimal: showDecimal)} (${investmentSummary.totalReturnPct! >= 0 ? '+' : ''}${investmentSummary.totalReturnPct!.toStringAsFixed(2)}%)',
+                      value: '${baseCurrency.symbol} ${Formatters.formatCurrency(investmentSummary.totalValue, showDecimal: showDecimal)}',
+                    ),
+                  ],
                   // Active debts below Net Worth (all-time outstanding, cleared when settled)
                   if (activeDebt?.hasPayable == true) ...[
                     _buildDivider(),

@@ -85,7 +85,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .getSingle()
         .then((r) => r.data.values.first as int);
-    expect(version, 23);
+    expect(version, upgraded.schemaVersion);
 
     final settings = await SettingsDao(upgraded).getSettingsForProfile(profileId);
     expect(settings, isNotNull);
@@ -140,7 +140,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .getSingle()
         .then((r) => r.data.values.first as int);
-    expect(version, 23);
+    expect(version, upgraded.schemaVersion);
 
     final settings = await SettingsDao(upgraded).getSettingsForProfile(profileId);
     expect(settings!.hideCategoryIcon, isFalse);

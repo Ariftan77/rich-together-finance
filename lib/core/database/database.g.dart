@@ -8390,6 +8390,1621 @@ class PriceCacheCompanion extends UpdateCompanion<PriceCacheData> {
   }
 }
 
+class $InvestmentAssetsTable extends InvestmentAssets
+    with TableInfo<$InvestmentAssetsTable, InvestmentAsset> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InvestmentAssetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 60,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<AssetType, int> assetType =
+      GeneratedColumn<int>(
+        'asset_type',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<AssetType>($InvestmentAssetsTable.$converterassetType);
+  @override
+  late final GeneratedColumnWithTypeConverter<Currency, int> currency =
+      GeneratedColumn<int>(
+        'currency',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<Currency>($InvestmentAssetsTable.$convertercurrency);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isSyncedMeta = const VerificationMeta(
+    'isSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
+    'is_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    name,
+    assetType,
+    currency,
+    note,
+    isArchived,
+    createdAt,
+    updatedAt,
+    remoteId,
+    deletedAt,
+    isSynced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'investment_assets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InvestmentAsset> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('is_synced')) {
+      context.handle(
+        _isSyncedMeta,
+        isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InvestmentAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InvestmentAsset(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      assetType: $InvestmentAssetsTable.$converterassetType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}asset_type'],
+        )!,
+      ),
+      currency: $InvestmentAssetsTable.$convertercurrency.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}currency'],
+        )!,
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      isSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_synced'],
+      )!,
+    );
+  }
+
+  @override
+  $InvestmentAssetsTable createAlias(String alias) {
+    return $InvestmentAssetsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<AssetType, int, int> $converterassetType =
+      const EnumIndexConverter<AssetType>(AssetType.values);
+  static JsonTypeConverter2<Currency, int, int> $convertercurrency =
+      const EnumIndexConverter<Currency>(Currency.values);
+}
+
+class InvestmentAsset extends DataClass implements Insertable<InvestmentAsset> {
+  final int id;
+  final int profileId;
+  final String name;
+  final AssetType assetType;
+
+  /// Currency the user enters this asset's values in. Snapshots store their own
+  /// conversion rate, so this may differ from the profile's base currency.
+  final Currency currency;
+  final String? note;
+
+  /// Set when the asset is sold or no longer held. Archived assets keep their
+  /// history (and their final zero-value snapshot) but drop out of updates.
+  final bool isArchived;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? remoteId;
+  final DateTime? deletedAt;
+  final bool isSynced;
+  const InvestmentAsset({
+    required this.id,
+    required this.profileId,
+    required this.name,
+    required this.assetType,
+    required this.currency,
+    this.note,
+    required this.isArchived,
+    required this.createdAt,
+    required this.updatedAt,
+    this.remoteId,
+    this.deletedAt,
+    required this.isSynced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<int>(profileId);
+    map['name'] = Variable<String>(name);
+    {
+      map['asset_type'] = Variable<int>(
+        $InvestmentAssetsTable.$converterassetType.toSql(assetType),
+      );
+    }
+    {
+      map['currency'] = Variable<int>(
+        $InvestmentAssetsTable.$convertercurrency.toSql(currency),
+      );
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['is_archived'] = Variable<bool>(isArchived);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['is_synced'] = Variable<bool>(isSynced);
+    return map;
+  }
+
+  InvestmentAssetsCompanion toCompanion(bool nullToAbsent) {
+    return InvestmentAssetsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      name: Value(name),
+      assetType: Value(assetType),
+      currency: Value(currency),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      isArchived: Value(isArchived),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      isSynced: Value(isSynced),
+    );
+  }
+
+  factory InvestmentAsset.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InvestmentAsset(
+      id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      name: serializer.fromJson<String>(json['name']),
+      assetType: $InvestmentAssetsTable.$converterassetType.fromJson(
+        serializer.fromJson<int>(json['assetType']),
+      ),
+      currency: $InvestmentAssetsTable.$convertercurrency.fromJson(
+        serializer.fromJson<int>(json['currency']),
+      ),
+      note: serializer.fromJson<String?>(json['note']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      isSynced: serializer.fromJson<bool>(json['isSynced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<int>(profileId),
+      'name': serializer.toJson<String>(name),
+      'assetType': serializer.toJson<int>(
+        $InvestmentAssetsTable.$converterassetType.toJson(assetType),
+      ),
+      'currency': serializer.toJson<int>(
+        $InvestmentAssetsTable.$convertercurrency.toJson(currency),
+      ),
+      'note': serializer.toJson<String?>(note),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'isSynced': serializer.toJson<bool>(isSynced),
+    };
+  }
+
+  InvestmentAsset copyWith({
+    int? id,
+    int? profileId,
+    String? name,
+    AssetType? assetType,
+    Currency? currency,
+    Value<String?> note = const Value.absent(),
+    bool? isArchived,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    bool? isSynced,
+  }) => InvestmentAsset(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    name: name ?? this.name,
+    assetType: assetType ?? this.assetType,
+    currency: currency ?? this.currency,
+    note: note.present ? note.value : this.note,
+    isArchived: isArchived ?? this.isArchived,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    isSynced: isSynced ?? this.isSynced,
+  );
+  InvestmentAsset copyWithCompanion(InvestmentAssetsCompanion data) {
+    return InvestmentAsset(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      name: data.name.present ? data.name.value : this.name,
+      assetType: data.assetType.present ? data.assetType.value : this.assetType,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      note: data.note.present ? data.note.value : this.note,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentAsset(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('assetType: $assetType, ')
+          ..write('currency: $currency, ')
+          ..write('note: $note, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    name,
+    assetType,
+    currency,
+    note,
+    isArchived,
+    createdAt,
+    updatedAt,
+    remoteId,
+    deletedAt,
+    isSynced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InvestmentAsset &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.name == this.name &&
+          other.assetType == this.assetType &&
+          other.currency == this.currency &&
+          other.note == this.note &&
+          other.isArchived == this.isArchived &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.remoteId == this.remoteId &&
+          other.deletedAt == this.deletedAt &&
+          other.isSynced == this.isSynced);
+}
+
+class InvestmentAssetsCompanion extends UpdateCompanion<InvestmentAsset> {
+  final Value<int> id;
+  final Value<int> profileId;
+  final Value<String> name;
+  final Value<AssetType> assetType;
+  final Value<Currency> currency;
+  final Value<String?> note;
+  final Value<bool> isArchived;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> remoteId;
+  final Value<DateTime?> deletedAt;
+  final Value<bool> isSynced;
+  const InvestmentAssetsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.assetType = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  });
+  InvestmentAssetsCompanion.insert({
+    this.id = const Value.absent(),
+    required int profileId,
+    required String name,
+    required AssetType assetType,
+    required Currency currency,
+    this.note = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.remoteId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  }) : profileId = Value(profileId),
+       name = Value(name),
+       assetType = Value(assetType),
+       currency = Value(currency),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<InvestmentAsset> custom({
+    Expression<int>? id,
+    Expression<int>? profileId,
+    Expression<String>? name,
+    Expression<int>? assetType,
+    Expression<int>? currency,
+    Expression<String>? note,
+    Expression<bool>? isArchived,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? remoteId,
+    Expression<DateTime>? deletedAt,
+    Expression<bool>? isSynced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (name != null) 'name': name,
+      if (assetType != null) 'asset_type': assetType,
+      if (currency != null) 'currency': currency,
+      if (note != null) 'note': note,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (isSynced != null) 'is_synced': isSynced,
+    });
+  }
+
+  InvestmentAssetsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? profileId,
+    Value<String>? name,
+    Value<AssetType>? assetType,
+    Value<Currency>? currency,
+    Value<String?>? note,
+    Value<bool>? isArchived,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? remoteId,
+    Value<DateTime?>? deletedAt,
+    Value<bool>? isSynced,
+  }) {
+    return InvestmentAssetsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      name: name ?? this.name,
+      assetType: assetType ?? this.assetType,
+      currency: currency ?? this.currency,
+      note: note ?? this.note,
+      isArchived: isArchived ?? this.isArchived,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      remoteId: remoteId ?? this.remoteId,
+      deletedAt: deletedAt ?? this.deletedAt,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (assetType.present) {
+      map['asset_type'] = Variable<int>(
+        $InvestmentAssetsTable.$converterassetType.toSql(assetType.value),
+      );
+    }
+    if (currency.present) {
+      map['currency'] = Variable<int>(
+        $InvestmentAssetsTable.$convertercurrency.toSql(currency.value),
+      );
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (isSynced.present) {
+      map['is_synced'] = Variable<bool>(isSynced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentAssetsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('name: $name, ')
+          ..write('assetType: $assetType, ')
+          ..write('currency: $currency, ')
+          ..write('note: $note, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $InvestmentSnapshotsTable extends InvestmentSnapshots
+    with TableInfo<$InvestmentSnapshotsTable, InvestmentSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InvestmentSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  static const VerificationMeta _assetIdMeta = const VerificationMeta(
+    'assetId',
+  );
+  @override
+  late final GeneratedColumn<int> assetId = GeneratedColumn<int>(
+    'asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES investment_assets (id)',
+    ),
+  );
+  static const VerificationMeta _snapshotDateMeta = const VerificationMeta(
+    'snapshotDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> snapshotDate = GeneratedColumn<DateTime>(
+    'snapshot_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<double> value = GeneratedColumn<double>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contributionMeta = const VerificationMeta(
+    'contribution',
+  );
+  @override
+  late final GeneratedColumn<double> contribution = GeneratedColumn<double>(
+    'contribution',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _fxRateToBaseMeta = const VerificationMeta(
+    'fxRateToBase',
+  );
+  @override
+  late final GeneratedColumn<double> fxRateToBase = GeneratedColumn<double>(
+    'fx_rate_to_base',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Currency, int> baseCurrency =
+      GeneratedColumn<int>(
+        'base_currency',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<Currency>(
+        $InvestmentSnapshotsTable.$converterbaseCurrency,
+      );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _transactionIdMeta = const VerificationMeta(
+    'transactionId',
+  );
+  @override
+  late final GeneratedColumn<int> transactionId = GeneratedColumn<int>(
+    'transaction_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES transactions (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isSyncedMeta = const VerificationMeta(
+    'isSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
+    'is_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    assetId,
+    snapshotDate,
+    value,
+    contribution,
+    fxRateToBase,
+    baseCurrency,
+    note,
+    transactionId,
+    createdAt,
+    remoteId,
+    updatedAt,
+    deletedAt,
+    isSynced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'investment_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InvestmentSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('asset_id')) {
+      context.handle(
+        _assetIdMeta,
+        assetId.isAcceptableOrUnknown(data['asset_id']!, _assetIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_assetIdMeta);
+    }
+    if (data.containsKey('snapshot_date')) {
+      context.handle(
+        _snapshotDateMeta,
+        snapshotDate.isAcceptableOrUnknown(
+          data['snapshot_date']!,
+          _snapshotDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotDateMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('contribution')) {
+      context.handle(
+        _contributionMeta,
+        contribution.isAcceptableOrUnknown(
+          data['contribution']!,
+          _contributionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fx_rate_to_base')) {
+      context.handle(
+        _fxRateToBaseMeta,
+        fxRateToBase.isAcceptableOrUnknown(
+          data['fx_rate_to_base']!,
+          _fxRateToBaseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+        _transactionIdMeta,
+        transactionId.isAcceptableOrUnknown(
+          data['transaction_id']!,
+          _transactionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('is_synced')) {
+      context.handle(
+        _isSyncedMeta,
+        isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InvestmentSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InvestmentSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      assetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}asset_id'],
+      )!,
+      snapshotDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}snapshot_date'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}value'],
+      )!,
+      contribution: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}contribution'],
+      )!,
+      fxRateToBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fx_rate_to_base'],
+      )!,
+      baseCurrency: $InvestmentSnapshotsTable.$converterbaseCurrency.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}base_currency'],
+        )!,
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      transactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}transaction_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      isSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_synced'],
+      )!,
+    );
+  }
+
+  @override
+  $InvestmentSnapshotsTable createAlias(String alias) {
+    return $InvestmentSnapshotsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<Currency, int, int> $converterbaseCurrency =
+      const EnumIndexConverter<Currency>(Currency.values);
+}
+
+class InvestmentSnapshot extends DataClass
+    implements Insertable<InvestmentSnapshot> {
+  final int id;
+  final int profileId;
+  final int assetId;
+
+  /// Normalized to local midnight. An asset may have several records on one
+  /// day; they apply in `id` order, so the last one saved sets the value.
+  final DateTime snapshotDate;
+
+  /// Total market value of the holding, in the asset's own currency.
+  final double value;
+
+  /// Capital added (+) or withdrawn (-) since the previous snapshot, in the
+  /// asset's own currency. Net invested is the running sum of this column.
+  final double contribution;
+
+  /// Asset currency → [baseCurrency] rate, captured when the snapshot was
+  /// saved. Stored rather than looked up later because historical rates are
+  /// only available for days this device actually fetched, and because a
+  /// today-rate lookup would let FX movement rewrite past chart points.
+  final double fxRateToBase;
+
+  /// The base currency [fxRateToBase] converts to, so the rate stays
+  /// interpretable if the user later changes their base currency.
+  final Currency baseCurrency;
+  final String? note;
+
+  /// Wallet transaction that moved [contribution] in or out of an account
+  /// (investmentOut / investmentIn). Null when the money was not tracked
+  /// through a wallet. The snapshot owns it: deleting the snapshot deletes
+  /// the transaction.
+  final int? transactionId;
+  final DateTime createdAt;
+  final String? remoteId;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final bool isSynced;
+  const InvestmentSnapshot({
+    required this.id,
+    required this.profileId,
+    required this.assetId,
+    required this.snapshotDate,
+    required this.value,
+    required this.contribution,
+    required this.fxRateToBase,
+    required this.baseCurrency,
+    this.note,
+    this.transactionId,
+    required this.createdAt,
+    this.remoteId,
+    this.updatedAt,
+    this.deletedAt,
+    required this.isSynced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<int>(profileId);
+    map['asset_id'] = Variable<int>(assetId);
+    map['snapshot_date'] = Variable<DateTime>(snapshotDate);
+    map['value'] = Variable<double>(value);
+    map['contribution'] = Variable<double>(contribution);
+    map['fx_rate_to_base'] = Variable<double>(fxRateToBase);
+    {
+      map['base_currency'] = Variable<int>(
+        $InvestmentSnapshotsTable.$converterbaseCurrency.toSql(baseCurrency),
+      );
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    if (!nullToAbsent || transactionId != null) {
+      map['transaction_id'] = Variable<int>(transactionId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['is_synced'] = Variable<bool>(isSynced);
+    return map;
+  }
+
+  InvestmentSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return InvestmentSnapshotsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      assetId: Value(assetId),
+      snapshotDate: Value(snapshotDate),
+      value: Value(value),
+      contribution: Value(contribution),
+      fxRateToBase: Value(fxRateToBase),
+      baseCurrency: Value(baseCurrency),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      transactionId: transactionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(transactionId),
+      createdAt: Value(createdAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      isSynced: Value(isSynced),
+    );
+  }
+
+  factory InvestmentSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InvestmentSnapshot(
+      id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      assetId: serializer.fromJson<int>(json['assetId']),
+      snapshotDate: serializer.fromJson<DateTime>(json['snapshotDate']),
+      value: serializer.fromJson<double>(json['value']),
+      contribution: serializer.fromJson<double>(json['contribution']),
+      fxRateToBase: serializer.fromJson<double>(json['fxRateToBase']),
+      baseCurrency: $InvestmentSnapshotsTable.$converterbaseCurrency.fromJson(
+        serializer.fromJson<int>(json['baseCurrency']),
+      ),
+      note: serializer.fromJson<String?>(json['note']),
+      transactionId: serializer.fromJson<int?>(json['transactionId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      isSynced: serializer.fromJson<bool>(json['isSynced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<int>(profileId),
+      'assetId': serializer.toJson<int>(assetId),
+      'snapshotDate': serializer.toJson<DateTime>(snapshotDate),
+      'value': serializer.toJson<double>(value),
+      'contribution': serializer.toJson<double>(contribution),
+      'fxRateToBase': serializer.toJson<double>(fxRateToBase),
+      'baseCurrency': serializer.toJson<int>(
+        $InvestmentSnapshotsTable.$converterbaseCurrency.toJson(baseCurrency),
+      ),
+      'note': serializer.toJson<String?>(note),
+      'transactionId': serializer.toJson<int?>(transactionId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'isSynced': serializer.toJson<bool>(isSynced),
+    };
+  }
+
+  InvestmentSnapshot copyWith({
+    int? id,
+    int? profileId,
+    int? assetId,
+    DateTime? snapshotDate,
+    double? value,
+    double? contribution,
+    double? fxRateToBase,
+    Currency? baseCurrency,
+    Value<String?> note = const Value.absent(),
+    Value<int?> transactionId = const Value.absent(),
+    DateTime? createdAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<DateTime?> updatedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    bool? isSynced,
+  }) => InvestmentSnapshot(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    assetId: assetId ?? this.assetId,
+    snapshotDate: snapshotDate ?? this.snapshotDate,
+    value: value ?? this.value,
+    contribution: contribution ?? this.contribution,
+    fxRateToBase: fxRateToBase ?? this.fxRateToBase,
+    baseCurrency: baseCurrency ?? this.baseCurrency,
+    note: note.present ? note.value : this.note,
+    transactionId: transactionId.present
+        ? transactionId.value
+        : this.transactionId,
+    createdAt: createdAt ?? this.createdAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    isSynced: isSynced ?? this.isSynced,
+  );
+  InvestmentSnapshot copyWithCompanion(InvestmentSnapshotsCompanion data) {
+    return InvestmentSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      assetId: data.assetId.present ? data.assetId.value : this.assetId,
+      snapshotDate: data.snapshotDate.present
+          ? data.snapshotDate.value
+          : this.snapshotDate,
+      value: data.value.present ? data.value.value : this.value,
+      contribution: data.contribution.present
+          ? data.contribution.value
+          : this.contribution,
+      fxRateToBase: data.fxRateToBase.present
+          ? data.fxRateToBase.value
+          : this.fxRateToBase,
+      baseCurrency: data.baseCurrency.present
+          ? data.baseCurrency.value
+          : this.baseCurrency,
+      note: data.note.present ? data.note.value : this.note,
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentSnapshot(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('assetId: $assetId, ')
+          ..write('snapshotDate: $snapshotDate, ')
+          ..write('value: $value, ')
+          ..write('contribution: $contribution, ')
+          ..write('fxRateToBase: $fxRateToBase, ')
+          ..write('baseCurrency: $baseCurrency, ')
+          ..write('note: $note, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    assetId,
+    snapshotDate,
+    value,
+    contribution,
+    fxRateToBase,
+    baseCurrency,
+    note,
+    transactionId,
+    createdAt,
+    remoteId,
+    updatedAt,
+    deletedAt,
+    isSynced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InvestmentSnapshot &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.assetId == this.assetId &&
+          other.snapshotDate == this.snapshotDate &&
+          other.value == this.value &&
+          other.contribution == this.contribution &&
+          other.fxRateToBase == this.fxRateToBase &&
+          other.baseCurrency == this.baseCurrency &&
+          other.note == this.note &&
+          other.transactionId == this.transactionId &&
+          other.createdAt == this.createdAt &&
+          other.remoteId == this.remoteId &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.isSynced == this.isSynced);
+}
+
+class InvestmentSnapshotsCompanion extends UpdateCompanion<InvestmentSnapshot> {
+  final Value<int> id;
+  final Value<int> profileId;
+  final Value<int> assetId;
+  final Value<DateTime> snapshotDate;
+  final Value<double> value;
+  final Value<double> contribution;
+  final Value<double> fxRateToBase;
+  final Value<Currency> baseCurrency;
+  final Value<String?> note;
+  final Value<int?> transactionId;
+  final Value<DateTime> createdAt;
+  final Value<String?> remoteId;
+  final Value<DateTime?> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<bool> isSynced;
+  const InvestmentSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.assetId = const Value.absent(),
+    this.snapshotDate = const Value.absent(),
+    this.value = const Value.absent(),
+    this.contribution = const Value.absent(),
+    this.fxRateToBase = const Value.absent(),
+    this.baseCurrency = const Value.absent(),
+    this.note = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  });
+  InvestmentSnapshotsCompanion.insert({
+    this.id = const Value.absent(),
+    required int profileId,
+    required int assetId,
+    required DateTime snapshotDate,
+    required double value,
+    this.contribution = const Value.absent(),
+    this.fxRateToBase = const Value.absent(),
+    required Currency baseCurrency,
+    this.note = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    required DateTime createdAt,
+    this.remoteId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+  }) : profileId = Value(profileId),
+       assetId = Value(assetId),
+       snapshotDate = Value(snapshotDate),
+       value = Value(value),
+       baseCurrency = Value(baseCurrency),
+       createdAt = Value(createdAt);
+  static Insertable<InvestmentSnapshot> custom({
+    Expression<int>? id,
+    Expression<int>? profileId,
+    Expression<int>? assetId,
+    Expression<DateTime>? snapshotDate,
+    Expression<double>? value,
+    Expression<double>? contribution,
+    Expression<double>? fxRateToBase,
+    Expression<int>? baseCurrency,
+    Expression<String>? note,
+    Expression<int>? transactionId,
+    Expression<DateTime>? createdAt,
+    Expression<String>? remoteId,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<bool>? isSynced,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (assetId != null) 'asset_id': assetId,
+      if (snapshotDate != null) 'snapshot_date': snapshotDate,
+      if (value != null) 'value': value,
+      if (contribution != null) 'contribution': contribution,
+      if (fxRateToBase != null) 'fx_rate_to_base': fxRateToBase,
+      if (baseCurrency != null) 'base_currency': baseCurrency,
+      if (note != null) 'note': note,
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (isSynced != null) 'is_synced': isSynced,
+    });
+  }
+
+  InvestmentSnapshotsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? profileId,
+    Value<int>? assetId,
+    Value<DateTime>? snapshotDate,
+    Value<double>? value,
+    Value<double>? contribution,
+    Value<double>? fxRateToBase,
+    Value<Currency>? baseCurrency,
+    Value<String?>? note,
+    Value<int?>? transactionId,
+    Value<DateTime>? createdAt,
+    Value<String?>? remoteId,
+    Value<DateTime?>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<bool>? isSynced,
+  }) {
+    return InvestmentSnapshotsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      assetId: assetId ?? this.assetId,
+      snapshotDate: snapshotDate ?? this.snapshotDate,
+      value: value ?? this.value,
+      contribution: contribution ?? this.contribution,
+      fxRateToBase: fxRateToBase ?? this.fxRateToBase,
+      baseCurrency: baseCurrency ?? this.baseCurrency,
+      note: note ?? this.note,
+      transactionId: transactionId ?? this.transactionId,
+      createdAt: createdAt ?? this.createdAt,
+      remoteId: remoteId ?? this.remoteId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (assetId.present) {
+      map['asset_id'] = Variable<int>(assetId.value);
+    }
+    if (snapshotDate.present) {
+      map['snapshot_date'] = Variable<DateTime>(snapshotDate.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<double>(value.value);
+    }
+    if (contribution.present) {
+      map['contribution'] = Variable<double>(contribution.value);
+    }
+    if (fxRateToBase.present) {
+      map['fx_rate_to_base'] = Variable<double>(fxRateToBase.value);
+    }
+    if (baseCurrency.present) {
+      map['base_currency'] = Variable<int>(
+        $InvestmentSnapshotsTable.$converterbaseCurrency.toSql(
+          baseCurrency.value,
+        ),
+      );
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<int>(transactionId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (isSynced.present) {
+      map['is_synced'] = Variable<bool>(isSynced.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('assetId: $assetId, ')
+          ..write('snapshotDate: $snapshotDate, ')
+          ..write('value: $value, ')
+          ..write('contribution: $contribution, ')
+          ..write('fxRateToBase: $fxRateToBase, ')
+          ..write('baseCurrency: $baseCurrency, ')
+          ..write('note: $note, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isSynced: $isSynced')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -11259,6 +12874,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InvestmentTransactionsTable investmentTransactions =
       $InvestmentTransactionsTable(this);
   late final $PriceCacheTable priceCache = $PriceCacheTable(this);
+  late final $InvestmentAssetsTable investmentAssets = $InvestmentAssetsTable(
+    this,
+  );
+  late final $InvestmentSnapshotsTable investmentSnapshots =
+      $InvestmentSnapshotsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $BudgetCategoriesTable budgetCategories = $BudgetCategoriesTable(
     this,
@@ -11282,6 +12902,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     holdings,
     investmentTransactions,
     priceCache,
+    investmentAssets,
+    investmentSnapshots,
     budgets,
     budgetCategories,
     goals,
@@ -11443,6 +13065,56 @@ final class $$ProfilesTableReferences
     ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_holdingsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$InvestmentAssetsTable, List<InvestmentAsset>>
+  _investmentAssetsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.investmentAssets,
+    aliasName: $_aliasNameGenerator(
+      db.profiles.id,
+      db.investmentAssets.profileId,
+    ),
+  );
+
+  $$InvestmentAssetsTableProcessedTableManager get investmentAssetsRefs {
+    final manager = $$InvestmentAssetsTableTableManager(
+      $_db,
+      $_db.investmentAssets,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _investmentAssetsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $InvestmentSnapshotsTable,
+    List<InvestmentSnapshot>
+  >
+  _investmentSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.investmentSnapshots,
+        aliasName: $_aliasNameGenerator(
+          db.profiles.id,
+          db.investmentSnapshots.profileId,
+        ),
+      );
+
+  $$InvestmentSnapshotsTableProcessedTableManager get investmentSnapshotsRefs {
+    final manager = $$InvestmentSnapshotsTableTableManager(
+      $_db,
+      $_db.investmentSnapshots,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _investmentSnapshotsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -11707,6 +13379,56 @@ class $$ProfilesTableFilterComposer
           }) => $$HoldingsTableFilterComposer(
             $db: $db,
             $table: $db.holdings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> investmentAssetsRefs(
+    Expression<bool> Function($$InvestmentAssetsTableFilterComposer f) f,
+  ) {
+    final $$InvestmentAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.investmentAssets,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.investmentAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> investmentSnapshotsRefs(
+    Expression<bool> Function($$InvestmentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$InvestmentSnapshotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.investmentSnapshots,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentSnapshotsTableFilterComposer(
+            $db: $db,
+            $table: $db.investmentSnapshots,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12033,6 +13755,57 @@ class $$ProfilesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> investmentAssetsRefs<T extends Object>(
+    Expression<T> Function($$InvestmentAssetsTableAnnotationComposer a) f,
+  ) {
+    final $$InvestmentAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.investmentAssets,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.investmentAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> investmentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$InvestmentSnapshotsTableAnnotationComposer a) f,
+  ) {
+    final $$InvestmentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.investmentSnapshots,
+          getReferencedColumn: (t) => t.profileId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$InvestmentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.investmentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> budgetsRefs<T extends Object>(
     Expression<T> Function($$BudgetsTableAnnotationComposer a) f,
   ) {
@@ -12105,6 +13878,8 @@ class $$ProfilesTableTableManager
             bool debtsRefs,
             bool transactionsRefs,
             bool holdingsRefs,
+            bool investmentAssetsRefs,
+            bool investmentSnapshotsRefs,
             bool budgetsRefs,
             bool goalsRefs,
           })
@@ -12181,6 +13956,8 @@ class $$ProfilesTableTableManager
                 debtsRefs = false,
                 transactionsRefs = false,
                 holdingsRefs = false,
+                investmentAssetsRefs = false,
+                investmentSnapshotsRefs = false,
                 budgetsRefs = false,
                 goalsRefs = false,
               }) {
@@ -12194,6 +13971,8 @@ class $$ProfilesTableTableManager
                     if (debtsRefs) db.debts,
                     if (transactionsRefs) db.transactions,
                     if (holdingsRefs) db.holdings,
+                    if (investmentAssetsRefs) db.investmentAssets,
+                    if (investmentSnapshotsRefs) db.investmentSnapshots,
                     if (budgetsRefs) db.budgets,
                     if (goalsRefs) db.goals,
                   ],
@@ -12347,6 +14126,48 @@ class $$ProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (investmentAssetsRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          InvestmentAsset
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._investmentAssetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).investmentAssetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (investmentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          InvestmentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._investmentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).investmentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (budgetsRefs)
                         await $_getPrefetchedData<
                           Profile,
@@ -12417,6 +14238,8 @@ typedef $$ProfilesTableProcessedTableManager =
         bool debtsRefs,
         bool transactionsRefs,
         bool holdingsRefs,
+        bool investmentAssetsRefs,
+        bool investmentSnapshotsRefs,
         bool budgetsRefs,
         bool goalsRefs,
       })
@@ -16503,6 +18326,33 @@ final class $$TransactionsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $InvestmentSnapshotsTable,
+    List<InvestmentSnapshot>
+  >
+  _investmentSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.investmentSnapshots,
+        aliasName: $_aliasNameGenerator(
+          db.transactions.id,
+          db.investmentSnapshots.transactionId,
+        ),
+      );
+
+  $$InvestmentSnapshotsTableProcessedTableManager get investmentSnapshotsRefs {
+    final manager = $$InvestmentSnapshotsTableTableManager(
+      $_db,
+      $_db.investmentSnapshots,
+    ).filter((f) => f.transactionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _investmentSnapshotsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TransactionsTableFilterComposer
@@ -16716,6 +18566,31 @@ class $$TransactionsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> investmentSnapshotsRefs(
+    Expression<bool> Function($$InvestmentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$InvestmentSnapshotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.investmentSnapshots,
+      getReferencedColumn: (t) => t.transactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentSnapshotsTableFilterComposer(
+            $db: $db,
+            $table: $db.investmentSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -17121,6 +18996,32 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> investmentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$InvestmentSnapshotsTableAnnotationComposer a) f,
+  ) {
+    final $$InvestmentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.investmentSnapshots,
+          getReferencedColumn: (t) => t.transactionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$InvestmentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.investmentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -17143,6 +19044,7 @@ class $$TransactionsTableTableManager
             bool toAccountId,
             bool recurringId,
             bool debtId,
+            bool investmentSnapshotsRefs,
           })
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
@@ -17256,10 +19158,13 @@ class $$TransactionsTableTableManager
                 toAccountId = false,
                 recurringId = false,
                 debtId = false,
+                investmentSnapshotsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (investmentSnapshotsRefs) db.investmentSnapshots,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -17370,7 +19275,29 @@ class $$TransactionsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (investmentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          Transaction,
+                          $TransactionsTable,
+                          InvestmentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TransactionsTableReferences
+                              ._investmentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TransactionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).investmentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.transactionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -17397,6 +19324,7 @@ typedef $$TransactionsTableProcessedTableManager =
         bool toAccountId,
         bool recurringId,
         bool debtId,
+        bool investmentSnapshotsRefs,
       })
     >;
 typedef $$HoldingsTableCreateCompanionBuilder =
@@ -18932,6 +20860,1291 @@ typedef $$PriceCacheTableProcessedTableManager =
       ),
       PriceCacheData,
       PrefetchHooks Function()
+    >;
+typedef $$InvestmentAssetsTableCreateCompanionBuilder =
+    InvestmentAssetsCompanion Function({
+      Value<int> id,
+      required int profileId,
+      required String name,
+      required AssetType assetType,
+      required Currency currency,
+      Value<String?> note,
+      Value<bool> isArchived,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> remoteId,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+typedef $$InvestmentAssetsTableUpdateCompanionBuilder =
+    InvestmentAssetsCompanion Function({
+      Value<int> id,
+      Value<int> profileId,
+      Value<String> name,
+      Value<AssetType> assetType,
+      Value<Currency> currency,
+      Value<String?> note,
+      Value<bool> isArchived,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> remoteId,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+
+final class $$InvestmentAssetsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $InvestmentAssetsTable, InvestmentAsset> {
+  $$InvestmentAssetsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProfilesTable _profileIdTable(_$AppDatabase db) =>
+      db.profiles.createAlias(
+        $_aliasNameGenerator(db.investmentAssets.profileId, db.profiles.id),
+      );
+
+  $$ProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<int>('profile_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $InvestmentSnapshotsTable,
+    List<InvestmentSnapshot>
+  >
+  _investmentSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.investmentSnapshots,
+        aliasName: $_aliasNameGenerator(
+          db.investmentAssets.id,
+          db.investmentSnapshots.assetId,
+        ),
+      );
+
+  $$InvestmentSnapshotsTableProcessedTableManager get investmentSnapshotsRefs {
+    final manager = $$InvestmentSnapshotsTableTableManager(
+      $_db,
+      $_db.investmentSnapshots,
+    ).filter((f) => f.assetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _investmentSnapshotsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$InvestmentAssetsTableFilterComposer
+    extends Composer<_$AppDatabase, $InvestmentAssetsTable> {
+  $$InvestmentAssetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AssetType, AssetType, int> get assetType =>
+      $composableBuilder(
+        column: $table.assetType,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<Currency, Currency, int> get currency =>
+      $composableBuilder(
+        column: $table.currency,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get profileId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> investmentSnapshotsRefs(
+    Expression<bool> Function($$InvestmentSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$InvestmentSnapshotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.investmentSnapshots,
+      getReferencedColumn: (t) => t.assetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentSnapshotsTableFilterComposer(
+            $db: $db,
+            $table: $db.investmentSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$InvestmentAssetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InvestmentAssetsTable> {
+  $$InvestmentAssetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get assetType => $composableBuilder(
+    column: $table.assetType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get profileId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$InvestmentAssetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InvestmentAssetsTable> {
+  $$InvestmentAssetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AssetType, int> get assetType =>
+      $composableBuilder(column: $table.assetType, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Currency, int> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSynced =>
+      $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get profileId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> investmentSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$InvestmentSnapshotsTableAnnotationComposer a) f,
+  ) {
+    final $$InvestmentSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.investmentSnapshots,
+          getReferencedColumn: (t) => t.assetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$InvestmentSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.investmentSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$InvestmentAssetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InvestmentAssetsTable,
+          InvestmentAsset,
+          $$InvestmentAssetsTableFilterComposer,
+          $$InvestmentAssetsTableOrderingComposer,
+          $$InvestmentAssetsTableAnnotationComposer,
+          $$InvestmentAssetsTableCreateCompanionBuilder,
+          $$InvestmentAssetsTableUpdateCompanionBuilder,
+          (InvestmentAsset, $$InvestmentAssetsTableReferences),
+          InvestmentAsset,
+          PrefetchHooks Function({bool profileId, bool investmentSnapshotsRefs})
+        > {
+  $$InvestmentAssetsTableTableManager(
+    _$AppDatabase db,
+    $InvestmentAssetsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InvestmentAssetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InvestmentAssetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InvestmentAssetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<AssetType> assetType = const Value.absent(),
+                Value<Currency> currency = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => InvestmentAssetsCompanion(
+                id: id,
+                profileId: profileId,
+                name: name,
+                assetType: assetType,
+                currency: currency,
+                note: note,
+                isArchived: isArchived,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int profileId,
+                required String name,
+                required AssetType assetType,
+                required Currency currency,
+                Value<String?> note = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => InvestmentAssetsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                name: name,
+                assetType: assetType,
+                currency: currency,
+                note: note,
+                isArchived: isArchived,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$InvestmentAssetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({profileId = false, investmentSnapshotsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (investmentSnapshotsRefs) db.investmentSnapshots,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profileId,
+                                    referencedTable:
+                                        $$InvestmentAssetsTableReferences
+                                            ._profileIdTable(db),
+                                    referencedColumn:
+                                        $$InvestmentAssetsTableReferences
+                                            ._profileIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (investmentSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          InvestmentAsset,
+                          $InvestmentAssetsTable,
+                          InvestmentSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$InvestmentAssetsTableReferences
+                              ._investmentSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$InvestmentAssetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).investmentSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.assetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$InvestmentAssetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InvestmentAssetsTable,
+      InvestmentAsset,
+      $$InvestmentAssetsTableFilterComposer,
+      $$InvestmentAssetsTableOrderingComposer,
+      $$InvestmentAssetsTableAnnotationComposer,
+      $$InvestmentAssetsTableCreateCompanionBuilder,
+      $$InvestmentAssetsTableUpdateCompanionBuilder,
+      (InvestmentAsset, $$InvestmentAssetsTableReferences),
+      InvestmentAsset,
+      PrefetchHooks Function({bool profileId, bool investmentSnapshotsRefs})
+    >;
+typedef $$InvestmentSnapshotsTableCreateCompanionBuilder =
+    InvestmentSnapshotsCompanion Function({
+      Value<int> id,
+      required int profileId,
+      required int assetId,
+      required DateTime snapshotDate,
+      required double value,
+      Value<double> contribution,
+      Value<double> fxRateToBase,
+      required Currency baseCurrency,
+      Value<String?> note,
+      Value<int?> transactionId,
+      required DateTime createdAt,
+      Value<String?> remoteId,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+typedef $$InvestmentSnapshotsTableUpdateCompanionBuilder =
+    InvestmentSnapshotsCompanion Function({
+      Value<int> id,
+      Value<int> profileId,
+      Value<int> assetId,
+      Value<DateTime> snapshotDate,
+      Value<double> value,
+      Value<double> contribution,
+      Value<double> fxRateToBase,
+      Value<Currency> baseCurrency,
+      Value<String?> note,
+      Value<int?> transactionId,
+      Value<DateTime> createdAt,
+      Value<String?> remoteId,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<bool> isSynced,
+    });
+
+final class $$InvestmentSnapshotsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $InvestmentSnapshotsTable,
+          InvestmentSnapshot
+        > {
+  $$InvestmentSnapshotsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ProfilesTable _profileIdTable(_$AppDatabase db) =>
+      db.profiles.createAlias(
+        $_aliasNameGenerator(db.investmentSnapshots.profileId, db.profiles.id),
+      );
+
+  $$ProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<int>('profile_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $InvestmentAssetsTable _assetIdTable(_$AppDatabase db) =>
+      db.investmentAssets.createAlias(
+        $_aliasNameGenerator(
+          db.investmentSnapshots.assetId,
+          db.investmentAssets.id,
+        ),
+      );
+
+  $$InvestmentAssetsTableProcessedTableManager get assetId {
+    final $_column = $_itemColumn<int>('asset_id')!;
+
+    final manager = $$InvestmentAssetsTableTableManager(
+      $_db,
+      $_db.investmentAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_assetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TransactionsTable _transactionIdTable(_$AppDatabase db) =>
+      db.transactions.createAlias(
+        $_aliasNameGenerator(
+          db.investmentSnapshots.transactionId,
+          db.transactions.id,
+        ),
+      );
+
+  $$TransactionsTableProcessedTableManager? get transactionId {
+    final $_column = $_itemColumn<int>('transaction_id');
+    if ($_column == null) return null;
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_transactionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$InvestmentSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $InvestmentSnapshotsTable> {
+  $$InvestmentSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get snapshotDate => $composableBuilder(
+    column: $table.snapshotDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get contribution => $composableBuilder(
+    column: $table.contribution,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fxRateToBase => $composableBuilder(
+    column: $table.fxRateToBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Currency, Currency, int> get baseCurrency =>
+      $composableBuilder(
+        column: $table.baseCurrency,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get profileId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$InvestmentAssetsTableFilterComposer get assetId {
+    final $$InvestmentAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.assetId,
+      referencedTable: $db.investmentAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.investmentAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TransactionsTableFilterComposer get transactionId {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$InvestmentSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InvestmentSnapshotsTable> {
+  $$InvestmentSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get snapshotDate => $composableBuilder(
+    column: $table.snapshotDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get contribution => $composableBuilder(
+    column: $table.contribution,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fxRateToBase => $composableBuilder(
+    column: $table.fxRateToBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get baseCurrency => $composableBuilder(
+    column: $table.baseCurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSynced => $composableBuilder(
+    column: $table.isSynced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get profileId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$InvestmentAssetsTableOrderingComposer get assetId {
+    final $$InvestmentAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.assetId,
+      referencedTable: $db.investmentAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.investmentAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TransactionsTableOrderingComposer get transactionId {
+    final $$TransactionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$InvestmentSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InvestmentSnapshotsTable> {
+  $$InvestmentSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get snapshotDate => $composableBuilder(
+    column: $table.snapshotDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<double> get contribution => $composableBuilder(
+    column: $table.contribution,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fxRateToBase => $composableBuilder(
+    column: $table.fxRateToBase,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<Currency, int> get baseCurrency =>
+      $composableBuilder(
+        column: $table.baseCurrency,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSynced =>
+      $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get profileId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$InvestmentAssetsTableAnnotationComposer get assetId {
+    final $$InvestmentAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.assetId,
+      referencedTable: $db.investmentAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvestmentAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.investmentAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TransactionsTableAnnotationComposer get transactionId {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.transactionId,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$InvestmentSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InvestmentSnapshotsTable,
+          InvestmentSnapshot,
+          $$InvestmentSnapshotsTableFilterComposer,
+          $$InvestmentSnapshotsTableOrderingComposer,
+          $$InvestmentSnapshotsTableAnnotationComposer,
+          $$InvestmentSnapshotsTableCreateCompanionBuilder,
+          $$InvestmentSnapshotsTableUpdateCompanionBuilder,
+          (InvestmentSnapshot, $$InvestmentSnapshotsTableReferences),
+          InvestmentSnapshot,
+          PrefetchHooks Function({
+            bool profileId,
+            bool assetId,
+            bool transactionId,
+          })
+        > {
+  $$InvestmentSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $InvestmentSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InvestmentSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InvestmentSnapshotsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$InvestmentSnapshotsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<int> assetId = const Value.absent(),
+                Value<DateTime> snapshotDate = const Value.absent(),
+                Value<double> value = const Value.absent(),
+                Value<double> contribution = const Value.absent(),
+                Value<double> fxRateToBase = const Value.absent(),
+                Value<Currency> baseCurrency = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int?> transactionId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => InvestmentSnapshotsCompanion(
+                id: id,
+                profileId: profileId,
+                assetId: assetId,
+                snapshotDate: snapshotDate,
+                value: value,
+                contribution: contribution,
+                fxRateToBase: fxRateToBase,
+                baseCurrency: baseCurrency,
+                note: note,
+                transactionId: transactionId,
+                createdAt: createdAt,
+                remoteId: remoteId,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int profileId,
+                required int assetId,
+                required DateTime snapshotDate,
+                required double value,
+                Value<double> contribution = const Value.absent(),
+                Value<double> fxRateToBase = const Value.absent(),
+                required Currency baseCurrency,
+                Value<String?> note = const Value.absent(),
+                Value<int?> transactionId = const Value.absent(),
+                required DateTime createdAt,
+                Value<String?> remoteId = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<bool> isSynced = const Value.absent(),
+              }) => InvestmentSnapshotsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                assetId: assetId,
+                snapshotDate: snapshotDate,
+                value: value,
+                contribution: contribution,
+                fxRateToBase: fxRateToBase,
+                baseCurrency: baseCurrency,
+                note: note,
+                transactionId: transactionId,
+                createdAt: createdAt,
+                remoteId: remoteId,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                isSynced: isSynced,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$InvestmentSnapshotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({profileId = false, assetId = false, transactionId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profileId,
+                                    referencedTable:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._profileIdTable(db),
+                                    referencedColumn:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._profileIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (assetId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.assetId,
+                                    referencedTable:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._assetIdTable(db),
+                                    referencedColumn:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._assetIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (transactionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.transactionId,
+                                    referencedTable:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._transactionIdTable(db),
+                                    referencedColumn:
+                                        $$InvestmentSnapshotsTableReferences
+                                            ._transactionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$InvestmentSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InvestmentSnapshotsTable,
+      InvestmentSnapshot,
+      $$InvestmentSnapshotsTableFilterComposer,
+      $$InvestmentSnapshotsTableOrderingComposer,
+      $$InvestmentSnapshotsTableAnnotationComposer,
+      $$InvestmentSnapshotsTableCreateCompanionBuilder,
+      $$InvestmentSnapshotsTableUpdateCompanionBuilder,
+      (InvestmentSnapshot, $$InvestmentSnapshotsTableReferences),
+      InvestmentSnapshot,
+      PrefetchHooks Function({bool profileId, bool assetId, bool transactionId})
     >;
 typedef $$BudgetsTableCreateCompanionBuilder =
     BudgetsCompanion Function({
@@ -21208,6 +24421,10 @@ class $AppDatabaseManager {
       );
   $$PriceCacheTableTableManager get priceCache =>
       $$PriceCacheTableTableManager(_db, _db.priceCache);
+  $$InvestmentAssetsTableTableManager get investmentAssets =>
+      $$InvestmentAssetsTableTableManager(_db, _db.investmentAssets);
+  $$InvestmentSnapshotsTableTableManager get investmentSnapshots =>
+      $$InvestmentSnapshotsTableTableManager(_db, _db.investmentSnapshots);
   $$BudgetsTableTableManager get budgets =>
       $$BudgetsTableTableManager(_db, _db.budgets);
   $$BudgetCategoriesTableTableManager get budgetCategories =>

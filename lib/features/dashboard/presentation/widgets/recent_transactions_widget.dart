@@ -15,6 +15,7 @@ import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
 import '../../../transactions/presentation/screens/transaction_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_payment_view_screen.dart';
+import '../../../investments/presentation/screens/investment_asset_detail_screen.dart';
 
 /// Widget displaying recent transactions
 class RecentTransactionsWidget extends ConsumerWidget {
@@ -111,9 +112,17 @@ class RecentTransactionsWidget extends ConsumerWidget {
                     final isDebtPaymentOut = transaction.type == TransactionType.debtPaymentOut;
                     final isDebtPaymentIn = transaction.type == TransactionType.debtPaymentIn;
                     final isDebtPayment = isDebtPaymentOut || isDebtPaymentIn;
+                    final isInvestmentOut = transaction.type == TransactionType.investmentOut;
+                    final isInvestmentIn = transaction.type == TransactionType.investmentIn;
+                    final isInvestment = isInvestmentOut || isInvestmentIn;
+                    final investmentColor = isLight ? AppColors.primaryGoldTextLight : AppColors.primaryGold;
                     
                     return InkWell(
                       onTap: () {
+                        if (isInvestment) {
+                          openInvestmentTransaction(context, transaction.id);
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -143,7 +152,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                           children: [
                             // Icon
                             Builder(builder: (context) {
-                              final typeColor = isIncome
+                              final typeColor = isInvestment
+                                  ? investmentColor
+                                  : isIncome
                                   ? AppColors.success
                                   : isExpense
                                       ? AppColors.error
@@ -182,7 +193,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                 child: useCategoryIcon
                                     ? Center(child: CategoryIconWidget(iconString: category!.icon, size: 18, color: typeColor))
                                     : Icon(
-                                        isIncome
+                                        isInvestment
+                                            ? Icons.show_chart
+                                            : isIncome
                                             ? Icons.arrow_downward
                                             : isExpense
                                                 ? Icons.arrow_upward
@@ -251,9 +264,11 @@ class RecentTransactionsWidget extends ConsumerWidget {
                             ),
                             // Amount
                             Text(
-                              '${isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn ? '+' : isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
+                              '${isIncome || isAdjustmentIn || isDebtIn || isDebtPaymentIn || isInvestmentIn ? '+' : isExpense || isAdjustmentOut || isDebtOut || isDebtPaymentOut || isInvestmentOut ? '-' : ''} ${Formatters.formatCurrency(transaction.amount, showDecimal: showDecimal)}',
                               style: TextStyle(
-                                color: isIncome
+                                color: isInvestment
+                                    ? investmentColor
+                                    : isIncome
                                     ? AppColors.success
                                     : isExpense
                                         ? AppColors.error

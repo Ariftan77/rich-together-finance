@@ -229,6 +229,12 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
           case TransactionType.debtPaymentIn:
             balance += tx.amount;
             break;
+          case TransactionType.investmentOut:
+            balance -= tx.amount;
+            break;
+          case TransactionType.investmentIn:
+            balance += tx.amount;
+            break;
         }
       } else if (tx.toAccountId == accountId) {
         // Transaction is TO this account (transfer)
@@ -466,9 +472,9 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
   /// cross-currency transfers are handled correctly (mirrors calculateAccountBalance).
   Stream<Map<int, double>> watchAllAccountBalanceDeltas(int profileId) {
     // Types that ADD to the source account (accountId column):
-    //   income=0, adjustmentIn=3, debtIn=5, debtPaymentIn=8
+    //   income=0, adjustmentIn=3, debtIn=5, debtPaymentIn=8, investmentIn=10
     // Types that SUBTRACT from the source account (accountId column):
-    //   expense=1, transfer=2, adjustmentOut=4, debtOut=6, debtPaymentOut=7
+    //   expense=1, transfer=2, adjustmentOut=4, debtOut=6, debtPaymentOut=7, investmentOut=9
     //
     // We emit two rows per transfer: one for the source account (negative) via
     // the accountId GROUP, and one for the destination account (positive) via a
@@ -480,7 +486,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
         SELECT
           account_id,
           CASE
-            WHEN "type" IN (0, 3, 5, 8) THEN  amount
+            WHEN "type" IN (0, 3, 5, 8, 10) THEN  amount
             ELSE                              -amount
           END AS signed_amount
         FROM transactions
@@ -519,7 +525,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase> with _$TransactionDao
         SELECT
           account_id,
           CASE
-            WHEN "type" IN (0, 3, 5, 8) THEN  amount
+            WHEN "type" IN (0, 3, 5, 8, 10) THEN  amount
             ELSE                              -amount
           END AS signed_amount
         FROM transactions

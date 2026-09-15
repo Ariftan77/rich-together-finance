@@ -58,6 +58,8 @@ class AppTranslationsId implements AppTranslations {
   @override String get entryTypeDebtOut => 'Dipinjamkan';
   @override String get entryTypeDebtPaymentOut => 'Bayar Hutang';
   @override String get entryTypeDebtPaymentIn => 'Terima Piutang';
+  @override String get entryTypeInvestmentOut => 'Tambah Investasi';
+  @override String get entryTypeInvestmentIn => 'Tarik Investasi';
   @override String get entryCategoryCreated => 'Kategori berhasil dibuat';
   @override String get entryCategory => 'Kategori';
   @override String get entryAccount => 'Akun';
@@ -295,9 +297,6 @@ class AppTranslationsId implements AppTranslations {
   @override String get debtNoDebtsHint => 'Tap + untuk menambah catatan hutang';
   @override String get debtSettled => 'Hutang lunas';
 
-  // Investment
-  @override String get investmentPlaceholder => 'Pelacakan Investasi';
-  @override String get investmentPlaceholderHint => 'Segera hadir — pantau portofolio Anda di sini';
 
   // Recurring
   @override String get recurringTitle => 'Transaksi Berulang';
@@ -855,4 +854,98 @@ class AppTranslationsId implements AppTranslations {
   @override String get iapActionTryAgain => 'Coba Lagi';
   @override String get iapActionContactSupport => 'Hubungi Dukungan';
   @override String get iapActionRestore => 'Pulihkan';
+
+  // ===== Investment tracking (snapshot-based) =====
+  @override String get investmentAssetTypeStock => 'Saham';
+  @override String get investmentAssetTypeCrypto => 'Kripto';
+  @override String get investmentAssetTypeGold => 'Emas';
+  @override String get investmentAssetTypeSilver => 'Perak';
+  @override String get investmentAssetTypeEtf => 'ETF';
+  @override String get investmentAssetTypeMutualFund => 'Reksadana';
+  @override String get investmentAssetTypeProperty => 'Properti';
+  @override String get investmentAssetTypeBond => 'Obligasi';
+  @override String get investmentAssetTypeOther => 'Lainnya';
+
+  @override String get investmentTotalValue => 'Total Nilai';
+  @override String get investmentInvested => 'Modal';
+  @override String get investmentGain => 'Keuntungan';
+  @override String get investmentReturn => 'Imbal Hasil';
+  @override String get investmentReturnBreakdownTitle => 'Cara menghitung imbal hasil';
+  @override String get investmentTotalPutIn => 'Total disetor';
+  @override String get investmentInvestedFormula => 'Modal (disetor − ditarik)';
+  @override String get investmentGainFormula => 'Keuntungan (nilai − modal)';
+  @override String get investmentReturnFormula => 'Imbal hasil (keuntungan ÷ total disetor)';
+  @override String get investmentReturnBreakdownNote => 'Keuntungan yang sudah ditarik tidak dihitung. Setelah semua setoran ditarik, setoran berikutnya dihitung dari awal.';
+  @override String get investmentSinceLastUpdate => 'Sejak pembaruan terakhir';
+
+  @override String get investmentEmptyTitle => 'Pantau investasi Anda';
+  @override String get investmentEmptyHint => 'Tambahkan aset, lalu perbarui nilainya kapan pun Anda mau. Grafik pertumbuhan terbentuk sendiri.';
+  @override String get investmentSaveButton => 'Simpan';
+  @override String get investmentDeleteConfirmAction => 'Hapus';
+  @override String get investmentAddAsset => 'Tambah Aset';
+  @override String get investmentUpdateValues => 'Perbarui Nilai';
+  @override String get investmentAssetsSection => 'Aset';
+
+  @override String get investmentChartTitle => 'Nilai Portofolio';
+  @override String get investmentChartValueLabel => 'Nilai';
+  @override String get investmentChartInvestedLabel => 'Modal';
+  @override String investmentChartNeedMore(int count) => count == 1
+      ? 'Perbarui sekali lagi untuk melihat tren Anda'
+      : 'Perbarui $count kali lagi untuk melihat tren Anda';
+
+  @override String get investmentAssetChartTitle => 'Riwayat Nilai';
+  @override String get investmentUpdateValue => 'Perbarui Nilai';
+  @override String get investmentSelectAssetType => 'Pilih Jenis';
+  @override String get investmentWalletLabel => 'Dompet (opsional)';
+  @override String get investmentWalletNone => 'Tidak dari dompet';
+  @override String investmentWalletNoneInCurrency(String currencyCode) => 'Tidak ada dompet $currencyCode';
+  @override String get investmentWalletAddedHint => 'Jumlah ini dipotong dari dompet ini.';
+  @override String get investmentWalletWithdrawnHint => 'Jumlah ini ditambahkan ke dompet ini.';
+  @override String get investmentContributionAdded => 'Ditambah';
+  @override String get investmentContributionWithdrawn => 'Ditarik';
+
+  @override String get investmentAssetNameLabel => 'Nama aset';
+  @override String get investmentAssetNameHint => 'mis. Emas batangan 10g';
+  @override String get investmentAssetTypeLabel => 'Jenis';
+  @override String get investmentAssetCurrencyLabel => 'Mata uang';
+  @override String get investmentCurrentValueLabel => 'Nilai saat ini';
+  @override String get investmentInvestedSoFarLabel => 'Modal yang sudah ditanam';
+  @override String get investmentInvestedSoFarHint => 'Jumlah yang sudah Anda bayarkan. Bawaannya sama dengan nilai saat ini, sehingga aset dimulai tanpa keuntungan.';
+  @override String get investmentNoteLabel => 'Catatan (opsional)';
+  @override String get investmentAddAssetTitle => 'Tambah Aset';
+  @override String get investmentEditAssetTitle => 'Ubah Aset';
+  @override String get investmentDeleteAsset => 'Hapus aset';
+  @override String get investmentDeleteAssetConfirm => 'Hapus aset ini beserta seluruh riwayat nilainya? Tindakan ini tidak dapat dibatalkan.';
+
+  @override String get investmentUpdateTitle => 'Perbarui Nilai';
+  @override String get investmentUpdateAsOf => 'Per tanggal';
+  @override String get investmentUpdateValueLabel => 'Nilai sekarang';
+  @override String get investmentUpdateContributionLabel => 'Dana ditambah atau ditarik';
+  @override String get investmentUpdateContributionHint => 'Biarkan 0 jika Anda hanya memperbarui nilainya.';
+  @override String get investmentUpdateSaved => 'Nilai tersimpan';
+  @override String get investmentUpdateNothingEntered => 'Masukkan setidaknya satu nilai';
+
+  @override String get investmentSellTitle => 'Tandai Terjual';
+  @override String get investmentSellProceedsLabel => 'Dana yang diterima';
+  @override String get investmentSellOrWithdraw => 'Jual / Tarik';
+  @override String get investmentSellAll => 'Jual semua';
+  @override String get investmentSellAllHint => 'Catat dana yang diterima. Aset akan diarsipkan.';
+  @override String get investmentWithdrawPart => 'Tarik sebagian';
+  @override String get investmentWithdrawPartHint => 'Ambil sebagian dana, aset tetap disimpan.';
+  @override String get investmentSellHint =>'Aset akan diarsipkan dan dihapus dari total serta grafik Anda.';
+  @override String get investmentSellAction => 'Terjual / ditarik';
+  @override String get investmentSellDone => 'Aset diarsipkan';
+
+  @override String get investmentHistoryTitle => 'Riwayat Pembaruan';
+  @override String get investmentHistoryEmpty => 'Belum ada pembaruan';
+  @override String investmentHistoryAssetCount(int count) => '$count aset';
+  @override String get investmentDeleteSession => 'Hapus pembaruan';
+  @override String get investmentDeleteSessionConfirm => 'Hapus semua nilai yang dicatat pada tanggal ini?';
+
+  @override String investmentLastUpdated(String date) => 'Diperbarui $date';
+
+  @override String get premiumGateInvestmentTitle => 'Batas Aset Tercapai';
+  @override String get premiumGateInvestmentDesc => 'Tier gratis hanya mendukung 3 aset investasi. Upgrade untuk aset tak terbatas.';
+  @override String get premiumFeatureInvestments => 'Aset Investasi';
+  @override String get dashboardInvestments => 'Investasi';
 }

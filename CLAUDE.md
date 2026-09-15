@@ -105,7 +105,7 @@ Because users only ever update through the Play Store / App Store, **any install
 When touching anything under `core/database/tables/` or `core/models/enums.dart`:
 
 1. **Edit the table** in `core/database/tables/`. Additive only: new columns must be `nullable()` or carry `withDefault(...)`. Don't drop or rename a column that shipped.
-2. **Bump `schemaVersion`** in `lib/core/database/database.dart` (currently **22**) by exactly one.
+2. **Bump `schemaVersion`** in `lib/core/database/database.dart` (currently **25**) by exactly one.
 3. **Add a new `if (from < N) { … }` block** at the end of `onUpgrade`. Never edit, renumber, or delete an existing block — devices still on v7 replay every block in order. Wrap each `addColumn` / `createTable` in `try { } catch (_) { }` like the existing ones (restored backups may already have the column). Destructive rewrites need `m.alterTable(TableMigration(...))`, as in the `from < 19` budgets case.
 4. **Backfill** existing rows with `customStatement` inside the same block when the new column must be non-empty for old data (see `backfillTransactionDebtLinks` for the v22 pattern).
 5. **Regenerate**: `flutter pub run build_runner build --delete-conflicting-outputs`.

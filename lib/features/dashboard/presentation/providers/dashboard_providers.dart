@@ -5,6 +5,7 @@ import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/services/currency_exchange_service.dart';
+import '../../../investments/presentation/providers/investment_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Data classes
@@ -197,6 +198,8 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
   final debtDao = ref.watch(debtDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
+  // Read before the first await: ref.watch is only valid synchronously.
+  final investmentValue = ref.watch(investmentTotalValueProvider);
   // Re-create when transactions change (not just accounts)
   ref.watch(transactionsStreamProvider.select((v) => v.valueOrNull?.length));
 
@@ -230,7 +233,11 @@ final dashboardNetWorthProvider = StreamProvider.autoDispose<double>((ref) async
     }
   }
 
-  // 3. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
+  // 3. Snapshot-tracked investments, valued at the latest confirmed snapshot
+  // (already converted to base currency by the summary).
+  totalAssets += investmentValue;
+
+  // 4. Debts: payable = liabilities (I owe), receivable = assets (owed to me)
   final debts = await debtDao.getAllDebts(profileId);
   double totalLiabilities = 0;
   for (final debt in debts.where((d) => !d.isSettled)) {

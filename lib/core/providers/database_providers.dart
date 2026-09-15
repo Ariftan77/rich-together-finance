@@ -5,6 +5,7 @@ import '../database/daos/account_dao.dart';
 import '../database/daos/transaction_dao.dart';
 import '../database/daos/category_dao.dart';
 import '../database/daos/holding_dao.dart';
+import '../database/daos/investment_dao.dart';
 import '../database/daos/budget_dao.dart';
 import '../database/daos/goal_dao.dart';
 import '../database/daos/debt_dao.dart';
@@ -42,6 +43,12 @@ final categoryDaoProvider = Provider<CategoryDao>((ref) {
 final holdingDaoProvider = Provider<HoldingDao>((ref) {
   final db = ref.watch(databaseProvider);
   return HoldingDao(db);
+});
+
+/// Investment DAO provider (snapshot-based investment tracking)
+final investmentDaoProvider = Provider<InvestmentDao>((ref) {
+  final db = ref.watch(databaseProvider);
+  return InvestmentDao(db);
 });
 
 /// Budget DAO provider
@@ -118,6 +125,16 @@ final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
 final holdingsStreamProvider = StreamProvider<List<Holding>>((ref) {
   final holdingDao = ref.watch(holdingDaoProvider);
   return holdingDao.watchAllHoldings();
+});
+
+/// Active investment assets stream (filtered by active profile)
+final investmentAssetsStreamProvider =
+    StreamProvider<List<InvestmentAsset>>((ref) {
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (profileId == null) return Stream.value([]);
+
+  final investmentDao = ref.watch(investmentDaoProvider);
+  return investmentDao.watchActiveAssets(profileId);
 });
 
 /// All budgets stream (filtered by active profile)
