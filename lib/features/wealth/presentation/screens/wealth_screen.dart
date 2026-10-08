@@ -33,6 +33,7 @@ import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/account_selector.dart';
 import '../widgets/debt_payoff_card.dart';
+import '../widgets/debt_share_pages.dart';
 
 
 /// Exposes the active sub-tab index so DashboardShell can show the right FAB.
@@ -2679,11 +2680,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (_) => Positioned(
-        left: -9999,
+        right: MediaQuery.sizeOf(context).width + 1,
         top: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: _buildPersonDebtShareWidget(personName, type, debts, locale),
+        child: UnconstrainedBox(
+          child: Material(
+            color: Colors.transparent,
+            child: buildPersonDebtShareWidget(personName, type, debts, locale,
+                captureKey: _debtShareKey),
+          ),
         ),
       ),
     );
@@ -2714,6 +2718,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
 
       overlayEntry.remove();
       overlayEntry = null;
@@ -2744,13 +2749,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     }
   }
 
+}
+
   /// Builds the share image for a single person's debt group.
-  Widget _buildPersonDebtShareWidget(
+  Widget buildPersonDebtShareWidget(
     String personName,
     DebtType type,
     List<Debt> debts,
-    String locale,
-  ) {
+    String locale, {
+    required GlobalKey captureKey,
+  }) {
     final typeColor = type == DebtType.payable ? AppColors.error : AppColors.success;
     final typeLabel = type == DebtType.payable ? 'I Owe' : 'Owed to Me';
     final typeIcon = type == DebtType.payable ? Icons.arrow_upward : Icons.arrow_downward;
@@ -2802,7 +2810,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                         style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                       ),
                       if (d.dueDate != null)
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             const Text('Due: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                             Text(
@@ -2875,16 +2884,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
     }
 
     return RepaintBoundary(
-      key: _debtShareKey,
+      key: captureKey,
       child: Container(
-        width: 380,
-        padding: const EdgeInsets.all(20),
         color: bgColor,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        child: DebtSharePages(
           children: [
             // Header: app name + date
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Row(
               children: [
                 ClipRRect(
@@ -2942,9 +2951,15 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
               ],
             ),
             const SizedBox(height: 14),
+              ],
+            ),
             // Debt rows
             ...debts.map(debtRow),
             // Total summary
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             const Divider(color: Color(0x40D4AF37), height: 20),
             for (final entry in remainingByCurrency.entries)
               Padding(
@@ -2952,9 +2967,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Total Remaining (${entry.key.code})',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    Expanded(
+                      child: Text(
+                        'Total Remaining (${entry.key.code})',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
                     ),
                     Text(
                       '${entry.key.code} ${Formatters.formatCurrency(entry.value, showDecimal: false)}',
@@ -2973,9 +2990,11 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Total Amount (${entry.key.code})',
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    Expanded(
+                      child: Text(
+                        'Total Amount (${entry.key.code})',
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                      ),
                     ),
                     Text(
                       '${entry.key.code} ${Formatters.formatCurrency(entry.value, showDecimal: false)}',
@@ -2991,12 +3010,13 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10),
               ),
             ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
-}
 
 class _FilterChip extends StatelessWidget {
   final String label;
