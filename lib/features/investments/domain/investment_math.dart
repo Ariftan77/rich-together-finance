@@ -135,6 +135,72 @@ class InvestmentSummary {
   }
 }
 
+/// One asset type's share of the portfolio, all figures in the base currency.
+class InvestmentAllocationSlice {
+  final AssetType type;
+
+  /// Assets of this type, highest current value first.
+  final List<InvestmentAssetView> assets;
+  final double value;
+  final double invested;
+  final double putIn;
+
+  /// Share of the total portfolio value, 0–100.
+  final double percentage;
+
+  const InvestmentAllocationSlice({
+    required this.type,
+    required this.assets,
+    required this.value,
+    required this.invested,
+    required this.putIn,
+    required this.percentage,
+  });
+
+  double get gain => value - invested;
+
+  /// Null when there is no capital base to measure against.
+  double? get returnPct => putIn > 0 ? (gain / putIn) * 100 : null;
+}
+
+/// Splits the portfolio by asset type, largest share first.
+///
+/// Assets worth nothing are left out — a pie has no slice to draw for them.
+List<InvestmentAllocationSlice> buildInvestmentAllocation(
+  List<InvestmentAssetView> views,
+) {
+  final byType = <AssetType, List<InvestmentAssetView>>{};
+  double total = 0;
+  for (final view in views) {
+    if (view.valueInBase <= 0) continue;
+    byType.putIfAbsent(view.asset.assetType, () => []).add(view);
+    total += view.valueInBase;
+  }
+  if (total <= 0) return const [];
+
+  final slices = <InvestmentAllocationSlice>[];
+  for (final entry in byType.entries) {
+    final assets = entry.value
+      ..sort((a, b) => b.valueInBase.compareTo(a.valueInBase));
+    double value = 0, invested = 0, putIn = 0;
+    for (final view in assets) {
+      value += view.valueInBase;
+      invested += view.investedInBase;
+      putIn += view.putInBase;
+    }
+    slices.add(InvestmentAllocationSlice(
+      type: entry.key,
+      assets: assets,
+      value: value,
+      invested: invested,
+      putIn: putIn,
+      percentage: value / total * 100,
+    ));
+  }
+  slices.sort((a, b) => b.value.compareTo(a.value));
+  return slices;
+}
+
 /// Running figures for one asset while sweeping its records.
 class _AssetState {
   double value = 0;

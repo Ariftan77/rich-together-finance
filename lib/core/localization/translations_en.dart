@@ -892,6 +892,8 @@ class AppTranslationsEn implements AppTranslations {
       ? 'Update once more to see your trend'
       : 'Update $count more times to see your trend';
 
+  @override String get investmentAllocationTitle => 'Allocation';
+  @override String get investmentAllocationHint => 'Hold a slice to see its assets';
   @override String get investmentAssetChartTitle => 'Value History';
   @override String get investmentUpdateValue => 'Update Value';
   @override String get investmentSelectAssetType => 'Select Type';
