@@ -893,6 +893,8 @@ class AppTranslationsId implements AppTranslations {
       ? 'Perbarui sekali lagi untuk melihat tren Anda'
       : 'Perbarui $count kali lagi untuk melihat tren Anda';
 
+  @override String get investmentAllocationTitle => 'Alokasi';
+  @override String get investmentAllocationHint => 'Tahan potongan untuk melihat asetnya';
   @override String get investmentAssetChartTitle => 'Riwayat Nilai';
   @override String get investmentUpdateValue => 'Perbarui Nilai';
   @override String get investmentSelectAssetType => 'Pilih Jenis';

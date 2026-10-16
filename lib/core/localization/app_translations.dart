@@ -880,6 +880,8 @@ abstract class AppTranslations {
   /// Shown instead of the chart until three snapshot dates exist - two points
   /// would draw a trend line the data cannot support.
   String investmentChartNeedMore(int count);
+  String get investmentAllocationTitle;
+  String get investmentAllocationHint;
   String get investmentAssetChartTitle;
   String get investmentUpdateValue;
   String get investmentSelectAssetType;

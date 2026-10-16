@@ -20,13 +20,14 @@ InvestmentAsset _asset(
   String name, {
   Currency currency = Currency.idr,
   bool isArchived = false,
+  AssetType type = AssetType.gold,
 }) {
   final now = DateTime(2026, 1, 1);
   return InvestmentAsset(
     id: id,
     profileId: 1,
     name: name,
-    assetType: AssetType.gold,
+    assetType: type,
     currency: currency,
     isArchived: isArchived,
     createdAt: now,
@@ -458,6 +459,59 @@ void main() {
       expect(summary.series.map((p) => p.date).toList(), [sept, oct, nov]);
       expect(summary.series.map((p) => p.value).toList(),
           [closeTo(10 * jt, 1), closeTo(20 * jt, 1), closeTo(30 * jt, 1)]);
+    });
+  });
+
+  group('buildInvestmentAllocation', () {
+    test('groups assets by type with value share and gain', () {
+      final summary = _build([
+        _asset(1, 'BBCA', type: AssetType.stock),
+        _asset(2, 'TLKM', type: AssetType.stock),
+        _asset(3, 'Gold bar'),
+      ], [
+        _snap(1, 1, sept, 20 * jt, contribution: 20 * jt),
+        _snap(2, 2, sept, 20 * jt, contribution: 20 * jt),
+        _snap(3, 3, sept, 40 * jt, contribution: 40 * jt),
+        _snap(4, 1, oct, 30 * jt),
+        _snap(5, 2, oct, 22 * jt),
+        _snap(6, 3, oct, 28 * jt),
+      ]);
+
+      final slices = buildInvestmentAllocation(summary.assets);
+
+      expect(slices.map((s) => s.type).toList(),
+          [AssetType.stock, AssetType.gold]);
+
+      final stock = slices.first;
+      expect(stock.value, closeTo(52 * jt, 1));
+      expect(stock.invested, closeTo(40 * jt, 1));
+      expect(stock.gain, closeTo(12 * jt, 1));
+      expect(stock.returnPct, closeTo(30, 0.01));
+      expect(stock.percentage, closeTo(65, 0.01));
+      expect(stock.assets.map((v) => v.asset.name).toList(), ['BBCA', 'TLKM']);
+
+      final gold = slices.last;
+      expect(gold.gain, closeTo(-12 * jt, 1));
+      expect(gold.returnPct, closeTo(-30, 0.01));
+      expect(gold.percentage, closeTo(35, 0.01));
+    });
+
+    test('assets worth nothing are left out', () {
+      final summary = _build([
+        _asset(1, 'Gold bar'),
+        _asset(2, 'No value yet', type: AssetType.crypto),
+      ], [
+        _snap(1, 1, sept, 10 * jt, contribution: 10 * jt),
+      ]);
+
+      final slices = buildInvestmentAllocation(summary.assets);
+
+      expect(slices.map((s) => s.type).toList(), [AssetType.gold]);
+      expect(slices.single.percentage, closeTo(100, 0.01));
+    });
+
+    test('nothing held gives no slices', () {
+      expect(buildInvestmentAllocation(const []), isEmpty);
     });
   });
 }

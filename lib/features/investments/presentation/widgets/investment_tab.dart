@@ -9,7 +9,7 @@ import '../screens/investment_asset_detail_screen.dart';
 import '../screens/investment_history_screen.dart';
 import 'investment_asset_card.dart';
 import 'investment_summary_header.dart';
-import 'investment_chart_section.dart';
+import 'investment_chart_carousel.dart';
 import 'investment_update_sheet.dart';
 
 /// Body of the Investment tab in WealthScreen.
@@ -39,7 +39,7 @@ class InvestmentTab extends ConsumerWidget {
         InvestmentSummaryHeader(summary: summary),
         const SizedBox(height: 16),
 
-        InvestmentChartSection(summary: summary),
+        InvestmentChartCarousel(summary: summary),
         const SizedBox(height: 24),
 
         Row(
