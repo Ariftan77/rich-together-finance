@@ -138,6 +138,7 @@ class InvestmentAssetDetailScreen extends ConsumerWidget {
                                     views: [view]),
                                 isPrimary: true,
                                 isFullWidth: true,
+                                size: GlassButtonSize.small,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -148,6 +149,7 @@ class InvestmentAssetDetailScreen extends ConsumerWidget {
                                 onPressed: () =>
                                     _sellOrWithdraw(context, ref, view),
                                 isFullWidth: true,
+                                size: GlassButtonSize.small,
                               ),
                             ),
                           ],
