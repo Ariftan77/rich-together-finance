@@ -68,6 +68,14 @@ class GlassButton extends StatelessWidget {
     } else if (child != null) {
       content = child!;
     } else {
+      final Widget label = Text(
+        text!,
+        maxLines: isFullWidth ? 1 : null,
+        overflow: isFullWidth ? TextOverflow.ellipsis : null,
+        style: textStyle.copyWith(
+          color: isPrimary ? Colors.black : secondaryContentColor,
+        ),
+      );
       content = Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -80,12 +88,11 @@ class GlassButton extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          Text(
-            text!,
-            style: textStyle.copyWith(
-              color: isPrimary ? Colors.black : secondaryContentColor,
-            ),
-          ),
+          // Full-width buttons get a bounded width (often half a Row via
+          // Expanded), so long or Indonesian labels must ellipsize instead of
+          // overflowing. Non-full-width buttons may sit in an unbounded Row,
+          // where Flexible would throw, so they keep their natural size.
+          if (isFullWidth) Flexible(child: label) else label,
         ],
       );
     }
