@@ -13,10 +13,12 @@ import '../database/daos/category_dao.dart';
 import '../database/daos/debt_dao.dart';
 import '../database/daos/goal_dao.dart';
 import '../database/daos/holding_dao.dart';
+import '../database/daos/investment_dao.dart';
 import '../database/daos/recurring_dao.dart';
 import '../database/daos/transaction_dao.dart';
 import '../localization/app_translations.dart';
 import '../models/enums.dart';
+import 'currency_exchange_service.dart';
 
 class ExportService {
   final TransactionDao _transactionDao;
@@ -27,10 +29,72 @@ class ExportService {
   final GoalDao _goalDao;
   final DebtDao _debtDao;
   final HoldingDao _holdingDao;
+  final InvestmentDao _investmentDao;
+
+  /// Today's USD-based exchange rates, read at export time.
+  final Map<String, double> Function() _rates;
 
   ExportService(this._transactionDao, this._accountDao, this._categoryDao,
       this._recurringDao, this._budgetDao, this._goalDao, this._debtDao,
-      this._holdingDao);
+      this._holdingDao, this._investmentDao, this._rates);
+
+  /// Everything counting toward a goal — linked accounts and linked investment
+  /// assets — each converted into the goal's currency at today's rate. Mirrors
+  /// `goalsWithProgressProvider`, so the report matches the Goals tab.
+  Future<List<_GoalHoldingLine>> _goalHoldings(
+    Goal goal,
+    List<Account> accounts,
+    Map<int, double> balances,
+  ) async {
+    final rates = _rates();
+    final target = goal.targetCurrency;
+    double rateFrom(Currency from) => from == target
+        ? 1.0
+        : CurrencyExchangeService.convertCurrency(
+            1.0, from.code, target.code, rates);
+
+    final lines = <_GoalHoldingLine>[];
+    for (final ga in await _goalDao.getGoalAccounts(goal.id)) {
+      final account = accounts.where((a) => a.id == ga.accountId).firstOrNull;
+      if (account == null) continue;
+      final amount = ga.contributionAmount ?? (balances[ga.accountId] ?? 0);
+      final rate = rateFrom(account.currency);
+      lines.add(_GoalHoldingLine(
+        name: account.name,
+        type: account.type.displayName,
+        source: 'Account',
+        currency: account.currency,
+        amount: amount,
+        exchangeRate: rate,
+        convertedAmount: amount * rate,
+      ));
+    }
+    for (final gi in await _goalDao.getGoalInvestments(goal.id)) {
+      final asset = await _investmentDao.getAssetById(gi.assetId);
+      if (asset == null || asset.isArchived) continue;
+      final latest = await _investmentDao.getLatestSnapshotForAsset(asset.id);
+      final amount = latest?.value ?? 0;
+      final rate = rateFrom(asset.currency);
+      lines.add(_GoalHoldingLine(
+        name: asset.name,
+        type: asset.assetType.displayName,
+        source: 'Investment',
+        currency: asset.currency,
+        amount: amount,
+        exchangeRate: rate,
+        convertedAmount: amount * rate,
+      ));
+    }
+    return lines;
+  }
+
+  Future<double> _goalCurrentAmount(
+    Goal goal,
+    List<Account> accounts,
+    Map<int, double> balances,
+  ) async =>
+      (await _goalHoldings(goal, accounts, balances))
+          .fold<double>(0.0, (s, l) => s + l.convertedAmount);
 
   Future<bool> exportReport({
     required int profileId,
@@ -1319,10 +1383,8 @@ class ExportService {
     final activeGoals = allGoals.where((g) => !g.isAchieved).toList();
     for (int r = 0; r < activeGoals.length; r++) {
       final goal = activeGoals[r];
-      final linkedAccounts = await _goalDao.getGoalAccounts(goal.id);
-      final currentBalance = linkedAccounts.fold(0.0, (s, ga) {
-        return s + (balances[ga.accountId] ?? 0);
-      });
+      final currentBalance =
+          await _goalCurrentAmount(goal, accounts, balances);
       final pctAchieved = goal.targetAmount > 0
           ? (currentBalance / goal.targetAmount) * 100
           : 0.0;
@@ -2455,10 +2517,8 @@ class ExportService {
     final activeGoals = allGoals.where((g) => !g.isAchieved).toList();
     for (int r = 0; r < activeGoals.length; r++) {
       final goal = activeGoals[r];
-      final linkedAccounts = await _goalDao.getGoalAccounts(goal.id);
-      final currentBalance = linkedAccounts.fold(0.0, (s, ga) {
-        return s + (accountBalances[ga.accountId] ?? 0);
-      });
+      final currentBalance =
+          await _goalCurrentAmount(goal, accounts, accountBalances);
       final pctAchieved = goal.targetAmount > 0
           ? (currentBalance / goal.targetAmount) * 100
           : 0.0;
@@ -2498,8 +2558,8 @@ class ExportService {
     // --- Sheet: Account Mapping ---
     final amSheet = excel['Account Mapping'];
     final amHeaders = [
-      'Goal Name', 'Account Name', 'Account Type', 'Currency',
-      'Account Balance', 'Contribution Amount',
+      'Goal Name', 'Source', 'Name', 'Type', 'Currency', 'Amount',
+      'Exchange Rate', 'Amount (Goal Currency)', 'Goal Currency',
     ];
     for (int i = 0; i < amHeaders.length; i++) {
       final cell = amSheet.cell(
@@ -2509,17 +2569,18 @@ class ExportService {
     }
     int amRow = 1;
     for (final goal in activeGoals) {
-      final linkedAccounts = await _goalDao.getGoalAccounts(goal.id);
-      for (final ga in linkedAccounts) {
-        final account = accounts.where((a) => a.id == ga.accountId).firstOrNull;
-        final balance = accountBalances[ga.accountId] ?? 0;
+      final lines = await _goalHoldings(goal, accounts, accountBalances);
+      for (final line in lines) {
         final row = [
           goal.name,
-          account?.name ?? '',
-          account?.type.displayName ?? '',
-          account?.currency.code ?? '',
-          balance,
-          ga.contributionAmount ?? 0.0,
+          line.source,
+          line.name,
+          line.type,
+          line.currency.code,
+          line.amount,
+          line.exchangeRate,
+          line.convertedAmount,
+          goal.targetCurrency.code,
         ];
         for (int c = 0; c < row.length; c++) {
           final cell = amSheet.cell(
@@ -2545,11 +2606,8 @@ class ExportService {
     // Get initial balances for each top goal
     final List<double> goalCurrentBalances = [];
     for (final goal in topGoals) {
-      final linkedAccounts = await _goalDao.getGoalAccounts(goal.id);
-      final bal = linkedAccounts.fold(0.0, (s, ga) {
-        return s + (accountBalances[ga.accountId] ?? 0);
-      });
-      goalCurrentBalances.add(bal);
+      goalCurrentBalances
+          .add(await _goalCurrentAmount(goal, accounts, accountBalances));
     }
 
     final List<double> projectedBalances = List.from(goalCurrentBalances);
@@ -2939,4 +2997,25 @@ class ExportService {
 
     return true;
   }
+}
+
+/// One account or investment counted toward a goal, for the goal reports.
+class _GoalHoldingLine {
+  final String name;
+  final String type;
+  final String source;
+  final Currency currency;
+  final double amount;
+  final double exchangeRate;
+  final double convertedAmount;
+
+  const _GoalHoldingLine({
+    required this.name,
+    required this.type,
+    required this.source,
+    required this.currency,
+    required this.amount,
+    required this.exchangeRate,
+    required this.convertedAmount,
+  });
 }

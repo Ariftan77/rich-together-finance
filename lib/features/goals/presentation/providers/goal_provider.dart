@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
+import '../../../../core/database/daos/goal_dao.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/models/enums.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
+import '../../../investments/presentation/providers/investment_providers.dart';
 
 class GoalAccountBalance {
   final GoalAccount goalAccount;
@@ -23,12 +25,29 @@ class GoalAccountBalance {
   });
 }
 
+class GoalInvestmentBalance {
+  final GoalInvestment goalInvestment;
+  final InvestmentAsset asset;
+  final double originalAmount;
+  final double convertedAmount;
+  final double exchangeRate;
+
+  GoalInvestmentBalance({
+    required this.goalInvestment,
+    required this.asset,
+    required this.originalAmount,
+    required this.convertedAmount,
+    required this.exchangeRate,
+  });
+}
+
 class GoalWithProgress {
   final Goal goal;
   final double currentAmount;
   final double progress;
   final double? monthlyNeeded;
   final List<GoalAccountBalance> accountBalances;
+  final List<GoalInvestmentBalance> investmentBalances;
 
   GoalWithProgress({
     required this.goal,
@@ -36,39 +55,41 @@ class GoalWithProgress {
     required this.progress,
     this.monthlyNeeded,
     required this.accountBalances,
+    this.investmentBalances = const [],
   });
 }
 
-final goalsWithProgressProvider =
-    StreamProvider.autoDispose<List<GoalWithProgress>>((ref) async* {
-  final goalDao = ref.watch(goalDaoProvider);
+/// Active goals with their account and investment link rows. Re-emits when a
+/// goal or any of its links changes. Kept separate from the balance math so
+/// that balance updates never restart these database reads.
+final _goalLinksProvider =
+    StreamProvider.autoDispose<List<GoalLinks>>((ref) {
   final profileId = ref.watch(activeProfileIdProvider);
-  if (profileId == null) {
-    yield [];
-    return;
-  }
+  if (profileId == null) return Stream.value([]);
+  return ref.watch(goalDaoProvider).watchActiveGoalsWithLinks(profileId);
+});
 
-  // Watch transactions & accounts so balances recalculate reactively
-  ref.watch(transactionsStreamProvider);
-  ref.watch(accountsStreamProvider);
-
-  // Capture values SYNCHRONOUSLY before any await — ref cannot be used after async gaps
-  final balances = ref.read(accountBalanceProvider);
-  final accounts = ref.read(accountsStreamProvider).valueOrNull ?? [];
+/// Goals with progress, combining links with live balances, investment values
+/// and today's rates. Synchronous: whenever any input changes, the totals are
+/// recomputed from the latest values with no awaits in between.
+final goalsWithProgressProvider =
+    Provider.autoDispose<AsyncValue<List<GoalWithProgress>>>((ref) {
+  final linksAsync = ref.watch(_goalLinksProvider);
+  final balances = ref.watch(accountBalanceProvider);
+  final accounts = ref.watch(accountsStreamProvider).valueOrNull ?? [];
   final accountsMap = {for (var a in accounts) a.id: a};
   final rates = ref.watch(todayRatesProvider);
+  // Latest value per investment asset, in the asset's own currency
+  final investmentViews = {
+    for (final v in ref.watch(investmentSummaryProvider).assets) v.asset.id: v,
+  };
 
-  final goalsStream = goalDao.watchActiveGoals(profileId);
-
-  await for (final goals in goalsStream) {
-    if (goals.isEmpty) {
-      yield [];
-      continue;
-    }
+  return linksAsync.whenData((links) {
     final result = <GoalWithProgress>[];
 
-    for (final goal in goals) {
-      final goalAccounts = await goalDao.getGoalAccounts(goal.id);
+    for (final link in links) {
+      final goal = link.goal;
+      final goalAccounts = link.accounts;
       double currentAmount = 0;
       final List<GoalAccountBalance> accountBalances = [];
 
@@ -108,6 +129,40 @@ final goalsWithProgressProvider =
         ));
       }
 
+      final goalInvestments = link.investments;
+      final List<GoalInvestmentBalance> investmentBalances = [];
+
+      for (final gi in goalInvestments) {
+        final view = investmentViews[gi.assetId];
+        if (view == null) continue; // archived or deleted asset
+
+        final asset = view.asset;
+        final value = view.latestValue;
+        double convertedAmount = value;
+        double rate = 1.0;
+
+        // Convert to goal's target currency if different
+        if (asset.currency != goal.targetCurrency) {
+          rate = CurrencyExchangeService.convertCurrency(
+            1.0,
+            asset.currency.code,
+            goal.targetCurrency.code,
+            rates,
+          );
+          convertedAmount = value * rate;
+        }
+
+        currentAmount += convertedAmount;
+
+        investmentBalances.add(GoalInvestmentBalance(
+          goalInvestment: gi,
+          asset: asset,
+          originalAmount: value,
+          convertedAmount: convertedAmount,
+          exchangeRate: rate,
+        ));
+      }
+
       double? monthlyNeeded;
       if (goal.deadline != null) {
         final remaining = goal.targetAmount - currentAmount;
@@ -127,9 +182,10 @@ final goalsWithProgressProvider =
             goal.targetAmount > 0 ? currentAmount / goal.targetAmount : 0,
         monthlyNeeded: monthlyNeeded,
         accountBalances: accountBalances,
+        investmentBalances: investmentBalances,
       ));
     }
 
-    yield result;
-  }
+    return result;
+  });
 });

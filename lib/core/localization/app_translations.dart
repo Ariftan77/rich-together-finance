@@ -260,6 +260,10 @@ abstract class AppTranslations {
   String get goalDeadline;
   String get goalNoDeadline;
   String get goalLinkAccounts;
+  String get goalLinkInvestments;
+  String get goalSelectInvestments;
+  String get goalNoInvestmentsAvailable;
+  String get goalInvestmentsSelected;
   String get goalSaved;
   String get goalRemaining;
   String get goalMonthlyNeeded;

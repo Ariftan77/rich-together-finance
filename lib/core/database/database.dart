@@ -25,6 +25,7 @@ import 'tables/investment_snapshots.dart';
 import 'tables/budgets.dart';
 import 'tables/goals.dart';
 import 'tables/goal_accounts.dart';
+import 'tables/goal_investments.dart';
 import 'tables/budget_categories.dart';
 import 'tables/debts.dart';
 import 'tables/recurring.dart';
@@ -48,6 +49,7 @@ part 'database.g.dart';
   BudgetCategories,
   Goals,
   GoalAccounts,
+  GoalInvestments,
   Debts,
   Recurring,
   DailyExchangeRates,
@@ -60,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration {
@@ -278,6 +280,12 @@ class AppDatabase extends _$AppDatabase {
           // throws there and is ignored.
           try {
             await m.addColumn(investmentSnapshots, investmentSnapshots.transactionId);
+          } catch (_) {}
+        }
+        if (from < 26) {
+          // Goals can count investment assets toward their target.
+          try {
+            await m.createTable(goalInvestments);
           } catch (_) {}
         }
       },

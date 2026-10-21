@@ -19,7 +19,9 @@ import '../../../../shared/widgets/currency_picker_field.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../../shared/widgets/multi_account_picker_field.dart';
+import '../../../../shared/widgets/multi_investment_picker_field.dart';
 import '../../../accounts/presentation/providers/balance_provider.dart';
+import '../../../investments/presentation/providers/investment_providers.dart';
 
 class GoalEntryScreen extends ConsumerStatefulWidget {
   final Goal? goal;
@@ -38,6 +40,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
   DateTime? _deadline;
   bool _isLoading = false;
   List<int> _linkedAccountIds = [];
+  Set<int> _linkedInvestmentIds = {};
 
   @override
   void initState() {
@@ -60,9 +63,11 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
   Future<void> _loadLinkedAccounts() async {
     final goalDao = ref.read(goalDaoProvider);
     final accounts = await goalDao.getGoalAccounts(widget.goal!.id);
+    final investments = await goalDao.getGoalInvestments(widget.goal!.id);
     if (mounted) {
       setState(() {
         _linkedAccountIds = accounts.map((ga) => ga.accountId).toList();
+        _linkedInvestmentIds = investments.map((gi) => gi.assetId).toSet();
       });
     }
   }
@@ -159,6 +164,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
             ),
           );
         }
+        await goalDao.setGoalInvestments(goalId, _linkedInvestmentIds);
       } else {
         await goalDao.updateGoal(
           widget.goal!.copyWith(
@@ -183,6 +189,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
             ),
           );
         }
+        await goalDao.setGoalInvestments(widget.goal!.id, _linkedInvestmentIds);
       }
 
       if (mounted) Navigator.pop(context);
@@ -206,6 +213,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
     final accountsAsync = ref.watch(accountsStreamProvider);
     final balances = ref.watch(accountBalanceProvider);
     final showDecimal = ref.watch(showDecimalProvider);
+    final investmentViews = ref.watch(investmentSummaryProvider).assets;
 
     return Stack(
       children: [
@@ -377,6 +385,30 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                               color: AppColors.primaryGold)),
                       error: (err, _) => Text('Error: $err'),
                     ),
+                    const SizedBox(height: 24),
+
+                    // Link Investments
+                    Text(trans.goalLinkInvestments,
+                        style: Theme.of(context).textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    if (investmentViews.isEmpty)
+                      Text(
+                        trans.goalNoInvestmentsAvailable,
+                        style: TextStyle(
+                          color: isLight
+                              ? const Color(0xFF94A3B8)
+                              : Colors.white54,
+                        ),
+                      )
+                    else
+                      MultiInvestmentPickerField(
+                        assets: investmentViews,
+                        selectedIds: _linkedInvestmentIds,
+                        showDecimal: showDecimal,
+                        trans: trans,
+                        onChanged: (ids) =>
+                            setState(() => _linkedInvestmentIds = ids),
+                      ),
                     const SizedBox(height: 32),
 
                     // Save Button

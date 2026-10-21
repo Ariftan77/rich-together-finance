@@ -84,6 +84,8 @@ class InvestmentDao extends DatabaseAccessor<AppDatabase>
       await _deleteLinkedTransactions(
           await (select(investmentSnapshots)..where((s) => s.assetId.equals(id))).get());
       await (delete(investmentSnapshots)..where((s) => s.assetId.equals(id))).go();
+      await customStatement(
+          'DELETE FROM goal_investments WHERE asset_id = ?', [id]);
       await (delete(investmentAssets)..where((a) => a.id.equals(id))).go();
     });
   }

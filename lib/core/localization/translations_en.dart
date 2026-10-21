@@ -264,6 +264,10 @@ class AppTranslationsEn implements AppTranslations {
   @override String get goalDeadline => 'Deadline';
   @override String get goalNoDeadline => 'No deadline';
   @override String get goalLinkAccounts => 'Link Accounts';
+  @override String get goalLinkInvestments => 'Link Investments';
+  @override String get goalSelectInvestments => 'Select Investments';
+  @override String get goalNoInvestmentsAvailable => 'No investments available';
+  @override String get goalInvestmentsSelected => 'investments selected';
   @override String get goalSaved => 'Saved';
   @override String get goalRemaining => 'Remaining';
   @override String get goalMonthlyNeeded => 'Monthly needed';

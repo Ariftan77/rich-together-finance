@@ -799,35 +799,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   void _showNetWorthBreakdown(BuildContext context) async {
-    final breakdownAsync = ref.read(dashboardBalanceByCurrencyProvider);
-    final breakdown = breakdownAsync.valueOrNull;
-    if (breakdown == null || breakdown.isEmpty) return;
+    // Use the same provider values as the summary row so the dialog always adds up.
+    final netWorth = ref.read(dashboardNetWorthProvider).valueOrNull;
+    final totalBalance = ref.read(dashboardTotalBalanceProvider).valueOrNull;
+    if (netWorth == null || totalBalance == null) return;
 
     final showDecimal = ref.read(showDecimalProvider);
     final baseCurrency = ref.read(defaultCurrencyProvider);
     final trans = ref.read(translationsProvider);
-    final exchangeService = ref.read(currencyExchangeServiceProvider);
-    final activeDebtAsync = ref.read(dashboardActiveDebtProvider);
-    final activeDebt = activeDebtAsync.valueOrNull;
+    final activeDebt = ref.read(dashboardActiveDebtProvider).valueOrNull;
+    final receivable = (activeDebt != null && activeDebt.hasReceivable) ? activeDebt.receivable : 0.0;
+    final payable = (activeDebt != null && activeDebt.hasPayable) ? activeDebt.payable : 0.0;
 
-    final rateResult = await exchangeService.getRates();
-    final rates = rateResult.rates;
-
-    if (!mounted) return;
-
-    // Calculate total balance (sum of all account balances converted to base)
-    double totalBalance = 0;
-    for (final entry in breakdown.entries) {
-      final currency = entry.key;
-      final amount = entry.value;
-      if (currency == baseCurrency) {
-        totalBalance += amount;
-      } else {
-        totalBalance += CurrencyExchangeService.convertCurrency(
-          amount, currency.code, baseCurrency.code, rates,
-        );
-      }
-    }
+    // Investments (holdings + snapshot-tracked assets) = whatever net worth holds beyond cash and debts.
+    final investments = netWorth - totalBalance - receivable + payable;
+    final hasInvestments = investments.abs() >= 0.005;
+    final showTotal = hasInvestments || (activeDebt != null && activeDebt.hasAny);
 
     showDialog(
       context: context,
@@ -892,6 +879,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 ],
               ),
 
+              // Investments (adds to net worth)
+              if (hasInvestments) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.show_chart, color: AppColors.primaryGold, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      trans.dashboardInvestments,
+                      style: TextStyle(
+                        color: isLight ? const Color(0xFF94A3B8) : Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '+${baseCurrency.symbol} ${Formatters.formatCurrency(investments, showDecimal: showDecimal)}',
+                      style: TextStyle(
+                        color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               // Receivable debts (owed to me — adds to net worth)
               if (activeDebt != null && activeDebt.hasReceivable) ...[
                 const SizedBox(height: 10),
@@ -947,7 +961,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ],
 
               // Divider + Net Worth total
-              if (activeDebt != null && activeDebt.hasAny) ...[
+              if (showTotal) ...[
                 const SizedBox(height: 12),
                 Divider(color: isLight ? const Color(0xFFE2E8F0) : Colors.white.withValues(alpha: 0.15), height: 1),
                 const SizedBox(height: 12),
@@ -962,19 +976,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                     ),
                     const Spacer(),
-                    Builder(builder: (context) {
-                      final netWorth = totalBalance
-                          + (activeDebt.hasReceivable ? activeDebt.receivable : 0)
-                          - (activeDebt.hasPayable ? activeDebt.payable : 0);
-                      return Text(
-                        '${baseCurrency.symbol} ${Formatters.formatCurrency(netWorth, showDecimal: showDecimal)}',
-                        style: const TextStyle(
-                          color: AppColors.primaryGold,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    }),
+                    Text(
+                      '${baseCurrency.symbol} ${Formatters.formatCurrency(netWorth, showDecimal: showDecimal)}',
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],

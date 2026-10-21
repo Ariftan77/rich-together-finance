@@ -265,6 +265,10 @@ class AppTranslationsId implements AppTranslations {
   @override String get goalDeadline => 'Tenggat';
   @override String get goalNoDeadline => 'Tanpa tenggat';
   @override String get goalLinkAccounts => 'Hubungkan Akun';
+  @override String get goalLinkInvestments => 'Hubungkan Investasi';
+  @override String get goalSelectInvestments => 'Pilih Investasi';
+  @override String get goalNoInvestmentsAvailable => 'Tidak ada investasi tersedia';
+  @override String get goalInvestmentsSelected => 'investasi dipilih';
   @override String get goalSaved => 'Terkumpul';
   @override String get goalRemaining => 'Sisa';
   @override String get goalMonthlyNeeded => 'Kebutuhan bulanan';
