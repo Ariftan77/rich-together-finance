@@ -24,6 +24,7 @@ import '../../../../shared/widgets/glass_card.dart';
 import '../../../../shared/utils/formatters.dart';
 import '../../../budget/presentation/providers/budget_provider.dart';
 import '../../../budget/presentation/screens/budget_entry_screen.dart';
+import '../../../investments/presentation/widgets/asset_type_display.dart';
 import '../../../goals/presentation/providers/goal_provider.dart';
 import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
@@ -2533,13 +2534,94 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }
 
   void _showGoalAccountsBreakdown(BuildContext context, GoalWithProgress item) {
-    if (item.accountBalances.isEmpty) return;
+    if (item.accountBalances.isEmpty && item.investmentBalances.isEmpty) return;
 
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final isDefault = themeMode == AppThemeMode.defaultTheme;
     final showDecimal = ref.read(showDecimalProvider);
     final trans = ref.read(translationsProvider);
+
+    // One converted line per linked account or investment, with the exchange
+    // rate shown when its currency differs from the goal's.
+    Widget breakdownRow({
+      required String currencyCode,
+      required String currencySymbol,
+      required String name,
+      IconData? icon,
+      required bool isForeign,
+      required double convertedAmount,
+      required double originalAmount,
+      required double exchangeRate,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    currencyCode,
+                    style: const TextStyle(
+                      color: AppColors.primaryGold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (icon != null) ...[
+                  Icon(icon, color: AppColors.primaryGold, size: 14),
+                  const SizedBox(width: 6),
+                ],
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      color: isLight
+                          ? AppColors.textPrimaryLight
+                          : Colors.white.withValues(alpha: 0.9),
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '${item.goal.targetCurrency.symbol} ${Formatters.formatCurrency(convertedAmount, showDecimal: showDecimal)}',
+                  style: TextStyle(
+                    color: isLight ? AppColors.textPrimaryLight : Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            if (isForeign) ...[
+              const SizedBox(height: 3),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${Formatters.formatRate(exchangeRate)} × $currencySymbol ${Formatters.formatCurrency(originalAmount, showDecimal: showDecimal)}',
+                  style: TextStyle(
+                    color: isLight
+                        ? const Color(0xFF94A3B8)
+                        : Colors.white.withValues(alpha: 0.4),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
 
     showDialog(
       context: context,
@@ -2575,73 +2657,25 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
                 ],
               ),
               const SizedBox(height: 20),
-              ...item.accountBalances.map((ab) {
-                final isForeign = ab.account.currency != item.goal.targetCurrency;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGold.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              ab.account.currency.code,
-                              style: const TextStyle(
-                                color: AppColors.primaryGold,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              ab.account.name,
-                              style: TextStyle(
-                                color: isLight
-                                    ? AppColors.textPrimaryLight
-                                    : Colors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            '${item.goal.targetCurrency.symbol} ${Formatters.formatCurrency(ab.convertedAmount, showDecimal: showDecimal)}',
-                            style: TextStyle(
-                              color: isLight ? AppColors.textPrimaryLight : Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (isForeign) ...[
-                        const SizedBox(height: 3),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            '${Formatters.formatRate(ab.exchangeRate)} × ${ab.account.currency.symbol} ${Formatters.formatCurrency(ab.originalAmount, showDecimal: showDecimal)}',
-                            style: TextStyle(
-                              color: isLight
-                                  ? const Color(0xFF94A3B8)
-                                  : Colors.white.withValues(alpha: 0.4),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }),
+              ...item.accountBalances.map((ab) => breakdownRow(
+                    currencyCode: ab.account.currency.code,
+                    currencySymbol: ab.account.currency.symbol,
+                    name: ab.account.name,
+                    isForeign: ab.account.currency != item.goal.targetCurrency,
+                    convertedAmount: ab.convertedAmount,
+                    originalAmount: ab.originalAmount,
+                    exchangeRate: ab.exchangeRate,
+                  )),
+              ...item.investmentBalances.map((ib) => breakdownRow(
+                    currencyCode: ib.asset.currency.code,
+                    currencySymbol: ib.asset.currency.symbol,
+                    name: ib.asset.name,
+                    icon: assetTypeIcon(ib.asset.assetType),
+                    isForeign: ib.asset.currency != item.goal.targetCurrency,
+                    convertedAmount: ib.convertedAmount,
+                    originalAmount: ib.originalAmount,
+                    exchangeRate: ib.exchangeRate,
+                  )),
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,

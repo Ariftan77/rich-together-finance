@@ -8,4 +8,7 @@ mixin _$GoalDaoMixin on DatabaseAccessor<AppDatabase> {
   $GoalsTable get goals => attachedDatabase.goals;
   $AccountsTable get accounts => attachedDatabase.accounts;
   $GoalAccountsTable get goalAccounts => attachedDatabase.goalAccounts;
+  $InvestmentAssetsTable get investmentAssets =>
+      attachedDatabase.investmentAssets;
+  $GoalInvestmentsTable get goalInvestments => attachedDatabase.goalInvestments;
 }

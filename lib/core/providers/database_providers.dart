@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database.dart';
 import 'service_providers.dart';
+import 'currency_exchange_providers.dart';
 import '../database/daos/account_dao.dart';
 import '../database/daos/transaction_dao.dart';
 import '../database/daos/category_dao.dart';
@@ -86,6 +87,8 @@ final exportServiceProvider = Provider<ExportService>((ref) {
     ref.watch(goalDaoProvider),
     ref.watch(debtDaoProvider),
     ref.watch(holdingDaoProvider),
+    ref.watch(investmentDaoProvider),
+    () => ref.read(todayRatesProvider),
   );
 });
 
