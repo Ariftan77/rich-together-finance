@@ -1,0 +1,76 @@
+android
+ca-app-pub-2052368068537804~1011567714
+
+app_open_launch
+ca-app-pub-2052368068537804/5162565718
+
+banner_home
+ca-app-pub-2052368068537804/2569968069
+
+rewarded_add_profile
+ca-app-pub-2052368068537804/3849484041
+
+
+IOS
+ca-app-pub-2052368068537804~4082360281
+
+banner_home
+ca-app-pub-2052368068537804/4701307383
+
+rewarded_add_profile
+ca-app-pub-2052368068537804/8642210958
+
+app_open_launch
+ca-app-pub-2052368068537804/5625600140
+
+
+
+Meanwhile, make sure the following version of the SDK has been implemented in your app: Google Mobile Ads SDK 18.1.0 or later (Android) or 7.44 or later (iOS).
+
+
+Code change applied (settings_screen.dart:852):
+  - Replaced GlassInput with a plain TextField using underline borders —        
+  eliminates the GlassCard wrapping that was adding excess height               
+  - Added contentPadding: EdgeInsets.fromLTRB(24, 12, 24, 8) to AlertDialog —   
+  reduces vertical whitespace from the default 20/24 top/bottom                 
+                                                                                
+  Manual steps still required:
+
+  1. Firebase Remote Config — enable both flags:
+    - premium_enabled = true
+    - voucher_enabled = true
+
+  Without both, the Premium section and Redeem Voucher tile won't appear
+  regardless of the code.
+  2. Supabase test voucher — insert into vouchers table:
+  INSERT INTO vouchers (code, type, used) VALUES ('TEST123', 'lifetime', false);
+
+  After those two steps, restart the app → Premium section should appear → tap
+  Redeem Voucher → dialog should be compact → enter TEST123 → should show
+  "Premium activated! 🎉"
+
+xcrun simctl boot "iPhone 17 Pro"
+  flutter run -d 00008030-000C08393C04202E
+
+flutter clean
+cd ios
+rm -rf Pods && rm -rf Podfile.lock
+
+cd ..
+flutter pub get
+
+cd ios
+pod install --repo-update
+
+cd..
+flutter run
+
+flutter build ipa --release
+ 
+ {
+    "platform": "ios",
+    "transaction_id": "2000000123456789",
+    "product_id": "expense_tracker_premium",
+    "is_restore": false,
+    "temporary_user_id": "tmp-sk2-test-001"
+  }
