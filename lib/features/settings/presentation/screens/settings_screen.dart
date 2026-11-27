@@ -33,9 +33,12 @@ import '../../../../core/services/voucher_service.dart';
 import '../../../../core/services/iap_service.dart' show IapService, IapResult;
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'package:permission_handler/permission_handler.dart' show openAppSettings;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/providers/announcement_providers.dart';
-import '../../../../core/providers/service_providers.dart' show premiumStatusProvider;
+import '../../../../core/providers/service_providers.dart'
+    show premiumStatusProvider, iapEnabledProvider, premiumEnabledProvider;
+import '../../../../shared/widgets/premium_gate_modal.dart';
 import '../widgets/announcements_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -195,10 +198,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Notifications Section
-              // _buildSectionHeader(ref.watch(translationsProvider).settingsNotifications),
-              // const SizedBox(height: 12),
-              // _buildNotificationsSection(),
-              // const SizedBox(height: 24),
+              _buildSectionHeader(ref.watch(translationsProvider).settingsNotifications),
+              const SizedBox(height: 12),
+              _buildNotificationsSection(),
+              const SizedBox(height: 24),
 
               // Premium Section (gated by Remote Config)
               if (RemoteConfigService().premiumEnabled) ...[
@@ -1410,48 +1413,515 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _handleNotificationPermissionDenied() {
+    final trans = ref.read(translationsProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(trans.notificationPermissionDenied),
+        backgroundColor: AppColors.error,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: trans.notificationOpenSettings,
+          textColor: Colors.white,
+          onPressed: () => openAppSettings(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildNotificationsSection() {
     final notifSettings = ref.watch(notificationSettingsProvider);
     final trans = ref.watch(translationsProvider);
+    final isLight = AppThemeProvider.isLightMode(context);
+    final premiumEnabled = ref.watch(premiumEnabledProvider);
+    final iapEnabled = ref.watch(iapEnabledProvider);
+    final isPremium = ref.watch(premiumStatusProvider);
+    final isCustomLocked = premiumEnabled && iapEnabled && !isPremium;
+    final displayMessage = (!isCustomLocked && notifSettings.hasCustomText)
+        ? notifSettings.customReminderText!
+        : trans.notificationReminderBody;
 
-    return GlassCard(
-      child: Column(
-        children: [
-          SettingsTile(
-            icon: Icons.notifications_active,
-            title: trans.settingsDailyReminder,
-            trailing: Switch(
-              value: notifSettings.isReminderEnabled,
-              onChanged: (value) {
-                ref.read(notificationSettingsProvider.notifier).toggleReminder(value);
-              },
-              activeColor: AppColors.primaryGold,
+    return Column(
+      children: [
+        // Card 1: Daily Transaction Reminder
+        GlassCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              SettingsTile(
+                icon: Icons.notifications_active_outlined,
+                title: trans.settingsDailyReminder,
+                subtitle: trans.settingsDailyReminderSubtitle,
+                trailing: Switch(
+                  value: notifSettings.isReminderEnabled,
+                  onChanged: (value) async {
+                    final ok = await ref
+                        .read(notificationSettingsProvider.notifier)
+                        .toggleReminder(value);
+                    if (!ok && mounted) {
+                      _handleNotificationPermissionDenied();
+                    }
+                  },
+                  activeThumbColor: AppColors.primaryGold,
+                ),
+              ),
+              if (notifSettings.isReminderEnabled) ...[
+                _buildDivider(),
+                SettingsTile(
+                  icon: Icons.access_time,
+                  title: trans.settingsReminderTime,
+                  subtitle: notifSettings.reminderTime.format(context),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: notifSettings.reminderTime,
+                    );
+                    if (picked != null) {
+                      await ref
+                          .read(notificationSettingsProvider.notifier)
+                          .setReminderTime(picked);
+                    }
+                  },
+                ),
+                _buildDivider(),
+                SettingsTile(
+                  icon: Icons.edit_notifications_outlined,
+                  title: trans.settingsCustomReminderText,
+                  subtitle: displayMessage,
+                  trailing: isCustomLocked
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primaryGold.withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.workspace_premium,
+                                size: 14,
+                                color: isLight
+                                    ? AppColors.primaryGoldTextLight
+                                    : AppColors.primaryGold,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PRO',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isLight
+                                      ? AppColors.primaryGoldTextLight
+                                      : AppColors.primaryGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : notifSettings.hasCustomText
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.restart_alt,
+                                    size: 20,
+                                    color: isLight
+                                        ? AppColors.primaryGoldTextLight
+                                        : AppColors.primaryGold,
+                                  ),
+                                  tooltip: trans.settingsResetToDefault,
+                                  onPressed: () async {
+                                    await ref
+                                        .read(notificationSettingsProvider
+                                            .notifier)
+                                        .resetCustomReminderText();
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text(trans.settingsReminderResetDone),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: isLight
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ],
+                            )
+                          : null,
+                  onTap: () async {
+                    if (isCustomLocked) {
+                      final unlocked = await showPremiumGateModal(
+                        context,
+                        ref,
+                        title: trans.premiumGateCustomNotifTitle,
+                        description: trans.premiumGateCustomNotifDesc,
+                        icon: Icons.edit_notifications_outlined,
+                      );
+                      if (unlocked && mounted) {
+                        _refreshPremiumStatus();
+                        ref.invalidate(premiumStatusProvider);
+                        await _showCustomReminderTextDialog(
+                          notifSettings.customReminderText,
+                        );
+                      }
+                    } else {
+                      await _showCustomReminderTextDialog(
+                        notifSettings.customReminderText,
+                      );
+                    }
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Card 2: Daily Budget Alert Notification
+        GlassCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              SettingsTile(
+                icon: Icons.pie_chart_outline,
+                title: trans.settingsBudgetAlert,
+                subtitle: trans.settingsBudgetAlertSubtitle,
+                trailing: Switch(
+                  value: notifSettings.isBudgetAlertEnabled,
+                  onChanged: (value) async {
+                    final ok = await ref
+                        .read(notificationSettingsProvider.notifier)
+                        .toggleBudgetAlert(value);
+                    if (!ok && mounted) {
+                      _handleNotificationPermissionDenied();
+                    }
+                  },
+                  activeThumbColor: AppColors.primaryGold,
+                ),
+              ),
+              if (notifSettings.isBudgetAlertEnabled) ...[
+                _buildDivider(),
+                SettingsTile(
+                  icon: Icons.access_time,
+                  title: trans.settingsBudgetAlertTime,
+                  subtitle: notifSettings.budgetAlertTime.format(context),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: notifSettings.budgetAlertTime,
+                    );
+                    if (picked != null) {
+                      await ref
+                          .read(notificationSettingsProvider.notifier)
+                          .setBudgetAlertTime(picked);
+                    }
+                  },
+                ),
+                _buildDivider(),
+                SettingsTile(
+                  icon: Icons.percent,
+                  title: trans.settingsBudgetAlertThreshold,
+                  subtitle: trans.settingsBudgetAlertThresholdSubtitle(
+                    notifSettings.budgetAlertThreshold,
+                  ),
+                  onTap: () => _showBudgetThresholdSheet(
+                    notifSettings.budgetAlertThreshold,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showCustomReminderTextDialog(String? currentCustomText) async {
+    final trans = ref.read(translationsProvider);
+    final controller = TextEditingController(text: currentCustomText ?? '');
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final isLight = AppThemeProvider.isLightMode(dialogContext);
+        final dialogBg = AppColors.themed3<Color>(
+          dialogContext,
+          defaultTheme: AppColors.bgDarkEnd,
+          dark: const Color(0xFF111111),
+          light: Colors.white,
+        );
+        final textPrimary = isLight ? AppColors.textPrimaryLight : Colors.white;
+        final textMuted = isLight
+            ? const Color(0xFF64748B)
+            : Colors.white.withValues(alpha: 0.6);
+
+        return AlertDialog(
+          backgroundColor: dialogBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            trans.settingsCustomReminderDialogTitle,
+            style: TextStyle(color: textPrimary),
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 3,
+            maxLength: 140,
+            style: TextStyle(color: textPrimary),
+            decoration: InputDecoration(
+              hintText: trans.notificationReminderBody,
+              hintStyle: TextStyle(color: textMuted),
+              counterStyle: TextStyle(color: textMuted),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: isLight ? const Color(0xFFCBD5E1) : Colors.white24,
+                ),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryGold),
+              ),
             ),
           ),
-          if (notifSettings.isReminderEnabled) ...[
-            Builder(builder: (context) {
-              final isLight = AppThemeProvider.isLightMode(context);
-              return Divider(
-                color: isLight ? Colors.black.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.1),
-              );
-            }),
-            SettingsTile(
-              icon: Icons.access_time,
-              title: trans.settingsReminderTime,
-              subtitle: notifSettings.reminderTime.format(context),
-              onTap: () async {
-                final picked = await showTimePicker(
-                  context: context,
-                  initialTime: notifSettings.reminderTime,
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await ref
+                    .read(notificationSettingsProvider.notifier)
+                    .resetCustomReminderText();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(trans.settingsReminderResetDone)),
                 );
-                if (picked != null) {
-                  ref.read(notificationSettingsProvider.notifier).setReminderTime(picked);
-                }
               },
+              child: Text(
+                trans.settingsResetToDefault,
+                style: TextStyle(
+                  color: isLight
+                      ? AppColors.primaryGoldTextLight
+                      : AppColors.primaryGold,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                trans.cancel,
+                style: TextStyle(
+                  color: isLight ? const Color(0xFF374151) : Colors.white70,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final value = controller.text;
+                Navigator.pop(dialogContext);
+                await ref
+                    .read(notificationSettingsProvider.notifier)
+                    .setCustomReminderText(value);
+              },
+              child: Text(
+                trans.save,
+                style: TextStyle(
+                  color: isLight
+                      ? AppColors.primaryGoldTextLight
+                      : AppColors.primaryGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showBudgetThresholdSheet(int initialThreshold) async {
+    final trans = ref.read(translationsProvider);
+    var selectedPercent = initialThreshold.clamp(10, 100);
+    const presets = [70, 80, 90, 95, 100];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isLight = AppThemeProvider.isLightMode(context);
+            final sheetBg = AppColors.themed3<Color>(
+              context,
+              defaultTheme: const Color(0xFF1A1208),
+              dark: const Color(0xFF111111),
+              light: Colors.white,
+            );
+            final textPrimary =
+                isLight ? AppColors.textPrimaryLight : Colors.white;
+            final textMuted = isLight
+                ? const Color(0xFF64748B)
+                : Colors.white.withValues(alpha: 0.65);
+            final goldAccent = isLight
+                ? AppColors.primaryGoldTextLight
+                : AppColors.primaryGold;
+
+            return Container(
+              decoration: BoxDecoration(
+                color: sheetBg,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 12,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isLight
+                            ? const Color(0xFFCBD5E1)
+                            : Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    trans.settingsBudgetThresholdDialogTitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    trans.settingsBudgetThresholdDialogNote,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: textMuted,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selectedPercent > 10
+                            ? () => setModalState(() => selectedPercent--)
+                            : null,
+                        icon: Icon(
+                          Icons.remove_circle_outline,
+                          color: selectedPercent > 10
+                              ? goldAccent
+                              : textMuted.withValues(alpha: 0.4),
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        '$selectedPercent%',
+                        style: Theme.of(context)
+                            .textTheme
+                            .displaySmall
+                            ?.copyWith(
+                              color: goldAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: selectedPercent < 100
+                            ? () => setModalState(() => selectedPercent++)
+                            : null,
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                          color: selectedPercent < 100
+                              ? goldAccent
+                              : textMuted.withValues(alpha: 0.4),
+                          size: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: selectedPercent.toDouble(),
+                    min: 10,
+                    max: 100,
+                    divisions: 90,
+                    activeColor: AppColors.primaryGold,
+                    inactiveColor: isLight
+                        ? Colors.black.withValues(alpha: 0.12)
+                        : Colors.white.withValues(alpha: 0.18),
+                    onChanged: (v) =>
+                        setModalState(() => selectedPercent = v.round()),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: presets.map((p) {
+                      final isSelected = selectedPercent == p;
+                      return ChoiceChip(
+                        label: Text('$p%'),
+                        selected: isSelected,
+                        onSelected: (_) =>
+                            setModalState(() => selectedPercent = p),
+                        selectedColor: AppColors.primaryGold,
+                        backgroundColor: isLight
+                            ? Colors.black.withValues(alpha: 0.05)
+                            : Colors.white.withValues(alpha: 0.08),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.black : textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  GlassButton(
+                    text: trans.save,
+                    isFullWidth: true,
+                    size: GlassButtonSize.large,
+                    onPressed: () async {
+                      Navigator.pop(sheetContext);
+                      await ref
+                          .read(notificationSettingsProvider.notifier)
+                          .setBudgetAlertThreshold(selectedPercent);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -2430,6 +2900,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           _BenefitsRow(
             feature: trans.premiumFeatureCloudBackup,
+            freeLabel: trans.premiumFreeLocked,
+            premiumLabel: '',
+            freeLocked: true,
+          ),
+          _BenefitsRow(
+            feature: trans.premiumFeatureCustomNotif,
             freeLabel: trans.premiumFreeLocked,
             premiumLabel: '',
             freeLocked: true,

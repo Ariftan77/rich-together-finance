@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/date_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/services/currency_exchange_service.dart';
@@ -91,6 +92,7 @@ final budgetsWithSpendingProvider =
   final accountDao = ref.watch(accountDaoProvider);
   final rates = ref.watch(todayRatesProvider);
   final profileId = ref.watch(activeProfileIdProvider);
+  ref.watch(currentDateProvider);
 
   if (profileId == null) return Stream.value([]);
 

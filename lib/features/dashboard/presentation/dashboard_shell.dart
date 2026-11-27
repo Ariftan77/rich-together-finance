@@ -33,6 +33,7 @@ import '../../../core/services/analytics_service.dart';
 import '../../transactions/presentation/providers/search_provider.dart';
 import '../../feedback/presentation/founder_feedback_modal.dart';
 import '../../feedback/services/founder_feedback_service.dart';
+import '../../settings/providers/notification_settings_provider.dart';
 import '../../../shared/widgets/premium_gate_modal.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
@@ -237,6 +238,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
   Widget build(BuildContext context) {
     // Trigger initialization (e.g. recurring transactions check)
     ref.watch(appInitProvider);
+    // Keep daily budget alert notifications synchronized with active budgets
+    ref.watch(budgetNotificationSyncProvider);
     // Pre-warm categories and accounts streams so TransactionEntryScreen gets
     // immediate values instead of waiting for the first DB emission after navigation.
     ref.watch(categoriesStreamProvider);

@@ -67,6 +67,10 @@ android {
         release {
             // Use release signing config for Play Store builds
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

@@ -129,9 +129,46 @@ class AppTranslationsEn implements AppTranslations {
   @override String get settingsAbout => 'About';
   @override String get settingsNotifications => 'Notifications';
   @override String get settingsDailyReminder => 'Daily Reminder';
+  @override String get settingsDailyReminderSubtitle => 'Daily reminder to record your transactions';
   @override String get settingsReminderTime => 'Reminder Time';
+  @override String get settingsCustomReminderText => 'Notification Message';
+  @override String get settingsCustomReminderHint => 'Enter custom reminder message...';
+  @override String get settingsCustomReminderDialogTitle => 'Custom Notification Message';
+  @override String get settingsResetToDefault => 'Reset to Default';
+  @override String get settingsReminderResetDone => 'Notification message reset to default';
+  @override String get settingsBudgetAlert => 'Budget Alert';
+  @override String get settingsBudgetAlertSubtitle => 'Daily alert when budgets approach or exceed limit';
+  @override String get settingsBudgetAlertTime => 'Alert Time';
+  @override String get settingsBudgetAlertThreshold => 'Alert Threshold';
+  @override String settingsBudgetAlertThresholdSubtitle(int percent) =>
+      'Notify at $percent% (exceeded budgets always included)';
+  @override String get settingsBudgetThresholdDialogTitle => 'Budget Alert Threshold';
+  @override String get settingsBudgetThresholdDialogNote =>
+      'You will receive a daily notification at your chosen time when any active budget reaches this percentage, plus any budgets that have exceeded 100%.';
+  @override String get notificationPermissionDenied =>
+      'Notification permission is disabled. Enable it in system settings.';
+  @override String get notificationOpenSettings => 'Settings';
   @override String get notificationReminderTitle => '💰 Time to track!';
   @override String get notificationReminderBody => "Don't forget to record today's transactions.";
+  @override String notificationBudgetNearTitle(int threshold) =>
+      '⚠️ Budget Alert ($threshold%+)';
+  @override String get notificationBudgetExceededTitle => '🚨 Budget Exceeded!';
+  @override String get notificationBudgetCombinedTitle => '🚨 Budget Alert';
+  @override String notificationBudgetSingleNearBody(String name, int percent) =>
+      '$name has reached $percent% of its budget.';
+  @override String notificationBudgetMultiNearBody(int count, int threshold, String items) =>
+      '$count budgets reached $threshold%+: $items.';
+  @override String notificationBudgetSingleExceededBody(String name, int percent) =>
+      '$name has exceeded its budget ($percent%)!';
+  @override String notificationBudgetMultiExceededBody(int count, String items) =>
+      '$count budgets exceeded: $items.';
+  @override String notificationBudgetCombinedBody(
+    String exceededItems,
+    int threshold,
+    String nearItems,
+  ) =>
+      'Exceeded: $exceededItems • Near limit ($threshold%+): $nearItems';
+  @override String notificationBudgetMoreSuffix(int moreCount) => '+$moreCount more';
   @override String get settingsSyncBackup => 'Sync & Backup';
   @override String get settingsManageCategories => 'Manage Categories';
   @override String get settingsBackupRestore => 'Backup & Restore';
@@ -809,6 +846,9 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumGateProfileDesc => 'Free tier supports 1 profile. Upgrade to manage multiple profiles.';
   @override String get premiumGateCloudBackupDesc => 'Cloud backup to Google Drive is a premium feature.';
   @override String get premiumGateCloudBackupTitle => 'Cloud Backup';
+  @override String get premiumGateCustomNotifTitle => 'Custom Reminder Text';
+  @override String get premiumGateCustomNotifDesc =>
+      'Personalize your daily reminder notification text with Premium.';
 
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Premium Benefits';
@@ -826,6 +866,7 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumFeatureProfiles => 'Profiles';
   @override String get premiumFeatureAnalytics => 'Deep Analytics';
   @override String get premiumFeatureCloudBackup => 'Daily Backup Google Drive (optional)';
+  @override String get premiumFeatureCustomNotif => 'Custom Notification Text';
   @override String get premiumFreeLimit5 => 'Up to 5';
   @override String get premiumFreeLimit3 => 'Up to 3';
   @override String get premiumFreeLimit1 => '1 only';

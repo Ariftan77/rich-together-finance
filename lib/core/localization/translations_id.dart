@@ -129,9 +129,47 @@ class AppTranslationsId implements AppTranslations {
   @override String get settingsAbout => 'Tentang';
   @override String get settingsNotifications => 'Notifikasi';
   @override String get settingsDailyReminder => 'Pengingat Harian';
+  @override String get settingsDailyReminderSubtitle => 'Pengingat harian untuk mencatat transaksi Anda';
   @override String get settingsReminderTime => 'Waktu Pengingat';
+  @override String get settingsCustomReminderText => 'Pesan Notifikasi';
+  @override String get settingsCustomReminderHint => 'Masukkan pesan pengingat khusus...';
+  @override String get settingsCustomReminderDialogTitle => 'Pesan Notifikasi Khusus';
+  @override String get settingsResetToDefault => 'Kembalikan ke Awal';
+  @override String get settingsReminderResetDone => 'Pesan notifikasi dikembalikan ke awal';
+  @override String get settingsBudgetAlert => 'Peringatan Anggaran';
+  @override String get settingsBudgetAlertSubtitle =>
+      'Notifikasi harian saat anggaran mendekati atau melebihi batas';
+  @override String get settingsBudgetAlertTime => 'Waktu Notifikasi';
+  @override String get settingsBudgetAlertThreshold => 'Batas Persentase';
+  @override String settingsBudgetAlertThresholdSubtitle(int percent) =>
+      'Notifikasi mulai $percent% (anggaran terlampaui selalu disertakan)';
+  @override String get settingsBudgetThresholdDialogTitle => 'Batas Peringatan Anggaran';
+  @override String get settingsBudgetThresholdDialogNote =>
+      'Anda akan menerima notifikasi harian pada waktu yang dipilih saat anggaran aktif mencapai persentase ini, termasuk semua anggaran yang melebihi 100%.';
+  @override String get notificationPermissionDenied =>
+      'Izin notifikasi dinonaktifkan. Aktifkan di pengaturan sistem.';
+  @override String get notificationOpenSettings => 'Pengaturan';
   @override String get notificationReminderTitle => '💰 Waktunya mencatat!';
   @override String get notificationReminderBody => "Jangan lupa catat transaksi Anda hari ini.";
+  @override String notificationBudgetNearTitle(int threshold) =>
+      '⚠️ Peringatan Anggaran ($threshold%+)';
+  @override String get notificationBudgetExceededTitle => '🚨 Anggaran Terlampaui!';
+  @override String get notificationBudgetCombinedTitle => '🚨 Peringatan Anggaran';
+  @override String notificationBudgetSingleNearBody(String name, int percent) =>
+      'Anggaran $name telah mencapai $percent%.';
+  @override String notificationBudgetMultiNearBody(int count, int threshold, String items) =>
+      '$count anggaran mencapai $threshold%+: $items.';
+  @override String notificationBudgetSingleExceededBody(String name, int percent) =>
+      'Anggaran $name telah terlampaui ($percent%)!';
+  @override String notificationBudgetMultiExceededBody(int count, String items) =>
+      '$count anggaran terlampaui: $items.';
+  @override String notificationBudgetCombinedBody(
+    String exceededItems,
+    int threshold,
+    String nearItems,
+  ) =>
+      'Terlampaui: $exceededItems • Mendekati batas ($threshold%+): $nearItems';
+  @override String notificationBudgetMoreSuffix(int moreCount) => '+$moreCount lainnya';
   @override String get settingsSyncBackup => 'Sinkronisasi & Cadangan';
   @override String get settingsManageCategories => 'Kelola Kategori';
   @override String get settingsBackupRestore => 'Cadangan & Pemulihan';
@@ -810,6 +848,9 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumGateProfileDesc => 'Tier gratis hanya mendukung 1 profil. Upgrade untuk mengelola banyak profil.';
   @override String get premiumGateCloudBackupDesc => 'Cadangan cloud ke Google Drive adalah fitur premium.';
   @override String get premiumGateCloudBackupTitle => 'Cadangan Cloud';
+  @override String get premiumGateCustomNotifTitle => 'Pesan Pengingat Khusus';
+  @override String get premiumGateCustomNotifDesc =>
+      'Kustomisasi teks notifikasi pengingat harian Anda dengan Premium.';
 
   // Premium Benefits Modal
   @override String get premiumBenefitsTitle => 'Keuntungan Premium';
@@ -827,6 +868,7 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumFeatureProfiles => 'Profil';
   @override String get premiumFeatureAnalytics => 'Analitik Mendalam';
   @override String get premiumFeatureCloudBackup => 'Cadangan Harian Google Drive (opsional)';
+  @override String get premiumFeatureCustomNotif => 'Teks Notifikasi Khusus';
   @override String get premiumFreeLimit5 => 'Maks. 5';
   @override String get premiumFreeLimit3 => 'Maks. 3';
   @override String get premiumFreeLimit1 => 'Hanya 1';
