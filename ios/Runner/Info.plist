@@ -32,6 +32,16 @@
 				<string>com.googleusercontent.apps.188246340948-g4np1chf1i44d3hncmsma9d7uu07p20o</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.axiomtechdev.richtogether.widget</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>richtogether</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>

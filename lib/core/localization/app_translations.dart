@@ -968,4 +968,32 @@ abstract class AppTranslations {
   String get premiumGateInvestmentDesc;
   String get premiumFeatureInvestments;
   String get dashboardInvestments;
+
+  // Home Screen Widgets
+  String get settingsHomeWidgets;
+  String get settingsHomeWidgetsSubtitle;
+  String get widgetQuickAddTitle;
+  String get widgetQuickAddDesc;
+  String get widgetBudgetPulseTitle;
+  String get widgetBudgetPulseDesc;
+  String get widgetCashFlowTitle;
+  String get widgetCashFlowDesc;
+  String get widgetHideAmounts;
+  String get widgetHideAmountsSubtitle;
+  String get widgetPinButton;
+  String get widgetRefreshNow;
+  String get widgetRefreshedToast;
+  String get widgetHowToAddIos;
+  String get widgetHowToAddAndroid;
+  String get widgetLblExpenseShort;
+  String get widgetLblIncomeShort;
+  String get widgetLblTransferShort;
+  String get widgetLblSafePerDay;
+  String get widgetLblBudgetLeft;
+  String get widgetLblOverBudget;
+  String get widgetLblNoBudget;
+  String widgetLblDaysLeft(int days);
+  String get widgetLblTodaySpend;
+  String get widgetLblMonthIn;
+  String get widgetLblMonthOut;
 }

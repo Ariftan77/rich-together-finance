@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_default"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Top Row: Profile + Today's Spend + Privacy Eye + Quick Expense Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/cashflow_header_area"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txt_profile_today"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Personal • Today's Spend"
+                android:textColor="#FFD4AF37"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txt_today_amount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Rp 85.000"
+                android:textColor="#FFFFFFFF"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_privacy"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Toggle privacy"
+            android:padding="4dp"
+            android:src="@drawable/ic_widget_eye" />
+
+        <ImageView
+            android:id="@+id/btn_quick_expense"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_btn_gold"
+            android:contentDescription="Add expense"
+            android:padding="5dp"
+            android:src="@drawable/ic_widget_add" />
+    </LinearLayout>
+
+    <!-- Bottom Row: Monthly Income & Monthly Expense Pills -->
+    <LinearLayout
+        android:id="@+id/cashflow_bottom_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/pill_month_in"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_pill_income_dark"
+            android:orientation="vertical"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:id="@+id/txt_lbl_month_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Month In"
+                android:textColor="#B3FFFFFF"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/txt_val_month_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Rp 8.500.000"
+                android:textColor="#FF2ECC71"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="8dp"
+            android:layout_height="1dp" />
+
+        <LinearLayout
+            android:id="@+id/pill_month_out"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_pill_expense_dark"
+            android:orientation="vertical"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:id="@+id/txt_lbl_month_out"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Month Out"
+                android:textColor="#B3FFFFFF"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/txt_val_month_out"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Rp 3.240.000"
+                android:textColor="#FFE74C3C"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

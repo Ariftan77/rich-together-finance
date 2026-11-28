@@ -83,6 +83,9 @@ dependencies:
   # Export
   excel: ^4.0.6
 
+  # Home Screen Widgets (Android AppWidget + iOS WidgetKit)
+  home_widget: ^0.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

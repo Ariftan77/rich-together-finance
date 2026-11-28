@@ -996,4 +996,32 @@ class AppTranslationsId implements AppTranslations {
   @override String get premiumGateInvestmentDesc => 'Tier gratis hanya mendukung 3 aset investasi. Upgrade untuk aset tak terbatas.';
   @override String get premiumFeatureInvestments => 'Aset Investasi';
   @override String get dashboardInvestments => 'Investasi';
+
+  // Home Screen Widgets
+  @override String get settingsHomeWidgets => 'Widget Layar Utama';
+  @override String get settingsHomeWidgetsSubtitle => 'Catat cepat, anggaran & arus kas';
+  @override String get widgetQuickAddTitle => 'Aksi Cepat';
+  @override String get widgetQuickAddDesc => 'Catat Pengeluaran, Pemasukan, atau Transfer sekali ketuk dari layar utama.';
+  @override String get widgetBudgetPulseTitle => 'Pantau Anggaran';
+  @override String get widgetBudgetPulseDesc => 'Batas aman harian dan sisa anggaran bulanan Anda.';
+  @override String get widgetCashFlowTitle => 'Ringkasan Arus Kas';
+  @override String get widgetCashFlowDesc => 'Pengeluaran hari ini & arus kas bulanan dengan sensor privasi.';
+  @override String get widgetHideAmounts => 'Sembunyikan Nominal di Widget';
+  @override String get widgetHideAmountsSubtitle => 'Sensor saldo dan pengeluaran menjadi ••••••';
+  @override String get widgetPinButton => 'Tambah ke Layar Utama';
+  @override String get widgetRefreshNow => 'Sinkronkan Widget';
+  @override String get widgetRefreshedToast => 'Widget layar utama diperbarui';
+  @override String get widgetHowToAddIos => 'Tekan lama Layar Utama → ketuk + di pojok atas → cari "Richer".';
+  @override String get widgetHowToAddAndroid => 'Ketuk "Tambah ke Layar Utama" pada kartu di bawah, atau tekan lama Layar Utama → Widget → Richer.';
+  @override String get widgetLblExpenseShort => 'Keluar';
+  @override String get widgetLblIncomeShort => 'Masuk';
+  @override String get widgetLblTransferShort => 'Transfer';
+  @override String get widgetLblSafePerDay => 'Aman / hari';
+  @override String get widgetLblBudgetLeft => 'Sisa anggaran';
+  @override String get widgetLblOverBudget => 'Lewat batas';
+  @override String get widgetLblNoBudget => 'Ketuk atur anggaran';
+  @override String widgetLblDaysLeft(int days) => '$days hari lagi';
+  @override String get widgetLblTodaySpend => 'Hari Ini';
+  @override String get widgetLblMonthIn => 'Masuk';
+  @override String get widgetLblMonthOut => 'Keluar';
 }

@@ -10,6 +10,9 @@ import '../../../../core/services/premium_auth_service.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../../../auth/presentation/screens/auth_screen.dart';
 import '../../../onboarding/presentation/screens/getting_started_screen.dart';
+import '../../../home_widgets/domain/home_widget_models.dart';
+import '../../../home_widgets/presentation/providers/home_widget_providers.dart';
+import '../../../home_widgets/services/home_widget_service.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -32,20 +35,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Wait minimum 1 second for splash animation
     final splashDelay = Future.delayed(const Duration(seconds: 1));
 
-    // Wait for auth status and onboarding flag in parallel
+    // Wait for auth status, onboarding flag, and initial widget URI in parallel
     final authService = ref.read(authServiceProvider);
     final authSw = Stopwatch()..start();
     final results = await Future.wait([
       authService.hasPin(),
       authService.isAuthEnabled(),
       SharedPreferences.getInstance(),
+      HomeWidgetService.getInitialLaunchAction(),
     ]);
     debugPrint('⏱️ [splash] Future.wait(hasPin + isAuthEnabled + SharedPrefs): ${authSw.elapsedMilliseconds}ms');
 
     final hasPin = results[0] as bool;
     final isEnabled = results[1] as bool;
     final prefs = results[2] as SharedPreferences;
+    final launchAction = results[3] as HomeWidgetLaunchAction?;
     final onboardingDone = prefs.getBool(AppConstants.onboardingCompletedKey) ?? false;
+
+    if (onboardingDone && launchAction != null && mounted) {
+      ref.read(pendingHomeWidgetActionProvider.notifier).state = launchAction;
+    }
 
     // Ensure splash shows for at least 1 second
     await splashDelay;

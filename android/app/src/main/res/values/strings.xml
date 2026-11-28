@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Richer</string>
+    <string name="widget_quick_actions_label">Richer • Quick Actions</string>
+    <string name="widget_quick_actions_desc">Log Expense, Income, or Transfer in one tap.</string>
+    <string name="widget_budget_pulse_label">Richer • Budget Pulse</string>
+    <string name="widget_budget_pulse_desc">Daily safe-to-spend allowance and monthly budget progress.</string>
+    <string name="widget_cash_flow_label">Richer • Cash Flow</string>
+    <string name="widget_cash_flow_desc">Today\'s spending and monthly cash flow with privacy toggle.</string>
+</resources>

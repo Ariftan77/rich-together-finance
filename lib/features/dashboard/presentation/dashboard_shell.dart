@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,9 @@ import '../../feedback/presentation/founder_feedback_modal.dart';
 import '../../feedback/services/founder_feedback_service.dart';
 import '../../settings/providers/notification_settings_provider.dart';
 import '../../../shared/widgets/premium_gate_modal.dart';
+import '../../home_widgets/domain/home_widget_models.dart';
+import '../../home_widgets/presentation/providers/home_widget_providers.dart';
+import '../../home_widgets/services/home_widget_service.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
@@ -64,6 +68,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
 
   bool _debtDialOpen = false;
   final GlobalKey<DebtSpeedDialFabState> _debtDialKey = GlobalKey();
+  StreamSubscription<HomeWidgetLaunchAction>? _widgetClickSubscription;
 
   @override
   void initState() {
@@ -105,6 +110,79 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     });
 
     _triggerAutoBackup();
+    _initHomeWidgetListener();
+  }
+
+  void _initHomeWidgetListener() {
+    HomeWidgetService.init().then((_) {
+      if (!mounted) return;
+      _widgetClickSubscription =
+          HomeWidgetService.widgetActionStream.listen((action) {
+        if (mounted) {
+          _executeHomeWidgetAction(action);
+        }
+      });
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final pending = ref.read(pendingHomeWidgetActionProvider);
+      if (pending != null) {
+        ref.read(pendingHomeWidgetActionProvider.notifier).state = null;
+        _executeHomeWidgetAction(pending);
+      }
+    });
+  }
+
+  void _executeHomeWidgetAction(HomeWidgetLaunchAction action) {
+    // Refresh masked state in case the user toggled the eye icon natively
+    ref.read(widgetAmountsMaskedProvider.notifier).reload();
+
+    switch (action) {
+      case HomeWidgetLaunchAction.addExpense:
+        ref.read(categoriesStreamProvider);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TransactionEntryScreen(
+              transactionType: TransactionType.expense,
+            ),
+          ),
+        );
+        break;
+      case HomeWidgetLaunchAction.addIncome:
+        ref.read(categoriesStreamProvider);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TransactionEntryScreen(
+              transactionType: TransactionType.income,
+            ),
+          ),
+        );
+        break;
+      case HomeWidgetLaunchAction.addTransfer:
+        ref.read(categoriesStreamProvider);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TransactionEntryScreen(
+              transactionType: TransactionType.transfer,
+            ),
+          ),
+        );
+        break;
+      case HomeWidgetLaunchAction.openBudget:
+        ref.read(wealthTabIndexProvider.notifier).state = 0;
+        _onTabTap(3);
+        break;
+      case HomeWidgetLaunchAction.openOverview:
+        _onTabTap(2);
+        break;
+      case HomeWidgetLaunchAction.togglePrivacy:
+        ref.read(widgetAmountsMaskedProvider.notifier).toggle();
+        break;
+    }
   }
 
   Future<void> _loadFabTappedState() async {
@@ -164,6 +242,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
 
   @override
   void dispose() {
+    _widgetClickSubscription?.cancel();
     _tabCurvedAnimation.dispose();
     _tabAnimController.dispose();
     _fabPulseController.dispose();
@@ -240,6 +319,14 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
     ref.watch(appInitProvider);
     // Keep daily budget alert notifications synchronized with active budgets
     ref.watch(budgetNotificationSyncProvider);
+    // Keep Android & iOS Home Screen Widgets synchronized with active profile data
+    ref.watch(homeWidgetSyncProvider);
+    ref.listen<HomeWidgetLaunchAction?>(pendingHomeWidgetActionProvider, (prev, next) {
+      if (next != null) {
+        ref.read(pendingHomeWidgetActionProvider.notifier).state = null;
+        _executeHomeWidgetAction(next);
+      }
+    });
     // Pre-warm categories and accounts streams so TransactionEntryScreen gets
     // immediate values instead of waiting for the first DB emission after navigation.
     ref.watch(categoriesStreamProvider);

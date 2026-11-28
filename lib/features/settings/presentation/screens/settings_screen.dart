@@ -40,6 +40,7 @@ import '../../../../core/providers/service_providers.dart'
     show premiumStatusProvider, iapEnabledProvider, premiumEnabledProvider;
 import '../../../../shared/widgets/premium_gate_modal.dart';
 import '../widgets/announcements_sheet.dart';
+import '../../../home_widgets/presentation/widgets/home_widgets_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -373,6 +374,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               context,
               MaterialPageRoute(builder: (_) => const BackupScreen()),
             ),
+          ),
+          _buildDivider(),
+          SettingsTile(
+            icon: Icons.widgets_outlined,
+            title: ref.watch(translationsProvider).settingsHomeWidgets,
+            subtitle: ref.watch(translationsProvider).settingsHomeWidgetsSubtitle,
+            onTap: () => showHomeWidgetsSheet(context),
           ),
           _buildDivider(),
           Padding(

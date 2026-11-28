@@ -994,4 +994,32 @@ class AppTranslationsEn implements AppTranslations {
   @override String get premiumGateInvestmentDesc => 'Free tier allows up to 3 investment assets. Upgrade to track unlimited assets.';
   @override String get premiumFeatureInvestments => 'Investment Assets';
   @override String get dashboardInvestments => 'Investments';
+
+  // Home Screen Widgets
+  @override String get settingsHomeWidgets => 'Home Screen Widgets';
+  @override String get settingsHomeWidgetsSubtitle => 'Quick-add, budget pulse & cash flow';
+  @override String get widgetQuickAddTitle => 'Quick Actions';
+  @override String get widgetQuickAddDesc => '1-tap Expense, Income, or Transfer right from your home screen.';
+  @override String get widgetBudgetPulseTitle => 'Budget Pulse';
+  @override String get widgetBudgetPulseDesc => 'Daily safe-to-spend allowance and remaining monthly budget.';
+  @override String get widgetCashFlowTitle => 'Cash Flow Snapshot';
+  @override String get widgetCashFlowDesc => 'Today\'s spending and monthly cash flow with instant privacy mask.';
+  @override String get widgetHideAmounts => 'Hide Amounts on Widgets';
+  @override String get widgetHideAmountsSubtitle => 'Mask balances and spending with ••••••';
+  @override String get widgetPinButton => 'Add to Home Screen';
+  @override String get widgetRefreshNow => 'Sync Widgets Now';
+  @override String get widgetRefreshedToast => 'Home screen widgets updated';
+  @override String get widgetHowToAddIos => 'Long-press your Home Screen → tap + in the top corner → search "Richer".';
+  @override String get widgetHowToAddAndroid => 'Tap "Add to Home Screen" on any card below, or long-press your Home Screen → Widgets → Richer.';
+  @override String get widgetLblExpenseShort => 'Expense';
+  @override String get widgetLblIncomeShort => 'Income';
+  @override String get widgetLblTransferShort => 'Transfer';
+  @override String get widgetLblSafePerDay => 'Safe / day';
+  @override String get widgetLblBudgetLeft => 'Budget left';
+  @override String get widgetLblOverBudget => 'Over budget';
+  @override String get widgetLblNoBudget => 'Tap to set budget';
+  @override String widgetLblDaysLeft(int days) => days == 1 ? '1 day left' : '$days days left';
+  @override String get widgetLblTodaySpend => 'Today\'s Spend';
+  @override String get widgetLblMonthIn => 'Month In';
+  @override String get widgetLblMonthOut => 'Month Out';
 }

@@ -50,6 +50,51 @@
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+
+        <!-- Home Screen Widgets -->
+        <receiver
+            android:name=".widgets.QuickActionsWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quick_actions_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_actions_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.BudgetPulseWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_budget_pulse_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budget_pulse_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.CashFlowWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_cash_flow_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/cash_flow_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.WidgetPrivacyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.axiomtechdev.richtogether.ACTION_TOGGLE_WIDGET_PRIVACY" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

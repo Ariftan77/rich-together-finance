@@ -80,6 +80,14 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(wealthTabIndexProvider, (prev, next) {
+      if (_tabController.index != next &&
+          next >= 0 &&
+          next < _tabController.length) {
+        _tabController.animateTo(next);
+      }
+    });
+
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
     final isDefault = themeMode == AppThemeMode.defaultTheme;

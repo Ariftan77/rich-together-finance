@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Richer</string>
+    <string name="widget_quick_actions_label">Richer • Aksi Cepat</string>
+    <string name="widget_quick_actions_desc">Catat Pengeluaran, Pemasukan, atau Transfer sekali ketuk.</string>
+    <string name="widget_budget_pulse_label">Richer • Pantau Anggaran</string>
+    <string name="widget_budget_pulse_desc">Batas aman harian dan sisa anggaran bulanan Anda.</string>
+    <string name="widget_cash_flow_label">Richer • Arus Kas</string>
+    <string name="widget_cash_flow_desc">Pengeluaran hari ini dan arus kas bulanan dengan sensor privasi.</string>
+</resources>
