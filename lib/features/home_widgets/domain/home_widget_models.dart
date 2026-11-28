@@ -1,5 +1,69 @@
 // Domain models and action routing for Android & iOS Home Screen Widgets.
 
+import '../../../core/models/enums.dart';
+
+/// How many days past the snapshot day native widgets can roll forward on
+/// their own (without the app re-pushing data). Beyond this, widgets show a
+/// "open the app to refresh" hint instead of guessing.
+const int kWidgetProjectionHorizonDays = 6;
+
+/// Formats a local calendar day as `yyyy-MM-dd`, the format native widgets parse.
+String formatWidgetDay(DateTime day) {
+  final y = day.year.toString().padLeft(4, '0');
+  final m = day.month.toString().padLeft(2, '0');
+  final d = day.day.toString().padLeft(2, '0');
+  return '$y-$m-$d';
+}
+
+/// Calendar-day distance computed in UTC so DST transitions never shift it.
+int calendarDaysBetween(DateTime from, DateTime to) {
+  final a = DateTime.utc(from.year, from.month, from.day);
+  final b = DateTime.utc(to.year, to.month, to.day);
+  return b.difference(a).inDays;
+}
+
+/// The budget period that the Budget Pulse widget tracks for [today].
+class BudgetWindow {
+  final DateTime periodEnd;
+  final int daysLeft; // inclusive of today, always >= 1
+
+  const BudgetWindow({required this.periodEnd, required this.daysLeft});
+
+  /// [period] null means a mix of periods; it falls back to the calendar year,
+  /// matching the widget's "any budget" fallback.
+  factory BudgetWindow.resolve(BudgetPeriod? period, DateTime today) {
+    final day = DateTime(today.year, today.month, today.day);
+    final DateTime end;
+    switch (period) {
+      case BudgetPeriod.monthly:
+        end = DateTime(day.year, day.month + 1, 0);
+      case BudgetPeriod.weekly:
+        // Weeks end on Sunday (DateTime.sunday == 7).
+        end = DateTime(day.year, day.month, day.day + (7 - day.weekday));
+      case BudgetPeriod.yearly:
+      case null:
+        end = DateTime(day.year, 12, 31);
+    }
+    final left = calendarDaysBetween(day, end) + 1;
+    return BudgetWindow(periodEnd: end, daysLeft: left < 1 ? 1 : left);
+  }
+}
+
+/// Safe-to-spend per day for each of the next [horizon] days, assuming no new
+/// spending is recorded. Index 0 is tomorrow. Null means the period has ended
+/// by that day, so the widget must not show a projection.
+List<double?> projectSafePerDay({
+  required double remaining,
+  required int daysLeft,
+  int horizon = kWidgetProjectionHorizonDays,
+}) {
+  return List<double?>.generate(horizon, (i) {
+    final left = daysLeft - (i + 1);
+    if (left < 1) return null;
+    return remaining > 0 ? remaining / left : 0.0;
+  });
+}
+
 /// Supported native Home Screen Widget kinds.
 enum HomeWidgetKind {
   quickActions,
@@ -41,6 +105,7 @@ enum HomeWidgetLaunchAction {
   openBudget,
   openOverview,
   togglePrivacy,
+  createBudget,
 }
 
 extension HomeWidgetLaunchActionX on HomeWidgetLaunchAction {
@@ -64,6 +129,9 @@ extension HomeWidgetLaunchActionX on HomeWidgetLaunchAction {
         return HomeWidgetLaunchAction.addTransfer;
       case 'budget':
         return HomeWidgetLaunchAction.openBudget;
+      case 'budget-new':
+      case 'budget_new':
+        return HomeWidgetLaunchAction.createBudget;
       case 'overview':
       case 'dashboard':
         return HomeWidgetLaunchAction.openOverview;
@@ -110,6 +178,16 @@ class HomeWidgetSnapshot {
   final String monthExpenseFmt;
   final String monthIncomeFmt;
 
+  // Day-rollover support: lets native widgets stay correct after midnight
+  // (and across month boundaries) when the app has not been opened.
+  final String snapshotDay; // yyyy-MM-dd, local
+  final String budgetPeriodEndDay; // yyyy-MM-dd, '' when no budget
+  final String zeroAmountFmt;
+  final String lblStale;
+  /// Length [kWidgetProjectionHorizonDays]; index 0 = tomorrow. '' = no projection.
+  final List<String> safePerDayAheadFmt;
+  final List<String> lblDaysLeftAhead;
+
   const HomeWidgetSnapshot({
     required this.profileName,
     required this.themeMode,
@@ -135,9 +213,21 @@ class HomeWidgetSnapshot {
     required this.todayExpenseFmt,
     required this.monthExpenseFmt,
     required this.monthIncomeFmt,
+    required this.snapshotDay,
+    required this.budgetPeriodEndDay,
+    required this.zeroAmountFmt,
+    required this.lblStale,
+    required this.safePerDayAheadFmt,
+    required this.lblDaysLeftAhead,
   });
 
   Map<String, Object> toStorageMap() {
+    if (safePerDayAheadFmt.length != kWidgetProjectionHorizonDays ||
+        lblDaysLeftAhead.length != kWidgetProjectionHorizonDays) {
+      throw ArgumentError(
+        'Projection lists must have $kWidgetProjectionHorizonDays entries',
+      );
+    }
     return {
       'widget_has_data': true,
       'widget_profile_name': profileName,
@@ -164,6 +254,14 @@ class HomeWidgetSnapshot {
       'widget_today_expense_fmt': todayExpenseFmt,
       'widget_month_expense_fmt': monthExpenseFmt,
       'widget_month_income_fmt': monthIncomeFmt,
+      'widget_snapshot_day': snapshotDay,
+      'widget_budget_period_end_day': budgetPeriodEndDay,
+      'widget_zero_fmt': zeroAmountFmt,
+      'widget_lbl_stale': lblStale,
+      for (var i = 0; i < kWidgetProjectionHorizonDays; i++) ...{
+        'widget_safe_per_day_fmt_d${i + 1}': safePerDayAheadFmt[i],
+        'widget_lbl_days_left_d${i + 1}': lblDaysLeftAhead[i],
+      },
     };
   }
 }

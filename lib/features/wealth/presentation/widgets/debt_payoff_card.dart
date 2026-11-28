@@ -27,7 +27,6 @@ class DebtPayoffCard extends ConsumerWidget {
     final trans = ref.watch(translationsProvider);
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     return debtsAsync.when(
       data: (allDebts) {
@@ -180,7 +179,7 @@ class DebtPayoffCard extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -248,7 +247,6 @@ class _DebtSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isLight ? AppColors.textPrimaryLight : Colors.white;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

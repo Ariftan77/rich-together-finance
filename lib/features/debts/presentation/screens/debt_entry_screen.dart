@@ -386,7 +386,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: _filteredNames.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
                           itemBuilder: (context, index) {
                             final name = _filteredNames[index];
                             return GestureDetector(
@@ -668,7 +668,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                                       );
                                     },
                                     loading: () => const SizedBox(height: 50),
-                                    error: (_, __) => const SizedBox(height: 50),
+                                    error: (_, _) => const SizedBox(height: 50),
                                   ),
                                 ],
                               ),
@@ -1023,7 +1023,7 @@ class _DebtEntryScreenState extends ConsumerState<DebtEntryScreen> {
                               },
                             );
 
-                            if (confirm == true) {
+                            if (confirm == true && context.mounted) {
                               final navigator = Navigator.of(context);
                               final debt = widget.debt!;
 

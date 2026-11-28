@@ -67,6 +67,9 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
     // WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLaunchTour());
   }
 
+  // Auto-launch on first visit is disabled (see commented call sites); kept so
+  // it can be re-enabled without rewriting.
+  // ignore: unused_element
   Future<void> _maybeLaunchTour({bool delayed = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool(_tourPrefsKey) ?? false;
@@ -353,8 +356,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
 
     // Grouping and sorting are computed in derived providers so they only
     // recompute when stream data changes — not on every animation frame.
-    final _grouped = ref.watch(groupedTransactionsProvider);
-    final _sortedDates = ref.watch(sortedTransactionDatesProvider);
+    final grouped0 = ref.watch(groupedTransactionsProvider);
+    final sortedDates0 = ref.watch(sortedTransactionDatesProvider);
     final hasCustomRange = ref.watch(dateFromFilterProvider) != null || ref.watch(dateToFilterProvider) != null;
     final latestTxDate = ref.watch(latestTransactionDateProvider).valueOrNull;
     final latestTxMonth = latestTxDate != null
@@ -758,8 +761,8 @@ class _TransactionsHistoryScreenState extends ConsumerState<TransactionsHistoryS
                       }
 
                       // Use pre-computed grouping from build() level.
-                      final grouped = _grouped;
-                      final sortedDates = _sortedDates;
+                      final grouped = grouped0;
+                      final sortedDates = sortedDates0;
 
                       // Pre-fetch maps for efficient lookup
                       final categoryMap = categoriesAsync.valueOrNull != null

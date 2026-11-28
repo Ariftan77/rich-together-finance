@@ -13,7 +13,6 @@ import '../../../../shared/theme/theme_provider_widget.dart';
 
 import '../../../../shared/widgets/category_icon_widget.dart';
 import '../../../../shared/widgets/glass_card.dart';
-import '../../../../shared/widgets/glass_input.dart';
 import '../../../../core/models/enums.dart';
 import '../../../transactions/presentation/widgets/add_category_dialog.dart';
 import '../widgets/category_icon_picker.dart';
@@ -160,7 +159,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     return ListView.separated(
                       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 100),
                       itemCount: categories.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = categories[index];
                         return _buildCategoryTile(item, isLight);
@@ -242,7 +241,6 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
 
   Widget _buildCategoryTile(CategoryWithUsage item, bool isLight) {
     final isEditing = _editingCategoryId == item.category.id;
-    final isSystem = item.category.isSystem;
     final themeMode = AppThemeProvider.of(context);
     final isDefault = themeMode == AppThemeMode.defaultTheme;
 

@@ -37,11 +37,6 @@ class PremiumAuthService {
   /// Resets to false on failure so the next [triggerSessionRestore] call retries.
   bool _hasStartedRestore = false;
 
-  /// True when the last restore attempt failed — callers may use this to
-  /// know a retry is warranted, but the guard in [triggerSessionRestore]
-  /// handles that automatically.
-  bool _needsRefresh = false;
-
   bool get isSignedIn => _activeProvider != AuthProvider.none;
   AuthProvider get activeProvider => _activeProvider;
   String? get googleId => _googleUser?.id;
@@ -161,15 +156,12 @@ class PremiumAuthService {
         final isStale = cacheTs == null ||
             DateTime.now().millisecondsSinceEpoch - cacheTs > _kCacheTtlMs;
         if (isStale) await _refreshPremiumCache();
-        _needsRefresh = false;
         debugPrint('[PremiumAuth] Session restored: provider=$savedProvider, email=$email');
       } else {
-        _needsRefresh = false;
         debugPrint('[PremiumAuth] No saved provider — skipping premium refresh');
       }
     } catch (e) {
       // FALLBACK: keep existing cache as-is, never clear on network failure.
-      _needsRefresh = true;
       _hasStartedRestore = false; // allow retry on next triggerSessionRestore() call
       debugPrint('[PremiumAuth] Session restore failed, keeping cache: $e');
     }

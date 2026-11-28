@@ -149,7 +149,7 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay>
                               shape: BoxShape.circle,
                               color: index < _pin.length
                                   ? AppColors.primaryGold
-                                  : AppColors.textSecondary.withOpacity(0.2),
+                                  : AppColors.textSecondary.withValues(alpha: 0.2),
                             ),
                           );
                         }),

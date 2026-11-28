@@ -57,7 +57,6 @@ class GlassSegmentedControl<T> extends StatelessWidget {
           final option = options[index];
           final label = labels[index];
           final isSelected = value == option;
-          final shouldHighlight = highlightValue != null && option == highlightValue;
 
           return Expanded(
             child: GestureDetector(

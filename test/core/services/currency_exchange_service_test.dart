@@ -208,18 +208,6 @@ void main() {
 
     // We cannot easily mock SupabaseClient without mocktail.
     // These tests exercise local → API path (Supabase always fails).
-    CurrencyExchangeService _createServiceWithFailingSupabase() {
-      // Use a dummy Supabase URL that will always fail.
-      // The service catches all Supabase errors gracefully.
-      // We pass a real SupabaseClient pointing at a bogus URL.
-      // Note: Since Supabase.instance requires initialization, we test
-      // the core logic paths that don't depend on Supabase responses.
-      // For full integration tests with Supabase, use a real test environment.
-      //
-      // For unit tests, we test convertCurrency (pure) and verify local store
-      // interaction directly.
-      throw UnimplementedError('Full service tests require Supabase init — see integration tests');
-    }
 
     test('given local hit, when getRates called, then does not call API', () async {
       // Arrange

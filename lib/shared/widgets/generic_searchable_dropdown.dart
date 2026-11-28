@@ -130,14 +130,9 @@ class _GenericSearchableDropdownState<T>
     const itemHeight = 48.0;
     const searchFieldHeight = 48.0;
     const verticalPadding = 8.0;
-    final listHeight =
-        (_filteredItems.isEmpty ? itemHeight : _filteredItems.length * itemHeight)
-            .clamp(itemHeight, widget.maxVisibleItems * itemHeight);
 
     // Calculate extra height for "Add New" button
     final addNewHeight = widget.onAddNew != null ? 49.0 : 0.0; // 48 button + 1 divider
-
-    final totalHeight = searchFieldHeight + verticalPadding * 2 + listHeight + 8 + addNewHeight;
 
     return OverlayEntry(
       builder: (context) {

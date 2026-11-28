@@ -423,7 +423,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Switch(
               value: showDecimal,
               onChanged: (value) => _toggleShowDecimal(value),
-              activeColor: AppColors.primaryGold,
+              activeThumbColor: AppColors.primaryGold,
             ),
           ),
           _buildDivider(),
@@ -440,7 +440,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Switch(
               value: cardShadow,
               onChanged: (value) => _toggleCardShadow(value),
-              activeColor: AppColors.primaryGold,
+              activeThumbColor: AppColors.primaryGold,
             ),
           ),
           _buildDivider(),
@@ -450,7 +450,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Switch(
               value: hideCategoryIcon,
               onChanged: (value) => _toggleHideCategoryIcon(value),
-              activeColor: AppColors.primaryGold,
+              activeThumbColor: AppColors.primaryGold,
             ),
           ),
         ],
@@ -491,7 +491,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailing: Switch(
                   value: isAppLockEnabled,
                   onChanged: (value) => _toggleAppLock(value),
-                  activeColor: AppColors.primaryGold,
+                  activeThumbColor: AppColors.primaryGold,
                 ),
               ),
               _buildDivider(),
@@ -505,7 +505,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     trailing: Switch(
                       value: biometricEnabled,
                       onChanged: (value) => _toggleBiometric(value),
-                      activeColor: AppColors.primaryGold,
+                      activeThumbColor: AppColors.primaryGold,
                     ),
                   ),
                 ),
@@ -698,7 +698,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final success = await _sendEmailFeedback(controller.text.trim());
                       setState(() => isSending = false);
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(ref.watch(translationsProvider).settingsSendFeedbackSuccess), backgroundColor: AppColors.success),
@@ -873,7 +873,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () async {
               final authService = ref.read(authServiceProvider);
               final isValid = await authService.verifyPin(pinController.text);
-              if (!mounted) return;
+              if (!context.mounted) return;
               Navigator.pop(context);
               if (isValid) {
                 await _showNewPinDialog();
@@ -957,7 +957,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
               final authService = ref.read(authServiceProvider);
               await authService.setPin(pinController.text);
-              if (!mounted) return;
+              if (!context.mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                  SnackBar(content: Text(ref.watch(translationsProvider).settingsPinSetSuccess), backgroundColor: AppColors.success),
@@ -2510,6 +2510,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  // Sync purchase flow — dormant until Supabase sync ships (SyncScreen is not
+  // reachable from navigation).
+  // ignore: unused_element
   Future<void> _handleBuySync() async {
     final trans = ref.read(translationsProvider);
     final auth = PremiumAuthService();
@@ -3162,6 +3165,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         isLoading: _isBuyingFromModal,
                         onPressed: () async {
                           final nav = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
                           setState(() => _isBuyingFromModal = true);
                           setModalState(() {});
 
@@ -3189,7 +3193,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             nav.pop();
                             if (!auth.isSignedIn) {
                               final trans = ref.read(translationsProvider);
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 SnackBar(
                                   content: Text(trans.premiumActivated),
                                   backgroundColor: AppColors.success,

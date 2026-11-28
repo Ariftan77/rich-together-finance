@@ -29,7 +29,6 @@ import '../../../goals/presentation/providers/goal_provider.dart';
 import '../../../goals/presentation/screens/goal_entry_screen.dart';
 import '../../../debts/presentation/screens/debt_entry_screen.dart';
 import '../../../investments/presentation/widgets/investment_tab.dart';
-import '../../../../shared/utils/indonesian_currency_formatter.dart';
 import '../../../../shared/widgets/multi_currency_picker_field.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../../../transactions/presentation/widgets/account_selector.dart';
@@ -90,7 +89,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
 
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final trans = ref.watch(translationsProvider);
 
     return Scaffold(
@@ -177,7 +175,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   Widget _buildBudgetTab() {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final summariesAsync = ref.watch(budgetPeriodSummariesProvider);
     final showDecimal = ref.watch(showDecimalProvider);
@@ -375,7 +372,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   }) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     final periodLabel = switch (period) {
       BudgetPeriod.weekly => trans.recurringWeekly as String,
@@ -491,7 +487,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
   Widget _buildBudgetSummaryCard(BudgetPeriodSummary summary, bool showDecimal, dynamic trans) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final progressColor = summary.progress > 0.9
         ? Colors.red
         : (summary.progress > 0.5 ? Colors.orange : AppColors.success);
@@ -1015,11 +1010,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
         final sortedReceivableGroups = Map.fromEntries(
           receivableGroups.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
         );
-
-        final themeMode = AppThemeProvider.of(context);
-        final isLight = themeMode == AppThemeMode.light ||
-            (themeMode == AppThemeMode.system &&
-                MediaQuery.platformBrightnessOf(context) == Brightness.light);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
@@ -2441,41 +2431,6 @@ class _WealthScreenState extends ConsumerState<WealthScreen>
           child: Text(label, maxLines: 1),
         ),
       );
-
-  Widget _buildPeriodBadge(BudgetPeriod period) {
-    final themeMode = AppThemeProvider.of(context);
-    final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final trans = ref.watch(translationsProvider);
-    final label = switch (period) {
-      BudgetPeriod.weekly => trans.recurringWeekly,
-      BudgetPeriod.monthly => trans.recurringMonthly,
-      BudgetPeriod.yearly => trans.recurringYearly,
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: isLight
-            ? Colors.black.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: isLight
-              ? Colors.black.withValues(alpha: 0.12)
-              : Colors.white.withValues(alpha: 0.15),
-          width: 0.8,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isLight ? const Color(0xFF64748B) : const Color(0xB3FFFFFF),
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
 
   Widget _buildCurrencyBadge(String code) {
     return Container(

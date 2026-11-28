@@ -33,7 +33,6 @@ class DowSpendingChart extends ConsumerWidget {
     final isLight = themeMode == AppThemeMode.light ||
         (themeMode == AppThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final accentColor = Theme.of(context).colorScheme.primary;
     final trans = ref.watch(translationsProvider);
     final dowAsync = ref.watch(dowSpendingProvider);
@@ -50,7 +49,7 @@ class DowSpendingChart extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => GlassCard(
+      error: (_, _) => GlassCard(
         child: SizedBox(
           height: 80,
           child: Center(

@@ -30,7 +30,6 @@ import '../widgets/budget_performance_chart.dart';
 import '../widgets/financial_health_card.dart';
 import '../../../investments/presentation/providers/investment_providers.dart';
 import '../../../reports/presentation/screens/report_details_screen.dart';
-import '../../../reports/presentation/widgets/export_report_modal.dart';
 import '../../../reports/presentation/widgets/advanced_report_modal.dart';
 
 /// Dashboard Overview Screen with Tabs
@@ -51,10 +50,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void initState() {
     super.initState();
     AnalyticsService.trackFirstOverviewVisit();
-    final _dao = ref.read(transactionDaoProvider);
-    final _profileId = ref.read(activeProfileIdProvider);
-    if (_profileId != null) {
-      unawaited(AnalyticsService.checkAndTrackNoTransactionsIn7Days(_dao, _profileId).catchError((_) {}));
+    final dao = ref.read(transactionDaoProvider);
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId != null) {
+      unawaited(AnalyticsService.checkAndTrackNoTransactionsIn7Days(dao, profileId).catchError((_) {}));
     }
     _tabController = TabController(length: 2, vsync: this);
     // Free-tier users default to Monthly Details (index 1); premium users start
@@ -160,7 +159,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       }),
                       AnimatedBuilder(
                         animation: _tabController,
-                        builder: (_, __) {
+                        builder: (_, _) {
                           if (_tabController.index != 1) {
                             return const SizedBox(width: 88, height: 40);
                           }
@@ -311,7 +310,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     value: totalBalanceAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
-                      error: (_, __) => 'Error',
+                      error: (_, _) => 'Error',
                     ),
                     onTap: () => _showCurrencyBreakdown(context),
                     onLongPress: () => _showCurrencyBreakdown(context),
@@ -324,7 +323,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     value: netWorthAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
-                      error: (_, __) => 'Error',
+                      error: (_, _) => 'Error',
                     ),
                     onTap: () => _showNetWorthBreakdown(context),
                     onLongPress: () => _showNetWorthBreakdown(context),
@@ -387,7 +386,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     value: monthlyIncomeAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
-                      error: (_, __) => 'Error',
+                      error: (_, _) => 'Error',
                     ),
                     onTap: () => _showAmountBreakdown(
                       context,
@@ -406,7 +405,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     value: monthlyExpenseAsync.when(
                       data: (v) => '${baseCurrency.symbol} ${Formatters.formatCurrency(v, showDecimal: showDecimal)}',
                       loading: () => '...',
-                      error: (_, __) => 'Error',
+                      error: (_, _) => 'Error',
                     ),
                     onTap: () => _showAmountBreakdown(
                       context,
@@ -429,7 +428,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           return '$prefix${baseCurrency.symbol} ${Formatters.formatCurrency(v.abs(), showDecimal: showDecimal)}';
                         },
                         loading: () => '...',
-                        error: (_, __) => 'Error',
+                        error: (_, _) => 'Error',
                       ),
                       onTap: () => _showAmountBreakdown(
                         context,
@@ -523,7 +522,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final rateResult = await exchangeService.getRates();
     final rates = rateResult.rates;
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -668,7 +667,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final rateResult = await exchangeService.getRates();
     final rates = rateResult.rates;
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,

@@ -174,7 +174,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                   category.icon.isNotEmpty;
                               Color bgColor;
                               if (useCategoryIcon) {
-                                final hex = category!.color;
+                                final hex = category.color;
                                 bgColor = parseHexColor(hex).withValues(alpha: 0.25);
                               } else {
                                 bgColor = typeColor.withValues(alpha: 0.2);
@@ -191,7 +191,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                   ),
                                 ),
                                 child: useCategoryIcon
-                                    ? Center(child: CategoryIconWidget(iconString: category!.icon, size: 18, color: typeColor))
+                                    ? Center(child: CategoryIconWidget(iconString: category.icon, size: 18, color: typeColor))
                                     : Icon(
                                         isInvestment
                                             ? Icons.show_chart

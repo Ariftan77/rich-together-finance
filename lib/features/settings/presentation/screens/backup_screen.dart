@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import '../../../../core/providers/locale_provider.dart';
@@ -196,6 +194,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Future<void> _handleUploadToDrive() async {
     if (!await _guardCloudBackup()) return;
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);
@@ -220,6 +219,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Future<void> _handleRestoreFromDrive() async {
     if (!await _guardCloudBackup()) return;
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final trans = ref.read(translationsProvider);
     setState(() => _isLoading = true);
@@ -443,7 +443,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                             title: Text(trans.backupCloudEnable, style: TextStyle(color: isLight ? AppColors.textPrimaryLight : Colors.white)),
                             subtitle: Text(trans.backupCloudEnableSubtitle, style: TextStyle(color: isLight ? const Color(0xFF94A3B8) : Colors.white54)),
                             value: _cloudBackupEnabled,
-                            activeColor: AppColors.primaryGold,
+                            activeThumbColor: AppColors.primaryGold,
                             onChanged: _setCloudBackupEnabled,
                           ),
                           if (_cloudBackupEnabled) ...[

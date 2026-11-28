@@ -24,13 +24,13 @@ String _buildCaption(
   String monthYear,
 ) {
   final base = switch (type) {
-    AchievementType.savingsStreak => trans.shareCaption_savingsStreak,
-    AchievementType.financeChampion => trans.shareCaption_financeChampion,
-    AchievementType.budgetChampion => trans.shareCaption_budgetChampion,
-    AchievementType.budgetDisciplined => trans.shareCaption_budgetDisciplined,
-    AchievementType.gradeA => trans.shareCaption_gradeA,
-    AchievementType.gradeB => trans.shareCaption_gradeB,
-    AchievementType.spendingUnderControl => trans.shareCaption_spendingUnderControl,
+    AchievementType.savingsStreak => trans.shareCaptionSavingsStreak,
+    AchievementType.financeChampion => trans.shareCaptionFinanceChampion,
+    AchievementType.budgetChampion => trans.shareCaptionBudgetChampion,
+    AchievementType.budgetDisciplined => trans.shareCaptionBudgetDisciplined,
+    AchievementType.gradeA => trans.shareCaptionGradeA,
+    AchievementType.gradeB => trans.shareCaptionGradeB,
+    AchievementType.spendingUnderControl => trans.shareCaptionSpendingUnderControl,
   };
   return '$base\n\n— $monthYear';
 }

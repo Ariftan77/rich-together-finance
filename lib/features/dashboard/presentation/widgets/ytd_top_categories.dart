@@ -58,7 +58,7 @@ class YtdTopCategories extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => GlassCard(
+      error: (_, _) => GlassCard(
         child: SizedBox(
           height: 80,
           child: Center(
@@ -609,7 +609,7 @@ class _TrendSection extends ConsumerWidget {
                 ),
               ),
             ),
-            error: (_, __) => SizedBox(
+            error: (_, _) => SizedBox(
               height: 60,
               child: Center(
                 child: Text(

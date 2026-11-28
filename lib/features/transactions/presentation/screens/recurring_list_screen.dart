@@ -390,7 +390,6 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
     final isAdjustment = widget.item.type == TransactionType.adjustmentIn || widget.item.type == TransactionType.adjustmentOut;
     final isDebtIn = widget.item.type == TransactionType.debtIn;
     final isDebtOut = widget.item.type == TransactionType.debtOut;
-    final isDebt = isDebtIn || isDebtOut;
     final color = isExpense
         ? const Color(0xFFFB7185)
         : isAdjustment
@@ -554,7 +553,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
                     Switch(
                       value: _isActive,
                       onChanged: (val) => setState(() => _isActive = val),
-                      activeColor: AppColors.primaryGold,
+                      activeThumbColor: AppColors.primaryGold,
                     ),
                   ],
                 ),
@@ -798,7 +797,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
       final dao = ref.read(recurringDaoProvider);
       await dao.deleteRecurring(widget.item.id);
 
-      if (mounted) {
+      if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -808,7 +807,7 @@ class _RecurringEditDialogState extends ConsumerState<_RecurringEditDialog> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${trans.error}: $e'),

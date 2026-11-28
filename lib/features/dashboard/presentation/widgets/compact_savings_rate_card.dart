@@ -26,7 +26,7 @@ class CompactSavingsRateCard extends ConsumerWidget {
         title: trans.savingsRateLabel,
         child: _buildLoadingContent(isLight),
       ),
-      error: (_, __) => _buildShell(
+      error: (_, _) => _buildShell(
         isLight: isLight,
         title: trans.savingsRateLabel,
         child: _buildErrorContent(isLight, trans.reportNoData),

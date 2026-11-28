@@ -99,28 +99,6 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
     ],
   };
 
-  static const List<String> _colors = [
-    'transparent',
-    // Reds & Pinks
-    '#FF6B6B', '#E74C3C', '#D35400', '#FF4757', '#FF6348',
-    '#C0392B', '#E84393', '#FD79A8',
-    // Oranges & Yellows
-    '#FF9F1C', '#E67E22', '#F39C12', '#F1C40F', '#FFE66D',
-    '#FDCB6E', '#F0932B',
-    // Greens
-    '#2ECC71', '#27AE60', '#16A085', '#00B894', '#00CEC9',
-    '#55E6C1', '#6AB04C',
-    // Blues
-    '#3498DB', '#2980B9', '#0984E3', '#74B9FF', '#48DBFB',
-    '#00D2D3', '#54A0FF',
-    // Purples
-    '#9B59B6', '#8E44AD', '#6C5CE7', '#A29BFE', '#E056A0',
-    '#BE2EDD', '#4834D4',
-    // Neutrals & Dark
-    '#1A535C', '#34495E', '#2C3E50', '#636E72', '#95A5A6',
-    '#BDC3C7', '#DFE6E9',
-  ];
-
   Map<String, List<String>> get _activeGroups {
     if (_sourceMode == 0) return _emojiGroups;
     if (_sourceMode == 1) return phosphorCuratedGroups;
@@ -155,11 +133,6 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
   }
 
   Color _hexToColor(String hex) => parseHexColor(hex);
-
-  Color _previewIconColor() {
-    if (!CategoryIconWidget.isPhosphorIcon(_selectedIcon)) return Colors.white;
-    return _selectedColorHex == 'transparent' ? AppColors.primaryGold : Colors.white;
-  }
 
   /// Convert camelCase to readable: "creditCard" -> "credit card"
   String _humanize(String name) {
@@ -547,23 +520,4 @@ class _CategoryIconPickerState extends State<CategoryIconPicker>
       ),
     );
   }
-}
-
-class _CrossPainter extends CustomPainter {
-  final bool isLight;
-  const _CrossPainter({this.isLight = false});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = isLight ? Colors.black38 : Colors.white38
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round;
-    final inset = size.width * 0.25;
-    canvas.drawLine(Offset(inset, inset), Offset(size.width - inset, size.height - inset), paint);
-    canvas.drawLine(Offset(size.width - inset, inset), Offset(inset, size.height - inset), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -43,7 +43,7 @@ class BudgetPerformanceChart extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => GlassCard(
+      error: (_, _) => GlassCard(
         child: SizedBox(
           height: 80,
           child: Center(

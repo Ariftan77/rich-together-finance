@@ -790,13 +790,13 @@ abstract class AppTranslations {
   // Share Achievement Feature
   String get shareAchievement;
   String get achievementsTitle;
-  String get shareCaption_savingsStreak;
-  String get shareCaption_financeChampion;
-  String get shareCaption_budgetChampion;
-  String get shareCaption_budgetDisciplined;
-  String get shareCaption_gradeA;
-  String get shareCaption_gradeB;
-  String get shareCaption_spendingUnderControl;
+  String get shareCaptionSavingsStreak;
+  String get shareCaptionFinanceChampion;
+  String get shareCaptionBudgetChampion;
+  String get shareCaptionBudgetDisciplined;
+  String get shareCaptionGradeA;
+  String get shareCaptionGradeB;
+  String get shareCaptionSpendingUnderControl;
 
   // Premium Gate Modal
   String get premiumGateButtonBuyLifetime;
@@ -996,4 +996,5 @@ abstract class AppTranslations {
   String get widgetLblTodaySpend;
   String get widgetLblMonthIn;
   String get widgetLblMonthOut;
+  String get widgetLblStale;
 }

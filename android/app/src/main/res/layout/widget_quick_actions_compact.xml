@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact (icon-only) Quick Actions, used when the widget is resized below ~3 cells wide.
+     Button IDs match widget_quick_actions.xml so the provider binds both the same way. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_default"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <FrameLayout
+        android:id="@+id/btn_expense"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/widget_pill_expense_dark"
+        android:contentDescription="Expense"
+        android:minHeight="40dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_widget_expense" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="6dp"
+        android:layout_height="1dp" />
+
+    <FrameLayout
+        android:id="@+id/btn_income"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/widget_pill_income_dark"
+        android:contentDescription="Income"
+        android:minHeight="40dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_widget_income" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="6dp"
+        android:layout_height="1dp" />
+
+    <FrameLayout
+        android:id="@+id/btn_transfer"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/widget_pill_transfer_dark"
+        android:contentDescription="Transfer"
+        android:minHeight="40dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_widget_transfer" />
+    </FrameLayout>
+
+</LinearLayout>

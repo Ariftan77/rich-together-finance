@@ -478,7 +478,7 @@ class _GoalEntryScreenState extends ConsumerState<GoalEntryScreen> {
                               await ref
                                   .read(goalDaoProvider)
                                   .deleteGoal(widget.goal!.id);
-                              if (mounted) Navigator.pop(context);
+                              if (context.mounted) Navigator.pop(context);
                             }
                           },
                           child: Text('Delete Goal',

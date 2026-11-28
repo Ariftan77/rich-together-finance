@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/services/analytics_service.dart';
 import '../../../shared/theme/app_theme_mode.dart';
-import '../../../shared/theme/colors.dart';
 import '../../../shared/theme/theme_provider_widget.dart';
 import '../../../shared/widgets/glass_button.dart';
 import '../services/founder_feedback_service.dart';
@@ -86,7 +85,6 @@ class _FounderFeedbackSheetState extends State<_FounderFeedbackSheet> {
     final fillColor = isLight
         ? const Color(0xFFF1F5F9)
         : Colors.white.withValues(alpha: 0.07);
-    final textColor = isLight ? const Color(0xFF1E293B) : Colors.white;
     final hintColor = isLight
         ? const Color(0xFF94A3B8)
         : Colors.white.withValues(alpha: 0.4);
@@ -177,7 +175,6 @@ class _FounderFeedbackSheetState extends State<_FounderFeedbackSheet> {
             ? Colors.white
             : const Color(0xFF1A1A1A);
 
-    final titleColor = isLight ? AppColors.textPrimaryLight : Colors.white;
     final bodyColor = isLight
         ? const Color(0xFF475569)
         : Colors.white.withValues(alpha: 0.75);

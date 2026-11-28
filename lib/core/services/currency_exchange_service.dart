@@ -89,12 +89,12 @@ class CurrencyExchangeService {
     final totalSw = Stopwatch()..start();
     final steps = <String>[];
 
-    int _ms(Stopwatch sw) { sw.stop(); return sw.elapsedMilliseconds; }
+    int ms(Stopwatch sw) { sw.stop(); return sw.elapsedMilliseconds; }
 
     // 1. Exact match in local DB (always checked first)
     var sw = Stopwatch()..start();
     final local = await _localStore.get(requestedDate);
-    steps.add('local_exact:${_ms(sw)}ms(${local != null ? 'hit' : 'miss'})');
+    steps.add('local_exact:${ms(sw)}ms(${local != null ? 'hit' : 'miss'})');
     if (local != null) {
       final patched = _patchMissingRates(local, requestedDate);
       _cacheResult(requestedDate, patched);
@@ -107,13 +107,13 @@ class CurrencyExchangeService {
       sw = Stopwatch()..start();
       final latestLocal = await _localStore.getLatest();
       if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
-        steps.add('local_tolerance:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
+        steps.add('local_tolerance:${ms(sw)}ms(hit:${latestLocal.rateDate})');
         final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
         _cacheResult(requestedDate, patched);
         _log(requestedDate, patched, totalSw: totalSw, steps: steps);
         return patched;
       }
-      steps.add('local_tolerance:${_ms(sw)}ms(miss)');
+      steps.add('local_tolerance:${ms(sw)}ms(miss)');
     }
 
     // 1c. Connectivity gate — skip all network calls if offline
@@ -121,13 +121,13 @@ class CurrencyExchangeService {
       sw = Stopwatch()..start();
       final latestLocal = await _localStore.getLatest();
       if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
-        steps.add('offline_local_fallback:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
+        steps.add('offline_local_fallback:${ms(sw)}ms(hit:${latestLocal.rateDate})');
         final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
         _cacheResult(requestedDate, patched);
         _log(requestedDate, patched, totalSw: totalSw, steps: steps);
         return patched;
       }
-      steps.add('offline_local_fallback:${_ms(sw)}ms(miss)');
+      steps.add('offline_local_fallback:${ms(sw)}ms(miss)');
       final hardcodedResult = getHardcodedRates(requestedDate);
       _cacheResult(requestedDate, hardcodedResult);
       _log(requestedDate, hardcodedResult, totalSw: totalSw, steps: steps);
@@ -137,7 +137,7 @@ class CurrencyExchangeService {
     // 2. Exact match in Supabase
     sw = Stopwatch()..start();
     final supabaseResult = await _fetchFromSupabase(requestedDate);
-    steps.add('supabase_exact:${_ms(sw)}ms(${supabaseResult != null ? 'hit' : 'miss'})');
+    steps.add('supabase_exact:${ms(sw)}ms(${supabaseResult != null ? 'hit' : 'miss'})');
     if (supabaseResult != null) {
       final patched = _patchMissingRates(supabaseResult, requestedDate);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
@@ -151,14 +151,14 @@ class CurrencyExchangeService {
       sw = Stopwatch()..start();
       final latestSupabase = await _fetchLatestFromSupabase();
       if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
-        steps.add('supabase_latest:${_ms(sw)}ms(hit:${latestSupabase.rateDate})');
+        steps.add('supabase_latest:${ms(sw)}ms(hit:${latestSupabase.rateDate})');
         final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
         await _safeLocalWrite(patched.copyWith(source: 'local'));
         _cacheResult(requestedDate, patched);
         _log(requestedDate, patched, totalSw: totalSw, steps: steps);
         return patched;
       }
-      steps.add('supabase_latest:${_ms(sw)}ms(miss)');
+      steps.add('supabase_latest:${ms(sw)}ms(miss)');
       // Weekend and no stored data close enough — fall through to hardcoded
       final hardcodedResult = getHardcodedRates(requestedDate);
       _cacheResult(requestedDate, hardcodedResult);
@@ -170,14 +170,14 @@ class CurrencyExchangeService {
     try {
       sw = Stopwatch()..start();
       final apiResult = await _fetchFromOpenER();
-      steps.add('open_er:${_ms(sw)}ms(hit)');
+      steps.add('open_er:${ms(sw)}ms(hit)');
       await _safeSupabaseWrite(apiResult);
       await _safeLocalWrite(apiResult.copyWith(source: 'local'));
       _cacheResult(requestedDate, apiResult);
       _log(requestedDate, apiResult, totalSw: totalSw, steps: steps);
       return apiResult;
     } catch (e) {
-      steps.add('open_er:${_ms(sw)}ms(fail)');
+      steps.add('open_er:${ms(sw)}ms(fail)');
       developer.log('open.er-api failed: $e', name: 'CurrencyExchangeService');
     }
 
@@ -185,7 +185,7 @@ class CurrencyExchangeService {
     try {
       sw = Stopwatch()..start();
       final frankfurterResult = await _fetchFromFrankfurter();
-      steps.add('frankfurter:${_ms(sw)}ms(hit)');
+      steps.add('frankfurter:${ms(sw)}ms(hit)');
       final patched = _patchMissingRates(frankfurterResult, requestedDate);
       await _safeSupabaseWrite(patched);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
@@ -193,7 +193,7 @@ class CurrencyExchangeService {
       _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     } catch (e) {
-      steps.add('frankfurter:${_ms(sw)}ms(fail)');
+      steps.add('frankfurter:${ms(sw)}ms(fail)');
       developer.log('Both APIs failed: $e', name: 'CurrencyExchangeService');
     }
 
@@ -201,25 +201,25 @@ class CurrencyExchangeService {
     sw = Stopwatch()..start();
     final latestLocal = await _localStore.getLatest();
     if (latestLocal != null && _isWithinDays(latestLocal.rateDate, requestedDate, _weekendToleranceDays)) {
-      steps.add('local_tolerance_fallback:${_ms(sw)}ms(hit:${latestLocal.rateDate})');
+      steps.add('local_tolerance_fallback:${ms(sw)}ms(hit:${latestLocal.rateDate})');
       final patched = _patchMissingRates(latestLocal.copyWith(isExactDate: false), requestedDate);
       _cacheResult(requestedDate, patched);
       _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
-    steps.add('local_tolerance_fallback:${_ms(sw)}ms(miss)');
+    steps.add('local_tolerance_fallback:${ms(sw)}ms(miss)');
 
     sw = Stopwatch()..start();
     final latestSupabase = await _fetchLatestFromSupabase();
     if (latestSupabase != null && _isWithinDays(latestSupabase.rateDate, requestedDate, _weekendToleranceDays)) {
-      steps.add('supabase_latest_fallback:${_ms(sw)}ms(hit:${latestSupabase.rateDate})');
+      steps.add('supabase_latest_fallback:${ms(sw)}ms(hit:${latestSupabase.rateDate})');
       final patched = _patchMissingRates(latestSupabase.copyWith(isExactDate: false), requestedDate);
       await _safeLocalWrite(patched.copyWith(source: 'local'));
       _cacheResult(requestedDate, patched);
       _log(requestedDate, patched, totalSw: totalSw, steps: steps);
       return patched;
     }
-    steps.add('supabase_latest_fallback:${_ms(sw)}ms(miss)');
+    steps.add('supabase_latest_fallback:${ms(sw)}ms(miss)');
 
     // 6. Last resort: hardcoded
     final hardcodedResult = getHardcodedRates(requestedDate);

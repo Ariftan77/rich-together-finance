@@ -4,6 +4,54 @@ import WidgetKit
 
 private let richerAppGroupId = "group.com.axiomtechdev.richtogether"
 private let privacyMaskKey = "widget_amounts_masked"
+private let projectionHorizonDays = 6
+
+// MARK: - Day Rollover
+
+/// Parses the `yyyy-MM-dd` local-day strings written by the Flutter app.
+func parseWidgetDay(_ raw: String?, calendar: Calendar) -> Date? {
+  guard let raw = raw, !raw.isEmpty else { return nil }
+  let parts = raw.split(separator: "-").compactMap { Int($0) }
+  guard parts.count == 3 else { return nil }
+  return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+}
+
+/// Decides how a snapshot taken on `snapshotDay` should render on `now`,
+/// without the app having refreshed it. Mirrors `WidgetFreshness.kt`.
+struct WidgetFreshness {
+  /// Whole calendar days since the snapshot; 0 when the snapshot is from today
+  /// (or when no snapshot day was recorded by an older app build).
+  let dayOffset: Int
+  let isSameMonth: Bool
+  let isPastBudgetPeriod: Bool
+
+  static func resolve(
+    snapshotDay: String?,
+    periodEndDay: String?,
+    now: Date,
+    calendar: Calendar = .current
+  ) -> WidgetFreshness {
+    let today = calendar.startOfDay(for: now)
+    guard let snap = parseWidgetDay(snapshotDay, calendar: calendar) else {
+      return WidgetFreshness(dayOffset: 0, isSameMonth: true, isPastBudgetPeriod: false)
+    }
+    let offset = calendar.dateComponents([.day], from: snap, to: today).day ?? 0
+    let sameMonth =
+      calendar.component(.year, from: snap) == calendar.component(.year, from: today)
+      && calendar.component(.month, from: snap) == calendar.component(.month, from: today)
+    var pastPeriod = false
+    if let end = parseWidgetDay(periodEndDay, calendar: calendar) {
+      pastPeriod = today > end
+    }
+    return WidgetFreshness(dayOffset: offset, isSameMonth: sameMonth, isPastBudgetPeriod: pastPeriod)
+  }
+
+  /// A budget projection exists only for days 1...horizon inside the period.
+  /// A negative offset (clock moved back) is treated as untrustworthy.
+  var budgetIsStale: Bool {
+    dayOffset < 0 || dayOffset > projectionHorizonDays || isPastBudgetPeriod
+  }
+}
 
 // MARK: - Shared Data Model
 
@@ -25,6 +73,8 @@ struct RicherWidgetEntry: TimelineEntry {
   let lblTodaySpend: String
   let lblMonthIn: String
   let lblMonthOut: String
+  let lblStale: String
+  let isBudgetStale: Bool
 
   let hasBudget: Bool
   let budgetRemainingFmt: String
@@ -40,13 +90,13 @@ struct RicherWidgetEntry: TimelineEntry {
     return isMasked ? maskedPlaceholder : raw
   }
 
-  static func load(isPreview: Bool) -> RicherWidgetEntry {
+  static func load(isPreview: Bool, at date: Date = Date()) -> RicherWidgetEntry {
     let prefs = UserDefaults(suiteName: richerAppGroupId)
     let hasData = prefs?.bool(forKey: "widget_has_data") ?? false
 
     if isPreview && !hasData {
       return RicherWidgetEntry(
-        date: Date(),
+        date: date,
         profileName: "Personal",
         themeMode: "default",
         isMasked: false,
@@ -62,6 +112,8 @@ struct RicherWidgetEntry: TimelineEntry {
         lblTodaySpend: "Today's Spend",
         lblMonthIn: "Month In",
         lblMonthOut: "Month Out",
+        lblStale: "Open Richer to refresh",
+        isBudgetStale: false,
         hasBudget: true,
         budgetRemainingFmt: "Rp 2.400.000",
         safePerDayFmt: "Rp 200.000",
@@ -73,8 +125,40 @@ struct RicherWidgetEntry: TimelineEntry {
       )
     }
 
+    func str(_ key: String, _ fallback: String) -> String {
+      prefs?.string(forKey: key) ?? fallback
+    }
+
+    let freshness = WidgetFreshness.resolve(
+      snapshotDay: prefs?.string(forKey: "widget_snapshot_day"),
+      periodEndDay: prefs?.string(forKey: "widget_budget_period_end_day"),
+      now: date
+    )
+    let zero = str("widget_zero_fmt", "Rp 0")
+    let hasBudget = prefs?.bool(forKey: "widget_has_budget") ?? false
+
+    // Budget Pulse: roll safe/day + days-left forward using the app's
+    // pre-computed projections; never invent numbers natively.
+    var safePerDay = str("widget_safe_per_day_fmt", "Rp 0")
+    var daysLeft = str("widget_lbl_days_left", "")
+    var budgetStale = false
+    if hasBudget && freshness.dayOffset != 0 {
+      if freshness.budgetIsStale {
+        budgetStale = true
+      } else {
+        let projected = str("widget_safe_per_day_fmt_d\(freshness.dayOffset)", "")
+        let projectedDays = str("widget_lbl_days_left_d\(freshness.dayOffset)", "")
+        if projected.isEmpty {
+          budgetStale = true
+        } else {
+          safePerDay = projected
+          daysLeft = projectedDays
+        }
+      }
+    }
+
     return RicherWidgetEntry(
-      date: Date(),
+      date: date,
       profileName: prefs?.string(forKey: "widget_profile_name") ?? "Richer",
       themeMode: prefs?.string(forKey: "widget_theme_mode") ?? "default",
       isMasked: prefs?.bool(forKey: privacyMaskKey) ?? false,
@@ -86,18 +170,23 @@ struct RicherWidgetEntry: TimelineEntry {
       lblBudgetLeft: prefs?.string(forKey: "widget_lbl_budget_left") ?? "Budget left",
       lblOverBudget: prefs?.string(forKey: "widget_lbl_over_budget") ?? "Over budget",
       lblNoBudget: prefs?.string(forKey: "widget_lbl_no_budget") ?? "Tap to set budget",
-      lblDaysLeft: prefs?.string(forKey: "widget_lbl_days_left") ?? "",
+      lblDaysLeft: daysLeft,
       lblTodaySpend: prefs?.string(forKey: "widget_lbl_today_spend") ?? "Today's Spend",
       lblMonthIn: prefs?.string(forKey: "widget_lbl_month_in") ?? "Month In",
       lblMonthOut: prefs?.string(forKey: "widget_lbl_month_out") ?? "Month Out",
-      hasBudget: prefs?.bool(forKey: "widget_has_budget") ?? false,
+      lblStale: str("widget_lbl_stale", "Open Richer to refresh"),
+      isBudgetStale: budgetStale,
+      hasBudget: hasBudget,
       budgetRemainingFmt: prefs?.string(forKey: "widget_budget_remaining_fmt") ?? "Rp 0",
-      safePerDayFmt: prefs?.string(forKey: "widget_safe_per_day_fmt") ?? "Rp 0",
+      safePerDayFmt: safePerDay,
       budgetProgressPct: prefs?.integer(forKey: "widget_budget_progress_pct") ?? 0,
       budgetStatus: prefs?.string(forKey: "widget_budget_status") ?? "ok",
-      todayExpenseFmt: prefs?.string(forKey: "widget_today_expense_fmt") ?? "Rp 0",
-      monthExpenseFmt: prefs?.string(forKey: "widget_month_expense_fmt") ?? "Rp 0",
-      monthIncomeFmt: prefs?.string(forKey: "widget_month_income_fmt") ?? "Rp 0"
+      todayExpenseFmt: freshness.dayOffset == 0
+        ? str("widget_today_expense_fmt", "Rp 0") : zero,
+      monthExpenseFmt: freshness.isSameMonth
+        ? str("widget_month_expense_fmt", "Rp 0") : zero,
+      monthIncomeFmt: freshness.isSameMonth
+        ? str("widget_month_income_fmt", "Rp 0") : zero
     )
   }
 }
@@ -112,9 +201,19 @@ struct RicherTimelineProvider: TimelineProvider {
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<RicherWidgetEntry>) -> Void) {
-    let entry = RicherWidgetEntry.load(isPreview: false)
-    let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
-    completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
+    // One entry now plus one at each upcoming local midnight, so "today" resets
+    // and safe/day rolls forward even if the app is never opened. The app calls
+    // reloadAllTimelines whenever data changes, which rebuilds this timeline.
+    let calendar = Calendar.current
+    let now = Date()
+    var entries = [RicherWidgetEntry.load(isPreview: false, at: now)]
+    var midnight = calendar.startOfDay(for: now)
+    for _ in 0...projectionHorizonDays {
+      guard let next = calendar.date(byAdding: .day, value: 1, to: midnight) else { break }
+      midnight = next
+      entries.append(RicherWidgetEntry.load(isPreview: false, at: midnight))
+    }
+    completion(Timeline(entries: entries, policy: .atEnd))
   }
 }
 
@@ -242,8 +341,8 @@ private func privacyToggleControl(isMasked: Bool, color: Color) -> some View {
 }
 
 @ViewBuilder
-private func quickExpenseBadge() -> some View {
-  Link(destination: widgetDeepLink("expense")) {
+private func quickExpenseBadge(destination: URL = widgetDeepLink("expense")) -> some View {
+  Link(destination: destination) {
     Image(systemName: "plus")
       .font(.system(size: 13, weight: .bold))
       .foregroundColor(Color(red: 0.06, green: 0.09, blue: 0.16))
@@ -257,10 +356,41 @@ private func quickExpenseBadge() -> some View {
 struct QuickActionsWidgetView: View {
   let entry: RicherWidgetEntry
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.widgetFamily) private var family
 
   var body: some View {
     let palette = RicherPalette.resolve(themeMode: entry.themeMode, systemScheme: colorScheme)
 
+    if family == .systemSmall {
+      // Small widgets only get ONE tap target on iOS (Link is ignored), so the
+      // small size is a single, tidy Quick Expense tile.
+      VStack(spacing: 8) {
+        Image(systemName: "minus.circle.fill")
+          .font(.system(size: 40, weight: .semibold))
+          .foregroundColor(palette.error)
+        Text(entry.lblExpense)
+          .font(.system(size: 15, weight: .bold))
+          .foregroundColor(palette.primaryText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+          .fill(palette.error.opacity(0.16))
+          .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+              .stroke(palette.error.opacity(0.38), lineWidth: 1)
+          )
+      )
+      .widgetURL(widgetDeepLink("expense"))
+      .richerWidgetContainer(palette.background)
+    } else {
+      fullBody(palette)
+    }
+  }
+
+  private func fullBody(_ palette: RicherPalette) -> some View {
     HStack(spacing: 8) {
       actionTile(
         label: entry.lblExpense,
@@ -329,7 +459,7 @@ struct RicherQuickActionsWidget: Widget {
     }
     .configurationDisplayName("Richer • Quick Actions")
     .description("Log Expense, Income, or Transfer in one tap.")
-    .supportedFamilies([.systemMedium])
+    .supportedFamilies([.systemSmall, .systemMedium])
   }
 }
 
@@ -352,13 +482,16 @@ struct BudgetPulseWidgetView: View {
       }
     }()
 
+    let isStale = entry.hasBudget && entry.isBudgetStale
+
     let headerLabel: String = {
-      if !entry.hasBudget { return "Richer" }
+      if !entry.hasBudget || isStale { return "Richer" }
       return isOver ? entry.lblOverBudget : entry.lblSafePerDay
     }()
 
     let heroValue: String = {
       if !entry.hasBudget { return entry.lblNoBudget }
+      if isStale { return entry.lblStale }
       return isOver ? entry.display(entry.budgetRemainingFmt) : entry.display(entry.safePerDayFmt)
     }()
 
@@ -371,24 +504,29 @@ struct BudgetPulseWidgetView: View {
         Spacer(minLength: 2)
         privacyToggleControl(isMasked: entry.isMasked, color: palette.secondaryText)
         if family != .systemSmall {
-          quickExpenseBadge()
+          // No budget yet: "+" creates one instead of logging an expense.
+          quickExpenseBadge(
+            destination: widgetDeepLink(entry.hasBudget ? "expense" : "budget-new")
+          )
         }
       }
 
       Spacer(minLength: 0)
 
       Text(heroValue)
-        .font(.system(size: family == .systemSmall ? 17 : 20, weight: .bold))
-        .foregroundColor(isOver ? palette.error : palette.primaryText)
-        .lineLimit(1)
+        .font(.system(size: isStale ? 14 : (family == .systemSmall ? 17 : 20), weight: .bold))
+        .foregroundColor(isOver && !isStale ? palette.error : palette.primaryText)
+        .lineLimit(isStale ? 2 : 1)
         .minimumScaleFactor(0.7)
+        .privacySensitive(entry.hasBudget && !isStale)
 
-      if entry.hasBudget {
+      if entry.hasBudget && !isStale {
         Text("\(entry.lblBudgetLeft): \(entry.display(entry.budgetRemainingFmt))")
           .font(.system(size: 11, weight: .medium))
           .foregroundColor(palette.secondaryText)
           .lineLimit(1)
           .minimumScaleFactor(0.8)
+          .privacySensitive()
       }
 
       GeometryReader { geo in
@@ -399,19 +537,20 @@ struct BudgetPulseWidgetView: View {
           Capsule()
             .fill(barColor)
             .frame(
-              width: max(0, min(1.0, CGFloat(entry.budgetProgressPct) / 100.0)) * geo.size.width,
+              width: (isStale ? 0 : max(0, min(1.0, CGFloat(entry.budgetProgressPct) / 100.0)))
+                * geo.size.width,
               height: 6
             )
         }
       }
       .frame(height: 6)
 
-      Text(entry.hasBudget ? entry.lblDaysLeft : "Richer")
+      Text(entry.hasBudget && !isStale ? entry.lblDaysLeft : "Richer")
         .font(.system(size: 10, weight: .bold))
         .foregroundColor(palette.gold)
         .lineLimit(1)
     }
-    .widgetURL(widgetDeepLink("budget"))
+    .widgetURL(widgetDeepLink(entry.hasBudget ? "budget" : "budget-new"))
     .richerWidgetContainer(palette.background)
   }
 }
@@ -450,6 +589,7 @@ struct CashFlowWidgetView: View {
             .foregroundColor(palette.primaryText)
             .lineLimit(1)
             .minimumScaleFactor(0.75)
+            .privacySensitive()
         }
         Spacer(minLength: 4)
         privacyToggleControl(isMasked: entry.isMasked, color: palette.secondaryText)
@@ -493,6 +633,7 @@ struct CashFlowWidgetView: View {
         .foregroundColor(tint)
         .lineLimit(1)
         .minimumScaleFactor(0.75)
+        .privacySensitive()
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.horizontal, 10)

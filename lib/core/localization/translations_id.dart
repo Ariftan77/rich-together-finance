@@ -5,7 +5,6 @@ class AppTranslationsId implements AppTranslations {
   @override String get navDashboard => 'Beranda';
   @override String get navTransactions => 'Transaksi';
   @override String get navWallet => 'Dompet';
-  @override String get navPlanning => 'Perencanaan';
   @override String get navSettings => 'Pengaturan';
   @override String get navReports => 'Laporan';
   
@@ -812,19 +811,19 @@ class AppTranslationsId implements AppTranslations {
   // Share Achievement Feature
   @override String get shareAchievement => 'Bagikan Pencapaian';
   @override String get achievementsTitle => 'Pencapaian';
-  @override String get shareCaption_savingsStreak =>
+  @override String get shareCaptionSavingsStreak =>
       'Tiga bulan berturut-turut pengeluaran lebih kecil dari pemasukan. Kebiasaan kecil, hasil konsisten. Dipantau lewat Richer. #Richer #KeuanganPribadi #StreakTabungan';
-  @override String get shareCaption_financeChampion =>
+  @override String get shareCaptionFinanceChampion =>
       'Lima bulan berturut-turut — pemasukan selalu lebih besar dari pengeluaran. Konsistensi ini ternyata memuaskan banget. #Richer #FinanceChampion #KebiasaanUang';
-  @override String get shareCaption_budgetChampion =>
+  @override String get shareCaptionBudgetChampion =>
       'Semua anggaran bulan ini berhasil dijaga. Ternyata menentukan batas dan benar-benar mengikutinya adalah dua hal yang sangat berbeda. #Richer #TujuanAnggaran #DisiplinKeuangan';
-  @override String get shareCaption_budgetDisciplined =>
+  @override String get shareCaptionBudgetDisciplined =>
       'Tiga bulan disiplin dengan anggaran. Membangun kebiasaan keuangan yang lebih baik, satu bulan dalam satu waktu. #Richer #DisiplinAnggaran #KebiasaanUang';
-  @override String get shareCaption_gradeA =>
+  @override String get shareCaptionGradeA =>
       'Skor kesehatan keuanganku baru saja mencapai Nilai A. Tingkat tabungan, beban utang, kepatuhan anggaran, tren pengeluaran — semua hijau. #Richer #KesehatanKeuangan #NilaiA';
-  @override String get shareCaption_gradeB =>
+  @override String get shareCaptionGradeB =>
       'Nilai B untuk cek kesehatan keuanganku. Masih ada satu dua komponen yang perlu ditingkatkan, tapi arahnya sudah benar. Progres lambat tetap progres. #Richer #KesehatanKeuangan #PerjalananUang';
-  @override String get shareCaption_spendingUnderControl =>
+  @override String get shareCaptionSpendingUnderControl =>
       'Pengeluaranku terus turun 3 bulan berturut-turut. Bukan karena menyiksa diri — hanya lebih disengaja dalam pengeluaran. #Richer #BelanjaCerdas #KebebasanFinansial';
 
   // Premium Gate Modal
@@ -1024,4 +1023,5 @@ class AppTranslationsId implements AppTranslations {
   @override String get widgetLblTodaySpend => 'Hari Ini';
   @override String get widgetLblMonthIn => 'Masuk';
   @override String get widgetLblMonthOut => 'Keluar';
+  @override String get widgetLblStale => 'Buka Richer untuk memperbarui';
 }

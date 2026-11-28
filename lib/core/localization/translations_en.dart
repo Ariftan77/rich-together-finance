@@ -5,7 +5,6 @@ class AppTranslationsEn implements AppTranslations {
   @override String get navDashboard => 'Dashboard';
   @override String get navTransactions => 'Transactions';
   @override String get navWallet => 'Wallet';
-  @override String get navPlanning => 'Planning';
   @override String get navSettings => 'Settings';
   @override String get navReports => 'Reports';
   
@@ -810,19 +809,19 @@ class AppTranslationsEn implements AppTranslations {
   // Share Achievement Feature
   @override String get shareAchievement => 'Share Achievement';
   @override String get achievementsTitle => 'Achievements';
-  @override String get shareCaption_savingsStreak =>
+  @override String get shareCaptionSavingsStreak =>
       'Three months of spending less than I earn. Small habit, consistent results. Tracking it all in Richer. #Richer #PersonalFinance #SavingsStreak';
-  @override String get shareCaption_financeChampion =>
+  @override String get shareCaptionFinanceChampion =>
       'Five months in a row — income beating expenses every single month. Didn\'t expect consistency to feel this good. #Richer #FinanceChampion #MoneyHabits';
-  @override String get shareCaption_budgetChampion =>
+  @override String get shareCaptionBudgetChampion =>
       'Kept every budget this month. Turns out setting limits and actually following them are two very different skills. Getting better at both. #Richer #BudgetGoals #FinancialDiscipline';
-  @override String get shareCaption_budgetDisciplined =>
+  @override String get shareCaptionBudgetDisciplined =>
       'Three months of staying disciplined with my budget. Building better money habits one month at a time. #Richer #BudgetDiscipline #MoneyHabits';
-  @override String get shareCaption_gradeA =>
+  @override String get shareCaptionGradeA =>
       'My financial health score just hit Grade A. Savings rate, debt load, budget adherence, expense trend — all green. Took a while to get here. #Richer #FinancialHealth #GradeA';
-  @override String get shareCaption_gradeB =>
+  @override String get shareCaptionGradeB =>
       'Grade B on my financial health check. There\'s a component or two still to work on, but the direction is right. Slow progress is still progress. #Richer #FinancialHealth #MoneyJourney';
-  @override String get shareCaption_spendingUnderControl =>
+  @override String get shareCaptionSpendingUnderControl =>
       'My expenses have been going down for 3 months in a row. Not because I\'m depriving myself — just being more intentional. #Richer #SpendingSmarter #FinancialFreedom';
 
   // Premium Gate Modal
@@ -1022,4 +1021,5 @@ class AppTranslationsEn implements AppTranslations {
   @override String get widgetLblTodaySpend => 'Today\'s Spend';
   @override String get widgetLblMonthIn => 'Month In';
   @override String get widgetLblMonthOut => 'Month Out';
+  @override String get widgetLblStale => 'Open Richer to refresh';
 }

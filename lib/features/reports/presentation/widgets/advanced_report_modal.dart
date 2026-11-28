@@ -253,7 +253,11 @@ class _AdvancedReportModalState extends ConsumerState<_AdvancedReportModal> {
               profileId: profileId, year: _dateFrom.year, locale: locale);
             AnalyticsService.logReportExported('report_year_review');
         }
-        if (hasData) exported++; else noData++;
+        if (hasData) {
+          exported++;
+        } else {
+          noData++;
+        }
         if (mounted) setState(() => _exportProgress++);
       }
 

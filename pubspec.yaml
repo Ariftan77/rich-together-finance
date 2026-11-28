@@ -86,6 +86,14 @@ dependencies:
   # Home Screen Widgets (Android AppWidget + iOS WidgetKit)
   home_widget: ^0.10.0
 
+  # Platform implementations imported directly (auth_service / iap_service /
+  # notification_service) — pinned to the versions already in pubspec.lock.
+  local_auth_android: ^1.0.56
+  local_auth_darwin: ^1.6.1
+  in_app_purchase_android: ^0.5.0
+  in_app_purchase_storekit: ^0.4.8+1
+  timezone: ^0.10.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

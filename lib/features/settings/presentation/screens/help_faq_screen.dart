@@ -99,7 +99,7 @@ class _HelpFaqScreenState extends ConsumerState<HelpFaqScreen> {
                       final success = await _sendEmailFeedback(controller.text.trim());
                       setState(() => isSending = false);
 
-                      if (success && mounted) {
+                      if (success && context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(ref.watch(translationsProvider).settingsSendFeedbackSuccess), backgroundColor: AppColors.success),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
+import '../../../../core/providers/date_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
 import '../../../../core/providers/currency_exchange_providers.dart';
 import '../../../../core/models/enums.dart';
@@ -340,6 +341,9 @@ final convertedMonthlyTransactionsProvider =
   final transactionDao = ref.watch(transactionDaoProvider);
   final baseCurrency = ref.watch(defaultCurrencyProvider);
   final rates = ref.watch(todayRatesProvider);
+  // Rebuild when the calendar day changes (set on app resume) so the month
+  // window — and the Home Screen Widget snapshot built from it — rolls over.
+  ref.watch(currentDateProvider);
 
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);

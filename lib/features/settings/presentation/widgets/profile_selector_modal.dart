@@ -404,7 +404,7 @@ class ProfileSelectorModal extends ConsumerWidget {
     final premiumEnabled = ref.read(premiumEnabledProvider);
     final iapEnabled = ref.read(iapEnabledProvider);
     final isPremium = ref.read(premiumStatusProvider);
-    if (premiumEnabled && iapEnabled && !isPremium && profiles.length >= 1) {
+    if (premiumEnabled && iapEnabled && !isPremium && profiles.isNotEmpty) {
       final trans = ref.read(translationsProvider);
       await showPremiumGateModal(
         context,

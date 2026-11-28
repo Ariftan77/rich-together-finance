@@ -23,9 +23,13 @@ class CashFlowWidgetProvider : HomeWidgetProvider() {
         val lblMonthIn = widgetData.getString("widget_lbl_month_in", "Month In") ?: "Month In"
         val lblMonthOut = widgetData.getString("widget_lbl_month_out", "Month Out") ?: "Month Out"
 
-        val todayRaw = widgetData.getString("widget_today_expense_fmt", "Rp 0") ?: "Rp 0"
-        val monthInRaw = widgetData.getString("widget_month_income_fmt", "Rp 0") ?: "Rp 0"
-        val monthOutRaw = widgetData.getString("widget_month_expense_fmt", "Rp 0") ?: "Rp 0"
+        // Reset "today" after midnight and month totals after a month change
+        // when the app hasn't pushed a fresh snapshot yet.
+        val freshness = WidgetFreshness.resolve(widgetData)
+        val lookup: (String) -> String? = { key -> widgetData.getString(key, null) }
+        val todayRaw = WidgetRollover.todayExpense(freshness, lookup)
+        val monthInRaw = WidgetRollover.monthValue(freshness, "widget_month_income_fmt", lookup)
+        val monthOutRaw = WidgetRollover.monthValue(freshness, "widget_month_expense_fmt", lookup)
 
         val todayDisplay = RicherWidgetSupport.maskIfNeeded(widgetData, todayRaw)
         val monthInDisplay = RicherWidgetSupport.maskIfNeeded(widgetData, monthInRaw)

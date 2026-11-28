@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 import 'package:sqlite3/open.dart';
@@ -216,6 +217,8 @@ class AppDatabase extends _$AppDatabase {
           // 3. Recreate budgets table: add name column (seeded from old category name),
           //    and drop the categoryId column + unique constraint in one step.
           await m.alterTable(
+            // TableMigration is Drift's supported way to rebuild a table; shipped v19 path.
+            // ignore: experimental_member_use
             TableMigration(
               budgets,
               columnTransformer: {
@@ -428,7 +431,7 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('UPDATE recurring SET profile_id = $profileId WHERE profile_id IS NULL');
       await customStatement('UPDATE holdings SET profile_id = $profileId WHERE profile_id IS NULL');
     } catch (e) {
-      print('⚠️ Profile migration partial error: $e');
+      debugPrint('⚠️ Profile migration partial error: $e');
     }
   }
 
@@ -504,7 +507,7 @@ class AppDatabase extends _$AppDatabase {
       await m.addColumn(investmentTransactions, investmentTransactions.isSynced);
 
     } catch (e) {
-      print('⚠️ Sync migration error: $e');
+      debugPrint('⚠️ Sync migration error: $e');
     }
   }
 
@@ -529,84 +532,6 @@ class AppDatabase extends _$AppDatabase {
         defaultCurrency: const Value(Currency.idr),
       ),
     );
-  }
-
-  /// Seeds the database with predefined categories
-  Future<void> _seedCategories() async {
-    final existingCategories = await select(categories).get();
-
-    bool exists(CategoriesCompanion comp) {
-      return existingCategories.any((c) => 
-          c.name == comp.name.value && c.type == comp.type.value);
-    }
-
-    // Expense categories
-    final defaultExpenses = [
-      CategoriesCompanion.insert(
-        name: 'Food',
-        type: CategoryType.expense,
-        icon: '🍔',
-        color: const Value('#FF6B6B'),
-        isSystem: const Value(true),
-        sortOrder: const Value(1),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Transportation',
-        type: CategoryType.expense,
-        icon: '🚗',
-        color: const Value('#4ECDC4'),
-        isSystem: const Value(true),
-        sortOrder: const Value(2),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Other',
-        type: CategoryType.expense,
-        icon: '📦',
-        color: const Value('#BDC3C7'),
-        isSystem: const Value(true),
-        sortOrder: const Value(3),
-      ),
-    ];
-
-    // Income categories
-    final defaultIncomes = [
-      CategoriesCompanion.insert(
-        name: 'Salary',
-        type: CategoryType.income,
-        icon: '💰',
-        color: const Value('#2ECC71'),
-        isSystem: const Value(true),
-        sortOrder: const Value(1),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Freelance',
-        type: CategoryType.income,
-        icon: '💻',
-        color: const Value('#3498DB'),
-        isSystem: const Value(true),
-        sortOrder: const Value(2),
-      ),
-      CategoriesCompanion.insert(
-        name: 'Other',
-        type: CategoryType.income,
-        icon: '📦',
-        color: const Value('#BDC3C7'),
-        isSystem: const Value(true),
-        sortOrder: const Value(3),
-      ),
-    ];
-
-    final expenseCategoriesToInsert = defaultExpenses.where((c) => !exists(c)).toList();
-    final incomeCategoriesToInsert = defaultIncomes.where((c) => !exists(c)).toList();
-
-    await batch((batch) {
-      if (expenseCategoriesToInsert.isNotEmpty) {
-        batch.insertAll(categories, expenseCategoriesToInsert);
-      }
-      if (incomeCategoriesToInsert.isNotEmpty) {
-        batch.insertAll(categories, incomeCategoriesToInsert);
-      }
-    });
   }
 
   /// Deletes all data for a specific profile, then deletes the profile itself.

@@ -20,7 +20,6 @@ import '../../../../shared/utils/formatters.dart';
 import '../../../../shared/widgets/calculator_bottom_sheet.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/add_category_dialog.dart';
-import '../../../../shared/widgets/generic_searchable_dropdown.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/recurring_service.dart';
 import '../widgets/account_selector.dart';
@@ -70,8 +69,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   int? _selectedCategoryId;
   
   // Currency Conversion (background)
-  double? _estimatedDestinationAmount;
-  double? _exchangeRate;
   
   // Suggested Titles
   List<String> _frequentTitles = [];
@@ -82,7 +79,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
   // Original values when editing (to correctly validate balance changes)
   double? _originalAmount;
-  int? _originalAccountId;
 
   // Debt this transaction belongs to (null for non-debt rows and for legacy
   // debt rows created before the debtId link existed)
@@ -94,8 +90,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   // Track if auto-select has been applied (only once per title)
   bool _autoSelectApplied = false;
 
-  // Swipe animation direction for tab switching
-  double _slideDirection = 1.0;
   static const _typeOptions = [
     TransactionType.income,
     TransactionType.expense,
@@ -217,7 +211,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
         _selectedTime = TimeOfDay.fromDateTime(transaction.date);
         _rawAmount = transaction.amount.toString();
         _originalAmount = transaction.amount;
-        _originalAccountId = transaction.accountId;
         _debtId = transaction.debtId;
         
         // Format amount
@@ -229,8 +222,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
         _titleController.text = transaction.title ?? '';
         _noteController.text = transaction.note ?? '';
-        _estimatedDestinationAmount = transaction.destinationAmount;
-        _exchangeRate = transaction.exchangeRate;
       });
     }
   }
@@ -422,7 +413,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                 finalExchangeRate = amount / destinationAmount;
                 
                 // Append rate note
-                 final rateText = 'Rate: 1 ${toAccount.currency.code} = ${Formatters.formatNumber(finalExchangeRate!)} ${fromAccount.currency.code}';
+                 final rateText = 'Rate: 1 ${toAccount.currency.code} = ${Formatters.formatNumber(finalExchangeRate)} ${fromAccount.currency.code}';
                 if (!_noteController.text.contains('Rate:')) {
                    if (_noteController.text.isNotEmpty) {
                     _noteController.text += '\n$rateText';
@@ -446,8 +437,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       }
       
       // Update state for next time
-      _estimatedDestinationAmount = finalDestinationAmount;
-      _exchangeRate = finalExchangeRate;
 
       final transactionCompanion = TransactionsCompanion(
         profileId: ref.read(activeProfileIdProvider) != null ? drift.Value(ref.read(activeProfileIdProvider)!) : const drift.Value.absent(),
@@ -474,9 +463,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
            // TODO: Ideally only fire on the first ever transaction (count == 0
            // before insert). For now fires on every new transaction save.
            AnalyticsService.trackFirstTransactionAdded();
-           final _insertedProfileId = transactionCompanion.profileId.value;
-           final _txCount = await dao.countAllTransactions(_insertedProfileId);
-           if (_txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
+           final insertedProfileId = transactionCompanion.profileId.value;
+           final txCount = await dao.countAllTransactions(insertedProfileId);
+           if (txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
         } else {
            if (mounted) {
             messenger.showSnackBar(
@@ -491,7 +480,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       if (mounted) {
         navigator.pop();
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
 
 
       if (mounted) {
@@ -583,7 +572,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     // Unfocus to prevent keyboard/focus issues during navigation
     FocusScope.of(context).unfocus();
 
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
     // Show confirmation dialog
@@ -847,24 +835,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final newIndex = _typeOptions.indexOf(newType);
     if (oldIndex == newIndex) return;
     setState(() {
-      _slideDirection = newIndex > oldIndex ? 1.0 : -1.0;
       _selectedType = newType;
     });
     _loadFrequentTitles();
-  }
-
-  String _formatDateDisplay() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final selectedDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
-    
-    if (selectedDay == today) {
-      return ref.read(translationsProvider).commonToday;
-    } else if (selectedDay == today.subtract(const Duration(days: 1))) {
-      return ref.read(translationsProvider).commonYesterday;
-    } else {
-      return DateFormat('MMM dd, yyyy').format(_selectedDate);
-    }
   }
 
 
@@ -898,7 +871,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
   }) {
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
     final selectedId = isToAccount ? _selectedToAccountId : _selectedAccountId;
     final selectedAccount = accounts.where((a) => a.id == selectedId).firstOrNull;
 
@@ -997,7 +969,6 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
     final trans = ref.watch(translationsProvider);
     final themeMode = AppThemeProvider.of(context);
     final isLight = themeMode == AppThemeMode.light || (themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isDefault = themeMode == AppThemeMode.defaultTheme;
 
     final accountsAsync = ref.watch(accountsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
@@ -1145,7 +1116,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                             );
                           },
                           loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                          error: (_, __) => const Text('Error loading accounts'),
+                          error: (_, _) => const Text('Error loading accounts'),
                         ),
                       ],
                     ),
@@ -1328,7 +1299,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                   child: ListView.separated(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _filteredTitles.length,
-                                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                                     itemBuilder: (context, index) {
                                       final title = _filteredTitles[index];
                                       return GestureDetector(
@@ -1434,14 +1405,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
 
                                                 if (name.isNotEmpty) {
                                                   // Direct creation path
-                                                  await _createNewCategory(name, categoryType!);
+                                                  await _createNewCategory(name, categoryType);
                                                 } else {
                                                   // Fallback to dialog if no text entered
                                                   // Use parent 'context', not the disposed 'modalContext'
                                                   FocusScope.of(context).unfocus();
                                                   await Future.delayed(const Duration(milliseconds: 100));
 
-                                                  if (!mounted) return;
+                                                  if (!context.mounted) return;
 
                                                   final result = await showDialog<Map<String, dynamic>>(
                                                     context: context,
@@ -1451,14 +1422,14 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                                     ),
                                                   );
 
-                                                  if (mounted) {
+                                                  if (context.mounted) {
                                                     FocusScope.of(context).unfocus();
                                                   }
 
                                                   if (result != null && result['name'] != null) {
                                                     await _createNewCategory(
                                                       result['name'] as String,
-                                                      categoryType!,
+                                                      categoryType,
                                                       icon: result['icon'] as String?,
                                                       color: result['color'] as String?,
                                                     );
@@ -1526,7 +1497,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                                 );
                               },
                               loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                              error: (_, __) => const Text('Error loading categories'),
+                              error: (_, _) => const Text('Error loading categories'),
                             ),
 
                           if (_selectedType != TransactionType.transfer)
@@ -1556,7 +1527,7 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
                               );
                             },
                             loading: () => const CircularProgressIndicator(color: AppColors.primaryGold),
-                            error: (_, __) => const Text('Error loading accounts'),
+                            error: (_, _) => const Text('Error loading accounts'),
                           ),
 
                           const SizedBox(height: 16),
@@ -1898,11 +1869,9 @@ class _TransactionEntryScreenState extends ConsumerState<TransactionEntryScreen>
       } else {
         await dao.insertTransaction(transactionCompanion);
         AnalyticsService.trackFirstTransactionAdded();
-        if (profileId != null) {
-          final _txCount = await dao.countAllTransactions(profileId);
-          if (_txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
-        }
-      }
+        final txCount = await dao.countAllTransactions(profileId);
+        if (txCount >= 10) AnalyticsService.trackTenTransactionsAdded();
+            }
 
       if (!mounted) return;
 

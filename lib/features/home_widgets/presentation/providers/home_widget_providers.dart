@@ -89,25 +89,22 @@ final homeWidgetSnapshotProvider = Provider<HomeWidgetSnapshot?>((ref) {
     }
   }
 
-  // 2. Safe-to-Spend Budget Pulse (prefer monthly budgets; fallback to weekly/yearly)
-  final now = DateTime.now();
+  // 2. Safe-to-Spend Budget Pulse (prefer monthly budgets; fallback to weekly,
+  // then all budgets measured against the calendar year).
   List<BudgetWithSpending> targetBudgets =
       budgets.where((b) => b.budget.period == BudgetPeriod.monthly).toList();
-  int daysLeft = DateTime(now.year, now.month + 1, 0).day - now.day + 1;
-
+  BudgetPeriod? windowPeriod = BudgetPeriod.monthly;
   if (targetBudgets.isEmpty) {
     targetBudgets =
         budgets.where((b) => b.budget.period == BudgetPeriod.weekly).toList();
-    if (targetBudgets.isNotEmpty) {
-      daysLeft = 7 - now.weekday + 1;
-    }
+    windowPeriod = BudgetPeriod.weekly;
   }
   if (targetBudgets.isEmpty && budgets.isNotEmpty) {
     targetBudgets = budgets;
-    final endOfYear = DateTime(now.year, 12, 31);
-    daysLeft = endOfYear.difference(DateTime(now.year, now.month, now.day)).inDays + 1;
+    windowPeriod = null;
   }
-  if (daysLeft < 1) daysLeft = 1;
+  final window = BudgetWindow.resolve(windowPeriod, currentDate);
+  final daysLeft = window.daysLeft;
 
   final hasBudget = targetBudgets.isNotEmpty;
   double totalBudget = 0;
@@ -130,6 +127,9 @@ final homeWidgetSnapshotProvider = Provider<HomeWidgetSnapshot?>((ref) {
 
   final remaining = totalBudget - totalSpent;
   final safePerDay = remaining > 0 ? (remaining / daysLeft) : 0.0;
+  final projected = hasBudget
+      ? projectSafePerDay(remaining: remaining, daysLeft: daysLeft)
+      : List<double?>.filled(kWidgetProjectionHorizonDays, null);
   final rawRatio = totalBudget > 0 ? (totalSpent / totalBudget) : 0.0;
   final progressPct = (rawRatio * 100).round().clamp(0, 100);
   final String budgetStatus;
@@ -169,6 +169,17 @@ final homeWidgetSnapshotProvider = Provider<HomeWidgetSnapshot?>((ref) {
     todayExpenseFmt: fmt(todayExpense),
     monthExpenseFmt: fmt(monthExpense),
     monthIncomeFmt: fmt(monthIncome),
+    snapshotDay: formatWidgetDay(currentDate),
+    budgetPeriodEndDay: hasBudget ? formatWidgetDay(window.periodEnd) : '',
+    zeroAmountFmt: fmt(0),
+    lblStale: trans.widgetLblStale,
+    safePerDayAheadFmt: [
+      for (final v in projected) v == null ? '' : fmt(v),
+    ],
+    lblDaysLeftAhead: [
+      for (var i = 0; i < projected.length; i++)
+        projected[i] == null ? '' : trans.widgetLblDaysLeft(daysLeft - (i + 1)),
+    ],
   );
 });
 

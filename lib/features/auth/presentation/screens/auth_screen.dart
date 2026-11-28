@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/auth_service.dart';
-import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/theme/colors.dart';
 import '../../../dashboard/presentation/dashboard_shell.dart';
 import '../widgets/pin_pad.dart';
@@ -193,7 +192,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       shape: BoxShape.circle,
                       color: index < _pin.length
                           ? AppColors.primaryGold
-                          : AppColors.textSecondary.withOpacity(0.2),
+                          : AppColors.textSecondary.withValues(alpha: 0.2),
                     ),
                   );
                 }),

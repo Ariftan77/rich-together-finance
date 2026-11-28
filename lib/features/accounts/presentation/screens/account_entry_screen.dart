@@ -373,7 +373,6 @@ class _AccountEntryScreenState extends ConsumerState<AccountEntryScreen> {
         : 0.0;
     final themeMode = AppThemeProvider.of(context);
     final isDarkMode = themeMode != AppThemeMode.light && !(themeMode == AppThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.light);
-    final isLight = !isDarkMode;
     final showDecimal = ref.watch(showDecimalProvider);
 
     return Stack(

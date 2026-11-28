@@ -182,7 +182,39 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
       case HomeWidgetLaunchAction.togglePrivacy:
         ref.read(widgetAmountsMaskedProvider.notifier).toggle();
         break;
+      case HomeWidgetLaunchAction.createBudget:
+        // Land on Wealth → Budget so closing the form leaves the user there.
+        ref.read(wealthTabIndexProvider.notifier).state = 0;
+        _onTabTap(3);
+        _openBudgetCreation();
+        break;
     }
+  }
+
+  /// Opens the new-budget form, enforcing the free-tier budget limit.
+  /// Shared by the Wealth FAB and the Budget Pulse home screen widget.
+  Future<void> _openBudgetCreation() async {
+    final premiumEnabled = ref.read(premiumEnabledProvider);
+    final iapEnabled = ref.read(iapEnabledProvider);
+    final isPremium = ref.read(premiumStatusProvider);
+    final budgets = ref.read(budgetsWithSpendingProvider).valueOrNull ?? [];
+    if (premiumEnabled && iapEnabled && !isPremium && budgets.length >= 3) {
+      final trans = ref.read(translationsProvider);
+      await showPremiumGateModal(
+        context,
+        ref,
+        title: trans.premiumGateBudgetTitle,
+        description: trans.premiumGateBudgetDesc,
+      );
+      return;
+    }
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BudgetEntryScreen(),
+      ),
+    );
   }
 
   Future<void> _loadFabTappedState() async {
@@ -476,29 +508,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell>
         if (wealthTab == 0) {
           return FabButton(
             icon: Icons.add,
-            onPressed: () async {
-              final premiumEnabled = ref.read(premiumEnabledProvider);
-              final iapEnabled = ref.read(iapEnabledProvider);
-              final isPremium = ref.read(premiumStatusProvider);
-              final budgets = ref.read(budgetsWithSpendingProvider).valueOrNull ?? [];
-              if (premiumEnabled && iapEnabled && !isPremium && budgets.length >= 3) {
-                final trans = ref.read(translationsProvider);
-                await showPremiumGateModal(
-                  context,
-                  ref,
-                  title: trans.premiumGateBudgetTitle,
-                  description: trans.premiumGateBudgetDesc,
-                );
-                return;
-              }
-              if (!mounted) return;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BudgetEntryScreen(),
-                ),
-              );
-            },
+            onPressed: _openBudgetCreation,
           );
         }
         if (wealthTab == 1) {

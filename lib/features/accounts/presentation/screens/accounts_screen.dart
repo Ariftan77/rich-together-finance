@@ -104,6 +104,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     super.dispose();
   }
 
+  // Auto-launch on first visit is disabled (see commented call sites); kept so
+  // it can be re-enabled without rewriting.
+  // ignore: unused_element
   Future<void> _maybeLaunchTour({bool delayed = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool(_tourPrefsKey) ?? false;

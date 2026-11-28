@@ -84,10 +84,10 @@ final accountBalanceStreamProvider = _accountBalanceStreamProvider;
 // ---------------------------------------------------------------------------
 
 /// Provider to calculate current balance for each account.
-/// Returns a Map<int, double> where key is Account ID and value is the
+/// Returns a `Map<int, double>` where key is Account ID and value is the
 /// running balance (initialBalance + net transaction delta).
 ///
-/// Return type is intentionally the same as the original Provider<Map<int, double>>
+/// Return type is intentionally the same as the original `Provider<Map<int, double>>`
 /// so all existing callers remain unaffected.  The computation now comes from a
 /// SQL GROUP BY query ([TransactionDao.watchAllAccountBalanceDeltas]) rather than
 /// iterating all transactions in Dart.

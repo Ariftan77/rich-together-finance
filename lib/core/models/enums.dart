@@ -1,5 +1,6 @@
 /// All enum definitions for Rich Together
 /// These enums are stored as INTEGER in SQLite (Drift auto-converts)
+library;
 
 /// Account types
 enum AccountType {

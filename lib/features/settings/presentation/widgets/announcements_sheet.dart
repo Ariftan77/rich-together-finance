@@ -99,7 +99,7 @@ class _AnnouncementsSheet extends ConsumerWidget {
                   child: CircularProgressIndicator(color: AppColors.primaryGold),
                 ),
               ),
-              error: (_, __) => Padding(
+              error: (_, _) => Padding(
                 padding: const EdgeInsets.all(32),
                 child: Center(
                   child: Text(

@@ -49,7 +49,7 @@ class VoucherService {
     final userId = auth.googleId ?? auth.appleId;
     await _db.from('voucher_redemptions').insert({
       'voucher_code': code,
-      if (userId != null) 'google_id': userId,
+      'google_id': ?userId,
     });
 
     await _db.from('vouchers').update({'used': true}).eq('code', code);

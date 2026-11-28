@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
-import '../../../../shared/utils/color_utils.dart';
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/providers/profile_provider.dart';
@@ -91,8 +90,8 @@ class _BudgetEntryScreenState extends ConsumerState<BudgetEntryScreen> {
     );
     if (result != null && mounted) {
       setState(() {
-        _selectedIcon = result['icon'] as String?;
-        _selectedIconColor = result['color'] as String?;
+        _selectedIcon = result['icon'];
+        _selectedIconColor = result['color'];
       });
     }
   }
